@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\SystemSetting;
+use App\Models\SubscriptionPlan;
 use App\Services\SubscriptionManager;
 use App\Services\PaystackService;
 use Illuminate\Http\Request;
@@ -25,34 +26,24 @@ class SubscriptionController extends Controller
      */
     public function locked()
     {
-        // Check if user is admin (role='user') or super admin
-        $user = auth()->user();
+        $user         = auth()->user();
         $canSubscribe = $user && ($user->isRegularUser() || $user->isSuperAdmin());
 
-        // Get subscription pricing from settings
-        $basePrice = (float) SystemSetting::get('subscription_base_price', 5000.00);
-        $currency = SystemSetting::get('default_currency', 'GHS');
+        // Use the new SubscriptionPlan model if plans have been defined
+        $plans = SubscriptionPlan::active()->ordered()->get();
 
-        // Calculate prices for different year options
+        if ($plans->isNotEmpty()) {
+            return view('subscription.locked', compact('plans', 'canSubscribe'));
+        }
+
+        // Fall back to old base-price system when no plans exist yet
+        $basePrice = (float) SystemSetting::get('subscription_base_price', 5000.00);
+        $currency  = SystemSetting::get('default_currency', 'GHS');
+
         $pricing = [
-            '1' => [
-                'years' => 1,
-                'name' => '1 Year',
-                'price' => $basePrice,
-                'description' => 'Annual subscription',
-            ],
-            '2' => [
-                'years' => 2,
-                'name' => '2 Years',
-                'price' => $basePrice * 2,
-                'description' => 'Two-year subscription',
-            ],
-            '3' => [
-                'years' => 3,
-                'name' => '3 Years',
-                'price' => $basePrice * 3,
-                'description' => 'Three-year subscription (Best Value)',
-            ],
+            '1' => ['years' => 1, 'name' => '1 Year',  'price' => $basePrice,      'description' => 'Annual subscription'],
+            '2' => ['years' => 2, 'name' => '2 Years', 'price' => $basePrice * 2,  'description' => 'Two-year subscription'],
+            '3' => ['years' => 3, 'name' => '3 Years', 'price' => $basePrice * 3,  'description' => 'Three-year subscription (Best Value)'],
         ];
 
         return view('subscription.locked', compact('pricing', 'currency', 'canSubscribe'));
@@ -63,59 +54,66 @@ class SubscriptionController extends Controller
      */
     public function subscribe(Request $request)
     {
-        // Only admins (role='user') or super admins can subscribe
         $user = auth()->user();
         if (!$user || (!$user->isRegularUser() && !$user->isSuperAdmin())) {
             return back()->with('error', 'Only administrators can create subscriptions.');
         }
 
-        $validated = $request->validate([
-            'institution_name' => 'required|string|max:255',
-            'years' => 'required|integer|min:1|max:3',
-        ]);
+        $request->validate(['institution_name' => 'required|string|max:255']);
 
-        // Get subscription pricing from settings
-        $basePrice = (float) SystemSetting::get('subscription_base_price', 5000.00);
-        $currency = SystemSetting::get('default_currency', 'GHS');
-
-        // Calculate amount based on number of years
-        $years = (int) $validated['years'];
-        $amount = $basePrice * $years;
-        
-        // Calculate dates: start today, end after selected number of years
-        // Examples (if created on Nov 10, 2025):
-        // - 1 year: starts Nov 10, 2025, ends Nov 10, 2026
-        // - 2 years: starts Nov 10, 2025, ends Nov 10, 2027
-        // - 3 years: starts Nov 10, 2025, ends Nov 10, 2028
-        $startDate = now()->startOfDay(); // Today at 00:00:00
-        // Add exactly the number of years selected (2 years = 2025 + 2 = 2027)
-        $endDate = $startDate->copy()->addYears($years)->startOfDay(); // Add years, keep as date (not datetime)
-
-        // Get grace period from settings
+        $startDate       = now()->startOfDay();
         $gracePeriodDays = SystemSetting::getGracePeriodDays();
 
-        // Create subscription
+        if ($request->filled('plan_id')) {
+            // ── New plan-based path ──────────────────────────────────────────
+            $request->validate(['plan_id' => 'required|integer|exists:subscription_plans,id']);
+
+            $plan     = SubscriptionPlan::active()->findOrFail($request->plan_id);
+            $amount   = $plan->price;
+            $currency = $plan->currency;
+            $planSlug = $plan->slug;
+
+            $renewalCycle = in_array($plan->billing_cycle, ['monthly', 'quarterly', 'semi_annual', 'annual'])
+                ? $plan->billing_cycle
+                : 'annual';
+
+            $endDate = match ($plan->billing_cycle) {
+                'monthly'     => $startDate->copy()->addMonth(),
+                'quarterly'   => $startDate->copy()->addMonths(3),
+                'semi_annual' => $startDate->copy()->addMonths(6),
+                default       => $startDate->copy()->addYear(),   // annual + one_time
+            };
+        } else {
+            // ── Legacy year-based fallback (when no plans defined) ───────────
+            $request->validate(['years' => 'required|integer|min:1|max:3']);
+
+            $basePrice    = (float) SystemSetting::get('subscription_base_price', 5000.00);
+            $currency     = SystemSetting::get('default_currency', 'GHS');
+            $years        = (int) $request->years;
+            $amount       = $basePrice * $years;
+            $planSlug     = 'standard';
+            $renewalCycle = 'annual';
+            $endDate      = $startDate->copy()->addYears($years)->startOfDay();
+        }
+
         $subscription = $this->subscriptionManager->createSubscription([
-            'institution_name' => $validated['institution_name'],
-            'institution_code' => Str::slug($validated['institution_name']),
-            'subscription_plan' => 'standard',
+            'institution_name'        => $request->institution_name,
+            'institution_code'        => Str::slug($request->institution_name),
+            'subscription_plan'       => $planSlug,
             'subscription_start_date' => $startDate,
-            'subscription_end_date' => $endDate,
-            'renewal_cycle' => 'annual', // Always annual
-            'renewal_amount' => $amount,
-            'currency' => $currency,
-            'auto_renewal' => SystemSetting::getAutoRenewalEnabled(),
-            'grace_period_days' => $gracePeriodDays,
-            'created_by' => $user->id,
+            'subscription_end_date'   => $endDate,
+            'renewal_cycle'           => $renewalCycle,
+            'renewal_amount'          => $amount,
+            'currency'                => $currency,
+            'auto_renewal'            => SystemSetting::getAutoRenewalEnabled(),
+            'grace_period_days'       => $gracePeriodDays,
+            'created_by'              => $user->id,
         ]);
 
-        // Initiate payment
-        $callbackUrl = route('super-admin.payments.callback');
-        
         $result = $this->subscriptionManager->initiateManualRenewal(
             $subscription,
             $user->id,
-            $callbackUrl
+            route('super-admin.payments.callback')
         );
 
         if ($result['success']) {

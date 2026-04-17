@@ -288,11 +288,43 @@
                 @endif
 
                 @if($canSubscribe)
-                    <h6 class="mb-3" style="color: #374151; font-weight: 600;">Choose Subscription Duration</h6>
-                    
+
                     <form action="{{ route('subscription.subscribe') }}" method="POST" id="subscribeForm">
                         @csrf
-                        
+
+                        @if(isset($plans) && $plans->isNotEmpty())
+                        {{-- ── New plan-based selection ── --}}
+                        <h6 class="mb-3" style="color:#374151;font-weight:600">Choose a Subscription Plan</h6>
+
+                        <div class="plans-grid" id="plansGrid">
+                            @foreach($plans as $plan)
+                            <div class="plan-card" data-plan-id="{{ $plan->id }}" onclick="selectPlan({{ $plan->id }}, this)">
+                                @if($plan->is_featured)
+                                <div class="plan-badge" style="margin-bottom:.5rem">POPULAR</div>
+                                @endif
+                                <div class="plan-name">{{ $plan->name }}</div>
+                                <div class="plan-price">{{ $plan->currency }} {{ number_format($plan->price, 0) }}</div>
+                                <div class="plan-cycle">{{ $plan->billing_cycle_label }}</div>
+                                @if(!empty($plan->features) && count($plan->features))
+                                <ul style="list-style:none;padding:0;margin:.75rem 0 0;text-align:left;font-size:.8rem;color:#4b5563">
+                                    @foreach(array_slice($plan->features, 0, 4) as $feature)
+                                    <li style="padding:2px 0">&#10003; {{ $feature }}</li>
+                                    @endforeach
+                                    @if(count($plan->features) > 4)
+                                    <li style="color:#9ca3af">+{{ count($plan->features) - 4 }} more</li>
+                                    @endif
+                                </ul>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+
+                        <input type="hidden" name="plan_id" id="selectedPlanId" required>
+
+                        @else
+                        {{-- ── Legacy year-based fallback ── --}}
+                        <h6 class="mb-3" style="color:#374151;font-weight:600">Choose Subscription Duration</h6>
+
                         <div class="plans-grid" id="plansGrid">
                             @foreach($pricing as $yearKey => $option)
                             <div class="plan-card" data-years="{{ $yearKey }}" onclick="selectYears('{{ $yearKey }}')">
@@ -307,16 +339,17 @@
                         </div>
 
                         <input type="hidden" name="years" id="selectedYears" required>
+                        @endif
 
                         <div class="subscribe-form">
                             <div class="mb-3">
                                 <label for="institution_name" class="form-label">
                                     <i class="icofont-building"></i> Institution Name <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       id="institution_name" 
-                                       name="institution_name" 
+                                <input type="text"
+                                       class="form-control"
+                                       id="institution_name"
+                                       name="institution_name"
                                        placeholder="Enter your institution name"
                                        required>
                             </div>
@@ -330,6 +363,7 @@
                             </p>
                         </div>
                     </form>
+
                 @else
                     <div class="empty-state">
                         <div class="empty-state-icon">
@@ -346,31 +380,31 @@
     </div>
 
     <script>
-        function selectYears(yearKey) {
-            // Remove selected class from all cards
-            document.querySelectorAll('.plan-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-
-            // Add selected class to clicked card
-            event.currentTarget.classList.add('selected');
-
-            // Set hidden input value
-            document.getElementById('selectedYears').value = yearKey;
-
-            // Enable subscribe button
+        function selectCard(el) {
+            document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
             document.getElementById('subscribeBtn').disabled = false;
         }
 
-        // Form validation
-        document.getElementById('subscribeForm').addEventListener('submit', function(e) {
-            const years = document.getElementById('selectedYears').value;
-            const institutionName = document.getElementById('institution_name').value;
+        function selectPlan(planId, el) {
+            selectCard(el);
+            document.getElementById('selectedPlanId').value = planId;
+        }
 
-            if (!years || !institutionName.trim()) {
+        function selectYears(yearKey) {
+            selectCard(event.currentTarget);
+            document.getElementById('selectedYears').value = yearKey;
+        }
+
+        document.getElementById('subscribeForm').addEventListener('submit', function(e) {
+            const planInput  = document.getElementById('selectedPlanId');
+            const yearsInput = document.getElementById('selectedYears');
+            const selected   = (planInput && planInput.value) || (yearsInput && yearsInput.value);
+            const name       = document.getElementById('institution_name').value;
+
+            if (!selected || !name.trim()) {
                 e.preventDefault();
-                alert('Please select a subscription duration and enter your institution name.');
-                return false;
+                alert('Please select a plan and enter your institution name.');
             }
         });
     </script>
