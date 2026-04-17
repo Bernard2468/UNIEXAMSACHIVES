@@ -101,24 +101,24 @@
                     <span class="ft-col__bar"></span>
                 </div>
                 <nav class="ft-nav">
-                    <a href="#" class="ft-link">
+                    <a href="https://cug.edu.gh/academics/faculties-and-school" target="_blank" rel="noopener" class="ft-link">
                         <span class="ft-link__dot"></span>
-                        <span class="ft-link__text">Public Universities Directory</span>
+                        <span class="ft-link__text">Faculties/Schools</span>
                         <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
-                    <a href="#" class="ft-link">
+                    <a href="https://cug.edu.gh/academics/academic-department" target="_blank" rel="noopener" class="ft-link">
                         <span class="ft-link__dot"></span>
-                        <span class="ft-link__text">Private Universities Directory</span>
+                        <span class="ft-link__text">Academic Departments</span>
                         <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
-                    <a href="#" class="ft-link">
+                    <a href="https://cug.edu.gh/admissions/graduate-programmes" target="_blank" rel="noopener" class="ft-link">
                         <span class="ft-link__dot"></span>
-                        <span class="ft-link__text">College Directory</span>
+                        <span class="ft-link__text">Postgraduate Admissions</span>
                         <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
-                    <a href="#" class="ft-link">
+                    <a href="https://cug.edu.gh/admissions/udergraduate-programmes" target="_blank" rel="noopener" class="ft-link">
                         <span class="ft-link__dot"></span>
-                        <span class="ft-link__text">Technical Universities Directory</span>
+                        <span class="ft-link__text">Undergraduate Admissions</span>
                         <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
                 </nav>
