@@ -327,7 +327,7 @@
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="icofont-search-1"></i>
+                            <img width="80" height="80" src="https://img.icons8.com/bubbles/80/view-file--v1.png" alt="view-file--v1"/>
                         </div>
                         <h3 class="feature-title">Advanced Search</h3>
                         <p class="feature-description">
@@ -340,7 +340,7 @@
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="icofont-ui-messaging"></i>
+                            <img width="100" height="100" src="https://img.icons8.com/plasticine/100/communication.png" alt="communication"/>
                         </div>
                         <h3 class="feature-title">Communication Hub</h3>
                         <p class="feature-description">
