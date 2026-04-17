@@ -319,6 +319,8 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin'])-
     
     // Dashboard
     Route::get('/', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'dashboard'])->name('dashboard');
+    // Analytics
+    Route::get('/analytics', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'analytics'])->name('analytics');
     // User Role Management
     Route::get('/roles', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'manageRoles'])->name('roles.index');
     Route::post('/users/{id}/grant-super-admin', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'grantSuperAdmin'])->name('users.grant-super-admin');

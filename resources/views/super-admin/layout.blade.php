@@ -354,6 +354,12 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('super-admin.analytics') }}" class="{{ request()->routeIs('super-admin.analytics') ? 'active' : '' }}">
+                    <i class="icofont-chart-bar-graph"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('super-admin.maintenance.index') }}" class="{{ request()->routeIs('super-admin.maintenance.*') ? 'active' : '' }}">
                     <i class="icofont-tools"></i>
                     <span>Maintenance</span>

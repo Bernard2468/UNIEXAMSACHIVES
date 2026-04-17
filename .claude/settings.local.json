@@ -59,7 +59,9 @@
       "Read(/C:\\Users\\USER\\Desktop\\UNIEXAMSACHIVES\\resources\\views\\admin\\communication/**)",
       "Read(/C:\\Users\\USER\\Desktop\\UNIEXAMSACHIVES\\app\\Http\\Controllers\\Frontend/**)",
       "Read(/C:\\Users\\USER\\Desktop\\UNIEXAMSACHIVES\\app\\Http\\Controllers\\Dashboard/**)",
-      "Read(/C:\\Users\\USER\\Desktop\\UNIEXAMSACHIVES\\resources\\views\\admin/**)"
+      "Read(/C:\\Users\\USER\\Desktop\\UNIEXAMSACHIVES\\resources\\views\\admin/**)",
+      "Bash(cat)",
+      "Bash(bash /tmp/check_views.sh)"
     ],
     "deny": []
   }

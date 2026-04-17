@@ -4,6 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SystemSubscription;
+use App\Models\SubscriptionPlan;
 use App\Services\SubscriptionManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -66,7 +67,8 @@ class SubscriptionController extends Controller
      */
     public function create()
     {
-        return view('super-admin.subscriptions.create');
+        $plans = SubscriptionPlan::active()->ordered()->get();
+        return view('super-admin.subscriptions.create', compact('plans'));
     }
 
     /**
@@ -74,22 +76,25 @@ class SubscriptionController extends Controller
      */
     public function store(Request $request)
     {
+        $planSlugs = SubscriptionPlan::active()->pluck('slug')
+            ->merge(['basic', 'standard', 'premium', 'enterprise'])
+            ->unique()->values()->toArray();
+
         $validated = $request->validate([
-            'institution_name' => 'required|string|max:255',
-            'institution_code' => 'nullable|string|max:100|unique:system_subscriptions,institution_code',
-            'subscription_plan' => 'required|in:basic,standard,premium,enterprise',
+            'institution_name'        => 'required|string|max:255',
+            'institution_code'        => 'nullable|string|max:100|unique:system_subscriptions,institution_code',
+            'subscription_plan'       => 'required|string|max:100|in:' . implode(',', $planSlugs),
             'subscription_start_date' => 'required|date',
-            'subscription_end_date' => 'required|date|after:subscription_start_date',
-            'renewal_cycle' => 'required|in:monthly,quarterly,semi_annual,annual',
-            'renewal_amount' => 'required|numeric|min:0',
-            'currency' => 'required|string|size:3',
-            'hosting_package_type' => 'nullable|string|max:255',
-            'auto_renewal' => 'boolean',
-            'grace_period_days' => 'required|integer|min:0|max:30',
-            'admin_notes' => 'nullable|string',
+            'subscription_end_date'   => 'required|date|after:subscription_start_date',
+            'renewal_cycle'           => 'required|in:monthly,quarterly,semi_annual,annual',
+            'renewal_amount'          => 'required|numeric|min:0',
+            'currency'                => 'required|string|size:3',
+            'hosting_package_type'    => 'nullable|string|max:255',
+            'auto_renewal'            => 'boolean',
+            'grace_period_days'       => 'required|integer|min:0|max:30',
+            'admin_notes'             => 'nullable|string',
         ]);
 
-        // Generate institution code if not provided
         if (empty($validated['institution_code'])) {
             $validated['institution_code'] = Str::slug($validated['institution_name']);
         }
@@ -136,7 +141,8 @@ class SubscriptionController extends Controller
     public function edit(int $id)
     {
         $subscription = SystemSubscription::findOrFail($id);
-        return view('super-admin.subscriptions.edit', compact('subscription'));
+        $plans        = SubscriptionPlan::active()->ordered()->get();
+        return view('super-admin.subscriptions.edit', compact('subscription', 'plans'));
     }
 
     /**
@@ -146,19 +152,23 @@ class SubscriptionController extends Controller
     {
         $subscription = SystemSubscription::findOrFail($id);
 
+        $planSlugs = SubscriptionPlan::active()->pluck('slug')
+            ->merge(['basic', 'standard', 'premium', 'enterprise'])
+            ->unique()->values()->toArray();
+
         $validated = $request->validate([
-            'institution_name' => 'required|string|max:255',
-            'institution_code' => 'required|string|max:100|unique:system_subscriptions,institution_code,' . $id,
-            'subscription_plan' => 'required|in:basic,standard,premium,enterprise',
+            'institution_name'        => 'required|string|max:255',
+            'institution_code'        => 'required|string|max:100|unique:system_subscriptions,institution_code,' . $id,
+            'subscription_plan'       => 'required|string|max:100|in:' . implode(',', $planSlugs),
             'subscription_start_date' => 'required|date',
-            'subscription_end_date' => 'required|date|after:subscription_start_date',
-            'renewal_cycle' => 'required|in:monthly,quarterly,semi_annual,annual',
-            'renewal_amount' => 'required|numeric|min:0',
-            'currency' => 'required|string|size:3',
-            'hosting_package_type' => 'nullable|string|max:255',
-            'auto_renewal' => 'boolean',
-            'grace_period_days' => 'required|integer|min:0|max:30',
-            'admin_notes' => 'nullable|string',
+            'subscription_end_date'   => 'required|date|after:subscription_start_date',
+            'renewal_cycle'           => 'required|in:monthly,quarterly,semi_annual,annual',
+            'renewal_amount'          => 'required|numeric|min:0',
+            'currency'                => 'required|string|size:3',
+            'hosting_package_type'    => 'nullable|string|max:255',
+            'auto_renewal'            => 'boolean',
+            'grace_period_days'       => 'required|integer|min:0|max:30',
+            'admin_notes'             => 'nullable|string',
         ]);
 
         $validated['updated_by'] = auth()->id();
