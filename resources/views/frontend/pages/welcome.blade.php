@@ -366,7 +366,7 @@
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <img width="50" height="50" src="https://img.icons8.com/bubbles/50/upload-to-cloud.png" alt="upload-to-cloud"/>
+                            <img width="100" height="100" src="https://img.icons8.com/bubbles/100/upload-to-cloud.png" alt="upload-to-cloud"/>
                         </div>
                         <h3 class="feature-title">Easy Upload</h3>
                         <p class="feature-description">
