@@ -379,7 +379,7 @@
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="icofont-chart-growth"></i>
+                            <img width="100" height="100" src="https://img.icons8.com/clouds/100/positive-dynamic.png" alt="positive-dynamic"/>
                         </div>
                         <h3 class="feature-title">Analytics Dashboard</h3>
                         <p class="feature-description">
