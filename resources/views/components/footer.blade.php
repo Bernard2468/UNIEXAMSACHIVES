@@ -61,13 +61,13 @@
                         </div>
                         <svg class="ft-partner__ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     </a>
-                    <a href="http://academicdigital.space/" target="_blank" rel="noopener" class="ft-partner">
+                    <a href="https://scholarindexing.academicdigital.space/" target="_blank" rel="noopener" class="ft-partner">
                         <div class="ft-partner__logo">
-                            <img src="https://i.ibb.co/3Ycf1t0k/MS.jpg" alt="Metascholar Institute">
+                            <img src="https://i.ibb.co/S1hygwB/logo.png" alt="Scholar Indexing">
                         </div>
                         <div class="ft-partner__info">
-                            <span class="ft-partner__name">Metascholar Institute</span>
-                            <span class="ft-partner__desc">Academic Excellence</span>
+                            <span class="ft-partner__name">Scholar Indexing</span>
+                            <span class="ft-partner__desc">Research Indexing</span>
                         </div>
                         <svg class="ft-partner__ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     </a>
@@ -81,13 +81,13 @@
                         </div>
                         <svg class="ft-partner__ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     </a>
-                    <a href="https://scholarindexing.academicdigital.space/" target="_blank" rel="noopener" class="ft-partner">
+                    <a href="http://academicdigital.space/" target="_blank" rel="noopener" class="ft-partner">
                         <div class="ft-partner__logo">
-                            <img src="https://i.ibb.co/S1hygwB/logo.png" alt="Scholar Indexing">
+                            <img src="https://i.ibb.co/3Ycf1t0k/MS.jpg" alt="Metascholar Institute">
                         </div>
                         <div class="ft-partner__info">
-                            <span class="ft-partner__name">Scholar Indexing</span>
-                            <span class="ft-partner__desc">Research Indexing</span>
+                            <span class="ft-partner__name">Metascholar Institute</span>
+                            <span class="ft-partner__desc">Academic Excellence</span>
                         </div>
                         <svg class="ft-partner__ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     </a>
