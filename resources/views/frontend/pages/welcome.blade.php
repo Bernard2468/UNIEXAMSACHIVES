@@ -130,7 +130,7 @@
         border-radius: 22px;
         box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 0;
         transition: all 0.3s ease;
         border: 1px solid rgba(15, 23, 42, 0.08);
         min-height: 385px;
