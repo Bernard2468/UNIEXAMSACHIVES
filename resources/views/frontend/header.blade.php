@@ -384,6 +384,7 @@ function initBellAudio(){
 
 let lastUnread = Number({{ $newMessagesCount ?? 0 }});
 let lastReplyNotifications = Number({{ $newReplyNotifications ?? 0 }});
+let unreadPollingEnabled = true;
 
 function updateNotificationBadge(unreadCount, replyCount = 0) {
   const badge = document.querySelector('.notification-badge');
@@ -398,9 +399,41 @@ function updateNotificationBadge(unreadCount, replyCount = 0) {
   }
 }
 
+function fetchJsonSafe(url, options = {}) {
+  return fetch(url, options).then(async (response) => {
+    const contentType = response.headers.get('content-type') || '';
+    const bodyText = await response.text();
+
+    if (!response.ok) {
+      const err = new Error(`HTTP ${response.status}`);
+      err.status = response.status;
+      err.bodyText = bodyText;
+      throw err;
+    }
+
+    if (!contentType.includes('application/json')) {
+      const err = new Error('Expected JSON response but received non-JSON payload');
+      err.status = response.status;
+      err.bodyText = bodyText;
+      throw err;
+    }
+
+    try {
+      return JSON.parse(bodyText);
+    } catch (parseError) {
+      const err = new Error('Invalid JSON response payload');
+      err.status = response.status;
+      err.bodyText = bodyText;
+      throw err;
+    }
+  });
+}
+
 function pollUnread(){
+  if (!unreadPollingEnabled) return;
+
   // Poll for memos
-  fetch('{{ route('dashboard.memos.unreadCount') }}', {
+  fetchJsonSafe('{{ route('dashboard.memos.unreadCount') }}', {
     credentials: 'same-origin',
     cache: 'no-cache',
     headers: {
@@ -408,12 +441,11 @@ function pollUnread(){
       'Pragma': 'no-cache'
     }
   })
-    .then(r => r.json())
     .then(data => {
       const unread = Number(data.unread || 0);
       
       // Poll for reply notifications
-      fetch('/dashboard/notifications/check', {
+      fetchJsonSafe('/dashboard/notifications/check', {
         credentials: 'same-origin',
         cache: 'no-cache',
         headers: {
@@ -421,7 +453,6 @@ function pollUnread(){
           'Pragma': 'no-cache'
         }
       })
-      .then(r => r.json())
       .then(notificationData => {
         const replyCount = notificationData.reply_count || 0;
         updateNotificationBadge(unread, replyCount);
@@ -445,6 +476,9 @@ function pollUnread(){
       });
     })
     .catch(err => {
+      if (err && (err.status === 401 || err.status === 403 || err.status === 419)) {
+        unreadPollingEnabled = false;
+      }
       console.log('Error polling unread count:', err);
     });
 }
