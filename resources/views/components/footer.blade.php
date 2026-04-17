@@ -282,9 +282,12 @@
 
 /* ── Partner cards ── */
 .ft-partners {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 8px;
+    align-items: stretch;
+    overflow-x: auto;
+    padding-bottom: 2px;
 }
 
 .ft-partner {
@@ -299,6 +302,8 @@
     transition: border-color .18s, transform .18s, box-shadow .18s;
     position: relative;
     overflow: hidden;
+    flex: 0 0 220px;
+    min-height: 72px;
 }
 
 .ft-partner::after {
@@ -535,7 +540,7 @@
 @media (max-width: 640px) {
     .ft-cols { grid-template-columns: 1fr; }
     .ft-col--support { grid-column: span 1; }
-    .ft-partners { grid-template-columns: 1fr; }
+    .ft-partner { flex-basis: 240px; }
     .ft-support { flex-direction: column; }
     .ft-bar { flex-direction: column; align-items: flex-start; gap: 6px; }
     .ft-bar__sep { display: none; }
