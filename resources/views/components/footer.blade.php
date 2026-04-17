@@ -1,7 +1,7 @@
 <footer class="ft-root" id="ft-root">
     <div class="ft-inner">
 
-        {{-- ── Top: three columns ── --}}
+        {{-- ── Top: four columns ── --}}
         <div class="ft-cols">
 
             {{-- Quick navigation --}}
@@ -94,6 +94,36 @@
                 </div>
             </div>
 
+            {{-- University directories --}}
+            <div class="ft-col ft-col--directories" data-ft-reveal>
+                <div class="ft-col__hd">
+                    <span class="ft-col__title">University directories</span>
+                    <span class="ft-col__bar"></span>
+                </div>
+                <nav class="ft-nav">
+                    <a href="#" class="ft-link">
+                        <span class="ft-link__dot"></span>
+                        <span class="ft-link__text">Public Universities Directory</span>
+                        <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="#" class="ft-link">
+                        <span class="ft-link__dot"></span>
+                        <span class="ft-link__text">Private Universities Directory</span>
+                        <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="#" class="ft-link">
+                        <span class="ft-link__dot"></span>
+                        <span class="ft-link__text">College Directory</span>
+                        <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="#" class="ft-link">
+                        <span class="ft-link__dot"></span>
+                        <span class="ft-link__text">Technical Universities Directory</span>
+                        <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </nav>
+            </div>
+
             {{-- Support --}}
             <div class="ft-col ft-col--support" data-ft-reveal>
                 <div class="ft-col__hd">
@@ -162,11 +192,11 @@
     padding: 0 24px;
 }
 
-/* ── Three columns ── */
+/* ── Four columns ── */
 .ft-cols {
     display: grid;
-    grid-template-columns: 1fr 1.6fr 1fr;
-    gap: 40px;
+    grid-template-columns: 1fr 1.75fr 1fr 1fr;
+    gap: 28px;
     padding: 36px 0 28px;
     border-bottom: 1.5px solid #f0f0f0;
 }
@@ -253,7 +283,7 @@
 /* ── Partner cards ── */
 .ft-partners {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
 }
 
