@@ -486,13 +486,13 @@
 
 .ft-bar__brand {
     font-weight: 700;
-    color: #b63a44;
+    color: #6b7280;
     text-decoration: none;
     transition: color .15s;
 }
 
 .ft-bar__brand:hover {
-    color: #962f38;
+    color: #0c0c0c;
     text-decoration: none;
 }
 
