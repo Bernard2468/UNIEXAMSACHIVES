@@ -205,8 +205,9 @@
 /* ── Four columns ── */
 .ft-cols {
     display: grid;
-    grid-template-columns: 1fr 1.75fr 1fr 1fr;
-    gap: 28px;
+    grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.35fr) minmax(220px, 1fr) minmax(220px, 1fr);
+    column-gap: 44px;
+    row-gap: 28px;
     padding: 36px 0 28px;
     border-bottom: 1.5px solid #f0f0f0;
 }
@@ -310,7 +311,7 @@
     transition: border-color .18s, transform .18s, box-shadow .18s;
     position: relative;
     overflow: hidden;
-    width: min(100%, 430px);
+    width: min(100%, 380px);
     min-height: 72px;
 }
 
