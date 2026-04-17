@@ -172,8 +172,18 @@
 }
 
 .ft-root {
-    background: #fff;
-    border-top: 1.5px solid #ebebeb;
+    --ft-cug-red: #d6454f;
+    --ft-cug-yellow: #f4d76e;
+    --ft-cug-green: #78b26a;
+    --ft-cug-black: #1f2937;
+    --ft-cug-white: #ffffff;
+    --ft-ink-soft: #475569;
+    --ft-border-soft: #eceff3;
+    --ft-surface-a: #ffffff;
+    --ft-surface-b: #fffcf2;
+    --ft-surface-c: #f6fbf5;
+    background: linear-gradient(165deg, var(--ft-surface-a) 0%, var(--ft-surface-b) 54%, var(--ft-surface-c) 100%);
+    border-top: 1.5px solid #f3e8ea;
     margin-top: auto;
     /* entry animation */
     opacity: 0;
@@ -199,7 +209,7 @@
     column-gap: 44px;
     row-gap: 28px;
     padding: 36px 0 28px;
-    border-bottom: 1.5px solid #f0f0f0;
+    border-bottom: 1.5px solid #eceff3;
 }
 
 /* ── Column header ── */
@@ -209,7 +219,7 @@
     display: block;
     font-size: 0.72rem;
     font-weight: 700;
-    color: #b0b5c0;
+    color: #9ca3af;
     letter-spacing: .1em;
     text-transform: uppercase;
     margin-bottom: 8px;
@@ -219,7 +229,7 @@
     display: block;
     width: 1.6rem;
     height: 2px;
-    background: #0c0c0c;
+    background: linear-gradient(90deg, rgba(214, 69, 79, .72), rgba(244, 215, 110, .78), rgba(120, 178, 106, .72));
     border-radius: 2px;
 }
 
@@ -237,7 +247,7 @@
     padding: 8px 10px;
     border-radius: 9px;
     text-decoration: none;
-    color: #374151;
+    color: var(--ft-ink-soft);
     font-size: 0.87rem;
     font-weight: 500;
     transition: background .15s, color .15s, transform .15s;
@@ -249,7 +259,7 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: #d1d5db;
+    background: #c7d2dd;
     flex-shrink: 0;
     transition: background .15s, transform .2s;
 }
@@ -260,19 +270,19 @@
     opacity: 0;
     transform: translateX(-6px);
     transition: opacity .2s, transform .2s;
-    color: #9ca3af;
+    color: #b4bdc8;
     flex-shrink: 0;
 }
 
 .ft-link:hover {
-    background: #f5f5f7;
-    color: #0c0c0c;
+    background: linear-gradient(90deg, #fff7f8 0%, #fffdf3 52%, #f6fbf6 100%);
+    color: var(--ft-cug-black);
     transform: translateX(3px);
     text-decoration: none;
 }
 
 .ft-link:hover .ft-link__dot {
-    background: #0c0c0c;
+    background: #d6454f;
     transform: scale(1.4);
 }
 
@@ -294,8 +304,8 @@
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: #fff;
-    border: 1.5px solid #ebebeb;
+    background: rgba(255,255,255,0.88);
+    border: 1.5px solid #e8edf2;
     border-radius: 12px;
     text-decoration: none;
     transition: border-color .18s, transform .18s, box-shadow .18s;
@@ -309,7 +319,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: #0c0c0c;
+    background: linear-gradient(100deg, rgba(214, 69, 79, .08), rgba(244, 215, 110, .08), rgba(120, 178, 106, .08));
     opacity: 0;
     transition: opacity .18s;
     border-radius: inherit;
@@ -317,9 +327,9 @@
 }
 
 .ft-partner:hover {
-    border-color: #d1d5db;
+    border-color: #d9e4ef;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(12,12,12,.08);
+    box-shadow: 0 10px 28px rgba(31, 41, 55, .08);
     text-decoration: none;
 }
 
@@ -329,8 +339,8 @@
     border-radius: 8px;
     overflow: hidden;
     flex-shrink: 0;
-    border: 1.5px solid #f0f0f0;
-    background: #fafafa;
+    border: 1.5px solid #edf1f5;
+    background: #ffffff;
 }
 
 .ft-partner__logo img {
@@ -356,7 +366,7 @@
 .ft-partner__name {
     font-size: 0.78rem;
     font-weight: 700;
-    color: #111827;
+    color: #1f2937;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -365,7 +375,7 @@
 
 .ft-partner__desc {
     font-size: 0.7rem;
-    color: #b0b5c0;
+    color: #94a3b8;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -373,13 +383,13 @@
 }
 
 .ft-partner__ext {
-    color: #d1d5db;
+    color: #c7d1db;
     flex-shrink: 0;
     transition: color .18s, transform .18s;
 }
 
 .ft-partner:hover .ft-partner__ext {
-    color: #6b7280;
+    color: #64748b;
     transform: translate(2px, -2px);
 }
 
@@ -389,30 +399,30 @@
     flex-direction: column;
     gap: 12px;
     padding: 18px;
-    background: #fafafa;
-    border: 1.5px solid #ebebeb;
+    background: linear-gradient(155deg, #ffffff 0%, #fffdf4 58%, #f7fbf6 100%);
+    border: 1.5px solid #e8edf2;
     border-radius: 14px;
     transition: border-color .18s, box-shadow .18s;
 }
 
 .ft-support:hover {
-    border-color: #d1d5db;
-    box-shadow: 0 4px 16px rgba(12,12,12,.06);
+    border-color: #d9e4ef;
+    box-shadow: 0 10px 24px rgba(31, 41, 55, .08);
 }
 
 .ft-support__icon-wrap {
     display: inline-flex;
     padding: 10px;
     background: #fff;
-    border: 1.5px solid #ebebeb;
+    border: 1.5px solid #e7edf3;
     border-radius: 10px;
-    color: #374151;
+    color: #475569;
     width: fit-content;
 }
 
 .ft-support__text {
     font-size: 0.82rem;
-    color: #6b7280;
+    color: #64748b;
     line-height: 1.55;
     margin: 0;
 }
@@ -422,8 +432,9 @@
     align-items: center;
     gap: 7px;
     padding: 9px 16px;
-    background: #0c0c0c;
-    color: #fff;
+    background: linear-gradient(95deg, #fff1f3 0%, #fffbe9 100%);
+    color: #7a1f26;
+    border: 1px solid #f5d7db;
     border-radius: 9px;
     font-size: 0.82rem;
     font-weight: 600;
@@ -433,11 +444,11 @@
 }
 
 .ft-support__btn:hover {
-    background: #1f2937;
-    color: #fff;
+    background: linear-gradient(95deg, #ffe9ed 0%, #fff7d9 100%);
+    color: #7a1f26;
     text-decoration: none;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(12,12,12,.18);
+    box-shadow: 0 8px 18px rgba(214, 69, 79, .14);
 }
 
 .ft-support__btn svg {
@@ -461,7 +472,7 @@
 .ft-bar__copy,
 .ft-bar__dev {
     font-size: 0.8rem;
-    color: #b0b5c0;
+    color: #94a3b8;
     font-weight: 400;
 }
 
@@ -469,19 +480,19 @@
     display: block;
     width: 1px;
     height: 14px;
-    background: #e5e7eb;
+    background: #e2e8f0;
     flex-shrink: 0;
 }
 
 .ft-bar__brand {
     font-weight: 700;
-    color: #6b7280;
+    color: #b63a44;
     text-decoration: none;
     transition: color .15s;
 }
 
 .ft-bar__brand:hover {
-    color: #0c0c0c;
+    color: #962f38;
     text-decoration: none;
 }
 
