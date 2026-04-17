@@ -2,6 +2,8 @@
 
 @push('styles')
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Manrope:wght@400;500;600&display=swap');
+
     /* Modern Landing Page Styles - Clean Professional Theme */
     .landing-container {
         min-height: 100vh;
@@ -124,36 +126,56 @@
 
     .feature-card {
         background: white;
-        padding: 2rem;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        padding: 2.1rem 1.8rem 1.9rem;
+        border-radius: 22px;
+        box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
         text-align: center;
         margin-bottom: 2rem;
         transition: all 0.3s ease;
-        border: 1px solid rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        min-height: 385px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .feature-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        transform: translateY(-8px);
+        box-shadow: 0 20px 54px rgba(15, 23, 42, 0.14);
     }
 
     .feature-icon {
-        font-size: 3rem;
-        color: #007bff;
-        margin-bottom: 1rem;
+        min-height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.85rem;
     }
 
     .feature-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        color: #333;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.38rem;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        line-height: 1.25;
+        margin-bottom: 0.85rem;
+        color: #0f172a;
+        min-height: 3.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .feature-description {
-        color: #666;
-        line-height: 1.6;
+        font-family: 'Manrope', sans-serif;
+        color: #475569;
+        font-size: 0.99rem;
+        font-weight: 500;
+        line-height: 1.72;
+        letter-spacing: 0.005em;
+        margin: 0;
+        min-height: 7.4rem;
     }
 
     .stats-section {
@@ -262,6 +284,15 @@
         .btn-secondary-modern {
             width: 100%;
             max-width: 300px;
+        }
+
+        .feature-card {
+            min-height: 350px;
+            padding: 1.9rem 1.5rem 1.7rem;
+        }
+
+        .feature-description {
+            min-height: auto;
         }
     }
 </style>
