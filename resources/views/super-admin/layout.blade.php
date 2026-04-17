@@ -336,6 +336,12 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('super-admin.subscription-plans.index') }}" class="{{ request()->routeIs('super-admin.subscription-plans.*') ? 'active' : '' }}">
+                    <i class="icofont-price"></i>
+                    <span>Subscription Plans</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('super-admin.subscriptions.index') }}" class="{{ request()->routeIs('super-admin.subscriptions.*') ? 'active' : '' }}">
                     <i class="icofont-tasks-alt"></i>
                     <span>Subscriptions</span>

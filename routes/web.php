@@ -326,6 +326,10 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin'])-
     Route::post('/users/{id}/grant-admin', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'grantAdmin'])->name('users.grant-admin');
     Route::post('/users/{id}/revoke-admin', [\App\Http\Controllers\SuperAdmin\SuperAdminController::class, 'revokeAdmin'])->name('users.revoke-admin');
     
+    // Subscription Plan Management
+    Route::resource('subscription-plans', \App\Http\Controllers\SuperAdmin\SubscriptionPlanController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::post('/subscription-plans/{id}/toggle-active', [\App\Http\Controllers\SuperAdmin\SubscriptionPlanController::class, 'toggleActive'])->name('subscription-plans.toggle-active');
+
     // Subscription Management
     Route::resource('subscriptions', \App\Http\Controllers\SuperAdmin\SubscriptionController::class);
     Route::post('/subscriptions/{id}/renew', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'renew'])->name('subscriptions.renew');
