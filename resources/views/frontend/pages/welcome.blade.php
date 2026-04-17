@@ -314,7 +314,7 @@
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <img width="72" height="72" src="https://img.icons8.com/bubbles/100/opened-folder.png" alt="opened-folder"/>
+                            <img width="80" height="80" src="https://img.icons8.com/bubbles/100/opened-folder.png" alt="opened-folder"/>
                         </div>
                         <h3 class="feature-title">Digital Archive</h3>
                         <p class="feature-description">
