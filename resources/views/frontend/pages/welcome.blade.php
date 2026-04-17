@@ -353,7 +353,7 @@
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="icofont-lock"></i>
+                            <img width="100" height="100" src="https://img.icons8.com/clouds/100/web-lock.png" alt="web-lock"/>
                         </div>
                         <h3 class="feature-title">Secure Access</h3>
                         <p class="feature-description">
