@@ -4,7 +4,6 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SystemSubscription;
-use App\Models\SystemSetting;
 use App\Services\SubscriptionManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -59,19 +58,7 @@ class SubscriptionController extends Controller
             'suspended' => SystemSubscription::where('status', 'suspended')->count(),
         ];
 
-        // Get subscription pricing settings
-        $basePrice = (float) SystemSetting::get('subscription_base_price', 5000.00);
-        $currency = SystemSetting::get('default_currency', 'GHS');
-
-        $pricing = [
-            'base_price' => $basePrice,
-            'currency' => $currency,
-            '1_year' => $basePrice,
-            '2_years' => $basePrice * 2,
-            '3_years' => $basePrice * 3,
-        ];
-
-        return view('super-admin.subscriptions.index', compact('subscriptions', 'stats', 'pricing'));
+        return view('super-admin.subscriptions.index', compact('subscriptions', 'stats'));
     }
 
     /**
