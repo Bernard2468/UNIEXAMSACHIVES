@@ -181,27 +181,77 @@
     .stats-section {
         position: relative;
         z-index: 2;
-        padding: 60px 0;
-        background: rgba(248, 249, 250, 0.9);
-        backdrop-filter: blur(10px);
+        padding: 78px 0 86px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 248, 255, 0.9) 100%);
+        backdrop-filter: blur(14px);
+    }
+
+    .stats-grid {
+        row-gap: 20px;
     }
 
     .stat-item {
+        position: relative;
         text-align: center;
-        color: #333;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 20px;
+        padding: 1.35rem 1rem 1.1rem;
+        min-height: 170px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
+        transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    }
+
+    .stat-item::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 1px;
+        background: linear-gradient(140deg, rgba(59, 130, 246, 0.38), rgba(99, 102, 241, 0.12));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity .25s ease;
+    }
+
+    .stat-item:hover {
+        transform: translateY(-6px);
+        border-color: rgba(59, 130, 246, 0.24);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.14);
+    }
+
+    .stat-item:hover::before {
+        opacity: 1;
     }
 
     .stat-number {
-        font-size: 3rem;
-        font-weight: 700;
-        color: #007bff;
+        font-family: 'Outfit', sans-serif;
+        font-size: clamp(2rem, 2.6vw, 2.75rem);
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        margin-bottom: 0.55rem;
         display: block;
+        background: linear-gradient(145deg, #0f172a 10%, #2563eb 52%, #4f46e5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .stat-label {
-        font-size: 1.1rem;
-        font-weight: 500;
-        margin-top: 0.5rem;
+        font-family: 'Manrope', sans-serif;
+        font-size: 0.96rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        color: #475569;
     }
 
     .floating-elements {
@@ -293,6 +343,14 @@
 
         .feature-description {
             min-height: auto;
+        }
+
+        .stats-section {
+            padding: 64px 0 70px;
+        }
+
+        .stat-item {
+            min-height: 154px;
         }
     }
 </style>
@@ -426,32 +484,32 @@
     <!-- Stats Section -->
     <div class="stats-section">
         <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg col-md-6 col-sm-6">
+            <div class="row justify-content-center stats-grid">
+                <div class="col-xl col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-item">
                         <span class="stat-number" data-count="{{ $stats['total_exams'] ?? 0 }}">0</span>
                         <div class="stat-label">Exam Papers</div>
                     </div>
                 </div>
-                <div class="col-lg col-md-6 col-sm-6">
+                <div class="col-xl col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-item">
                         <span class="stat-number" data-count="{{ $stats['total_files'] ?? 0 }}">0</span>
                         <div class="stat-label">Files</div>
                     </div>
                 </div>
-                <div class="col-lg col-md-6 col-sm-6">
+                <div class="col-xl col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-item">
                         <span class="stat-number" data-count="{{ $stats['total_departments'] ?? 0 }}">0</span>
                         <div class="stat-label">Departments</div>
                     </div>
                 </div>
-                <div class="col-lg col-md-6 col-sm-6">
+                <div class="col-xl col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-item">
                         <span class="stat-number" data-count="{{ $stats['total_users'] ?? 0 }}">0</span>
                         <div class="stat-label">Active Users</div>
                     </div>
                 </div>
-                <div class="col-lg col-md-6 col-sm-6">
+                <div class="col-xl col-lg-4 col-md-6 col-sm-6">
                     <div class="stat-item">
                         <span class="stat-number" data-count="{{ $stats['total_visits'] ?? 0 }}">0</span>
                         <div class="stat-label">Total Visits</div>
