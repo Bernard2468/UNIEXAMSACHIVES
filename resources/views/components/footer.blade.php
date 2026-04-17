@@ -121,6 +121,16 @@
                         <span class="ft-link__text">Undergraduate Admissions</span>
                         <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
+                    <a href="https://cug.edu.gh/office-research-and-innovation" target="_blank" rel="noopener" class="ft-link">
+                        <span class="ft-link__dot"></span>
+                        <span class="ft-link__text">School of Research and Graduate Studies</span>
+                        <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="https://cug.edu.gh/about/records-and-policies" target="_blank" rel="noopener" class="ft-link">
+                        <span class="ft-link__dot"></span>
+                        <span class="ft-link__text">University Policies</span>
+                        <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
                 </nav>
             </div>
 
