@@ -71,12 +71,12 @@
                         </div>
                         <svg class="ft-partner__ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     </a>
-                    <a href="https://scholarsmarket.academicdigital.space/" target="_blank" rel="noopener" class="ft-partner">
-                        <div class="ft-partner__logo">
-                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1771764375/scholarsmarket_zgbo86_btdrls.jpg" alt="Scholars Market">
+                    <a href="https://www.turnitin.com/" target="_blank" rel="noopener" class="ft-partner">
+                        <div class="ft-partner__logo ft-partner__logo--48">
+                            <img width="48" height="48" src="https://img.icons8.com/fluency/48/turnitin.png" alt="Turnitin">
                         </div>
                         <div class="ft-partner__info">
-                            <span class="ft-partner__name">Scholars Market</span>
+                            <span class="ft-partner__name">Turnitin</span>
                             <span class="ft-partner__desc">Plagiarism Detection</span>
                         </div>
                         <svg class="ft-partner__ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -341,6 +341,11 @@
     flex-shrink: 0;
     border: 1.5px solid #edf1f5;
     background: #ffffff;
+}
+
+.ft-partner__logo--48 {
+    width: 48px;
+    height: 48px;
 }
 
 .ft-partner__logo img {
