@@ -337,6 +337,16 @@
         box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
     }
 
+    .action-btn.edit {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+    }
+    .action-btn.edit:hover {
+        filter: brightness(1.06);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.45);
+    }
+
     .no-users {
         text-align: center;
         padding: 4rem 2rem;
@@ -603,6 +613,9 @@
 @endpush
 
 @section('content')
+@php
+    $canManageUserAccounts = auth()->check() && (auth()->user()->role === 'super_admin' || !auth()->user()->is_admin);
+@endphp
 @include('frontend.header')
 @include('frontend.theme_shadow')
 <div class="dashboardarea sp_bottom_100">
@@ -648,6 +661,29 @@
                             </div>
                         </div>
                     </div>
+
+                    @if (session('success'))
+                    <div class="container" style="margin-top: 1rem;">
+                        <div style="background:#ecfdf5;border:1px solid #6ee7b7;color:#047857;padding:12px 16px;border-radius:12px;font-weight:600;">
+                            {{ session('success') }}
+                        </div>
+                    </div>
+                    @endif
+                    @if (session('error'))
+                    <div class="container" style="margin-top: 1rem;">
+                        <div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:12px 16px;border-radius:12px;font-weight:600;">
+                            {{ session('error') }}
+                        </div>
+                    </div>
+                    @endif
+                    @if ($errors->any())
+                    <div class="container" style="margin-top: 1rem;">
+                        <div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:12px 16px;border-radius:12px;">
+                            <strong>Could not save changes:</strong>
+                            <ul style="margin:8px 0 0 18px;">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                        </div>
+                    </div>
+                    @endif
 
                     <!-- Search and Filter Section -->
                     <div class="search-filter-section">
@@ -711,6 +747,21 @@
                                             </div>
                                             
                                             <div class="user-actions">
+                                                @if($canManageUserAccounts && ($user->role !== 'super_admin' || auth()->user()->role === 'super_admin'))
+                                                <button type="button" class="action-btn edit"
+                                                    data-edit-user-id="{{ $user->id }}"
+                                                    data-edit-first-name="{{ $user->first_name }}"
+                                                    data-edit-last-name="{{ $user->last_name }}"
+                                                    data-edit-email="{{ $user->email }}"
+                                                    data-edit-department-id="{{ $user->department_id }}"
+                                                    data-edit-staff-category="{{ $user->staff_category }}"
+                                                    data-edit-position-id="{{ $user->position_id ?? '' }}"
+                                                >
+                                                    <i class="fas fa-pen"></i>
+                                                    Edit
+                                                </button>
+                                                @endif
+
                                                 @if (!$user->is_approve)
                                                     <form action="{{ route('users.approve', $user->id) }}" method="post" style="display: inline;">
                                                         @csrf
@@ -786,7 +837,21 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div style="display:flex; gap:0.5rem;">
+                                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                                        @if($canManageUserAccounts && ($user->role !== 'super_admin' || auth()->user()->role === 'super_admin'))
+                                                        <button type="button" class="action-btn edit" style="min-width:auto; padding:8px 12px;"
+                                                            data-edit-user-id="{{ $user->id }}"
+                                                            data-edit-first-name="{{ $user->first_name }}"
+                                                            data-edit-last-name="{{ $user->last_name }}"
+                                                            data-edit-email="{{ $user->email }}"
+                                                            data-edit-department-id="{{ $user->department_id }}"
+                                                            data-edit-staff-category="{{ $user->staff_category }}"
+                                                            data-edit-position-id="{{ $user->position_id ?? '' }}"
+                                                            title="Edit account"
+                                                        >
+                                                            <i class="fas fa-pen"></i>
+                                                        </button>
+                                                        @endif
                                                         @if (!$user->is_approve)
                                                         <form action="{{ route('users.approve', $user->id) }}" method="post" style="display: inline;">
                                                             @csrf
@@ -990,6 +1055,80 @@
                     <button type="button" class="cancel-btn" id="cancelAddUserBtn">Cancel</button>
                     <button type="submit" class="submit-btn-modal">
                         <i class="fas fa-user-plus"></i> Add User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="add-user-modal" style="display: none;">
+    <div class="add-user-modal-overlay"></div>
+    <div class="add-user-modal-content">
+        <div class="add-user-modal-header">
+            <h3><i class="fas fa-user-edit"></i> Edit user account</h3>
+            <button type="button" class="close-modal-btn" id="closeEditUserModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="add-user-modal-body">
+            <form id="editUserForm" method="POST" action="">
+                @csrf
+                @method('PUT')
+                <div class="form-row">
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" name="first_name" id="edit-user-firstname" class="animated-input" placeholder="First name" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="input-container">
+                            <input type="text" name="last_name" id="edit-user-lastname" class="animated-input" placeholder="Last name" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-container">
+                        <input type="email" name="email" id="edit-user-email" class="animated-input" placeholder="Email address" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-container">
+                        <select name="department_id" id="edit-user-department" class="animated-input" required>
+                            <option value="" disabled>Choose Department/Faculty/Unit</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->id }}">{{ $department->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-container">
+                        <select name="staff_category" id="edit-user-staff-category" class="animated-input" required>
+                            <option value="" disabled>Choose Staff Category</option>
+                            <option value="Junior Staff">Junior Staff</option>
+                            <option value="Senior Staff">Senior Staff</option>
+                            <option value="Senior Member (Non-Teaching)">Senior Member (Non-Teaching)</option>
+                            <option value="Senior Member (Teaching)">Senior Member (Teaching)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-container">
+                        <select name="position_id" id="edit-user-position" class="animated-input">
+                            <option value="">No position</option>
+                            @foreach($positions as $position)
+                                <option value="{{ $position->id }}">{{ $position->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <p style="font-size:0.85rem;color:#64748b;margin:0 0 12px;line-height:1.45;">Users cannot change their own email in Profile Settings. Changes here apply immediately.</p>
+                <div class="form-actions-modal">
+                    <button type="button" class="cancel-btn" id="cancelEditUserBtn">Cancel</button>
+                    <button type="submit" class="submit-btn-modal">
+                        <i class="fas fa-save"></i> Save changes
                     </button>
                 </div>
             </form>
@@ -1224,6 +1363,49 @@ document.addEventListener('DOMContentLoaded', function() {
         addUserModal.addEventListener('click', function(e) {
             if (e.target.classList.contains('add-user-modal-overlay')) {
                 closeModal();
+            }
+        });
+    }
+
+    // ── Edit User Modal ──
+    const editUserModal = document.getElementById('editUserModal');
+    const editUserForm = document.getElementById('editUserForm');
+    const closeEditUserModal = document.getElementById('closeEditUserModal');
+    const cancelEditUserBtn = document.getElementById('cancelEditUserBtn');
+    const usersUpdateBase = {{ json_encode(rtrim(url('/dashboard/users'), '/')) }};
+
+    function openEditUserModal(btn) {
+        if (!editUserForm || !editUserModal) return;
+        const id = btn.getAttribute('data-edit-user-id');
+        editUserForm.action = usersUpdateBase + '/' + id;
+        document.getElementById('edit-user-firstname').value = btn.getAttribute('data-edit-first-name') || '';
+        document.getElementById('edit-user-lastname').value = btn.getAttribute('data-edit-last-name') || '';
+        document.getElementById('edit-user-email').value = btn.getAttribute('data-edit-email') || '';
+        document.getElementById('edit-user-department').value = btn.getAttribute('data-edit-department-id') || '';
+        document.getElementById('edit-user-staff-category').value = btn.getAttribute('data-edit-staff-category') || '';
+        const pos = btn.getAttribute('data-edit-position-id');
+        document.getElementById('edit-user-position').value = pos || '';
+        editUserModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        if (!editUserModal) return;
+        editUserModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    document.querySelectorAll('.action-btn.edit').forEach(function(btn) {
+        btn.addEventListener('click', function() { openEditUserModal(btn); });
+    });
+
+    if (closeEditUserModal) closeEditUserModal.addEventListener('click', closeEditModal);
+    if (cancelEditUserBtn) cancelEditUserBtn.addEventListener('click', closeEditModal);
+
+    if (editUserModal) {
+        editUserModal.addEventListener('click', function(e) {
+            if (e.target.classList.contains('add-user-modal-overlay')) {
+                closeEditModal();
             }
         });
     }

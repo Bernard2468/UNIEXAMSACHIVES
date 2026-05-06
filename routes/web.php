@@ -224,6 +224,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/users', [HomeController::class, 'storeUser'])->name('users.store');
     Route::post('/dashboard/users/{user}/approve', [HomeController::class, 'approve'])->name('users.approve');
     Route::post('/dashboard/users/{user}/disapprove', [HomeController::class, 'disapprove'])->name('users.disapprove');
+    Route::put('/dashboard/users/{user}', [HomeController::class, 'updateManagedUser'])->name('users.update');
     Route::delete('/dashboard/users/{user}', [HomeController::class, 'destroy'])->name('users.destroy');
 
     #systems detail

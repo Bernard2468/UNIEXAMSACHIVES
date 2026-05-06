@@ -63,7 +63,7 @@
                                 <div class="sp-section">
                                     <div class="sp-section__hd">
                                         <h2 class="sp-section__title">Basic information<span class="sp-section__bar"></span></h2>
-                                        <p class="sp-section__hint">Your name, email, and profile photo.</p>
+                                        <p class="sp-section__hint">Your name and profile photo. Email is set by your system administrator on <strong>Manage Users</strong> — it cannot be changed here.</p>
                                     </div>
 
                                     {{-- Avatar row --}}
@@ -101,7 +101,8 @@
                                         </div>
                                         <div class="sp-field sp-field--full">
                                             <label class="sp-label">Email address</label>
-                                            <input class="sp-input" type="email" name="email" placeholder="Email address" value="{{ $data->email }}" required>
+                                            <input class="sp-input sp-input--locked" type="email" value="{{ $data->email }}" readonly autocomplete="off" aria-readonly="true" title="Contact your administrator to change this email">
+                                            <p class="sp-field-hint">Locked — only an administrator (Manage Users) or Super Admin can update this address.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -547,6 +548,21 @@
 .sp-input::placeholder { color: #d4d7de; font-weight: 400; }
 
 .sp-input--pr { padding-right: 42px; }
+
+.sp-input--locked {
+    background: #f9fafb !important;
+    color: #6b7280 !important;
+    cursor: not-allowed;
+}
+.sp-input--locked:hover { border-color: #e5e7eb !important; }
+.sp-input--locked:focus { border-color: #e5e7eb !important; box-shadow: none !important; }
+
+.sp-field-hint {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+    line-height: 1.4;
+}
 
 /* ─────────────── Select ─────────────── */
 .sp-sel-wrap { position: relative; }
