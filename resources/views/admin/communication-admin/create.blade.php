@@ -689,7 +689,7 @@
 .letterhead-card:hover { border-color:#1a4a9b; box-shadow:0 4px 16px rgba(26,74,155,0.12); transform:translateY(-2px); }
 .letterhead-card.active { border-color:#1a4a9b; box-shadow:0 4px 20px rgba(26,74,155,0.2); background:#f0f5ff; }
 .letterhead-card-preview { height:120px; overflow:hidden; background:#f8fafc; display:flex; align-items:center; justify-content:center; }
-.letterhead-preview-img { width:100%; height:100%; object-fit:cover; object-position:top; display:block; }
+.letterhead-preview-img { width:100%; height:100%; object-fit:contain; object-position:center; display:block; }
 .no-letterhead-preview { background:#f1f5f9; }
 .no-letterhead-icon { display:flex; flex-direction:column; align-items:center; gap:6px; color:#94a3b8; font-size:13px; }
 .no-letterhead-icon i { font-size:36px; }

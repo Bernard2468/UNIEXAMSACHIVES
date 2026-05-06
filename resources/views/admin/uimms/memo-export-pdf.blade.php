@@ -21,7 +21,7 @@
         }
         .letterhead-img {
             width: 100%;
-            max-height: 160px;
+            height: auto;
             display: block;
         }
 

@@ -1479,10 +1479,9 @@
 }
 .memo-letterhead-img {
     width: 100%;
+    height: auto;
     display: block;
-    max-height: 180px;
-    object-fit: cover;
-    object-position: top;
+    max-width: 100%;
 }
 
 /* CC notice badge */
