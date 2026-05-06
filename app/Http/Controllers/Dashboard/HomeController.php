@@ -17,7 +17,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Exam;
 use App\Models\User;
-use App\Models\SystemSetting;
 use App\Models\Visit;
 use App\Models\Committee;
 use Illuminate\Support\Facades\Mail;
@@ -30,23 +29,6 @@ use Illuminate\Support\Facades\Hash;
 
 class HomeController extends Controller
 {
-    /**
-     * Users who may access Manage Users and update other accounts (email, profile fields).
-     * Matches sidebar: Manage Users visible when is_admin is false, or any Super Admin.
-     */
-    protected function userCanManageUsers(): bool
-    {
-        $actor = Auth::user();
-        if (!$actor) {
-            return false;
-        }
-        if ($actor->role === 'super_admin') {
-            return true;
-        }
-
-        return ! (bool) $actor->is_admin;
-    }
-
     public function dashboard(){
         $currentTime = Carbon::now();
         $twentyFourHoursAgo = $currentTime->subHours(24);
@@ -544,6 +526,7 @@ class HomeController extends Controller
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . Auth::id(),
             'department_id' => 'required|exists:departments,id',
             'staff_category' => $staffCategoryRule,
             'position_id' => 'nullable|exists:positions,id',
@@ -560,9 +543,10 @@ class HomeController extends Controller
             // Fetch authenticated user
             $user = Auth::user();
 
-            // Update user information (email is not user-editable — only via Manage Users / Super Admin)
+            // Update user information
             $user->first_name = $request->input('first_name');
             $user->last_name = $request->input('last_name');
+            $user->email = $request->input('email');
             $user->department_id = $request->input('department_id');
             $user->staff_category = $request->input('staff_category');
             $user->position_id = $request->input('position_id');
@@ -696,11 +680,8 @@ class HomeController extends Controller
     }
 
     public function users(Request $request){
-        if (! $this->userCanManageUsers()) {
-            abort(403, 'You are not authorized to access user management.');
-        }
         $perPage = $request->get('per_page', 15);
-        $users = User::with(['position', 'department'])->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
+        $users = User::with('position')->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
         $totalUsers = User::count();
         $approvedCount = User::where('is_approve', 1)->count();
         $pendingCount = User::where('is_approve', 0)->count();
@@ -716,9 +697,6 @@ class HomeController extends Controller
 
     public function storeUser(Request $request)
     {
-        if (! $this->userCanManageUsers()) {
-            abort(403, 'You are not authorized to add users.');
-        }
         $validatedData = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -757,65 +735,8 @@ class HomeController extends Controller
         }
     }
 
-    /**
-     * Update another user's account (email and organisation fields).
-     * Not available from Profile Settings — callers must use Manage Users.
-     */
-    public function updateManagedUser(Request $request, User $user)
-    {
-        if (!$this->userCanManageUsers()) {
-            abort(403, 'You are not authorized to manage user accounts.');
-        }
-
-        if ($user->role === 'super_admin' && Auth::user()->role !== 'super_admin') {
-            abort(403, 'Only a Super Admin can modify this account.');
-        }
-
-        if ($request->input('position_id') === '' || $request->input('position_id') === null) {
-            $request->merge(['position_id' => null]);
-        }
-
-        $staffCategoryRule = 'required|string|in:Junior Staff,Senior Staff,Senior Member (Non-Teaching),Senior Member (Teaching)';
-
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'department_id' => 'required|exists:departments,id',
-            'staff_category' => $staffCategoryRule,
-            'position_id' => 'nullable|exists:positions,id',
-        ], [
-            'email.unique' => 'This email is already assigned to another user.',
-        ]);
-
-        $email = $validated['email'];
-        if (SystemSetting::get('restrict_email_domain', false)) {
-            $allowedDomain = SystemSetting::get('allowed_email_domain', '');
-            if ($allowedDomain && ! str_ends_with(strtolower($email), '@'.strtolower(trim($allowedDomain, '@')))) {
-                return redirect()->back()
-                    ->withErrors(['email' => 'Only institutional email addresses (@'.$allowedDomain.') are allowed.'])
-                    ->withInput();
-            }
-        }
-
-        $user->fill([
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'email' => $validated['email'],
-            'department_id' => $validated['department_id'],
-            'staff_category' => $validated['staff_category'],
-            'position_id' => $validated['position_id'] ?? null,
-        ]);
-        $user->save();
-
-        return redirect()->route('dashboard.users')->with('success', 'User account updated successfully.');
-    }
-
     public function approve(User $user)
     {
-        if (! $this->userCanManageUsers()) {
-            abort(403);
-        }
         try {
             // Generate a temporary password for the user (firstname + 5 random numbers)
             // $randomNumbers = str_pad(rand(0, 99999), 5, '0', STR_PAD_LEFT);
@@ -903,9 +824,6 @@ class HomeController extends Controller
 
     public function disapprove(User $user)
     {
-        if (! $this->userCanManageUsers()) {
-            abort(403);
-        }
         $user->update(['is_approve' => false]);
 
         return redirect()->route('dashboard.users')->with('success', 'User disapproved successfully');
@@ -913,9 +831,6 @@ class HomeController extends Controller
 
     public function destroy(User $user)
     {
-        if (! $this->userCanManageUsers()) {
-            abort(403);
-        }
         $user->delete();
 
         return redirect()->route('dashboard.users')->with('success', 'User deleted successfully');
