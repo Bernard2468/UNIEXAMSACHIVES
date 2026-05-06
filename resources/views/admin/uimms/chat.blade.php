@@ -626,16 +626,29 @@
                         <div class="mb-2">
                             <input type="text" id="user-search-input" class="form-control" placeholder="Search by name or email..." autocomplete="off">
                         </div>
-                        <div class="border rounded p-3" id="user-list-container" style="max-height: 300px; overflow-y: auto;">
+                        <div class="am-user-list" id="user-list-container">
                             @foreach($users as $user)
-                                <div class="form-check mb-2 user-item" data-name="{{ strtolower($user->first_name . ' ' . $user->last_name) }}" data-email="{{ strtolower($user->email) }}">
-                                    <input class="form-check-input" type="checkbox" name="assignee_ids[]" value="{{ $user->id }}" id="assignee_{{ $user->id }}">
-                                    <label class="form-check-label d-flex align-items-center flex-wrap gap-2" for="assignee_{{ $user->id }}">
-                                        <span>{{ $user->first_name }} {{ $user->last_name }} <span class="text-muted">({{ $user->email }})</span></span>
-                                        @if($user->department)
-                                            <span class="badge bg-secondary fw-normal" style="font-size: 0.7rem;">{{ $user->department->name }}</span>
-                                        @endif
-                                    </label>
+                                <div class="user-item am-user-item" data-name="{{ strtolower($user->first_name . ' ' . $user->last_name) }}" data-email="{{ strtolower($user->email) }}">
+                                    <div class="am-user-info">
+                                        <div class="am-user-name">
+                                            <span>{{ $user->first_name }} {{ $user->last_name }}</span>
+                                            @if($user->position)
+                                                <span class="am-name-sep">|</span>
+                                                <span class="am-position-badge">
+                                                    <i class="fas fa-briefcase"></i>
+                                                    {{ $user->position->name }}
+                                                </span>
+                                            @elseif($user->department)
+                                                <span class="am-name-sep">|</span>
+                                                <span class="am-dept-badge">{{ $user->department->name }}</span>
+                                            @endif
+                                        </div>
+                                        <div class="am-user-email">{{ $user->email }}</div>
+                                    </div>
+                                    <div class="am-user-checkbox">
+                                        <input type="checkbox" name="assignee_ids[]" value="{{ $user->id }}" id="assignee_{{ $user->id }}" class="am-checkbox">
+                                        <label for="assignee_{{ $user->id }}" class="am-checkmark"></label>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -681,6 +694,165 @@
 </div>
 
 <style>
+/* ── Assign Modal – user list ───────────────────────────────────────── */
+.am-user-list {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: #fff;
+}
+
+.am-user-item {
+    display: flex;
+    align-items: center;
+    padding: 13px 18px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background 0.15s ease, transform 0.15s ease;
+    cursor: pointer;
+}
+
+.am-user-item:last-child {
+    border-bottom: none;
+}
+
+.am-user-item:hover {
+    background: #f3f4f6;
+    transform: translateX(4px);
+}
+
+.am-user-item.am-selected {
+    background: #f0fdf4;
+}
+
+.am-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.am-user-name {
+    font-weight: 600;
+    font-size: 13.5px;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 3px;
+}
+
+.am-name-sep {
+    color: #dee2e6;
+    font-weight: 300;
+}
+
+.am-position-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: rgba(196, 181, 253, 0.8);
+    color: #5b21b6;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    white-space: nowrap;
+}
+
+.am-position-badge i {
+    font-size: 0.6rem;
+}
+
+.am-dept-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: rgba(186, 230, 253, 0.8);
+    color: #0369a1;
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    white-space: nowrap;
+}
+
+.am-user-email {
+    font-size: 11.5px;
+    color: #6c757d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* custom checkbox */
+.am-user-checkbox {
+    position: relative;
+    margin-left: 14px;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+}
+
+.am-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 22px;
+    height: 22px;
+    top: 0;
+    left: 0;
+    margin: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.am-checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 22px;
+    height: 22px;
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.am-checkbox:checked ~ .am-checkmark {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.am-checkmark::after {
+    content: '';
+    display: none;
+    width: 5px;
+    height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-top: -2px;
+}
+
+.am-checkbox:checked ~ .am-checkmark::after {
+    display: block;
+}
+
+.am-user-item:hover .am-checkmark {
+    border-color: #007bff;
+}
+
+.am-user-item:hover .am-checkbox:checked ~ .am-checkmark {
+    border-color: #28a745;
+}
+
+/* ── end Assign Modal ───────────────────────────────────────────────── */
+
 .chat-header {
     background: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
@@ -3418,7 +3590,7 @@ function filterUserList(searchTerm) {
         const email = item.getAttribute('data-email') || '';
         
         if (searchLower === '' || name.includes(searchLower) || email.includes(searchLower)) {
-            item.style.display = 'block';
+            item.style.display = '';
             visibleCount++;
         } else {
             item.style.display = 'none';
@@ -3451,7 +3623,7 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.addEventListener('input', function(e) {
             filterUserList(e.target.value);
         });
-        
+
         // Clear search when modal is hidden
         const assignModal = document.getElementById('assignModal');
         if (assignModal) {
@@ -3461,6 +3633,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+
+    // Make entire am-user-item row clickable
+    document.querySelectorAll('.am-user-item').forEach(function(row) {
+        row.addEventListener('click', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return;
+            const cb = row.querySelector('input[type="checkbox"]');
+            if (cb) cb.click();
+        });
+    });
 });
 
 document.getElementById('assign-form').addEventListener('submit', function(e) {
