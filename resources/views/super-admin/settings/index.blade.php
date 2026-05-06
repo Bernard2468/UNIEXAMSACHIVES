@@ -25,8 +25,10 @@
         border-radius: 0.75rem;
         background: linear-gradient(to bottom right, rgba(249, 250, 251, 0.95), rgba(243, 244, 246, 0.95), rgba(249, 250, 251, 0.95));
         color: #1f2937;
+        font-family: 'DM Sans', system-ui, sans-serif;
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 14px;
+        line-height: 1.4;
     }
 
     .settings-action-button:hover {
@@ -151,45 +153,54 @@
         background: linear-gradient(to bottom right, rgba(239, 68, 68, 0.3), rgba(248, 113, 113, 0.2));
     }
 
-    /* Page Header Style - Hostinger Style */
+    /* ── Page Header ── */
     .page-header-modern {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        margin-bottom: 0.5rem;
+        gap: 14px;
+        margin-bottom: 6px;
     }
 
     .page-header-title {
-        font-size: 1.875rem;
-        font-weight: 700;
-        color: #1f2937;
+        font-family: 'Outfit', system-ui, sans-serif;
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
         margin: 0;
+        letter-spacing: -0.5px;
+        line-height: 1.2;
     }
 
     .page-header-separator {
         width: 1px;
-        height: 2rem;
+        height: 22px;
         background-color: #d1d5db;
         margin: 0;
+        flex-shrink: 0;
     }
 
     .page-header-breadcrumb {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        color: #6b7280;
+        gap: 6px;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 13px;
+        font-weight: 400;
+        color: #64748b;
         margin: 0;
     }
 
     .page-header-breadcrumb i {
-        font-size: 1rem;
+        font-size: 13px;
     }
 
     .page-header-description {
-        margin-top: 0.5rem;
-        color: #6b7280;
-        font-size: 0.875rem;
+        margin-top: 6px;
+        color: #64748b;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.5;
     }
 
     /* Centered Container - Hostinger Style */
@@ -216,31 +227,35 @@
 
     .settings-card-header {
         background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-        color: #1f2937;
-        padding: 1.25rem 1.5rem;
+        color: #1e293b;
+        padding: 18px 24px;
         border-bottom: 1px solid #e5e7eb;
     }
 
     .settings-card-header h5 {
         margin: 0;
-        font-weight: 600;
-        font-size: 1.125rem;
+        font-family: 'Outfit', system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        color: #1e293b;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 10px;
+        letter-spacing: -0.1px;
     }
 
     .settings-card-header i {
-        font-size: 1.25rem;
+        font-size: 15px;
+        color: #64748b;
     }
 
     .settings-card-body {
-        padding: 1.5rem;
+        padding: 8px 24px 16px;
     }
 
-    /* Form Group Styling */
+    /* ── Form Group ── */
     .settings-form-group {
-        padding: 1.25rem 0;
+        padding: 18px 0;
         border-bottom: 1px solid #f3f4f6;
     }
 
@@ -249,16 +264,22 @@
     }
 
     .settings-form-label {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 14px;
         font-weight: 600;
-        color: #374151;
-        margin-bottom: 0.5rem;
+        color: #1e293b;
+        margin-bottom: 6px;
+        line-height: 1.4;
     }
 
     .settings-form-label small {
         display: block;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 13px;
         font-weight: 400;
-        color: #6b7280;
-        margin-top: 0.25rem;
+        color: #64748b;
+        margin-top: 3px;
+        line-height: 1.5;
     }
 
     /* Input Styling */
@@ -277,14 +298,17 @@
 
     /* Reminder Day Input Boxes - Verification Code Style */
     .reminder-day-input {
-        border: 2px solid #d1d5db;
-        border-radius: 0.5rem;
-        padding: 0.75rem;
-        font-size: 1.1rem;
-        font-weight: 600;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 9px;
+        padding: 10px;
+        font-family: 'Outfit', system-ui, sans-serif;
+        font-size: 15px;
+        font-weight: 700;
         text-align: center;
+        color: #0f172a;
         transition: all 0.2s ease;
         background: white;
+        line-height: 1.2;
     }
 
     .reminder-day-input:focus {
@@ -328,12 +352,14 @@
         border-radius: 9px !important;
         padding: 10px 14px !important;
         font-family: 'DM Sans', system-ui, sans-serif !important;
-        font-size: 13.5px !important;
+        font-size: 14px !important;
+        font-weight: 400 !important;
         color: #0f172a !important;
         background: #fff !important;
         transition: border-color .2s ease, box-shadow .2s ease !important;
         outline: none !important;
         box-shadow: none !important;
+        line-height: 1.5 !important;
     }
     .form-control:focus {
         border-color: #01b2ac !important;
@@ -404,17 +430,19 @@
         font-family: 'Outfit', system-ui, sans-serif;
         font-size: 15px; font-weight: 700;
         display: flex; align-items: center; gap: 14px;
+        letter-spacing: -0.1px;
     }
     .ss-header-icon {
         width: 40px; height: 40px; border-radius: 10px;
         background: rgba(1,178,172,.18);
         display: flex; align-items: center; justify-content: center;
-        color: #01b2ac; font-size: 17px; flex-shrink: 0;
+        color: #01b2ac; font-size: 16px; flex-shrink: 0;
     }
-    .ss-header-text { display: flex; flex-direction: column; gap: 2px; }
+    .ss-header-text { display: flex; flex-direction: column; gap: 3px; }
     .ss-header-text small {
         font-family: 'DM Sans', system-ui, sans-serif;
-        font-size: 12px; font-weight: 400; color: #94a3b8;
+        font-size: 13px; font-weight: 400; color: #94a3b8;
+        line-height: 1.4;
     }
 
     .ss-card .settings-card-body { padding: 0; }
@@ -431,13 +459,18 @@
     .ss-row-info { flex: 1; min-width: 0; }
     .ss-row-title {
         font-family: 'DM Sans', system-ui, sans-serif;
-        font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 3px;
+        font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px;
+        line-height: 1.4;
     }
-    .ss-row-desc { font-size: 12.5px; color: #64748b; line-height: 1.5; }
+    .ss-row-desc {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 13px; font-weight: 400; color: #64748b; line-height: 1.55;
+    }
     .ss-row-hint {
         display: flex; align-items: center; gap: 5px;
-        font-size: 11.5px; color: #94a3b8; margin-top: 6px;
-        font-style: italic;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 12px; font-weight: 400; color: #94a3b8; margin-top: 6px;
+        font-style: italic; line-height: 1.4;
     }
 
     .ss-row-control { flex-shrink: 0; display: flex; align-items: center; }
@@ -458,18 +491,18 @@
         padding: 11px 13px;
         background: #f8fafc; color: #475569;
         font-family: 'DM Sans', system-ui, sans-serif;
-        font-size: 14px; font-weight: 700;
+        font-size: 14px; font-weight: 600;
         border-right: 1.5px solid #e2e8f0;
-        user-select: none; letter-spacing: 0;
+        user-select: none; letter-spacing: 0; line-height: 1.4;
     }
     .ss-domain-input {
         flex: 1; padding: 11px 14px;
         border: none; outline: none;
         font-family: 'DM Sans', system-ui, sans-serif;
-        font-size: 13.5px; color: #0f172a;
-        background: transparent;
+        font-size: 14px; font-weight: 400; color: #0f172a;
+        background: transparent; line-height: 1.4;
     }
-    .ss-domain-input::placeholder { color: #94a3b8; }
+    .ss-domain-input::placeholder { color: #94a3b8; font-weight: 400; }
     .ss-domain-wrap.ss-dimmed { opacity: .4; pointer-events: none; }
 
     @media (max-width: 768px) {
@@ -701,7 +734,7 @@
                                                style="width: 80px;"
                                                {{ !$setting->is_editable ? 'readonly' : '' }}
                                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);">
-                                        <span class="text-muted ms-2" style="font-size: 0.875rem;">days before expiry</span>
+                                        <span style="font-family:'DM Sans',system-ui,sans-serif; font-size:13px; font-weight:400; color:#64748b; margin-left:8px;">days before expiry</span>
                                     </div>
                                 @else
                                     <textarea class="form-control" 
@@ -719,9 +752,9 @@
                             @endif
                             
                             @if($setting->requires_restart)
-                            <small class="text-warning d-block mt-2">
-                                <i class="icofont-warning"></i> Requires application restart
-                            </small>
+                            <div style="font-family:'DM Sans',system-ui,sans-serif; font-size:12px; font-weight:500; color:#d97706; margin-top:6px; display:flex; align-items:center; gap:5px;">
+                                <i class="icofont-warning" style="font-size:12px;"></i> Requires application restart
+                            </div>
                             @endif
                         </div>
                     </div>
@@ -749,8 +782,8 @@
             <h5><i class="icofont-warning"></i> Danger Zone</h5>
         </div>
         <div class="settings-card-body">
-            <h6>Maintenance Mode</h6>
-            <p class="text-muted">When enabled, only super admins can access the system.</p>
+            <h6 style="font-family:'Outfit',system-ui,sans-serif; font-size:15px; font-weight:700; color:#fff; margin:0 0 6px;">Maintenance Mode</h6>
+            <p style="font-family:'DM Sans',system-ui,sans-serif; font-size:13px; font-weight:400; color:rgba(255,255,255,0.75); margin:0 0 18px; line-height:1.55;">When enabled, only super admins can access the system. All other users will see a maintenance page.</p>
             <form method="POST" action="{{ route('super-admin.settings.toggle-maintenance') }}" class="d-inline">
                 @csrf
                 @if(App\Models\SystemSetting::getMaintenanceMode())
