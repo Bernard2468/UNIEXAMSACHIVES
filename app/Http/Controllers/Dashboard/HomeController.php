@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Services\ResendMailService;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class HomeController extends Controller
 {
@@ -1131,6 +1132,100 @@ class HomeController extends Controller
             \Log::error('Error in memoChat: ' . $e->getMessage());
             abort(500, 'Error loading memo chat.');
         }
+    }
+
+    public function exportMemoPdf(EmailCampaign $memo)
+    {
+        $userId = Auth::id();
+
+        // Access check — same rules as memoChat
+        $isActiveParticipant = $memo->isActiveParticipant($userId);
+        $isRecipient         = $memo->recipients()->where('user_id', $userId)->exists();
+        $isCreator           = $memo->created_by === $userId;
+
+        if (!$isActiveParticipant && !$isRecipient && !$isCreator) {
+            abort(403, 'You are not a participant in this memo.');
+        }
+
+        $memo->load(['creator', 'currentAssignee', 'toRecipients.user', 'ccRecipients.user', 'replies.user']);
+
+        // ── Letterhead ──
+        $letterheadUrl = match ($memo->letterhead ?? '') {
+            'cug'           => 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778065984/57a43cc8-0c87-4b69-9679-6299960a52d2.png',
+            'internal_memo' => 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png',
+            default         => null,
+        };
+
+        // ── Process attachments for inline preview ──
+        $processedAttachments = [];
+        if ($memo->attachments) {
+            foreach ($memo->attachments as $index => $attachment) {
+                $filePath = storage_path('app/public/' . $attachment['path']);
+                $mime     = $attachment['type'] ?? '';
+                $name     = $attachment['name'] ?? 'attachment';
+                $entry    = [
+                    'index' => $index,
+                    'name'  => $name,
+                    'size'  => isset($attachment['size']) ? round($attachment['size'] / 1024, 1) . ' KB' : '',
+                    'mime'  => $mime,
+                    'type'  => 'unsupported',
+                    'data'  => null,
+                    'text'  => null,
+                ];
+
+                if (file_exists($filePath)) {
+                    if (str_starts_with($mime, 'image/')) {
+                        // Embed image as base64
+                        $entry['type'] = 'image';
+                        $entry['data'] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($filePath));
+                    } elseif ($mime === 'application/pdf') {
+                        // PDF — provide a view link (DomPDF cannot embed external PDFs)
+                        $entry['type'] = 'pdf';
+                        $entry['url']  = route('dashboard.uimms.chat.attachment.view', ['memo' => $memo->id, 'index' => $index]);
+                    } elseif (in_array($mime, ['text/plain'])) {
+                        // Plain text — embed content
+                        $entry['type'] = 'text';
+                        $entry['text'] = htmlspecialchars(file_get_contents($filePath));
+                    } elseif (in_array($mime, [
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    ])) {
+                        $entry['type'] = 'doc';
+                        $entry['url']  = route('dashboard.uimms.chat.attachment.download', ['memo' => $memo->id, 'index' => $index]);
+                    } else {
+                        $entry['url'] = route('dashboard.uimms.chat.attachment.download', ['memo' => $memo->id, 'index' => $index]);
+                    }
+                }
+
+                $processedAttachments[] = $entry;
+            }
+        }
+
+        // ── Letterhead as base64 for DomPDF (DomPDF works best with local or base64 images) ──
+        $letterheadBase64 = null;
+        if ($letterheadUrl) {
+            try {
+                $imgData = @file_get_contents($letterheadUrl);
+                if ($imgData) {
+                    $letterheadBase64 = 'data:image/png;base64,' . base64_encode($imgData);
+                }
+            } catch (\Exception $e) {
+                $letterheadBase64 = null;
+            }
+        }
+
+        $pdf = Pdf::loadView('admin.uimms.memo-export-pdf', [
+            'memo'                 => $memo,
+            'letterheadBase64'     => $letterheadBase64,
+            'hasLetterhead'        => !empty($memo->letterhead),
+            'processedAttachments' => $processedAttachments,
+            'toRecipients'         => $memo->toRecipients,
+            'ccRecipients'         => $memo->ccRecipients,
+        ])->setPaper('a4', 'portrait');
+
+        $filename = 'Memo-' . ($memo->reference ?? $memo->id) . '.pdf';
+
+        return $pdf->stream($filename);
     }
 
     /**

@@ -162,6 +162,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/uimms/chat/{memo}/attachment/{index}/download', [HomeController::class, 'downloadUimmsMemoAttachment'])->name('dashboard.uimms.chat.attachment.download');
     Route::get('/dashboard/uimms/chat/{memo}/attachment/{index}/view', [HomeController::class, 'viewUimmsMemoAttachment'])->name('dashboard.uimms.chat.attachment.view');
     Route::get('/dashboard/uimms/chat/{memo}/messages', [HomeController::class, 'getChatMessages'])->name('dashboard.uimms.chat.messages');
+    Route::get('/dashboard/uimms/chat/{memo}/export-pdf', [HomeController::class, 'exportMemoPdf'])->name('dashboard.uimms.chat.export-pdf');
     Route::get('/dashboard/uimms/chat/reply/{reply}/attachment/{index}/download', [HomeController::class, 'downloadUimmsChatAttachment'])->name('dashboard.uimms.chat.reply.attachment.download');
     Route::get('/dashboard/uimms/chat/reply/{reply}/attachment/{index}/view', [HomeController::class, 'viewUimmsChatAttachment'])->name('dashboard.uimms.chat.reply.attachment.view');
     
