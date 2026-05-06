@@ -102,7 +102,7 @@
                                         <div class="sp-field sp-field--full">
                                             <label class="sp-label">Email address</label>
                                             <input class="sp-input" type="email" value="{{ $data->email }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
-                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>Email can only be changed by an Admin from the Manage Users page.</small>
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>Email can only be changed by System Administrator</small>
                                         </div>
                                     </div>
                                 </div>
