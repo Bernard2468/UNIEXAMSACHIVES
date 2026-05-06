@@ -592,7 +592,7 @@
                                     <label>Full Name <span class="required-dot"></span></label>
                                     <div class="input-icon-wrap">
                                         <i class="fas fa-user"></i>
-                                        <input type="text" placeholder="Enter your full name" name="instructor_name" value="{{ old('instructor_name', $exam->instructor_name ?? '') }}" required>
+                                        <input type="text" placeholder="Enter your full name" name="instructor_name" value="{{ old('instructor_name', $exam->instructor_name ?? auth()->user()->name) }}" required>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -629,7 +629,7 @@
                                             <label>Email Address <span class="required-dot"></span></label>
                                             <div class="input-icon-wrap">
                                                 <i class="fas fa-envelope"></i>
-                                                <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $exam->email ?? '') }}" required>
+                                                <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $exam->email ?? auth()->user()->email) }}" required>
                                             </div>
                                         </div>
                                     </div>
@@ -895,29 +895,77 @@
 (function() {
     const totalSteps = 4;
     let currentStep = 1;
+    const isEdit = {{ isset($exam) ? 'true' : 'false' }};
+
+    function validateExamStep(step) {
+        const panel = document.getElementById('examStep' + step);
+        let valid = true;
+
+        // Validate text/email/date/select inputs
+        panel.querySelectorAll('input[required], select[required]').forEach(function(el) {
+            if (el.type === 'file') {
+                if (!isEdit && !el.value) {
+                    valid = false;
+                    el.closest('.file-upload-zone').style.borderColor = '#ef4444';
+                } else {
+                    el.closest('.file-upload-zone').style.borderColor = '';
+                }
+            } else if (el.type === 'checkbox') {
+                if (!el.checked) {
+                    valid = false;
+                    el.style.outline = '2px solid #ef4444';
+                } else {
+                    el.style.outline = '';
+                }
+            } else {
+                if (!el.value.trim()) {
+                    valid = false;
+                    el.style.borderColor = '#ef4444';
+                    el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.12)';
+                } else {
+                    el.style.borderColor = '';
+                    el.style.boxShadow = '';
+                }
+            }
+        });
+
+        if (!valid) {
+            let errBox = panel.querySelector('.step-inline-error');
+            if (!errBox) {
+                errBox = document.createElement('div');
+                errBox.className = 'step-inline-error';
+                errBox.style.cssText = 'background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 16px;margin-top:12px;font-size:13px;color:#991b1b;display:flex;align-items:center;gap:8px;';
+                errBox.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#ef4444;"></i> Please fill in all required fields before continuing.';
+                panel.querySelector('.form-nav-buttons').before(errBox);
+            }
+        } else {
+            const errBox = panel.querySelector('.step-inline-error');
+            if (errBox) errBox.remove();
+        }
+
+        return valid;
+    }
 
     window.examNextStep = function(step) {
+        // Validate current step before moving forward
+        if (step > currentStep && !validateExamStep(currentStep)) return;
+
         currentStep = step;
-        // Update panels
         for (let i = 1; i <= totalSteps; i++) {
             const panel = document.getElementById('examStep' + i);
             if (panel) panel.classList.toggle('active', i === step);
         }
-        // Update stepper
         document.querySelectorAll('#examStepper .step-item').forEach(function(el) {
             const s = parseInt(el.getAttribute('data-step'));
             el.classList.remove('active', 'completed');
             if (s === step) el.classList.add('active');
             else if (s < step) el.classList.add('completed');
         });
-        // Update connectors
         document.querySelectorAll('#examStepper .step-connector').forEach(function(el, idx) {
             el.classList.toggle('completed', idx < step - 1);
         });
-        // Update progress bar
         const pct = Math.round((step / totalSteps) * 100);
         document.getElementById('examProgressBar').style.width = pct + '%';
-        // Scroll to top of form
         window.scrollTo({ top: document.querySelector('.modern-depo-container').offsetTop - 20, behavior: 'smooth' });
     };
 
@@ -926,10 +974,24 @@
         if (input.files && input.files.length > 0) {
             display.querySelector('.fn-text').textContent = input.files[0].name;
             display.classList.add('visible');
+            // Clear any red border on the upload zone
+            input.closest('.file-upload-zone').style.borderColor = '';
         } else {
             display.classList.remove('visible');
         }
     };
+
+    // Clear field errors on input
+    document.querySelectorAll('#examDepoForm input, #examDepoForm select').forEach(function(el) {
+        el.addEventListener('input', function() {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+        });
+        el.addEventListener('change', function() {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+        });
+    });
 
     // Drag and drop visual feedback
     document.querySelectorAll('.file-upload-zone').forEach(function(zone) {

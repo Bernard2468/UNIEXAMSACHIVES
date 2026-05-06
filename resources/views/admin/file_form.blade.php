@@ -608,7 +608,7 @@
                                     <label>Depositor's Name <span class="req"></span></label>
                                     <div class="icon-wrap">
                                         <i class="fas fa-user"></i>
-                                        <input type="text" placeholder="Enter your full name" name="depositor_name" value="{{ old('depositor_name', $file->depositor_name ?? '') }}" required>
+                                        <input type="text" placeholder="Enter your full name" name="depositor_name" value="{{ old('depositor_name', $file->depositor_name ?? auth()->user()->name) }}" required>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -617,7 +617,7 @@
                                             <label>Email Address <span class="req"></span></label>
                                             <div class="icon-wrap">
                                                 <i class="fas fa-envelope"></i>
-                                                <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $file->email ?? '') }}" required>
+                                                <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $file->email ?? auth()->user()->email) }}" required>
                                             </div>
                                         </div>
                                     </div>
@@ -653,7 +653,7 @@
                             </div>
                             <div class="file-form-card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-8">
                                         <div class="ff-group">
                                             <label>File Title <span class="req"></span></label>
                                             <div class="icon-wrap">
@@ -662,37 +662,12 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="ff-group">
-                                            <label>File Format <span class="req"></span></label>
+                                            <label>Document Date <span class="req"></span></label>
                                             <div class="icon-wrap">
-                                                <i class="fas fa-file-circle-check"></i>
-                                                <select name="file_format" required>
-                                                    <option value="Pdf" {{ old('file_format', $file->file_format ?? '') == 'Pdf' ? 'selected' : '' }}>PDF</option>
-                                                    <option value="Word" {{ old('file_format', $file->file_format ?? '') == 'Word' ? 'selected' : '' }}>Word</option>
-                                                    <option value="Excel" {{ old('file_format', $file->file_format ?? '') == 'Excel' ? 'selected' : '' }}>Excel</option>
-                                                    <option value="Csv" {{ old('file_format', $file->file_format ?? '') == 'Csv' ? 'selected' : '' }}>CSV</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="ff-group">
-                                            <label>Date Created <span class="req"></span></label>
-                                            <div class="icon-wrap">
-                                                <i class="fas fa-calendar-plus"></i>
+                                                <i class="fas fa-calendar-day"></i>
                                                 <input type="date" name="year_created" value="{{ old('year_created', isset($file) ? \Carbon\Carbon::parse($file->year_created)->format('Y-m-d') : '') }}" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="ff-group">
-                                            <label>Date Deposited <span class="req"></span></label>
-                                            <div class="icon-wrap">
-                                                <i class="fas fa-calendar-check"></i>
-                                                <input type="date" name="year_deposit" value="{{ old('year_deposit', isset($file) ? \Carbon\Carbon::parse($file->year_deposit)->format('Y-m-d') : '') }}" required>
                                             </div>
                                         </div>
                                     </div>
@@ -703,8 +678,8 @@
                                     <div class="file-drop-zone" id="fileDropZone">
                                         <div class="drop-icon"><i class="fas fa-cloud-arrow-up"></i></div>
                                         <h4>Drag & drop or <em>browse files</em></h4>
-                                        <p>All common document formats accepted</p>
-                                        <input type="file" name="document_file" {{ isset($file) ? '' : 'required' }} onchange="fileShowName(this, 'filePickedName')">
+                                        <p>Accepted: PDF, Word, Excel, CSV, PowerPoint</p>
+                                        <input type="file" name="document_file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx" {{ isset($file) ? '' : 'required' }} onchange="fileShowName(this, 'filePickedName')">
                                     </div>
                                     <div class="file-picked" id="filePickedName">
                                         <i class="fas fa-check-circle"></i>
@@ -832,29 +807,75 @@
 (function() {
     const totalSteps = 3;
     let currentStep = 1;
+    const isEdit = {{ isset($file) ? 'true' : 'false' }};
+
+    function validateFileStep(step) {
+        const panel = document.getElementById('fileStep' + step);
+        let valid = true;
+
+        panel.querySelectorAll('input[required], select[required]').forEach(function(el) {
+            if (el.type === 'file') {
+                if (!isEdit && !el.value) {
+                    valid = false;
+                    el.closest('.file-drop-zone').style.borderColor = '#ef4444';
+                } else {
+                    el.closest('.file-drop-zone').style.borderColor = '';
+                }
+            } else if (el.type === 'checkbox') {
+                if (!el.checked) {
+                    valid = false;
+                    el.style.outline = '2px solid #ef4444';
+                } else {
+                    el.style.outline = '';
+                }
+            } else {
+                if (!el.value.trim()) {
+                    valid = false;
+                    el.style.borderColor = '#ef4444';
+                    el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.12)';
+                } else {
+                    el.style.borderColor = '';
+                    el.style.boxShadow = '';
+                }
+            }
+        });
+
+        if (!valid) {
+            let errBox = panel.querySelector('.step-inline-error');
+            if (!errBox) {
+                errBox = document.createElement('div');
+                errBox.className = 'step-inline-error';
+                errBox.style.cssText = 'background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 16px;margin-top:12px;font-size:13px;color:#991b1b;display:flex;align-items:center;gap:8px;';
+                errBox.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#ef4444;"></i> Please fill in all required fields before continuing.';
+                panel.querySelector('.file-nav-btns').before(errBox);
+            }
+        } else {
+            const errBox = panel.querySelector('.step-inline-error');
+            if (errBox) errBox.remove();
+        }
+
+        return valid;
+    }
 
     window.fileGoStep = function(step) {
+        if (step > currentStep && !validateFileStep(currentStep)) return;
+
         currentStep = step;
-        // Update panels
         for (let i = 1; i <= totalSteps; i++) {
             const panel = document.getElementById('fileStep' + i);
             if (panel) panel.classList.toggle('active', i === step);
         }
-        // Update stepper
         document.querySelectorAll('#fileStepper .file-step-item').forEach(function(el) {
             const s = parseInt(el.getAttribute('data-step'));
             el.classList.remove('active', 'completed');
             if (s === step) el.classList.add('active');
             else if (s < step) el.classList.add('completed');
         });
-        // Update connectors
         document.querySelectorAll('#fileStepper .file-step-connector').forEach(function(el, idx) {
             el.classList.toggle('completed', idx < step - 1);
         });
-        // Update progress bar
         const pct = Math.round((step / totalSteps) * 100);
         document.getElementById('fileProgressBar').style.width = pct + '%';
-        // Scroll to top
         window.scrollTo({ top: document.querySelector('.modern-file-container').offsetTop - 20, behavior: 'smooth' });
     };
 
@@ -863,10 +884,23 @@
         if (input.files && input.files.length > 0) {
             display.querySelector('.fpn-text').textContent = input.files[0].name;
             display.classList.add('visible');
+            input.closest('.file-drop-zone').style.borderColor = '';
         } else {
             display.classList.remove('visible');
         }
     };
+
+    // Clear field errors on input
+    document.querySelectorAll('#fileDepoForm input, #fileDepoForm select').forEach(function(el) {
+        el.addEventListener('input', function() {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+        });
+        el.addEventListener('change', function() {
+            el.style.borderColor = '';
+            el.style.boxShadow = '';
+        });
+    });
 
     // Drag and drop visual feedback
     document.querySelectorAll('.file-drop-zone').forEach(function(zone) {

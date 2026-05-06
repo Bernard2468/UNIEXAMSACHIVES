@@ -813,7 +813,7 @@
                                                         <form action="{{ route('users.destroy', $user->id) }}" method="post" style="display: inline;" id="delete-user-table-form-{{ $user->id }}">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="button" class="action-btn delete" style="min-width:auto; padding:8px 12px;" onclick="confirmDeleteUser({{ $user->id }}, '{{ $user->first_name }} {{ $user->last_name }}')">
+                                                            <button type="button" class="action-btn delete" style="min-width:auto; padding:8px 12px;" title="Delete" onclick="confirmDeleteUser({{ $user->id }}, '{{ $user->first_name }} {{ $user->last_name }}')">
                                                                 <i class="fas fa-trash"></i>
                                                             </button>
                                                         </form>

@@ -17,24 +17,36 @@ class FilesController extends Controller
             'email' => 'required|string|email',
             'phone_number' => 'required|string',
             'file_title' => 'required|string',
-            'file_format' => 'required|string',
             'year_created' => 'required|date',
-            'year_deposit' => 'required|date',
-            'document_file' => 'required|file',
+            'document_file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx',
             'unit' => 'required|string',
         ]);
 
         if ($request->hasFile('document_file')) {
-            $file = $request->file('document_file');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('exams/files'), $fileName);
+            $uploadedFile = $request->file('document_file');
+            $fileName = time() . '_' . $uploadedFile->getClientOriginalName();
+            $uploadedFile->move(public_path('exams/files'), $fileName);
             $validatedData['document_file'] = 'exams/files/' . $fileName;
+            $validatedData['file_format'] = $this->detectFileFormat($uploadedFile->getClientOriginalExtension());
         }
+        $validatedData['year_deposit'] = now()->toDateString();
         $validatedData['user_id'] = Auth::user()->id;
         $validatedData['document_id'] = random_int(1000000000, 9999999999);
-        $validatedData['is_approve'] = true; // Auto-approve all uploads
+        $validatedData['is_approve'] = true;
         File::create($validatedData);
         return redirect()->route('dashboard')->with('success', 'File has been deposited successfully.');
+    }
+
+    private function detectFileFormat(string $extension): string
+    {
+        $map = [
+            'pdf'  => 'Pdf',
+            'doc'  => 'Word', 'docx' => 'Word',
+            'xls'  => 'Excel', 'xlsx' => 'Excel',
+            'csv'  => 'Csv',
+            'ppt'  => 'PowerPoint', 'pptx' => 'PowerPoint',
+        ];
+        return $map[strtolower($extension)] ?? strtoupper($extension);
     }
 
 
@@ -52,33 +64,26 @@ class FilesController extends Controller
             'email' => 'required|string|email',
             'phone_number' => 'required|string',
             'file_title' => 'required|string',
-            'file_format' => 'required|string',
             'year_created' => 'required|date',
-            'year_deposit' => 'required|date',
-            'document_file' => 'nullable|file', // Changed to nullable
+            'document_file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx',
             'unit' => 'required|string',
         ]);
 
         $file = File::findOrFail($id);
 
-        // Handle file update if new file is uploaded
         if ($request->hasFile('document_file')) {
-            // Delete old file if it exists
             if ($file->document_file && file_exists(public_path($file->document_file))) {
                 unlink(public_path($file->document_file));
             }
-            
-            // Store new file
             $newFile = $request->file('document_file');
             $fileName = time() . '_' . $newFile->getClientOriginalName();
             $newFile->move(public_path('exams/files'), $fileName);
             $validatedData['document_file'] = 'exams/files/' . $fileName;
+            $validatedData['file_format'] = $this->detectFileFormat($newFile->getClientOriginalExtension());
         } else {
-            // Keep existing file if no new file uploaded
             $validatedData['document_file'] = $file->document_file;
         }
 
-        // Update the file record
         $file->update($validatedData);
 
         return redirect()->route('dashboard')
