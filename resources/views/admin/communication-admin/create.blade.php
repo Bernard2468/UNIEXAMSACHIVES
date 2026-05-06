@@ -2412,7 +2412,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Also add click event to the user item for better UX
         const userItem = checkbox.closest('.user-item');
-        if (userItem) {
+        if (userItem && !userItem.classList.contains('cc-user-item')) {
             userItem.addEventListener('click', function(e) {
                 // Don't trigger if clicking on the checkbox itself
                 if (e.target !== checkbox && !checkbox.contains(e.target)) {
@@ -2422,7 +2422,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    
+
+    // CC row click handlers
+    document.querySelectorAll('.cc-user-item').forEach(function(item) {
+        const cb = item.querySelector('.cc-checkbox');
+        if (!cb) return;
+        item.addEventListener('click', function(e) {
+            if (e.target === cb || cb.contains(e.target)) return;
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change'));
+        });
+    });
+
     // Select all functionality
     selectAllBtn.addEventListener('click', function() {
         const visibleCheckboxes = Array.from(userCheckboxes).filter(checkbox => {
