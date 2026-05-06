@@ -1121,9 +1121,10 @@ class HomeController extends Controller
             $memo->recordLastReadBy($userId);
 
             // Get all users for assignment dropdown
-            $users = User::where('is_approve', true)
+            $users = User::with('department')
+                ->where('is_approve', true)
                 ->where('id', '!=', $userId)
-                ->select('id', 'first_name', 'last_name', 'email')
+                ->select('id', 'first_name', 'last_name', 'email', 'department_id')
                 ->get();
 
             return view('admin.uimms.chat', compact('memo', 'users', 'canParticipate', 'isAssignedToSomeoneElse'));
@@ -1361,22 +1362,24 @@ class HomeController extends Controller
         $request->validate([
             'assignee_ids' => 'required|array|min:1',
             'assignee_ids.*' => 'required|exists:users,id',
-            'office' => 'nullable|string|max:255',
             'message' => 'nullable|string|max:1000',
         ]);
 
         $assigneeIds = $request->assignee_ids;
-        $assignees = User::whereIn('id', $assigneeIds)->get();
-        
+        $assignees = User::with('department')->whereIn('id', $assigneeIds)->get();
+
         if ($assignees->count() !== count($assigneeIds)) {
             return response()->json([
                 'success' => false,
                 'message' => 'One or more selected users were not found.',
             ], 422);
         }
-        
+
+        // Auto-derive office from the single assignee's department; null for multiple
+        $office = $assignees->count() === 1 ? $assignees->first()->department?->name : null;
+
         // Assign the memo to multiple users
-        $memo->assignToMultiple($assigneeIds, $userId, $request->office);
+        $memo->assignToMultiple($assigneeIds, $userId, $office);
 
         // Build assignment message with all assignees - format based on count
         $assigneeNamesList = $assignees->map(function($assignee) {
@@ -1428,19 +1431,19 @@ class HomeController extends Controller
         try {
             // Send success email to assigner with primary assignee (for email template compatibility)
             Mail::to(Auth::user()->email)->send(new \App\Mail\MemoAssignmentSuccess(
-                $memo, 
-                Auth::user(), 
-                $assignees->first(), // Primary assignee for email template compatibility
-                $request->office
+                $memo,
+                Auth::user(),
+                $assignees->first(),
+                $office
             ));
 
             // Send notification email to each assignee
             foreach ($assignees as $assignee) {
                 Mail::to($assignee->email)->send(new \App\Mail\MemoAssignedNotification(
-                    $memo, 
-                    Auth::user(), 
-                    $assignee, 
-                    $request->office
+                    $memo,
+                    Auth::user(),
+                    $assignee,
+                    $office
                 ));
             }
         } catch (\Exception $e) {

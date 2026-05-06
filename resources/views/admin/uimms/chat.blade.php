@@ -630,17 +630,16 @@
                             @foreach($users as $user)
                                 <div class="form-check mb-2 user-item" data-name="{{ strtolower($user->first_name . ' ' . $user->last_name) }}" data-email="{{ strtolower($user->email) }}">
                                     <input class="form-check-input" type="checkbox" name="assignee_ids[]" value="{{ $user->id }}" id="assignee_{{ $user->id }}">
-                                    <label class="form-check-label" for="assignee_{{ $user->id }}">
-                                        {{ $user->first_name }} {{ $user->last_name }} <span class="text-muted">({{ $user->email }})</span>
+                                    <label class="form-check-label d-flex align-items-center flex-wrap gap-2" for="assignee_{{ $user->id }}">
+                                        <span>{{ $user->first_name }} {{ $user->last_name }} <span class="text-muted">({{ $user->email }})</span></span>
+                                        @if($user->department)
+                                            <span class="badge bg-secondary fw-normal" style="font-size: 0.7rem;">{{ $user->department->name }}</span>
+                                        @endif
                                     </label>
                                 </div>
                             @endforeach
                         </div>
                         <!-- <small class="text-muted">Select at least one user to assign the memo.</small> -->
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Office/Department (Optional)</label>
-                        <input type="text" name="office" class="form-control" placeholder="e.g., Finance Department">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Assignment Message (Optional)</label>
