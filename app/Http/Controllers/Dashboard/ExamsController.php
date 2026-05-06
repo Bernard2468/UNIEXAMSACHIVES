@@ -26,7 +26,6 @@ class ExamsController extends Controller
             'student_id' => 'required',
             'course_code' => 'required|string',
             'email' => 'required|string',
-            'phone_number' => 'required|string',
             'course_title' => 'required|string',
             'faculty' => 'required|string',
             'semester' => 'required|string',
@@ -77,7 +76,6 @@ class ExamsController extends Controller
             'student_id' => 'required',
             'course_code' => 'required|string',
             'email' => 'required|string',
-            'phone_number' => 'required|string',
             'course_title' => 'required|string',
             'faculty' => 'required|string',
             'semester' => 'required|string',
@@ -86,8 +84,8 @@ class ExamsController extends Controller
             'exam_date' => 'required|date',
             'exam_format' => 'required',
             'duration' => 'required|string',
-            'exam_document' => 'nullable|file',  // Changed to nullable
-            'answer_key' => 'nullable|file',    // Changed to nullable
+            'exam_document' => 'nullable|file',
+            'answer_key' => 'nullable|file',
         ]);
 
         // Handle exam document update

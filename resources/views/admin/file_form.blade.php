@@ -608,27 +608,14 @@
                                     <label>Depositor's Name <span class="req"></span></label>
                                     <div class="icon-wrap">
                                         <i class="fas fa-user"></i>
-                                        <input type="text" placeholder="Enter your full name" name="depositor_name" value="{{ old('depositor_name', $file->depositor_name ?? auth()->user()->name) }}" required>
+                                        <input type="text" placeholder="Enter your full name" name="depositor_name" value="{{ old('depositor_name', $file->depositor_name ?? trim(auth()->user()->first_name . ' ' . auth()->user()->last_name)) }}" required>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="ff-group">
-                                            <label>Email Address <span class="req"></span></label>
-                                            <div class="icon-wrap">
-                                                <i class="fas fa-envelope"></i>
-                                                <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $file->email ?? auth()->user()->email) }}" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="ff-group">
-                                            <label>Phone Number <span class="req"></span></label>
-                                            <div class="icon-wrap">
-                                                <i class="fas fa-phone"></i>
-                                                <input type="text" placeholder="Enter phone number" name="phone_number" value="{{ old('phone_number', $file->phone_number ?? '') }}" required>
-                                            </div>
-                                        </div>
+                                <div class="ff-group">
+                                    <label>Email Address <span class="req"></span></label>
+                                    <div class="icon-wrap">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $file->email ?? auth()->user()->email) }}" required>
                                     </div>
                                 </div>
                             </div>

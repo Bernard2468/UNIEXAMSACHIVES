@@ -15,7 +15,6 @@ class FilesController extends Controller
         $validatedData = $request->validate([
             'depositor_name' => 'required|string',
             'email' => 'required|string|email',
-            'phone_number' => 'required|string',
             'file_title' => 'required|string',
             'year_created' => 'required|date',
             'document_file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx',
@@ -62,7 +61,6 @@ class FilesController extends Controller
         $validatedData = $request->validate([
             'depositor_name' => 'required|string',
             'email' => 'required|string|email',
-            'phone_number' => 'required|string',
             'file_title' => 'required|string',
             'year_created' => 'required|date',
             'document_file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx',

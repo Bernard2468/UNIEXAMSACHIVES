@@ -592,7 +592,7 @@
                                     <label>Full Name <span class="required-dot"></span></label>
                                     <div class="input-icon-wrap">
                                         <i class="fas fa-user"></i>
-                                        <input type="text" placeholder="Enter your full name" name="instructor_name" value="{{ old('instructor_name', $exam->instructor_name ?? auth()->user()->name) }}" required>
+                                        <input type="text" placeholder="Enter your full name" name="instructor_name" value="{{ old('instructor_name', $exam->instructor_name ?? trim(auth()->user()->first_name . ' ' . auth()->user()->last_name)) }}" required>
                                     </div>
                                 </div>
                                 <div class="row">
@@ -623,24 +623,11 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="field-group">
-                                            <label>Email Address <span class="required-dot"></span></label>
-                                            <div class="input-icon-wrap">
-                                                <i class="fas fa-envelope"></i>
-                                                <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $exam->email ?? auth()->user()->email) }}" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="field-group">
-                                            <label>Phone Number <span class="required-dot"></span></label>
-                                            <div class="input-icon-wrap">
-                                                <i class="fas fa-phone"></i>
-                                                <input type="text" placeholder="Enter phone number" name="phone_number" value="{{ old('phone_number', $exam->phone_number ?? '') }}" required>
-                                            </div>
-                                        </div>
+                                <div class="field-group">
+                                    <label>Email Address <span class="required-dot"></span></label>
+                                    <div class="input-icon-wrap">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $exam->email ?? auth()->user()->email) }}" required>
                                     </div>
                                 </div>
                             </div>
