@@ -526,7 +526,6 @@ class HomeController extends Controller
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . Auth::id(),
             'department_id' => 'required|exists:departments,id',
             'staff_category' => $staffCategoryRule,
             'position_id' => 'nullable|exists:positions,id',
@@ -546,7 +545,6 @@ class HomeController extends Controller
             // Update user information
             $user->first_name = $request->input('first_name');
             $user->last_name = $request->input('last_name');
-            $user->email = $request->input('email');
             $user->department_id = $request->input('department_id');
             $user->staff_category = $request->input('staff_category');
             $user->position_id = $request->input('position_id');
@@ -835,6 +833,21 @@ class HomeController extends Controller
 
         return redirect()->route('dashboard.users')->with('success', 'User deleted successfully');
     }
+
+    public function updateUserEmail(Request $request, User $user)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+        ], [
+            'email.unique' => 'This email is already in use by another account.',
+        ]);
+
+        $user->email = $request->input('email');
+        $user->save();
+
+        return redirect()->route('dashboard.users')->with('success', "Email for {$user->first_name} {$user->last_name} updated successfully.");
+    }
+
     public function logout(Request $request)
     {
         Auth::logout();

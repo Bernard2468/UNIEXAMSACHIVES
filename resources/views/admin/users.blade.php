@@ -729,6 +729,11 @@
                                                     </form>
                                                 @endif
 
+                                                <button type="button" class="action-btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditEmailModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ $user->email }}')">
+                                                    <i class="fas fa-envelope"></i>
+                                                    Edit Email
+                                                </button>
+
                                                 <form action="{{ route('users.destroy', $user->id) }}" method="post" style="display: inline;" id="delete-user-form-{{ $user->id }}">
                                                     @csrf
                                                     @method('DELETE')
@@ -786,26 +791,29 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div style="display:flex; gap:0.5rem;">
+                                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
                                                         @if (!$user->is_approve)
                                                         <form action="{{ route('users.approve', $user->id) }}" method="post" style="display: inline;">
                                                             @csrf
-                                                            <button type="submit" class="action-btn approve" style="min-width:auto; padding:8px 12px;">
+                                                            <button type="submit" class="action-btn approve" style="min-width:auto; padding:8px 12px;" title="Approve">
                                                                 <i class="fas fa-check"></i>
                                                             </button>
                                                         </form>
                                                         @else
                                                         <form action="{{ route('users.disapprove', $user->id) }}" method="post" style="display: inline;">
                                                             @csrf
-                                                            <button type="submit" class="action-btn disapprove" style="min-width:auto; padding:8px 12px;">
+                                                            <button type="submit" class="action-btn disapprove" style="min-width:auto; padding:8px 12px;" title="Disapprove">
                                                                 <i class="fas fa-thumbs-down"></i>
                                                             </button>
                                                         </form>
                                                         @endif
+                                                        <button type="button" class="action-btn" style="min-width:auto; padding:8px 12px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" title="Edit Email" onclick="openEditEmailModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ $user->email }}')">
+                                                            <i class="fas fa-envelope"></i>
+                                                        </button>
                                                         <form action="{{ route('users.destroy', $user->id) }}" method="post" style="display: inline;" id="delete-user-table-form-{{ $user->id }}">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="button" class="action-btn delete" style="min-width:auto; padding:8px 12px;" onclick="confirmDeleteUser({{ $user->id }}, '{{ $user->first_name }} {{ $user->last_name }}')">
+                                                            <button type="button" class="action-btn delete" style="min-width:auto; padding:8px 12px;" title="Delete" onclick="confirmDeleteUser({{ $user->id }}, '{{ $user->first_name }} {{ $user->last_name }}')">
                                                                 <i class="fas fa-trash"></i>
                                                             </button>
                                                         </form>
@@ -990,6 +998,37 @@
                     <button type="button" class="cancel-btn" id="cancelAddUserBtn">Cancel</button>
                     <button type="submit" class="submit-btn-modal">
                         <i class="fas fa-user-plus"></i> Add User
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Email Modal -->
+<div id="editEmailModal" class="add-user-modal" style="display: none;">
+    <div class="add-user-modal-overlay"></div>
+    <div class="add-user-modal-content" style="max-width:440px;">
+        <div class="add-user-modal-header">
+            <h3><i class="fas fa-envelope"></i> Change User Email</h3>
+            <button type="button" class="close-modal-btn" onclick="closeEditEmailModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="add-user-modal-body">
+            <p id="editEmailUserName" style="margin-bottom:1.2rem; color:#475569; font-size:0.95rem;"></p>
+            <form id="editEmailForm" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="form-group">
+                    <div class="input-container">
+                        <input type="email" name="email" id="editEmailInput" class="animated-input" placeholder="Enter new email address" required>
+                    </div>
+                </div>
+                <div class="form-actions-modal">
+                    <button type="button" class="cancel-btn" onclick="closeEditEmailModal()">Cancel</button>
+                    <button type="submit" class="submit-btn-modal">
+                        <i class="fas fa-save"></i> Save Email
                     </button>
                 </div>
             </form>
@@ -1256,6 +1295,38 @@ function toggleAddUserPasswordConfirm() {
         icon.classList.add('icofont-eye');
     }
 }
+
+function openEditEmailModal(userId, userName, currentEmail) {
+    const modal = document.getElementById('editEmailModal');
+    const form = document.getElementById('editEmailForm');
+    const nameLabel = document.getElementById('editEmailUserName');
+    const emailInput = document.getElementById('editEmailInput');
+
+    form.action = '/dashboard/users/' + userId + '/email';
+    nameLabel.textContent = 'Editing email for: ' + userName;
+    emailInput.value = currentEmail;
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    emailInput.focus();
+}
+
+function closeEditEmailModal() {
+    const modal = document.getElementById('editEmailModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const editModal = document.getElementById('editEmailModal');
+    if (editModal) {
+        editModal.addEventListener('click', function(e) {
+            if (e.target.classList.contains('add-user-modal-overlay')) {
+                closeEditEmailModal();
+            }
+        });
+    }
+});
 </script>
 
 @endsection
