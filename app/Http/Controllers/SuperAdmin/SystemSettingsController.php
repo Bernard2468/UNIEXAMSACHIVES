@@ -91,30 +91,41 @@ class SystemSettingsController extends Controller
             }
         }
 
-        foreach ($request->all() as $key => $value) {
-            // Skip CSRF token, renewal_reminder_days (handled above), and other non-setting fields
-            if (in_array($key, ['_token', '_method', 'renewal_reminder_days'])) {
+        // Iterate over the allowed keys rather than $request->all() so that
+        // unchecked boolean toggles (which browsers omit from the POST body)
+        // are always processed and correctly written as false.
+        $skipKeys = ['_token', '_method', 'renewal_reminder_days'];
+
+        foreach ($allowedKeys as $key) {
+            if (in_array($key, $skipKeys)) {
                 continue;
             }
 
             $setting = SystemSetting::where('key', $key)->first();
 
-            if ($setting && $setting->is_editable) {
-                // Handle boolean values
-                if ($setting->data_type === 'boolean') {
-                    $value = $request->has($key) ? true : false;
+            if (!$setting || !$setting->is_editable) {
+                continue;
+            }
+
+            if ($setting->data_type === 'boolean') {
+                // Checkbox absent from POST means unchecked → false
+                $value = $request->has($key) ? true : false;
+            } else {
+                // Skip non-boolean fields not submitted (e.g. hidden or missing inputs)
+                if (!$request->exists($key)) {
+                    continue;
                 }
+                $value = $request->input($key);
+            }
 
-                // Update setting
-                $oldValue = $setting->value;
-                SystemSetting::set($key, $value, auth()->id());
+            $oldValue = $setting->value;
+            SystemSetting::set($key, $value, auth()->id());
 
-                if ($oldValue !== $value) {
-                    $updated++;
+            if ($oldValue !== (string) $value) {
+                $updated++;
 
-                    if ($setting->requires_restart) {
-                        $requiresRestart = true;
-                    }
+                if ($setting->requires_restart) {
+                    $requiresRestart = true;
                 }
             }
         }
