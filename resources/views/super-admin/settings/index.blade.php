@@ -3,10 +3,11 @@
 @section('title', 'System Settings')
 
 @push('styles')
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <style>
     /* System Font Stack */
     body {
-        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        font-family: 'DM Sans', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     }
 
     /* Compact Modern Button Styles for Settings Page */
@@ -320,6 +321,161 @@
             padding: 1rem 0;
         }
     }
+
+    /* ── Premium input overrides ── */
+    .form-control {
+        border: 1.5px solid #e2e8f0 !important;
+        border-radius: 9px !important;
+        padding: 10px 14px !important;
+        font-family: 'DM Sans', system-ui, sans-serif !important;
+        font-size: 13.5px !important;
+        color: #0f172a !important;
+        background: #fff !important;
+        transition: border-color .2s ease, box-shadow .2s ease !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    .form-control:focus {
+        border-color: #01b2ac !important;
+        box-shadow: 0 0 0 3px rgba(1,178,172,.1) !important;
+    }
+    .form-control[readonly] {
+        background: #f8fafc !important;
+        color: #64748b !important;
+        cursor: not-allowed !important;
+    }
+    textarea.form-control { resize: vertical !important; }
+
+    /* ── Premium toggle (matching subscription plans) ── */
+    .sp-toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .sp-toggle-switch {
+        position: relative;
+        width: 46px; height: 24px;
+        flex-shrink: 0;
+    }
+    .sp-toggle-switch input {
+        opacity: 0; width: 0; height: 0;
+        position: absolute;
+    }
+    .sp-toggle-slider {
+        position: absolute; inset: 0;
+        background: #e2e8f0;
+        border-radius: 24px;
+        cursor: pointer;
+        transition: all .25s ease;
+    }
+    .sp-toggle-slider::before {
+        content: '';
+        position: absolute;
+        width: 18px; height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        top: 3px; left: 3px;
+        transition: all .25s ease;
+        box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    }
+    .sp-toggle-switch input:checked + .sp-toggle-slider { background: #01b2ac; }
+    .sp-toggle-switch input:checked + .sp-toggle-slider::before { transform: translateX(22px); }
+    .sp-toggle-switch input:disabled + .sp-toggle-slider { opacity: .5; cursor: not-allowed; }
+
+    .sp-status-pill {
+        font-family: 'Outfit', system-ui, sans-serif;
+        font-size: 11px; font-weight: 700;
+        padding: 3px 10px; border-radius: 20px;
+        letter-spacing: .3px; text-transform: uppercase;
+        transition: all .2s;
+        flex-shrink: 0;
+    }
+    .sp-status-pill.on  { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .sp-status-pill.off { background: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+
+    /* ── Security card special design ── */
+    .ss-card .settings-card-header {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-bottom: none;
+        padding: 20px 24px;
+    }
+    .ss-card .settings-card-header h5 {
+        color: #f1f5f9;
+        font-family: 'Outfit', system-ui, sans-serif;
+        font-size: 15px; font-weight: 700;
+        display: flex; align-items: center; gap: 14px;
+    }
+    .ss-header-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        background: rgba(1,178,172,.18);
+        display: flex; align-items: center; justify-content: center;
+        color: #01b2ac; font-size: 17px; flex-shrink: 0;
+    }
+    .ss-header-text { display: flex; flex-direction: column; gap: 2px; }
+    .ss-header-text small {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 12px; font-weight: 400; color: #94a3b8;
+    }
+
+    .ss-card .settings-card-body { padding: 0; }
+
+    .ss-row {
+        display: flex; align-items: center;
+        padding: 20px 24px; gap: 24px;
+        border-bottom: 1px solid #f8fafc;
+        transition: background .15s;
+    }
+    .ss-row:last-child { border-bottom: none; }
+    .ss-row:hover { background: #fafbfc; }
+
+    .ss-row-info { flex: 1; min-width: 0; }
+    .ss-row-title {
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 3px;
+    }
+    .ss-row-desc { font-size: 12.5px; color: #64748b; line-height: 1.5; }
+    .ss-row-hint {
+        display: flex; align-items: center; gap: 5px;
+        font-size: 11.5px; color: #94a3b8; margin-top: 6px;
+        font-style: italic;
+    }
+
+    .ss-row-control { flex-shrink: 0; display: flex; align-items: center; }
+
+    /* Domain input */
+    .ss-domain-wrap {
+        display: flex; align-items: center;
+        border: 1.5px solid #e2e8f0; border-radius: 10px;
+        overflow: hidden; background: #fff;
+        transition: border-color .2s, box-shadow .2s, opacity .2s;
+        min-width: 260px;
+    }
+    .ss-domain-wrap:focus-within {
+        border-color: #01b2ac;
+        box-shadow: 0 0 0 3px rgba(1,178,172,.1);
+    }
+    .ss-domain-prefix {
+        padding: 11px 13px;
+        background: #f8fafc; color: #475569;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 14px; font-weight: 700;
+        border-right: 1.5px solid #e2e8f0;
+        user-select: none; letter-spacing: 0;
+    }
+    .ss-domain-input {
+        flex: 1; padding: 11px 14px;
+        border: none; outline: none;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 13.5px; color: #0f172a;
+        background: transparent;
+    }
+    .ss-domain-input::placeholder { color: #94a3b8; }
+    .ss-domain-wrap.ss-dimmed { opacity: .4; pointer-events: none; }
+
+    @media (max-width: 768px) {
+        .ss-row { flex-direction: column; align-items: flex-start; gap: 14px; }
+        .ss-domain-wrap { min-width: 0; width: 100%; }
+    }
 </style>
 @endpush
 
@@ -382,81 +538,75 @@
 
         @foreach($settings as $category => $categorySettings)
 
-        {{-- Security category gets a dedicated card with smart toggle behaviour --}}
+        {{-- Security category — premium dedicated card --}}
         @if($category === 'security')
-        <div class="settings-card" id="security">
+        @php
+            $restrictSetting = $categorySettings->firstWhere('key', 'restrict_email_domain');
+            $domainSetting   = $categorySettings->firstWhere('key', 'allowed_email_domain');
+            $isRestricted    = $restrictSetting && $restrictSetting->typed_value;
+        @endphp
+        <div class="settings-card ss-card" id="security">
             <div class="settings-card-header">
-                <h5><i class="icofont-shield-alt"></i> Security</h5>
+                <h5>
+                    <div class="ss-header-icon"><i class="fas fa-shield-alt"></i></div>
+                    <div class="ss-header-text">
+                        Security
+                        <small>Control who can access the system based on email domain</small>
+                    </div>
+                </h5>
             </div>
+
             <div class="settings-card-body">
-                @php
-                    $restrictSetting = $categorySettings->firstWhere('key', 'restrict_email_domain');
-                    $domainSetting   = $categorySettings->firstWhere('key', 'allowed_email_domain');
-                    $isRestricted    = $restrictSetting && $restrictSetting->typed_value;
-                @endphp
 
-                {{-- Toggle row --}}
+                {{-- ── Toggle row ── --}}
                 @if($restrictSetting)
-                <div class="settings-form-group">
-                    <div class="row align-items-center">
-                        <div class="col-md-4">
-                            <label class="settings-form-label">
-                                {{ $restrictSetting->label }}
-                                @if($restrictSetting->description)
-                                <small>{{ $restrictSetting->description }}</small>
-                                @endif
-                            </label>
+                <div class="ss-row">
+                    <div class="ss-row-info">
+                        <div class="ss-row-title">{{ $restrictSetting->label }}</div>
+                        <div class="ss-row-desc">{{ $restrictSetting->description }}</div>
+                    </div>
+                    <div class="ss-row-control" style="gap: 12px;">
+                        <span id="restrict_badge" class="sp-status-pill {{ $isRestricted ? 'on' : 'off' }}">
+                            {{ $isRestricted ? 'Active' : 'Inactive' }}
+                        </span>
+                        <label class="sp-toggle-switch" style="margin:0">
+                            <input type="checkbox"
+                                   id="restrict_email_domain"
+                                   name="restrict_email_domain"
+                                   {{ $isRestricted ? 'checked' : '' }}
+                                   {{ !$restrictSetting->is_editable ? 'disabled' : '' }}>
+                            <span class="sp-toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                @endif
+
+                {{-- ── Domain input row ── --}}
+                @if($domainSetting)
+                <div class="ss-row" id="domain_row">
+                    <div class="ss-row-info">
+                        <div class="ss-row-title">{{ $domainSetting->label }}</div>
+                        <div class="ss-row-desc">{{ $domainSetting->description }}</div>
+                        <div class="ss-row-hint" id="domain_hint" style="{{ $isRestricted ? 'display:none' : '' }}">
+                            <i class="fas fa-info-circle"></i>
+                            Enable the restriction toggle above to activate domain filtering
                         </div>
-                        <div class="col-md-8">
-                            <div class="custom-control custom-switch">
-                                <input type="checkbox"
-                                       class="custom-control-input"
-                                       id="restrict_email_domain"
-                                       name="restrict_email_domain"
-                                       {{ $isRestricted ? 'checked' : '' }}
-                                       {{ !$restrictSetting->is_editable ? 'disabled' : '' }}>
-                                <label class="custom-control-label" for="restrict_email_domain">
-                                    <span id="restrict_label">{{ $isRestricted ? 'Enabled' : 'Disabled' }}</span>
-                                </label>
-                            </div>
+                    </div>
+                    <div class="ss-row-control">
+                        <div class="ss-domain-wrap {{ $isRestricted ? '' : 'ss-dimmed' }}" id="domain_wrap">
+                            <span class="ss-domain-prefix">{{ '@' }}</span>
+                            <input type="text"
+                                   class="ss-domain-input"
+                                   id="allowed_email_domain"
+                                   name="allowed_email_domain"
+                                   value="{{ $domainSetting->value }}"
+                                   placeholder="cug.edu.gh"
+                                   {{ !$domainSetting->is_editable ? 'readonly' : '' }}>
                         </div>
                     </div>
                 </div>
                 @endif
 
-                {{-- Domain input row --}}
-                @if($domainSetting)
-                <div class="settings-form-group" id="domain_row" style="{{ $isRestricted ? '' : 'opacity:0.45;' }}">
-                    <div class="row align-items-center">
-                        <div class="col-md-4">
-                            <label class="settings-form-label" for="allowed_email_domain">
-                                {{ $domainSetting->label }}
-                                @if($domainSetting->description)
-                                <small>{{ $domainSetting->description }}</small>
-                                @endif
-                            </label>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" style="border-radius:0.5rem 0 0 0.5rem; background:#f3f4f6; color:#6b7280; font-weight:600;">@</span>
-                                </div>
-                                <input type="text"
-                                       class="form-control"
-                                       id="allowed_email_domain"
-                                       name="allowed_email_domain"
-                                       value="{{ $domainSetting->value }}"
-                                       placeholder="cug.edu.gh"
-                                       style="border-radius:0 0.5rem 0.5rem 0;"
-                                       {{ !$domainSetting->is_editable ? 'readonly' : '' }}>
-                            </div>
-                            @if(!$isRestricted)
-                            <small class="text-muted mt-1 d-block"><i class="icofont-info-circle"></i> Enable the restriction toggle above to activate domain filtering.</small>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                @endif
             </div>
         </div>
 
@@ -482,16 +632,18 @@
                         </div>
                         <div class="col-md-8">
                             @if($setting->data_type === 'boolean')
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" 
-                                           class="custom-control-input" 
-                                           id="{{ $setting->key }}" 
-                                           name="{{ $setting->key }}"
-                                           {{ $setting->typed_value ? 'checked' : '' }}
-                                           {{ !$setting->is_editable ? 'disabled' : '' }}>
-                                    <label class="custom-control-label" for="{{ $setting->key }}">
-                                        {{ $setting->typed_value ? 'Enabled' : 'Disabled' }}
+                                <div class="sp-toggle-row">
+                                    <label class="sp-toggle-switch" style="margin:0">
+                                        <input type="checkbox"
+                                               id="{{ $setting->key }}"
+                                               name="{{ $setting->key }}"
+                                               {{ $setting->typed_value ? 'checked' : '' }}
+                                               {{ !$setting->is_editable ? 'disabled' : '' }}>
+                                        <span class="sp-toggle-slider"></span>
                                     </label>
+                                    <span class="sp-status-pill {{ $setting->typed_value ? 'on' : 'off' }}" id="pill_{{ $setting->key }}">
+                                        {{ $setting->typed_value ? 'Enabled' : 'Disabled' }}
+                                    </span>
                                 </div>
                             @elseif($setting->data_type === 'json')
                                 @if($setting->key === 'renewal_reminder_days')
@@ -624,36 +776,41 @@
 
 @push('scripts')
 <script>
-    // Security: sync domain row opacity/hint with the restriction toggle
+    // ── Security toggle: sync badge + domain dimming ──
     (function () {
         var toggle = document.getElementById('restrict_email_domain');
-        var domainRow = document.getElementById('domain_row');
-        var label = document.getElementById('restrict_label');
+        var badge  = document.getElementById('restrict_badge');
+        var wrap   = document.getElementById('domain_wrap');
+        var hint   = document.getElementById('domain_hint');
 
-        function syncDomainRow() {
-            if (!toggle || !domainRow) return;
-            var enabled = toggle.checked;
-            domainRow.style.opacity = enabled ? '1' : '0.45';
-            if (label) label.textContent = enabled ? 'Enabled' : 'Disabled';
+        function sync() {
+            if (!toggle) return;
+            var on = toggle.checked;
 
-            var hint = domainRow.querySelector('small.text-muted');
-            if (enabled) {
-                if (hint) hint.remove();
-            } else {
-                if (!hint) {
-                    var input = domainRow.querySelector('.col-md-8');
-                    if (input) {
-                        var el = document.createElement('small');
-                        el.className = 'text-muted mt-1 d-block';
-                        el.innerHTML = '<i class="icofont-info-circle"></i> Enable the restriction toggle above to activate domain filtering.';
-                        input.appendChild(el);
-                    }
-                }
+            if (badge) {
+                badge.textContent = on ? 'Active' : 'Inactive';
+                badge.className = 'sp-status-pill ' + (on ? 'on' : 'off');
+            }
+            if (wrap) {
+                wrap.classList.toggle('ss-dimmed', !on);
+            }
+            if (hint) {
+                hint.style.display = on ? 'none' : 'flex';
             }
         }
 
-        if (toggle) toggle.addEventListener('change', syncDomainRow);
+        if (toggle) toggle.addEventListener('change', sync);
     })();
+
+    // ── Generic boolean toggles: live pill update ──
+    document.querySelectorAll('.sp-toggle-row .sp-toggle-switch input[type="checkbox"]').forEach(function(input) {
+        var pill = document.getElementById('pill_' + input.id);
+        if (!pill) return;
+        input.addEventListener('change', function() {
+            pill.textContent  = input.checked ? 'Enabled' : 'Disabled';
+            pill.className = 'sp-status-pill ' + (input.checked ? 'on' : 'off');
+        });
+    });
 
     // Smooth scroll to anchor on page load
     document.addEventListener('DOMContentLoaded', function() {
