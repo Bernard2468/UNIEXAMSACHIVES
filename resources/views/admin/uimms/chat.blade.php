@@ -612,48 +612,418 @@
 
 {{-- Assignment Modal --}}
 <div class="modal fade" id="assignModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Assign Memo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-dialog-centered assign-modal-dialog">
+        <div class="modal-content assign-modal-content">
+
+            <div class="assign-modal-header">
+                <div class="assign-header-icon-wrap">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <polyline points="16 11 18 13 22 9"/>
+                    </svg>
+                </div>
+                <div class="assign-header-text">
+                    <h5 class="assign-modal-title">Assign Memo</h5>
+                    <p class="assign-modal-subtitle">Route this memo to one or more team members</p>
+                </div>
+                <button type="button" class="assign-close-btn" data-bs-dismiss="modal" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
             </div>
+
             <form id="assign-form">
                 @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Assign to User(s) <span class="text-muted">(Select one or more)</span></label>
-                        <div class="mb-2">
-                            <input type="text" id="user-search-input" class="form-control" placeholder="Search by name or email..." autocomplete="off">
-                        </div>
-                        <div class="border rounded p-3" id="user-list-container" style="max-height: 300px; overflow-y: auto;">
-                            @foreach($users as $user)
-                                <div class="form-check mb-2 user-item" data-name="{{ strtolower($user->first_name . ' ' . $user->last_name) }}" data-email="{{ strtolower($user->email) }}">
-                                    <input class="form-check-input" type="checkbox" name="assignee_ids[]" value="{{ $user->id }}" id="assignee_{{ $user->id }}">
-                                    <label class="form-check-label d-flex align-items-center flex-wrap gap-2" for="assignee_{{ $user->id }}">
-                                        <span>{{ $user->first_name }} {{ $user->last_name }} <span class="text-muted">({{ $user->email }})</span></span>
-                                        @if($user->department)
-                                            <span class="badge bg-secondary fw-normal" style="font-size: 0.7rem;">{{ $user->department->name }}</span>
-                                        @endif
-                                    </label>
+                <div class="assign-modal-body">
+
+                    <div id="selected-chips" class="assign-chips-wrap" style="display:none;"></div>
+
+                    <div class="assign-search-wrap">
+                        <svg class="assign-search-ico" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" id="user-search-input" class="assign-search-field" placeholder="Search by name or email…" autocomplete="off">
+                    </div>
+
+                    <div id="user-list-container" class="assign-user-list">
+                        @foreach($users as $user)
+                            @php $initials = strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)); @endphp
+                            <label class="assign-user-row user-item"
+                                   for="assignee_{{ $user->id }}"
+                                   data-name="{{ strtolower($user->first_name . ' ' . $user->last_name) }}"
+                                   data-email="{{ strtolower($user->email) }}"
+                                   data-initials="{{ $initials }}"
+                                   data-fullname="{{ $user->first_name }} {{ $user->last_name }}">
+                                <input class="assign-cb" type="checkbox" name="assignee_ids[]" value="{{ $user->id }}" id="assignee_{{ $user->id }}">
+                                <div class="assign-avatar">{{ $initials }}</div>
+                                <div class="assign-user-meta">
+                                    <span class="assign-user-name">{{ $user->first_name }} {{ $user->last_name }}</span>
+                                    <span class="assign-user-email">{{ $user->email }}</span>
                                 </div>
-                            @endforeach
-                        </div>
-                        <!-- <small class="text-muted">Select at least one user to assign the memo.</small> -->
+                                @if($user->department)
+                                    <span class="assign-dept-pill">{{ $user->department->name }}</span>
+                                @endif
+                                <div class="assign-tick">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                            </label>
+                        @endforeach
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Assignment Message (Optional)</label>
-                        <textarea name="message" class="form-control" rows="3" placeholder="Add a message explaining the assignment..."></textarea>
+
+                    <div class="assign-note-section">
+                        <label class="assign-note-label">
+                            Note
+                            <span class="assign-opt-tag">optional</span>
+                        </label>
+                        <textarea name="message" class="assign-note-field" rows="3" placeholder="Add context or instructions for the assignee(s)…"></textarea>
                     </div>
+
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Assign Memo</button>
+                <div class="assign-modal-footer">
+                    <button type="button" class="assign-btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="assign-btn-submit" id="assign-submit-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 11 18 13 22 9"/>
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        </svg>
+                        <span>Assign Memo</span>
+                    </button>
                 </div>
             </form>
+
         </div>
     </div>
 </div>
+
+{{-- Assign Modal Styles --}}
+<style>
+.assign-modal-dialog { max-width: 468px; }
+
+.assign-modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.16), 0 6px 20px rgba(0,0,0,0.07);
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ---- Header ---- */
+.assign-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 22px 22px 18px;
+    background: #0f172a;
+    position: relative;
+}
+.assign-header-icon-wrap {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.11);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #93c5fd;
+    flex-shrink: 0;
+}
+.assign-header-text { flex: 1; min-width: 0; }
+.assign-modal-title {
+    margin: 0 0 2px;
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: -0.01em;
+}
+.assign-modal-subtitle {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #475569;
+    line-height: 1;
+}
+.assign-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 28px;
+    height: 28px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 7px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.assign-close-btn:hover { background: rgba(255,255,255,0.13); color: #f1f5f9; }
+
+/* ---- Body ---- */
+.assign-modal-body { padding: 18px 20px 0; background: #fff; }
+
+/* Selected chips */
+.assign-chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 13px;
+}
+.assign-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    padding: 3px 9px 3px 5px;
+    font-size: 0.76rem;
+    color: #1d4ed8;
+    font-weight: 500;
+}
+.assign-chip-av {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Search */
+.assign-search-wrap { position: relative; margin-bottom: 10px; }
+.assign-search-ico {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+.assign-search-field {
+    width: 100%;
+    padding: 9px 12px 9px 34px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    font-size: 0.83rem;
+    color: #1e293b;
+    background: #f8fafc;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    font-family: inherit;
+}
+.assign-search-field:focus {
+    border-color: #3b82f6;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.assign-search-field::placeholder { color: #94a3b8; }
+
+/* User list */
+.assign-user-list {
+    max-height: 226px;
+    overflow-y: auto;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    scrollbar-width: thin;
+    scrollbar-color: #e2e8f0 transparent;
+}
+.assign-user-list::-webkit-scrollbar { width: 4px; }
+.assign-user-list::-webkit-scrollbar-track { background: transparent; }
+.assign-user-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+.assign-user-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px 13px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.12s;
+    margin: 0;
+}
+.assign-user-row:last-child { border-bottom: none; }
+.assign-user-row:hover { background: #f8fafc; }
+.assign-user-row.is-selected { background: #eff6ff; border-bottom-color: #dbeafe; }
+
+.assign-cb { display: none; }
+
+.assign-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+    transition: background 0.12s, color 0.12s;
+}
+.assign-user-row.is-selected .assign-avatar { background: #3b82f6; color: #fff; }
+
+.assign-user-meta { flex: 1; min-width: 0; }
+.assign-user-name {
+    display: block;
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.assign-user-email {
+    display: block;
+    font-size: 0.71rem;
+    color: #94a3b8;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.assign-dept-pill {
+    font-size: 0.67rem;
+    font-weight: 500;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.assign-user-row.is-selected .assign-dept-pill {
+    background: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.assign-tick {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: transparent;
+    background: transparent;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.assign-user-row.is-selected .assign-tick {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+}
+
+/* No results */
+.assign-no-results { text-align: center; padding: 22px 16px; color: #94a3b8; font-size: 0.81rem; }
+
+/* Note / message */
+.assign-note-section { margin-top: 14px; }
+.assign-note-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+.assign-opt-tag {
+    font-size: 0.68rem;
+    font-weight: 400;
+    color: #9ca3af;
+    background: #f3f4f6;
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+.assign-note-field {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 9px;
+    font-size: 0.82rem;
+    color: #1e293b;
+    background: #f8fafc;
+    outline: none;
+    resize: none;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    font-family: inherit;
+    line-height: 1.55;
+}
+.assign-note-field:focus {
+    border-color: #3b82f6;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.assign-note-field::placeholder { color: #94a3b8; }
+
+/* ---- Footer ---- */
+.assign-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    padding: 16px 20px 20px;
+    background: #fff;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 16px;
+}
+.assign-btn-cancel {
+    padding: 8px 17px;
+    background: transparent;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    font-family: inherit;
+}
+.assign-btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; color: #334155; }
+
+.assign-btn-submit {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 18px;
+    background: #0f172a;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    letter-spacing: -0.01em;
+}
+.assign-btn-submit:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(15,23,42,0.28);
+}
+.assign-btn-submit:active { transform: translateY(0); box-shadow: none; }
+.assign-btn-submit:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+</style>
 
 {{-- Suspend Modal --}}
 <div class="modal fade" id="suspendModal" tabindex="-1">
@@ -3396,14 +3766,47 @@ function scrollToBottom() {
 
 // Assignment functions
 function showAssignModal() {
+    // Reset checkboxes and selection state
+    document.querySelectorAll('.assign-cb').forEach(cb => { cb.checked = false; });
+    document.querySelectorAll('.assign-user-row').forEach(row => row.classList.remove('is-selected'));
+    const chips = document.getElementById('selected-chips');
+    if (chips) { chips.innerHTML = ''; chips.style.display = 'none'; }
+    const noteField = document.querySelector('.assign-note-field');
+    if (noteField) noteField.value = '';
+
     const modal = new bootstrap.Modal(document.getElementById('assignModal'));
     modal.show();
-    
-    // Clear search when modal opens
+
     const searchInput = document.getElementById('user-search-input');
     if (searchInput) {
         searchInput.value = '';
         filterUserList('');
+    }
+}
+
+function updateAssignSelection() {
+    const chipsWrap = document.getElementById('selected-chips');
+    if (!chipsWrap) return;
+    const chips = [];
+    document.querySelectorAll('.assign-cb').forEach(function(cb) {
+        const row = cb.closest('.assign-user-row');
+        if (cb.checked) {
+            row.classList.add('is-selected');
+            const initials = row.getAttribute('data-initials') || '?';
+            const fullname = row.getAttribute('data-fullname') || '';
+            chips.push(
+                `<span class="assign-chip"><span class="assign-chip-av">${initials}</span>${fullname}</span>`
+            );
+        } else {
+            row.classList.remove('is-selected');
+        }
+    });
+    if (chips.length > 0) {
+        chipsWrap.innerHTML = chips.join('');
+        chipsWrap.style.display = 'flex';
+    } else {
+        chipsWrap.innerHTML = '';
+        chipsWrap.style.display = 'none';
     }
 }
 
@@ -3432,7 +3835,7 @@ function filterUserList(searchTerm) {
     if (visibleCount === 0 && searchLower !== '') {
         if (!noResultsMsg) {
             noResultsMsg = document.createElement('div');
-            noResultsMsg.className = 'no-results-message text-muted text-center p-3';
+            noResultsMsg.className = 'assign-no-results';
             noResultsMsg.textContent = 'No users found matching your search.';
             container.appendChild(noResultsMsg);
         }
@@ -3444,15 +3847,14 @@ function filterUserList(searchTerm) {
     }
 }
 
-// Add search input event listener
+// Assign modal: search + selection listeners
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('user-search-input');
     if (searchInput) {
         searchInput.addEventListener('input', function(e) {
             filterUserList(e.target.value);
         });
-        
-        // Clear search when modal is hidden
+
         const assignModal = document.getElementById('assignModal');
         if (assignModal) {
             assignModal.addEventListener('hidden.bs.modal', function() {
@@ -3461,6 +3863,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+
+    // Wire up checkbox change → chip/selection state
+    document.querySelectorAll('.assign-cb').forEach(function(cb) {
+        cb.addEventListener('change', updateAssignSelection);
+    });
 });
 
 document.getElementById('assign-form').addEventListener('submit', function(e) {
