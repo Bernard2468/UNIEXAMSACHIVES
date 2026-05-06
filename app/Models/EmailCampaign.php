@@ -28,6 +28,8 @@ class EmailCampaign extends Model
         'failed_count',
         'created_by',
         'reference',
+        'letterhead',
+        'cc_users',
         // UIMMS fields
         'memo_status',
         'current_assignee_id',
@@ -44,6 +46,7 @@ class EmailCampaign extends Model
     protected $casts = [
         'attachments' => 'array',
         'selected_users' => 'array',
+        'cc_users' => 'array',
         'scheduled_at' => 'datetime',
         'sent_at' => 'datetime',
         // UIMMS casts
@@ -90,6 +93,16 @@ class EmailCampaign extends Model
     public function recipients(): HasMany
     {
         return $this->hasMany(EmailCampaignRecipient::class, 'comm_campaign_id');
+    }
+
+    public function toRecipients(): HasMany
+    {
+        return $this->hasMany(EmailCampaignRecipient::class, 'comm_campaign_id')->where('recipient_role', 'to');
+    }
+
+    public function ccRecipients(): HasMany
+    {
+        return $this->hasMany(EmailCampaignRecipient::class, 'comm_campaign_id')->where('recipient_role', 'cc');
     }
 
     public function sentRecipients(): HasMany

@@ -112,10 +112,10 @@ class AdvanceCommunicationController extends Controller
     public function store(Request $request)
     {
         $this->checkAdminAccess();
-        
+
         // Determine if this is a draft or send action
         $isDraft = $request->input('action') === 'draft';
-        
+
         $validator = Validator::make($request->all(), [
             'subject' => 'required|string|max:500',
             'message' => 'required|string',
@@ -129,6 +129,9 @@ class AdvanceCommunicationController extends Controller
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,png,gif,zip',
+            'letterhead' => 'nullable|in:cug,internal_memo',
+            'cc_users' => 'nullable|array',
+            'cc_users.*' => 'exists:users,id',
             'send_immediately' => 'boolean',
             'scheduled_at' => $isDraft ? 'nullable|date' : 'nullable|required_if:send_immediately,false|date|after:now',
         ]);
@@ -154,6 +157,12 @@ class AdvanceCommunicationController extends Controller
         // Get recipients using helper method
         $recipientUsers = $this->getRecipientsByType($request->recipient_type, $request->selected_users);
 
+        // Resolve CC users (exclude anyone already in primary recipient list)
+        $ccUserIds = collect($request->input('cc_users', []))->map('intval')->unique()->values()->toArray();
+        $primaryIds = $recipientUsers->pluck('id')->toArray();
+        $ccUserIds = array_values(array_diff($ccUserIds, $primaryIds));
+        $ccUsers = $ccUserIds ? User::whereIn('id', $ccUserIds)->get() : collect();
+
         // Create campaign
         $campaign = EmailCampaign::create([
             'subject' => $request->subject,
@@ -166,6 +175,8 @@ class AdvanceCommunicationController extends Controller
             'total_recipients' => $recipientUsers->count(),
             'created_by' => auth()->id(),
             'reference' => $this->generateUniqueReference(),
+            'letterhead' => $request->letterhead ?: null,
+            'cc_users' => $ccUserIds ?: null,
         ]);
 
         // If this is a draft, save and return immediately - NO EMAIL PROCESSING
@@ -175,11 +186,22 @@ class AdvanceCommunicationController extends Controller
         }
 
         // ONLY EXECUTE EMAIL SENDING LOGIC FOR NON-DRAFT CAMPAIGNS
-        // Create recipient records
+        // Create primary recipient records
         foreach ($recipientUsers as $user) {
             EmailCampaignRecipient::create([
                 'comm_campaign_id' => $campaign->id,
                 'user_id' => $user->id,
+                'recipient_role' => 'to',
+                'status' => 'pending',
+            ]);
+        }
+
+        // Create CC recipient records
+        foreach ($ccUsers as $ccUser) {
+            EmailCampaignRecipient::create([
+                'comm_campaign_id' => $campaign->id,
+                'user_id' => $ccUser->id,
+                'recipient_role' => 'cc',
                 'status' => 'pending',
             ]);
         }
@@ -268,6 +290,62 @@ class AdvanceCommunicationController extends Controller
                     ]);
                 
                 $failedCount++;
+            }
+        }
+
+        // Send notification emails to CC users
+        foreach ($ccUsers as $ccUser) {
+            try {
+                $htmlContent = view('mails.campaign_simple', [
+                    'campaign' => $campaign,
+                    'user' => $ccUser,
+                    'subject' => '[Cc] ' . $campaign->subject,
+                    'message' => $campaign->message,
+                ])->render();
+
+                $attachments = [];
+                if ($campaign->attachments && is_array($campaign->attachments)) {
+                    foreach ($campaign->attachments as $attachment) {
+                        $filePath = storage_path('app/public/' . $attachment['path']);
+                        if (file_exists($filePath)) {
+                            $fileContent = file_get_contents($filePath);
+                            if ($fileContent !== false) {
+                                $attachments[] = [
+                                    'filename' => $attachment['name'],
+                                    'content' => base64_encode($fileContent),
+                                    'type' => $attachment['type'] ?? mime_content_type($filePath),
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                $fromName = $campaign->creator ? trim($campaign->creator->first_name . ' ' . $campaign->creator->last_name) : (config('mail.from.name') ?: 'CUG');
+                $result = $resendService->sendEmail(
+                    $ccUser->email,
+                    '[Cc] ' . $campaign->subject,
+                    $htmlContent,
+                    config('mail.from.address'),
+                    $attachments,
+                    0,
+                    $fromName
+                );
+
+                EmailCampaignRecipient::where('comm_campaign_id', $campaign->id)
+                    ->where('user_id', $ccUser->id)
+                    ->where('recipient_role', 'cc')
+                    ->update([
+                        'status' => $result['success'] ? 'sent' : 'failed',
+                        'sent_at' => $result['success'] ? now() : null,
+                        'error_message' => $result['success'] ? null : ('ResendMailService error: ' . ($result['error'] ?? 'Unknown error')),
+                    ]);
+
+                usleep(500000);
+            } catch (Exception $e) {
+                EmailCampaignRecipient::where('comm_campaign_id', $campaign->id)
+                    ->where('user_id', $ccUser->id)
+                    ->where('recipient_role', 'cc')
+                    ->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
             }
         }
 
@@ -425,12 +503,12 @@ class AdvanceCommunicationController extends Controller
     public function send(EmailCampaign $campaign)
     {
         $this->checkAdminAccess();
-        
+
         // Ensure user can only send their own campaigns
         if ($campaign->created_by !== auth()->id()) {
             abort(403, 'Unauthorized access to this memo.');
         }
-        
+
         if ($campaign->status !== 'draft' && $campaign->status !== 'scheduled') {
             return redirect()->back()->with('error', 'Memo cannot be sent in current status.');
         }
@@ -438,15 +516,32 @@ class AdvanceCommunicationController extends Controller
         // Determine recipients based on campaign settings using helper method
         $recipientUsers = $this->getRecipientsByType($campaign->recipient_type, $campaign->selected_users);
 
-        // Ensure recipient records exist (create if draft or missing)
-        if ($campaign->status === 'draft' || $campaign->recipients()->count() === 0) {
+        // Ensure primary recipient records exist (create if draft or missing)
+        if ($campaign->status === 'draft' || $campaign->recipients()->where('recipient_role', 'to')->count() === 0) {
             foreach ($recipientUsers as $user) {
                 EmailCampaignRecipient::firstOrCreate([
                     'comm_campaign_id' => $campaign->id,
                     'user_id' => $user->id,
+                    'recipient_role' => 'to',
                 ], [
                     'status' => 'pending',
                 ]);
+            }
+
+            // Ensure CC recipient records exist
+            $ccUserIds = $campaign->cc_users ?? [];
+            $primaryIds = $recipientUsers->pluck('id')->toArray();
+            $ccUserIds = array_values(array_diff($ccUserIds, $primaryIds));
+            if ($ccUserIds) {
+                foreach ($ccUserIds as $ccUserId) {
+                    EmailCampaignRecipient::firstOrCreate([
+                        'comm_campaign_id' => $campaign->id,
+                        'user_id' => $ccUserId,
+                        'recipient_role' => 'cc',
+                    ], [
+                        'status' => 'pending',
+                    ]);
+                }
             }
 
             $campaign->update(['total_recipients' => $recipientUsers->count()]);
@@ -533,6 +628,63 @@ class AdvanceCommunicationController extends Controller
                         'error_message' => $e->getMessage()
                     ]);
                 $failedCount++;
+            }
+        }
+
+        // Send notification emails to CC users
+        $ccUsers = $campaign->ccRecipients()->with('user')->where('status', 'pending')->get()->pluck('user');
+        foreach ($ccUsers as $ccUser) {
+            try {
+                $htmlContent = view('mails.campaign_simple', [
+                    'campaign' => $campaign,
+                    'user' => $ccUser,
+                    'subject' => '[Cc] ' . $campaign->subject,
+                    'message' => $campaign->message,
+                ])->render();
+
+                $attachments = [];
+                if ($campaign->attachments && is_array($campaign->attachments)) {
+                    foreach ($campaign->attachments as $attachment) {
+                        $filePath = storage_path('app/public/' . $attachment['path']);
+                        if (file_exists($filePath)) {
+                            $fileContent = file_get_contents($filePath);
+                            if ($fileContent !== false) {
+                                $attachments[] = [
+                                    'filename' => $attachment['name'],
+                                    'content' => base64_encode($fileContent),
+                                    'type' => $attachment['type'] ?? mime_content_type($filePath),
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                $fromName = $campaign->creator ? trim($campaign->creator->first_name . ' ' . $campaign->creator->last_name) : (config('mail.from.name') ?: 'CUG');
+                $result = $resendService->sendEmail(
+                    $ccUser->email,
+                    '[Cc] ' . $campaign->subject,
+                    $htmlContent,
+                    config('mail.from.address'),
+                    $attachments,
+                    0,
+                    $fromName
+                );
+
+                EmailCampaignRecipient::where('comm_campaign_id', $campaign->id)
+                    ->where('user_id', $ccUser->id)
+                    ->where('recipient_role', 'cc')
+                    ->update([
+                        'status' => $result['success'] ? 'sent' : 'failed',
+                        'sent_at' => $result['success'] ? now() : null,
+                        'error_message' => $result['success'] ? null : ('ResendMailService error: ' . ($result['error'] ?? 'Unknown error')),
+                    ]);
+
+                usleep(500000);
+            } catch (Exception $e) {
+                EmailCampaignRecipient::where('comm_campaign_id', $campaign->id)
+                    ->where('user_id', $ccUser->id)
+                    ->where('recipient_role', 'cc')
+                    ->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
             }
         }
 

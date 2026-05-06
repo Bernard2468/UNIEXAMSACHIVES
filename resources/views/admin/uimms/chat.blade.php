@@ -146,24 +146,116 @@
                             </div>
                         </div>
 
-                        {{-- Memo Details Section --}}
-                        <div class="memo-details-section">
-                            <div class="memo-details-content">
+                        {{-- ===== MEMO DETAILS / FORMAL LETTER ===== --}}
+                        @php
+                            $hasLetterhead = !empty($memo->letterhead);
+                            $letterheadUrl = match($memo->letterhead ?? '') {
+                                'cug'           => 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778065984/57a43cc8-0c87-4b69-9679-6299960a52d2.png',
+                                'internal_memo' => 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png',
+                                default         => null,
+                            };
+                            $ccRecipients = $memo->ccRecipients->load('user');
+                            $toRecipients = $memo->recipients->filter(fn($r) => $r->recipient_role === 'to');
+                            $isCC = $memo->recipients->where('user_id', auth()->id())->where('recipient_role', 'cc')->isNotEmpty();
+                        @endphp
+
+                        <div class="memo-details-section {{ $hasLetterhead ? 'letter-mode' : '' }}" id="memo-letter-wrapper">
+
+                            {{-- ── LETTERHEAD BAND ── --}}
+                            @if($hasLetterhead)
+                            <div class="memo-letterhead-band">
+                                <img src="{{ $letterheadUrl }}" alt="Official Letterhead" class="memo-letterhead-img">
+                            </div>
+                            @endif
+
+                            {{-- ── CC BADGE (visible only to CC'd users) ── --}}
+                            @if($isCC)
+                            <div class="cc-viewer-notice">
+                                <i class="icofont-info-circle"></i>
+                                You are <strong>Cc'd</strong> on this memo — you have received a copy for your information.
+                            </div>
+                            @endif
+
+                            <div class="memo-details-content {{ $hasLetterhead ? 'formal-letter-body' : '' }}">
+
+                                {{-- ── FORMAL HEADER TABLE (letterhead mode) ── --}}
+                                @if($hasLetterhead)
+                                <table class="formal-header-table">
+                                    <tr>
+                                        <td class="fht-label">Ref:</td>
+                                        <td class="fht-value">{{ $memo->reference ?? '—' }}</td>
+                                        <td class="fht-label">Date:</td>
+                                        <td class="fht-value">{{ $memo->created_at->format('d F Y') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fht-label">From:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-person">
+                                                <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                     alt="{{ $memo->creator->first_name }}" class="fht-avatar">
+                                                {{ $memo->creator->first_name }} {{ $memo->creator->last_name }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fht-label">To:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-recipients">
+                                                @foreach($toRecipients->take(5) as $r)
+                                                    <span class="fht-person">
+                                                        <img src="{{ $r->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                             alt="{{ $r->user->first_name }}" class="fht-avatar">
+                                                        {{ $r->user->first_name }} {{ $r->user->last_name }}
+                                                    </span>
+                                                @endforeach
+                                                @if($toRecipients->count() > 5)
+                                                    <span class="fht-overflow">+{{ $toRecipients->count() - 5 }} more</span>
+                                                @endif
+                                                @if($toRecipients->isEmpty())
+                                                    <span class="text-muted">All registered users</span>
+                                                @endif
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @if($ccRecipients->isNotEmpty())
+                                    <tr>
+                                        <td class="fht-label">Cc:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-recipients">
+                                                @foreach($ccRecipients as $ccR)
+                                                    <span class="fht-person fht-cc-person">
+                                                        <img src="{{ $ccR->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                             alt="{{ $ccR->user->first_name }}" class="fht-avatar">
+                                                        {{ $ccR->user->first_name }} {{ $ccR->user->last_name }}
+                                                    </span>
+                                                @endforeach
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endif
+                                    <tr>
+                                        <td class="fht-label">Subject:</td>
+                                        <td class="fht-value fht-subject" colspan="3">{{ $memo->subject }}</td>
+                                    </tr>
+                                </table>
+                                <div class="formal-divider"></div>
+                                @else
+                                {{-- ── PLAIN MODE HEADER STRIP ── --}}
                                 <div class="memo-details-single-row">
                                     <div class="memo-detail-item-inline">
                                         <label>From:</label>
                                         <span class="memo-sender">
-                                            <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}" 
+                                            <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
                                                  alt="{{ $memo->creator->first_name }}" class="sender-avatar">
                                             {{ $memo->creator->first_name }} {{ $memo->creator->last_name }}
                                         </span>
                                     </div>
-                                    
+
                                     <div class="memo-detail-item-inline">
                                         <label>Created:</label>
                                         <span class="memo-date">{{ $memo->created_at->format('M d, Y H:i') }}</span>
                                     </div>
-                                    
+
                                     @if($canParticipate && $memo->workflow_history && count($memo->workflow_history) > 0)
                                         @php
                                             $lastAssignment = collect($memo->workflow_history)
@@ -179,7 +271,7 @@
                                                         $assigner = \App\Models\User::find($lastAssignment['user_id']);
                                                     @endphp
                                                     @if($assigner)
-                                                        <img src="{{ $assigner->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}" 
+                                                        <img src="{{ $assigner->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
                                                              alt="{{ $assigner->first_name }}" class="assigner-avatar">
                                                         {{ $assigner->first_name }} {{ $assigner->last_name }}
                                                     @else
@@ -189,12 +281,12 @@
                                             </div>
                                         @endif
                                     @endif
-                                    
+
                                     <div class="memo-detail-item-inline">
                                         <label>Assigned To:</label>
                                         <span class="memo-assignee">
                                             @if($memo->currentAssignee)
-                                                <img src="{{ $memo->currentAssignee->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}" 
+                                                <img src="{{ $memo->currentAssignee->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
                                                      alt="{{ $memo->currentAssignee->first_name }}" class="assignee-avatar">
                                                 {{ $memo->currentAssignee->first_name }} {{ $memo->currentAssignee->last_name }}
                                             @else
@@ -202,19 +294,40 @@
                                             @endif
                                         </span>
                                     </div>
+
+                                    {{-- CC row (plain mode) --}}
+                                    @if($ccRecipients->isNotEmpty())
+                                    <div class="memo-detail-item-inline cc-inline-row">
+                                        <label>Cc:</label>
+                                        <span class="cc-inline-list">
+                                            @foreach($ccRecipients as $ccR)
+                                                <span class="cc-chip">
+                                                    <img src="{{ $ccR->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                         alt="{{ $ccR->user->first_name }}" class="cc-chip-avatar">
+                                                    {{ $ccR->user->first_name }} {{ $ccR->user->last_name }}
+                                                </span>
+                                            @endforeach
+                                        </span>
+                                    </div>
+                                    @endif
                                 </div>
-                                
+                                @endif
+
+                                {{-- ── MESSAGE BODY ── --}}
                                 @if($memo->message)
                                 <div class="memo-details-row">
                                     <div class="memo-detail-item full-width">
+                                        @if(!$hasLetterhead)
                                         <label>Message:</label>
-                                        <div class="memo-message-content">
+                                        @endif
+                                        <div class="memo-message-content {{ $hasLetterhead ? 'formal-message' : '' }}">
                                             {!! $memo->message !!}
                                         </div>
                                     </div>
                                 </div>
                                 @endif
-                                
+
+                                {{-- ── ATTACHMENTS ── --}}
                                 @if($memo->attachments && count($memo->attachments) > 0)
                                 <div class="memo-details-row">
                                     <div class="memo-detail-item full-width">
@@ -240,14 +353,14 @@
                                                         <span class="attachment-size">{{ number_format($attachment['size'] / 1024, 1) }} KB</span>
                                                     </div>
                                                     <div class="attachment-actions">
-                                                        <a href="{{ route('dashboard.uimms.chat.attachment.view', ['memo' => $memo->id, 'index' => $index]) }}" 
-                                                           class="attachment-view" 
-                                                           target="_blank" 
+                                                        <a href="{{ route('dashboard.uimms.chat.attachment.view', ['memo' => $memo->id, 'index' => $index]) }}"
+                                                           class="attachment-view"
+                                                           target="_blank"
                                                            title="View {{ $attachment['name'] }}">
                                                             <i class="icofont-eye"></i>
                                                         </a>
-                                                        <a href="{{ route('dashboard.uimms.chat.attachment.download', ['memo' => $memo->id, 'index' => $index]) }}" 
-                                                           class="attachment-download" 
+                                                        <a href="{{ route('dashboard.uimms.chat.attachment.download', ['memo' => $memo->id, 'index' => $index]) }}"
+                                                           class="attachment-download"
                                                            title="Download {{ $attachment['name'] }}">
                                                             <i class="icofont-download"></i>
                                                         </a>
@@ -258,8 +371,9 @@
                                     </div>
                                 </div>
                                 @endif
-                            </div>
-                        </div>
+
+                            </div>{{-- /memo-details-content --}}
+                        </div>{{-- /memo-details-section --}}
 
                         {{-- Chat Messages Container --}}
                         <div class="chat-container">
@@ -1347,6 +1461,164 @@
     border-radius: 8px;
     margin-bottom: 20px;
     overflow: hidden;
+}
+
+/* ===== FORMAL LETTER MODE ===== */
+.memo-details-section.letter-mode {
+    border: 1.5px solid #c7d7f5;
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(26,74,155,0.09);
+}
+
+/* Letterhead band at the top of the letter */
+.memo-letterhead-band {
+    width: 100%;
+    background: #fff;
+    border-bottom: 2px solid #e9ecef;
+    line-height: 0;
+}
+.memo-letterhead-img {
+    width: 100%;
+    display: block;
+    max-height: 180px;
+    object-fit: cover;
+    object-position: top;
+}
+
+/* CC notice badge */
+.cc-viewer-notice {
+    background: #fffbeb;
+    border-bottom: 1px solid #fde68a;
+    padding: 8px 20px;
+    font-size: 13px;
+    color: #92400e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cc-viewer-notice i {
+    font-size: 16px;
+    color: #d97706;
+}
+
+/* Formal letter body padding */
+.memo-details-content.formal-letter-body {
+    padding: 24px 32px 28px;
+}
+
+/* Formal header table */
+.formal-header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+    font-size: 14px;
+}
+.formal-header-table tr {
+    border-bottom: 1px solid #f1f5f9;
+}
+.formal-header-table tr:last-child {
+    border-bottom: none;
+}
+.fht-label {
+    width: 80px;
+    font-weight: 700;
+    color: #374151;
+    padding: 7px 14px 7px 0;
+    vertical-align: top;
+    white-space: nowrap;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+}
+.fht-value {
+    color: #1e293b;
+    padding: 7px 20px 7px 0;
+    vertical-align: top;
+}
+.fht-subject {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1a4a9b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.fht-recipients {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+.fht-person {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f0f5ff;
+    border: 1px solid #c7d7f5;
+    border-radius: 20px;
+    padding: 3px 10px 3px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.fht-cc-person {
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #78350f;
+}
+.fht-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.fht-overflow {
+    font-size: 12px;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Divider between header and body in formal mode */
+.formal-divider {
+    border: none;
+    border-top: 2px solid #1a4a9b;
+    margin: 18px 0 20px;
+    opacity: 0.18;
+}
+
+/* Message body in formal mode */
+.memo-message-content.formal-message {
+    font-size: 14.5px;
+    line-height: 1.8;
+    color: #1e293b;
+    padding: 0;
+}
+
+/* CC row in plain mode */
+.cc-inline-row {
+    flex-wrap: wrap;
+}
+.cc-inline-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+.cc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 20px;
+    padding: 2px 10px 2px 3px;
+    font-size: 12px;
+    color: #78350f;
+    font-weight: 600;
+}
+.cc-chip-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 

@@ -15,6 +15,7 @@ class EmailCampaignRecipient extends Model
     protected $fillable = [
         'comm_campaign_id',
         'user_id',
+        'recipient_role',
         'status',
         'sent_at',
         'error_message',

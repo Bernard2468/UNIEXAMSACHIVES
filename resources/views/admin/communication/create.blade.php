@@ -62,13 +62,78 @@
                                         </div>
 
                                         <div class="form-section">
+
+                                            {{-- ===== LETTERHEAD SELECTOR ===== --}}
+                                            <div class="form-group">
+                                                <label class="form-label">
+                                                    <i class="icofont-paper"></i> Select Letterhead
+                                                </label>
+                                                <p class="form-help" style="margin-bottom:12px;">Choose the official letterhead that will appear at the top of your memo. Recipients will see it exactly as an institutional letter.</p>
+                                                <input type="hidden" name="letterhead" id="letterhead-input" value="{{ old('letterhead', '') }}">
+
+                                                <div class="letterhead-cards">
+                                                    {{-- No Letterhead --}}
+                                                    <div class="letterhead-card {{ old('letterhead', '') === '' ? 'active' : '' }}"
+                                                         data-value="" onclick="selectLetterhead(this)">
+                                                        <div class="letterhead-card-preview no-letterhead-preview">
+                                                            <div class="no-letterhead-icon">
+                                                                <i class="icofont-close-line-circled"></i>
+                                                                <span>None</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="letterhead-card-label">
+                                                            <strong>No Letterhead</strong>
+                                                            <span>Plain memo format</span>
+                                                        </div>
+                                                        <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
+                                                    </div>
+
+                                                    {{-- CUG Official --}}
+                                                    <div class="letterhead-card {{ old('letterhead') === 'cug' ? 'active' : '' }}"
+                                                         data-value="cug" onclick="selectLetterhead(this)">
+                                                        <div class="letterhead-card-preview">
+                                                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1778065984/57a43cc8-0c87-4b69-9679-6299960a52d2.png"
+                                                                 alt="CUG Official Letterhead" class="letterhead-preview-img">
+                                                        </div>
+                                                        <div class="letterhead-card-label">
+                                                            <strong>CUG Official</strong>
+                                                            <span>Standard institutional header</span>
+                                                        </div>
+                                                        <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
+                                                    </div>
+
+                                                    {{-- Internal Memo --}}
+                                                    <div class="letterhead-card {{ old('letterhead') === 'internal_memo' ? 'active' : '' }}"
+                                                         data-value="internal_memo" onclick="selectLetterhead(this)">
+                                                        <div class="letterhead-card-preview">
+                                                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png"
+                                                                 alt="Internal Memo Letterhead" class="letterhead-preview-img">
+                                                        </div>
+                                                        <div class="letterhead-card-label">
+                                                            <strong>Internal Memo</strong>
+                                                            <span>Formal internal communication</span>
+                                                        </div>
+                                                        <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Live Preview Strip --}}
+                                                <div id="letterhead-live-preview" class="letterhead-live-preview" style="display:none;">
+                                                    <div class="lhp-label"><i class="icofont-eye"></i> Letterhead preview — this is exactly what recipients will see</div>
+                                                    <div class="lhp-img-wrap">
+                                                        <img id="lhp-img" src="" alt="Letterhead Preview">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {{-- ===== END LETTERHEAD SELECTOR ===== --}}
+
                                             <div class="form-group">
                                                 <label for="subject" class="form-label">
                                                     <i class="icofont-email"></i> Memo Subject
                                                     <span class="required">*</span>
                                                 </label>
-                                                <input type="text" id="subject" name="subject" 
-                                                       placeholder="Enter a compelling subject line..." 
+                                                <input type="text" id="subject" name="subject"
+                                                       placeholder="Enter a compelling subject line..."
                                                        value="{{ old('subject') }}" required class="form-input">
                                                 <small class="form-help">This will be the memo subject line users see in their inbox</small>
                                             </div>
@@ -419,6 +484,86 @@
                                                 </div>
                                             </div>
 
+                                        {{-- ===== CC SECTION ===== --}}
+                                        <div class="form-group">
+                                            <label class="form-label">
+                                                <i class="icofont-users-alt-3"></i> Cc: (Carbon Copy)
+                                            </label>
+                                            <p class="form-help" style="margin-bottom:10px;">
+                                                Add people who should receive a copy of this memo for their information. They will see they are Cc'd — not the primary recipient.
+                                            </p>
+                                            <div class="cc-toggle-wrap">
+                                                <button type="button" id="cc-toggle-btn" class="cc-toggle-btn" onclick="toggleCcSection()">
+                                                    <i class="icofont-plus-circle"></i> Add Cc Recipients
+                                                </button>
+                                                <span id="cc-count-badge" class="cc-count-badge" style="display:none;">0 added</span>
+                                            </div>
+
+                                            <div id="cc-section" class="cc-section" style="display:none;">
+                                                <div class="user-selector-header">
+                                                    <div class="search-container">
+                                                        <div class="search-input-wrapper">
+                                                            <i class="icofont-search search-icon"></i>
+                                                            <input type="text" id="cc-search"
+                                                                   placeholder="Search by name or email..."
+                                                                   class="search-input" onkeyup="filterCcList()">
+                                                        </div>
+                                                    </div>
+                                                    <div class="user-stats">
+                                                        <div class="stats-info">
+                                                            <span id="cc-selected-count">0</span> of {{ $users->count() }} users selected as Cc
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="user-list-container">
+                                                    <div class="user-list" id="cc-user-list">
+                                                        @foreach($users as $user)
+                                                            <div class="user-item cc-user-item"
+                                                                 data-user-id="{{ $user->id }}"
+                                                                 data-search="{{ strtolower($user->first_name . ' ' . $user->last_name . ' ' . $user->email) }}">
+                                                                <div class="user-avatar">
+                                                                    @if($user->profile_picture)
+                                                                        <img src="{{ asset('profile_pictures/' . $user->profile_picture) }}" alt="{{ $user->first_name }}" class="avatar-img">
+                                                                    @else
+                                                                        <div class="avatar-placeholder">
+                                                                            {{ strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)) }}
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                                <div class="user-info">
+                                                                    <div class="user-name">
+                                                                        <span>{{ $user->first_name }} {{ $user->last_name }}</span>
+                                                                        @if($user->position)
+                                                                            <span class="name-separator">|</span>
+                                                                            <span class="position-badge-small"><i class="fas fa-briefcase"></i> {{ $user->position->name }}</span>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="user-email">{{ $user->email }}</div>
+                                                                </div>
+                                                                <div class="user-select-checkbox">
+                                                                    <input type="checkbox" name="cc_users[]"
+                                                                           value="{{ $user->id }}"
+                                                                           class="cc-checkbox"
+                                                                           {{ in_array($user->id, old('cc_users', [])) ? 'checked' : '' }}
+                                                                           onchange="updateCcCount()">
+                                                                    <span class="checkmark"></span>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                                <div class="user-actions">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllCc()">
+                                                        <i class="icofont-check-circled"></i> Select All
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllCc()">
+                                                        <i class="icofont-close-circled"></i> Clear All
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{-- ===== END CC SECTION ===== --}}
+
                                         <div class="form-group">
                                             <label class="form-label">Sending Options</label>
                                             <div class="sending-options">
@@ -524,6 +669,166 @@
     /* Modern Compose Memo Styles */
 * {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* ===== LETTERHEAD CARDS ===== */
+.letterhead-cards {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.letterhead-card {
+  flex: 1;
+  min-width: 180px;
+  max-width: 260px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  background: #fff;
+  position: relative;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.letterhead-card:hover {
+  border-color: #1a4a9b;
+  box-shadow: 0 4px 16px rgba(26,74,155,0.12);
+  transform: translateY(-2px);
+}
+.letterhead-card.active {
+  border-color: #1a4a9b;
+  box-shadow: 0 4px 20px rgba(26,74,155,0.2);
+  background: #f0f5ff;
+}
+.letterhead-card-preview {
+  height: 120px;
+  overflow: hidden;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.letterhead-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+.no-letterhead-preview {
+  background: #f1f5f9;
+}
+.no-letterhead-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+.no-letterhead-icon i {
+  font-size: 36px;
+}
+.letterhead-card-label {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.letterhead-card-label strong {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 700;
+}
+.letterhead-card-label span {
+  font-size: 11px;
+  color: #64748b;
+}
+.letterhead-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1a4a9b;
+  color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.letterhead-card.active .letterhead-check {
+  display: flex;
+}
+
+/* Live preview strip */
+.letterhead-live-preview {
+  margin-top: 12px;
+  border: 1px solid #c7d7f5;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+.lhp-label {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #1a4a9b;
+  font-weight: 600;
+  background: #eef3ff;
+  border-bottom: 1px solid #c7d7f5;
+}
+.lhp-img-wrap {
+  padding: 10px;
+  text-align: center;
+}
+.lhp-img-wrap img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* ===== CC SECTION ===== */
+.cc-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.cc-toggle-btn {
+  padding: 8px 18px;
+  border: 2px dashed #1a4a9b;
+  border-radius: 8px;
+  background: transparent;
+  color: #1a4a9b;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cc-toggle-btn:hover {
+  background: #eef3ff;
+}
+.cc-count-badge {
+  background: #1a4a9b;
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.cc-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fafbff;
+  margin-top: 8px;
 }
 
 .required { 
@@ -2735,6 +3040,81 @@ window.formatFileSize = function(bytes) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/* ===== LETTERHEAD ===== */
+const LETTERHEAD_URLS = {
+    cug: 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778065984/57a43cc8-0c87-4b69-9679-6299960a52d2.png',
+    internal_memo: 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png',
+};
+
+function selectLetterhead(card) {
+    document.querySelectorAll('.letterhead-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    const val = card.getAttribute('data-value');
+    document.getElementById('letterhead-input').value = val;
+
+    const preview = document.getElementById('letterhead-live-preview');
+    const img = document.getElementById('lhp-img');
+    if (val && LETTERHEAD_URLS[val]) {
+        img.src = LETTERHEAD_URLS[val];
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+        img.src = '';
+    }
+}
+
+// Restore selection on page load (for old() values)
+document.addEventListener('DOMContentLoaded', function () {
+    const savedVal = document.getElementById('letterhead-input').value;
+    if (savedVal) {
+        const card = document.querySelector('.letterhead-card[data-value="' + savedVal + '"]');
+        if (card) selectLetterhead(card);
+    }
+
+    /* ===== CC ===== */
+    updateCcCount();
+    if (document.querySelectorAll('.cc-checkbox:checked').length > 0) {
+        document.getElementById('cc-section').style.display = 'block';
+        document.getElementById('cc-toggle-btn').innerHTML = '<i class="icofont-minus-circle"></i> Hide Cc';
+    }
+});
+
+/* ===== CC HELPERS ===== */
+function toggleCcSection() {
+    const sec = document.getElementById('cc-section');
+    const btn = document.getElementById('cc-toggle-btn');
+    const open = sec.style.display !== 'none';
+    sec.style.display = open ? 'none' : 'block';
+    btn.innerHTML = open
+        ? '<i class="icofont-plus-circle"></i> Add Cc Recipients'
+        : '<i class="icofont-minus-circle"></i> Hide Cc';
+}
+
+function filterCcList() {
+    const q = document.getElementById('cc-search').value.toLowerCase();
+    document.querySelectorAll('.cc-user-item').forEach(function (item) {
+        item.style.display = item.getAttribute('data-search').includes(q) ? '' : 'none';
+    });
+}
+
+function updateCcCount() {
+    const n = document.querySelectorAll('.cc-checkbox:checked').length;
+    const badge = document.getElementById('cc-count-badge');
+    document.getElementById('cc-selected-count').textContent = n;
+    badge.textContent = n + ' added';
+    badge.style.display = n > 0 ? 'inline-block' : 'none';
+}
+
+function selectAllCc() {
+    document.querySelectorAll('.cc-checkbox').forEach(cb => cb.checked = true);
+    updateCcCount();
+}
+
+function clearAllCc() {
+    document.querySelectorAll('.cc-checkbox').forEach(cb => cb.checked = false);
+    updateCcCount();
 }
 </script>
 @endsection

@@ -1066,9 +1066,10 @@ class HomeController extends Controller
             $canParticipate = $isActiveParticipant || ($isCreator && !$isAssignedToSomeoneElse);
 
             $memo->load([
-                'creator', 
-                'currentAssignee', 
+                'creator',
+                'currentAssignee',
                 'recipients.user',
+                'ccRecipients.user',
                 'activeParticipants.user',
                 'replies.user'
             ]);
