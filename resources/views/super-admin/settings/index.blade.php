@@ -381,6 +381,86 @@
         @csrf
 
         @foreach($settings as $category => $categorySettings)
+
+        {{-- Security category gets a dedicated card with smart toggle behaviour --}}
+        @if($category === 'security')
+        <div class="settings-card" id="security">
+            <div class="settings-card-header">
+                <h5><i class="icofont-shield-alt"></i> Security</h5>
+            </div>
+            <div class="settings-card-body">
+                @php
+                    $restrictSetting = $categorySettings->firstWhere('key', 'restrict_email_domain');
+                    $domainSetting   = $categorySettings->firstWhere('key', 'allowed_email_domain');
+                    $isRestricted    = $restrictSetting && $restrictSetting->typed_value;
+                @endphp
+
+                {{-- Toggle row --}}
+                @if($restrictSetting)
+                <div class="settings-form-group">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="settings-form-label">
+                                {{ $restrictSetting->label }}
+                                @if($restrictSetting->description)
+                                <small>{{ $restrictSetting->description }}</small>
+                                @endif
+                            </label>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox"
+                                       class="custom-control-input"
+                                       id="restrict_email_domain"
+                                       name="restrict_email_domain"
+                                       {{ $isRestricted ? 'checked' : '' }}
+                                       {{ !$restrictSetting->is_editable ? 'disabled' : '' }}>
+                                <label class="custom-control-label" for="restrict_email_domain">
+                                    <span id="restrict_label">{{ $isRestricted ? 'Enabled' : 'Disabled' }}</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Domain input row --}}
+                @if($domainSetting)
+                <div class="settings-form-group" id="domain_row" style="{{ $isRestricted ? '' : 'opacity:0.45;' }}">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="settings-form-label" for="allowed_email_domain">
+                                {{ $domainSetting->label }}
+                                @if($domainSetting->description)
+                                <small>{{ $domainSetting->description }}</small>
+                                @endif
+                            </label>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" style="border-radius:0.5rem 0 0 0.5rem; background:#f3f4f6; color:#6b7280; font-weight:600;">@</span>
+                                </div>
+                                <input type="text"
+                                       class="form-control"
+                                       id="allowed_email_domain"
+                                       name="allowed_email_domain"
+                                       value="{{ $domainSetting->value }}"
+                                       placeholder="cug.edu.gh"
+                                       style="border-radius:0 0.5rem 0.5rem 0;"
+                                       {{ !$domainSetting->is_editable ? 'readonly' : '' }}>
+                            </div>
+                            @if(!$isRestricted)
+                            <small class="text-muted mt-1 d-block"><i class="icofont-info-circle"></i> Enable the restriction toggle above to activate domain filtering.</small>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        @else
         <div class="settings-card" id="{{ $category }}">
             <div class="settings-card-header">
                 <h5>
@@ -497,6 +577,8 @@
                 @endforeach
             </div>
         </div>
+        @endif
+
         @endforeach
 
         <div class="text-right mb-4">
@@ -542,6 +624,37 @@
 
 @push('scripts')
 <script>
+    // Security: sync domain row opacity/hint with the restriction toggle
+    (function () {
+        var toggle = document.getElementById('restrict_email_domain');
+        var domainRow = document.getElementById('domain_row');
+        var label = document.getElementById('restrict_label');
+
+        function syncDomainRow() {
+            if (!toggle || !domainRow) return;
+            var enabled = toggle.checked;
+            domainRow.style.opacity = enabled ? '1' : '0.45';
+            if (label) label.textContent = enabled ? 'Enabled' : 'Disabled';
+
+            var hint = domainRow.querySelector('small.text-muted');
+            if (enabled) {
+                if (hint) hint.remove();
+            } else {
+                if (!hint) {
+                    var input = domainRow.querySelector('.col-md-8');
+                    if (input) {
+                        var el = document.createElement('small');
+                        el.className = 'text-muted mt-1 d-block';
+                        el.innerHTML = '<i class="icofont-info-circle"></i> Enable the restriction toggle above to activate domain filtering.';
+                        input.appendChild(el);
+                    }
+                }
+            }
+        }
+
+        if (toggle) toggle.addEventListener('change', syncDomainRow);
+    })();
+
     // Smooth scroll to anchor on page load
     document.addEventListener('DOMContentLoaded', function() {
         if (window.location.hash) {

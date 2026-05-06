@@ -30,6 +30,8 @@ class SystemSettingsController extends Controller
             'send_renewal_emails',
             'send_payment_receipts',
             'default_currency',
+            'restrict_email_domain',
+            'allowed_email_domain',
         ];
 
         $settings = SystemSetting::whereIn('key', $allowedKeys)

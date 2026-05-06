@@ -217,6 +217,34 @@ class SuperAdminSystemSeeder extends Seeder
                 'default_value' => '1',
             ],
 
+            // Security Settings
+            [
+                'key' => 'restrict_email_domain',
+                'value' => '0',
+                'category' => 'security',
+                'label' => 'Restrict to Institutional Email',
+                'description' => 'When enabled, only emails from the configured domain can register or log in to the system.',
+                'data_type' => 'boolean',
+                'is_public' => false,
+                'is_editable' => true,
+                'requires_restart' => false,
+                'validation_rules' => 'boolean',
+                'default_value' => '0',
+            ],
+            [
+                'key' => 'allowed_email_domain',
+                'value' => 'cug.edu.gh',
+                'category' => 'security',
+                'label' => 'Allowed Email Domain',
+                'description' => 'Institutional domain to allow (e.g. cug.edu.gh — without the @ symbol). Only enforced when the restriction toggle above is enabled.',
+                'data_type' => 'string',
+                'is_public' => false,
+                'is_editable' => true,
+                'requires_restart' => false,
+                'validation_rules' => 'nullable|string|max:255',
+                'default_value' => 'cug.edu.gh',
+            ],
+
             // Currency Settings
             [
                 'key' => 'default_currency',

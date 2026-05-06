@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
 use App\Mail\PasswordResetConfirmation;
+use App\Models\SystemSetting;
 
 class PagesController extends Controller
 {
@@ -86,6 +87,14 @@ class PagesController extends Controller
     public function adminLoginUser(Request $request)
     {
         $credentials = $request->only('email', 'password');
+
+        if (SystemSetting::get('restrict_email_domain', false)) {
+            $allowedDomain = SystemSetting::get('allowed_email_domain', '');
+            if ($allowedDomain && !str_ends_with(strtolower($credentials['email']), '@' . strtolower(trim($allowedDomain, '@')))) {
+                return redirect()->back()->with('error', 'Access is restricted to institutional email addresses (@' . $allowedDomain . ') only.');
+            }
+        }
+
         $user = User::where('email', $credentials['email'])->first();
 
         if (!$user || !password_verify($credentials['password'], $user->password)) {
@@ -166,6 +175,15 @@ class PagesController extends Controller
             'position_id' => 'nullable|exists:positions,id',
         ]);
 
+        if (SystemSetting::get('restrict_email_domain', false)) {
+            $allowedDomain = SystemSetting::get('allowed_email_domain', '');
+            if ($allowedDomain && !str_ends_with(strtolower($validatedData['email']), '@' . strtolower(trim($allowedDomain, '@')))) {
+                return redirect()->back()
+                    ->withInput($request->except('password'))
+                    ->withErrors(['email' => 'Only institutional email addresses (@' . $allowedDomain . ') are accepted for registration.']);
+            }
+        }
+
         User::create([
             'first_name' => $validatedData['first_name'],
             'last_name' => $validatedData['last_name'],
@@ -225,6 +243,14 @@ class PagesController extends Controller
     public function loginUser(Request $request)
     {
         $credentials = $request->only('email', 'password');
+
+        if (SystemSetting::get('restrict_email_domain', false)) {
+            $allowedDomain = SystemSetting::get('allowed_email_domain', '');
+            if ($allowedDomain && !str_ends_with(strtolower($credentials['email']), '@' . strtolower(trim($allowedDomain, '@')))) {
+                return redirect()->back()->with('error', 'Access is restricted to institutional email addresses (@' . $allowedDomain . ') only.');
+            }
+        }
+
         $user = User::where('email', $credentials['email'])->first();
 
         if (!$user || !password_verify($credentials['password'], $user->password)) {
