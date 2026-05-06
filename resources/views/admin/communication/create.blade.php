@@ -1771,7 +1771,8 @@
     z-index: 1;
 }
 
-.user-checkbox:checked ~ .checkmark {
+.user-checkbox:checked ~ .checkmark,
+.cc-checkbox:checked ~ .checkmark {
     background-color: #28a745;
     border-color: #28a745;
 }
@@ -1786,8 +1787,22 @@
     transform: rotate(45deg);
 }
 
-.user-checkbox:checked ~ .checkmark:after {
+.user-checkbox:checked ~ .checkmark:after,
+.cc-checkbox:checked ~ .checkmark:after {
     display: block;
+}
+
+.cc-checkbox:focus + .checkmark {
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.cc-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 22px;
+    width: 22px;
+    z-index: 2;
 }
 
 /* Ensure the checkbox container is properly positioned */
@@ -2599,7 +2614,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Also add click event to the user item for better UX
         const userItem = checkbox.closest('.user-item');
-        if (userItem) {
+        if (userItem && !userItem.classList.contains('cc-user-item')) {
             userItem.addEventListener('click', function(e) {
                 // Don't trigger if clicking on the checkbox itself
                 if (e.target !== checkbox && !checkbox.contains(e.target)) {
@@ -2609,7 +2624,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
-    
+
+    // CC row click handlers
+    document.querySelectorAll('.cc-user-item').forEach(function(item) {
+        const cb = item.querySelector('.cc-checkbox');
+        if (!cb) return;
+        item.addEventListener('click', function(e) {
+            if (e.target === cb || cb.contains(e.target)) return;
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change'));
+        });
+    });
+
     // Select all functionality
     selectAllBtn.addEventListener('click', function() {
         const visibleCheckboxes = Array.from(userCheckboxes).filter(checkbox => {

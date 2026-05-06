@@ -15,6 +15,7 @@ class FilesController extends Controller
         $validatedData = $request->validate([
             'depositor_name' => 'required|string',
             'email' => 'required|string|email',
+            'phone_number' => 'nullable|string|max:30',
             'file_title' => 'required|string',
             'year_created' => 'required|date',
             'document_file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx',
@@ -31,6 +32,9 @@ class FilesController extends Controller
         $validatedData['year_deposit'] = now()->toDateString();
         $validatedData['user_id'] = Auth::user()->id;
         $validatedData['document_id'] = random_int(1000000000, 9999999999);
+        $validatedData['phone_number'] = $validatedData['phone_number']
+            ?? Auth::user()->phone_number
+            ?? 'N/A';
         $validatedData['is_approve'] = true;
         File::create($validatedData);
         return redirect()->route('dashboard')->with('success', 'File has been deposited successfully.');
@@ -61,6 +65,7 @@ class FilesController extends Controller
         $validatedData = $request->validate([
             'depositor_name' => 'required|string',
             'email' => 'required|string|email',
+            'phone_number' => 'nullable|string|max:30',
             'file_title' => 'required|string',
             'year_created' => 'required|date',
             'document_file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx',
@@ -81,6 +86,10 @@ class FilesController extends Controller
         } else {
             $validatedData['document_file'] = $file->document_file;
         }
+        $validatedData['phone_number'] = $validatedData['phone_number']
+            ?? $file->phone_number
+            ?? Auth::user()->phone_number
+            ?? 'N/A';
 
         $file->update($validatedData);
 

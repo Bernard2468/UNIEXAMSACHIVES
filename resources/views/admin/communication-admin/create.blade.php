@@ -1569,7 +1569,8 @@
     z-index: 1;
 }
 
-.user-checkbox:checked ~ .checkmark {
+.user-checkbox:checked ~ .checkmark,
+.cc-checkbox:checked ~ .checkmark {
     background-color: #28a745;
     border-color: #28a745;
 }
@@ -1584,8 +1585,22 @@
     transform: rotate(45deg);
 }
 
-.user-checkbox:checked ~ .checkmark:after {
+.user-checkbox:checked ~ .checkmark:after,
+.cc-checkbox:checked ~ .checkmark:after {
     display: block;
+}
+
+.cc-checkbox:focus + .checkmark {
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.cc-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 22px;
+    width: 22px;
+    z-index: 2;
 }
 
 /* Ensure the checkbox container is properly positioned */
