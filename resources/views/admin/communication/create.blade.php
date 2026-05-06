@@ -388,6 +388,86 @@
                                             </div>
                                         </div>
 
+                                                {{-- ===== CC SECTION ===== --}}
+                                                <div class="cc-form-group mt-3">
+                                                    <div class="cc-section-header">
+                                                        <span class="cc-section-label">
+                                                            <i class="icofont-users-alt-3"></i> Cc: (Carbon Copy)
+                                                        </span>
+                                                        <p class="cc-section-desc">Add people who should receive a copy for their information — they will see they are Cc'd, not the primary recipient.</p>
+                                                    </div>
+                                                    <div class="cc-toggle-wrap">
+                                                        <button type="button" id="cc-toggle-btn" class="cc-toggle-btn" onclick="toggleCcSection()">
+                                                            <i class="icofont-plus-circle"></i> Add Cc Recipients
+                                                        </button>
+                                                        <span id="cc-count-badge" class="cc-count-badge" style="display:none;">0 added</span>
+                                                    </div>
+
+                                                    <div id="cc-section" class="cc-section" style="display:none;">
+                                                        <div class="user-selector-header">
+                                                            <div class="search-container">
+                                                                <div class="search-input-wrapper">
+                                                                    <i class="icofont-search search-icon"></i>
+                                                                    <input type="text" id="cc-search"
+                                                                           placeholder="Search by name or email..."
+                                                                           class="search-input" onkeyup="filterCcList()">
+                                                                </div>
+                                                            </div>
+                                                            <div class="user-stats">
+                                                                <div class="stats-info">
+                                                                    <span id="cc-selected-count">0</span> of {{ $users->count() }} users selected as Cc
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="user-list-container">
+                                                            <div class="user-list" id="cc-user-list">
+                                                                @foreach($users as $user)
+                                                                    <div class="user-item cc-user-item"
+                                                                         data-user-id="{{ $user->id }}"
+                                                                         data-search="{{ strtolower($user->first_name . ' ' . $user->last_name . ' ' . $user->email) }}">
+                                                                        <div class="user-avatar">
+                                                                            @if($user->profile_picture)
+                                                                                <img src="{{ asset('profile_pictures/' . $user->profile_picture) }}" alt="{{ $user->first_name }}" class="avatar-img">
+                                                                            @else
+                                                                                <div class="avatar-placeholder">
+                                                                                    {{ strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)) }}
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                        <div class="user-info">
+                                                                            <div class="user-name">
+                                                                                <span>{{ $user->first_name }} {{ $user->last_name }}</span>
+                                                                                @if($user->position)
+                                                                                    <span class="name-separator">|</span>
+                                                                                    <span class="position-badge-small"><i class="fas fa-briefcase"></i> {{ $user->position->name }}</span>
+                                                                                @endif
+                                                                            </div>
+                                                                            <div class="user-email">{{ $user->email }}</div>
+                                                                        </div>
+                                                                        <div class="user-select-checkbox">
+                                                                            <input type="checkbox" name="cc_users[]"
+                                                                                   value="{{ $user->id }}"
+                                                                                   class="cc-checkbox"
+                                                                                   {{ in_array($user->id, old('cc_users', [])) ? 'checked' : '' }}
+                                                                                   onchange="updateCcCount()">
+                                                                            <span class="checkmark"></span>
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                        <div class="user-actions">
+                                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllCc()">
+                                                                <i class="icofont-check-circled"></i> Select All
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllCc()">
+                                                                <i class="icofont-close-circled"></i> Clear All
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {{-- ===== END CC SECTION ===== --}}
+
                                                 <!-- Staff Category Cards -->
                                                 <div class="staff-category-section">
                                                     <h6 class="section-title">Staff Categories</h6>
@@ -499,86 +579,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-
-                                        {{-- ===== CC SECTION ===== --}}
-                                        <div class="form-group">
-                                            <label class="form-label">
-                                                <i class="icofont-users-alt-3"></i> Cc: (Carbon Copy)
-                                            </label>
-                                            <p class="form-help" style="margin-bottom:10px;">
-                                                Add people who should receive a copy of this memo for their information. They will see they are Cc'd — not the primary recipient.
-                                            </p>
-                                            <div class="cc-toggle-wrap">
-                                                <button type="button" id="cc-toggle-btn" class="cc-toggle-btn" onclick="toggleCcSection()">
-                                                    <i class="icofont-plus-circle"></i> Add Cc Recipients
-                                                </button>
-                                                <span id="cc-count-badge" class="cc-count-badge" style="display:none;">0 added</span>
-                                            </div>
-
-                                            <div id="cc-section" class="cc-section" style="display:none;">
-                                                <div class="user-selector-header">
-                                                    <div class="search-container">
-                                                        <div class="search-input-wrapper">
-                                                            <i class="icofont-search search-icon"></i>
-                                                            <input type="text" id="cc-search"
-                                                                   placeholder="Search by name or email..."
-                                                                   class="search-input" onkeyup="filterCcList()">
-                                                        </div>
-                                                    </div>
-                                                    <div class="user-stats">
-                                                        <div class="stats-info">
-                                                            <span id="cc-selected-count">0</span> of {{ $users->count() }} users selected as Cc
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="user-list-container">
-                                                    <div class="user-list" id="cc-user-list">
-                                                        @foreach($users as $user)
-                                                            <div class="user-item cc-user-item"
-                                                                 data-user-id="{{ $user->id }}"
-                                                                 data-search="{{ strtolower($user->first_name . ' ' . $user->last_name . ' ' . $user->email) }}">
-                                                                <div class="user-avatar">
-                                                                    @if($user->profile_picture)
-                                                                        <img src="{{ asset('profile_pictures/' . $user->profile_picture) }}" alt="{{ $user->first_name }}" class="avatar-img">
-                                                                    @else
-                                                                        <div class="avatar-placeholder">
-                                                                            {{ strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)) }}
-                                                                        </div>
-                                                                    @endif
-                                                                </div>
-                                                                <div class="user-info">
-                                                                    <div class="user-name">
-                                                                        <span>{{ $user->first_name }} {{ $user->last_name }}</span>
-                                                                        @if($user->position)
-                                                                            <span class="name-separator">|</span>
-                                                                            <span class="position-badge-small"><i class="fas fa-briefcase"></i> {{ $user->position->name }}</span>
-                                                                        @endif
-                                                                    </div>
-                                                                    <div class="user-email">{{ $user->email }}</div>
-                                                                </div>
-                                                                <div class="user-select-checkbox">
-                                                                    <input type="checkbox" name="cc_users[]"
-                                                                           value="{{ $user->id }}"
-                                                                           class="cc-checkbox"
-                                                                           {{ in_array($user->id, old('cc_users', [])) ? 'checked' : '' }}
-                                                                           onchange="updateCcCount()">
-                                                                    <span class="checkmark"></span>
-                                                                </div>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                                <div class="user-actions">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllCc()">
-                                                        <i class="icofont-check-circled"></i> Select All
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllCc()">
-                                                        <i class="icofont-close-circled"></i> Clear All
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {{-- ===== END CC SECTION ===== --}}
 
                                         <div class="form-group">
                                             <label class="form-label">Sending Options</label>
@@ -808,6 +808,26 @@
 }
 
 /* ===== CC SECTION ===== */
+.cc-form-group {
+  margin-bottom: 16px;
+}
+.cc-section-header {
+  margin-bottom: 8px;
+}
+.cc-section-label {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.cc-section-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0 0 8px;
+}
 .cc-toggle-wrap {
   display: flex;
   align-items: center;
