@@ -369,6 +369,7 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin'])-
     // System Settings
     Route::get('/settings', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/single', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'updateSingle'])->name('settings.update-single');
     Route::post('/settings/test-paystack', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'testPaystack'])->name('settings.test-paystack');
     Route::post('/settings/toggle-maintenance', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'toggleMaintenanceMode'])->name('settings.toggle-maintenance');
     Route::post('/settings/clear-cache', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'clearCache'])->name('settings.clear-cache');

@@ -509,6 +509,50 @@
         .ss-row { flex-direction: column; align-items: flex-start; gap: 14px; }
         .ss-domain-wrap { min-width: 0; width: 100%; }
     }
+
+    /* ── Auto-save toast ── */
+    .autosave-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-family: 'DM Sans', system-ui, sans-serif;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #fff;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, .2);
+        opacity: 0;
+        transform: translateY(12px);
+        pointer-events: none;
+        transition: opacity .25s ease, transform .25s ease, background-color .2s ease;
+        z-index: 9999;
+        min-width: 180px;
+    }
+    .autosave-toast.visible { opacity: 1; transform: translateY(0); }
+    .autosave-toast.saving  { background: #475569; }
+    .autosave-toast.saved   { background: #059669; }
+    .autosave-toast.error   { background: #dc2626; }
+    .autosave-toast i { font-size: 14px; }
+
+    /* Subtle saving pulse on the row currently saving */
+    .ss-row.saving::after,
+    .settings-form-group.saving::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(1, 178, 172, .04);
+        pointer-events: none;
+        animation: ss-pulse 1.2s ease-in-out infinite;
+    }
+    .ss-row, .settings-form-group { position: relative; }
+    @keyframes ss-pulse {
+        0%, 100% { opacity: 0; }
+        50%      { opacity: 1; }
+    }
 </style>
 @endpush
 
@@ -766,14 +810,6 @@
 
         @endforeach
 
-        <div class="text-right mb-4">
-            <button type="submit" class="settings-action-button settings-button-primary" style="display: inline-block; width: auto; padding: 0.875rem 1.5rem;">
-                <div class="settings-button-content">
-                    <i class="icofont-save"></i>
-                    <span>Save All Settings</span>
-                </div>
-            </button>
-        </div>
     </form>
 
     {{-- Maintenance Mode Toggle --}}
@@ -807,43 +843,166 @@
     </div>
 </div>
 
+{{-- Auto-save status toast --}}
+<div id="autosaveToast" class="autosave-toast" role="status" aria-live="polite">
+    <i class="fas fa-circle-notch fa-spin"></i>
+    <span id="autosaveToastText">Saving…</span>
+</div>
+
 @push('scripts')
 <script>
-    // ── Security toggle: sync badge + domain dimming ──
+    // ════════════════════════════════════════════════════════════════
+    //  AUTO-SAVE ENGINE
+    //  Saves single settings via AJAX. Debounces text inputs (700ms),
+    //  toggles save instantly. Shows a small toast for feedback.
+    // ════════════════════════════════════════════════════════════════
     (function () {
-        var toggle = document.getElementById('restrict_email_domain');
-        var badge  = document.getElementById('restrict_badge');
-        var wrap   = document.getElementById('domain_wrap');
-        var hint   = document.getElementById('domain_hint');
+        const ENDPOINT = "{{ route('super-admin.settings.update-single') }}";
+        const csrfToken = document.querySelector('input[name="_token"]')?.value;
 
-        function sync() {
-            if (!toggle) return;
-            var on = toggle.checked;
+        const toast     = document.getElementById('autosaveToast');
+        const toastText = document.getElementById('autosaveToastText');
+        let toastTimer  = null;
 
-            if (badge) {
-                badge.textContent = on ? 'Active' : 'Inactive';
-                badge.className = 'sp-status-pill ' + (on ? 'on' : 'off');
-            }
-            if (wrap) {
-                wrap.classList.toggle('ss-dimmed', !on);
-            }
-            if (hint) {
-                hint.style.display = on ? 'none' : 'flex';
+        function showToast(state, message) {
+            if (!toast) return;
+            toast.classList.remove('saving', 'saved', 'error');
+            toast.classList.add(state, 'visible');
+            toastText.textContent = message;
+
+            const icon = toast.querySelector('i');
+            if (state === 'saving') icon.className = 'fas fa-circle-notch fa-spin';
+            else if (state === 'saved') icon.className = 'fas fa-check-circle';
+            else icon.className = 'fas fa-exclamation-circle';
+
+            clearTimeout(toastTimer);
+            if (state !== 'saving') {
+                toastTimer = setTimeout(() => toast.classList.remove('visible'), 1800);
             }
         }
 
-        if (toggle) toggle.addEventListener('change', sync);
-    })();
+        function markRowSaving(input, on) {
+            const row = input.closest('.ss-row, .settings-form-group');
+            if (row) row.classList.toggle('saving', on);
+        }
 
-    // ── Generic boolean toggles: live pill update ──
-    document.querySelectorAll('.sp-toggle-row .sp-toggle-switch input[type="checkbox"]').forEach(function(input) {
-        var pill = document.getElementById('pill_' + input.id);
-        if (!pill) return;
-        input.addEventListener('change', function() {
-            pill.textContent  = input.checked ? 'Enabled' : 'Disabled';
-            pill.className = 'sp-status-pill ' + (input.checked ? 'on' : 'off');
+        function saveSetting(key, value, inputForUiHook) {
+            if (!csrfToken) return;
+            showToast('saving', 'Saving…');
+            if (inputForUiHook) markRowSaving(inputForUiHook, true);
+
+            return fetch(ENDPOINT, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: 'key=' + encodeURIComponent(key) + '&value=' + encodeURIComponent(value)
+            })
+            .then(r => r.json().then(data => ({ ok: r.ok, data })))
+            .then(({ ok, data }) => {
+                if (inputForUiHook) markRowSaving(inputForUiHook, false);
+                if (ok && data.success) {
+                    showToast('saved', 'Saved');
+                } else {
+                    showToast('error', data.message || 'Save failed');
+                }
+                return data;
+            })
+            .catch(() => {
+                if (inputForUiHook) markRowSaving(inputForUiHook, false);
+                showToast('error', 'Network error');
+            });
+        }
+
+        // Debounce helper
+        function debounce(fn, ms) {
+            let t;
+            return function (...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), ms);
+            };
+        }
+
+        // ── Wire up text / number inputs (debounced) ──
+        document.querySelectorAll('input[name].form-control, textarea[name].form-control, .ss-domain-input[name], input[name].reminder-day-input').forEach(input => {
+            // renewal_reminder_days[] is an array — handled separately below
+            if (input.name && input.name.endsWith('[]')) return;
+
+            const handler = debounce(() => {
+                saveSetting(input.name, input.value, input);
+            }, 700);
+
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
         });
-    });
+
+        // ── renewal_reminder_days[] — collect all 4 values, send as JSON array ──
+        const dayInputs = document.querySelectorAll('input[name="renewal_reminder_days[]"]');
+        if (dayInputs.length) {
+            const saveDays = debounce(() => {
+                const days = Array.from(dayInputs).map(i => parseInt(i.value, 10) || 0);
+                showToast('saving', 'Saving…');
+                fetch(ENDPOINT, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ key: 'renewal_reminder_days', value: JSON.stringify(days) })
+                })
+                .then(r => r.json())
+                .then(data => showToast(data.success ? 'saved' : 'error', data.success ? 'Saved' : (data.message || 'Save failed')))
+                .catch(() => showToast('error', 'Network error'));
+            }, 700);
+
+            dayInputs.forEach(i => {
+                i.addEventListener('input', saveDays);
+                i.addEventListener('change', saveDays);
+            });
+        }
+
+        // ── Wire up boolean toggles (instant save + UI sync) ──
+        document.querySelectorAll('.sp-toggle-switch input[type="checkbox"][name]').forEach(input => {
+            input.addEventListener('change', function () {
+                const checked = input.checked;
+
+                // Generic pill update
+                const pill = document.getElementById('pill_' + input.id);
+                if (pill) {
+                    pill.textContent = checked ? 'Enabled' : 'Disabled';
+                    pill.className = 'sp-status-pill ' + (checked ? 'on' : 'off');
+                }
+
+                // Security toggle UI side-effects
+                if (input.id === 'restrict_email_domain') {
+                    const badge = document.getElementById('restrict_badge');
+                    const wrap  = document.getElementById('domain_wrap');
+                    const hint  = document.getElementById('domain_hint');
+                    if (badge) {
+                        badge.textContent = checked ? 'Active' : 'Inactive';
+                        badge.className = 'sp-status-pill ' + (checked ? 'on' : 'off');
+                    }
+                    if (wrap) wrap.classList.toggle('ss-dimmed', !checked);
+                    if (hint) hint.style.display = checked ? 'none' : 'flex';
+                }
+
+                saveSetting(input.name, checked ? '1' : '0', input);
+            });
+        });
+
+        // Prevent accidental submit-on-Enter from doing a full-page POST
+        const form = document.querySelector('form[action="{{ route('super-admin.settings.update') }}"]');
+        if (form) {
+            form.addEventListener('submit', e => e.preventDefault());
+        }
+    })();
 
     // Smooth scroll to anchor on page load
     document.addEventListener('DOMContentLoaded', function() {

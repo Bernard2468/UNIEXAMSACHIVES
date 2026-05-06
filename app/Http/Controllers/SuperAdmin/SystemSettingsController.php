@@ -11,13 +11,12 @@ use Illuminate\Support\Facades\Artisan;
 class SystemSettingsController extends Controller
 {
     /**
-     * Display system settings
-     * Only show settings that are defined in the SuperAdminSystemSeeder
+     * The single source of truth for which settings this page manages.
+     * Used by both index() and update().
      */
-    public function index()
+    private function allowedKeys(): array
     {
-        // List of allowed setting keys from SuperAdminSystemSeeder
-        $allowedKeys = [
+        return [
             'paystack_public_key',
             'paystack_secret_key',
             'paystack_webhook_secret',
@@ -33,8 +32,15 @@ class SystemSettingsController extends Controller
             'restrict_email_domain',
             'allowed_email_domain',
         ];
+    }
 
-        $settings = SystemSetting::whereIn('key', $allowedKeys)
+    /**
+     * Display system settings
+     * Only show settings that are defined in the SuperAdminSystemSeeder
+     */
+    public function index()
+    {
+        $settings = SystemSetting::whereIn('key', $this->allowedKeys())
             ->orderBy('category')
             ->orderBy('key')
             ->get()
@@ -96,7 +102,7 @@ class SystemSettingsController extends Controller
         // are always processed and correctly written as false.
         $skipKeys = ['_token', '_method', 'renewal_reminder_days'];
 
-        foreach ($allowedKeys as $key) {
+        foreach ($this->allowedKeys() as $key) {
             if (in_array($key, $skipKeys)) {
                 continue;
             }
@@ -142,6 +148,54 @@ class SystemSettingsController extends Controller
         }
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * AJAX endpoint: update a single setting in real-time.
+     * Used by the auto-save behaviour on the settings page.
+     */
+    public function updateSingle(Request $request)
+    {
+        $request->validate([
+            'key'   => 'required|string',
+            'value' => 'nullable',
+        ]);
+
+        $key = $request->input('key');
+
+        if (!in_array($key, $this->allowedKeys())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Setting not allowed.',
+            ], 403);
+        }
+
+        $setting = SystemSetting::where('key', $key)->first();
+
+        if (!$setting || !$setting->is_editable) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Setting not found or not editable.',
+            ], 404);
+        }
+
+        $value = $request->input('value');
+
+        // Coerce booleans from the various truthy/falsy strings the JS may send
+        if ($setting->data_type === 'boolean') {
+            $value = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+        }
+
+        SystemSetting::set($key, $value, auth()->id());
+        Cache::forget("system_setting_{$key}");
+
+        return response()->json([
+            'success'          => true,
+            'message'          => 'Saved',
+            'key'              => $key,
+            'value'            => $value,
+            'requires_restart' => (bool) $setting->requires_restart,
+        ]);
     }
 
     /**
