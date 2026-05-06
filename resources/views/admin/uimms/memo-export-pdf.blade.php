@@ -37,7 +37,7 @@
             margin-bottom: 18px;
         }
         .formal-header td {
-            padding: 5px 8px;
+            padding: 6px 8px;
             vertical-align: top;
             font-size: 10.5pt;
             border-bottom: 1px solid #e5e5e5;
@@ -45,11 +45,11 @@
         .fh-label {
             font-weight: bold;
             color: #374151;
-            width: 110px;
+            width: 90px;
             white-space: nowrap;
         }
         .fh-colon {
-            width: 12px;
+            width: 10px;
             color: #374151;
             font-weight: bold;
         }
@@ -130,11 +130,6 @@
             background: #f9fafb;
             padding: 8px;
         }
-        .attachment-link {
-            color: #1e40af;
-            text-decoration: underline;
-            font-size: 10pt;
-        }
         .attachment-link-note {
             font-size: 9pt;
             color: #6b7280;
@@ -172,6 +167,26 @@
 </head>
 <body>
 
+@php
+    // ── Resolve display recipients ──
+    // If toRecipients is empty (old memos before migration), fall back to all non-CC recipients
+    $displayTo = $toRecipients->isNotEmpty()
+        ? $toRecipients
+        : $memo->recipients->filter(fn($r) => ($r->recipient_role ?? 'to') !== 'cc');
+
+    $displayCc = $ccRecipients;
+
+    // Creator full name
+    $creatorName = trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? ''));
+    if (!$creatorName) $creatorName = $memo->creator->name ?? 'N/A';
+
+    // Creator title line (position + department)
+    $creatorMeta = collect([
+        optional($memo->creator->position)->name,
+        optional($memo->creator->department)->name,
+    ])->filter()->implode(', ');
+@endphp
+
 {{-- ══ LETTERHEAD BAND ══ --}}
 @if($hasLetterhead && $letterheadBase64)
     <div class="letterhead-band">
@@ -202,33 +217,35 @@
             <td class="fh-label">From</td>
             <td class="fh-colon">:</td>
             <td class="fh-value">
-                {{ $memo->creator->name ?? 'N/A' }}
-                @if($memo->creator && $memo->creator->position)
-                    – {{ $memo->creator->position->name }}
-                @endif
-                @if($memo->creator && $memo->creator->department)
-                    , {{ $memo->creator->department->name }}
-                @endif
+                {{ $creatorName }}@if($creatorMeta) &mdash; {{ $creatorMeta }}@endif
             </td>
         </tr>
         <tr>
             <td class="fh-label">To</td>
             <td class="fh-colon">:</td>
             <td class="fh-value">
-                @forelse($toRecipients as $r)
-                    {{ $r->user->name ?? 'Unknown' }}@if(!$loop->last); @endif
+                @forelse($displayTo as $r)
+                    @php
+                        $rName = trim(($r->user->first_name ?? '') . ' ' . ($r->user->last_name ?? ''));
+                        if (!$rName) $rName = $r->user->name ?? $r->email ?? 'Unknown';
+                    @endphp
+                    {{ $rName }}@if(!$loop->last); @endif
                 @empty
                     All Recipients
                 @endforelse
             </td>
         </tr>
-        @if($ccRecipients->isNotEmpty())
+        @if($displayCc->isNotEmpty())
         <tr>
             <td class="fh-label">Cc</td>
             <td class="fh-colon">:</td>
             <td class="fh-value">
-                @foreach($ccRecipients as $r)
-                    {{ $r->user->name ?? 'Unknown' }}@if(!$loop->last); @endif
+                @foreach($displayCc as $r)
+                    @php
+                        $ccName = trim(($r->user->first_name ?? '') . ' ' . ($r->user->last_name ?? ''));
+                        if (!$ccName) $ccName = $r->user->name ?? $r->email ?? 'Unknown';
+                    @endphp
+                    {{ $ccName }}@if(!$loop->last); @endif
                 @endforeach
             </td>
         </tr>
@@ -236,7 +253,7 @@
         <tr>
             <td class="fh-label">Subject</td>
             <td class="fh-colon">:</td>
-            <td class="fh-subject-value">{{ strtoupper($memo->subject ?? $memo->name ?? '') }}</td>
+            <td class="fh-subject-value">{{ strtoupper($memo->subject ?? '') }}</td>
         </tr>
     </table>
 
@@ -244,7 +261,7 @@
 
     {{-- ══ MEMO BODY ══ --}}
     <div class="memo-body">
-        {!! nl2br(e($memo->message ?? $memo->description ?? '')) !!}
+        {!! nl2br(e($memo->message ?? '')) !!}
     </div>
 
     {{-- ══ ATTACHMENTS ══ --}}
@@ -269,32 +286,32 @@
                     <div class="attachment-text">{{ $att['text'] }}</div>
 
                 @elseif($att['type'] === 'pdf')
-                    <div style="color:#1e40af; font-size:10pt;">
-                        &#128196; This attachment is a PDF document.
+                    <div style="font-size:10pt; color:#1e40af;">
+                        &#128196; PDF document &mdash; {{ $att['name'] }}
                     </div>
                     @if(isset($att['url']))
-                    <div class="attachment-link-note" style="margin-top:6px; font-size:9pt; color:#6b7280;">
-                        Open in portal: {{ $att['url'] }}
+                    <div class="attachment-link-note">
+                        View in portal: {{ $att['url'] }}
                     </div>
                     @endif
 
                 @elseif($att['type'] === 'doc')
-                    <div style="color:#1e40af; font-size:10pt;">
-                        &#128196; This attachment is a Word document.
+                    <div style="font-size:10pt; color:#1e40af;">
+                        &#128196; Word document &mdash; {{ $att['name'] }}
                     </div>
                     @if(isset($att['url']))
-                    <div class="attachment-link-note" style="margin-top:6px; font-size:9pt; color:#6b7280;">
+                    <div class="attachment-link-note">
                         Download from portal: {{ $att['url'] }}
                     </div>
                     @endif
 
                 @else
-                    <div style="color:#6b7280; font-size:10pt;">
+                    <div style="font-size:10pt; color:#6b7280;">
                         &#128196; {{ $att['name'] }}
                         @if(isset($att['url']))
                             <br><span style="font-size:9pt;">Download from portal: {{ $att['url'] }}</span>
                         @else
-                            <br><span style="font-size:9pt;">File not available for preview.</span>
+                            <br><span style="font-size:9pt;">File not available for inline preview.</span>
                         @endif
                     </div>
                 @endif
@@ -304,7 +321,7 @@
     </div>
     @endif
 
-    {{-- ══ FOOTER ══ --}}
+    {{-- ══ FOOTER ── --}}
     <div class="pdf-footer">
         Generated by UIMMS &bull; {{ now()->format('d M Y, H:i') }} &bull; Confidential
     </div>

@@ -1147,7 +1147,7 @@ class HomeController extends Controller
             abort(403, 'You are not a participant in this memo.');
         }
 
-        $memo->load(['creator', 'currentAssignee', 'toRecipients.user', 'ccRecipients.user', 'replies.user']);
+        $memo->load(['creator.position', 'creator.department', 'currentAssignee', 'toRecipients.user', 'ccRecipients.user', 'recipients.user', 'replies.user']);
 
         // ── Letterhead ──
         $letterheadUrl = match ($memo->letterhead ?? '') {
