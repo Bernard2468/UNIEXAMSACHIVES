@@ -1745,6 +1745,29 @@
     font-size: 0.95rem;
 }
 
+.memo-message-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 0.9rem;
+}
+.memo-message-content table th {
+    background: #1e3a5f;
+    color: #ffffff;
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+    border: 1px solid #1e3a5f;
+}
+.memo-message-content table td {
+    padding: 8px 12px;
+    border: 1px solid #c8d3df;
+    vertical-align: top;
+}
+.memo-message-content table tbody tr:nth-child(even) td {
+    background: rgba(30, 58, 95, 0.05);
+}
+
 .memo-attachments {
     display: flex;
     flex-direction: column;

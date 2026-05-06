@@ -78,6 +78,27 @@
         }
         .memo-body p { margin-bottom: 10px; }
 
+        /* ── Tables inside memo body ── */
+        .memo-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 10.5pt;
+        }
+        .memo-body table th {
+            background: #1e3a5f;
+            color: #ffffff;
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #1e3a5f;
+        }
+        .memo-body table td {
+            padding: 7px 10px;
+            border: 1px solid #c8d3df;
+            vertical-align: top;
+        }
+
         /* ── Attachments ── */
         .attachments-section {
             margin-top: 32px;
@@ -261,7 +282,7 @@
 
     {{-- ══ MEMO BODY ══ --}}
     <div class="memo-body">
-        {!! nl2br(e($memo->message ?? '')) !!}
+        {!! $memo->message ?? '' !!}
     </div>
 
     {{-- ══ ATTACHMENTS ══ --}}

@@ -203,9 +203,15 @@
                                                             <button type="button" class="toolbar-btn" data-command="insertImage" title="Insert Image">
                                                                 <i class="icofont-image"></i>
                                                             </button>
-                                                            <button type="button" class="toolbar-btn" data-command="insertTable" title="Insert Table">
-                                                                <i class="icofont-table"></i>
-                                                            </button>
+                                                            <div class="toolbar-table-wrapper">
+                                                                <button type="button" class="toolbar-btn" id="tablePickerBtn" title="Insert Table">
+                                                                    <i class="icofont-table"></i>
+                                                                </button>
+                                                                <div class="table-picker-popover" id="tablePickerPopover">
+                                                                    <div class="table-picker-label" id="tablePickerLabel">Insert Table</div>
+                                                                    <div class="table-picker-grid" id="tablePickerGrid"></div>
+                                                                </div>
+                                                            </div>
                                                             <button type="button" class="toolbar-btn" data-command="insertHorizontalRule" title="Insert Line">
                                                                 <i class="fas fa-minus"></i>
                                                             </button>
@@ -641,6 +647,18 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Table Context Menu -->
+<div class="table-ctx-menu" id="tableCtxMenu">
+    <div class="ctx-item" id="ctxAddRowAbove"><i class="fas fa-arrow-up fa-fw"></i> Add Row Above</div>
+    <div class="ctx-item" id="ctxAddRowBelow"><i class="fas fa-arrow-down fa-fw"></i> Add Row Below</div>
+    <div class="ctx-item" id="ctxAddColLeft"><i class="fas fa-arrow-left fa-fw"></i> Add Column Left</div>
+    <div class="ctx-item" id="ctxAddColRight"><i class="fas fa-arrow-right fa-fw"></i> Add Column Right</div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item danger" id="ctxDeleteRow"><i class="fas fa-minus-circle fa-fw"></i> Delete Row</div>
+    <div class="ctx-item danger" id="ctxDeleteCol"><i class="fas fa-times-circle fa-fw"></i> Delete Column</div>
+    <div class="ctx-item danger" id="ctxDeleteTable"><i class="fas fa-trash fa-fw"></i> Delete Table</div>
 </div>
 
 <!-- Send Memo Confirmation Modal -->
@@ -1342,19 +1360,113 @@
   width: 100%;
   border-collapse: collapse;
   margin: 16px 0;
+  font-size: 14px;
 }
 
-.editor-content table td,
 .editor-content table th {
-  border: 1px solid #e2e8f0;
+  background: #1e3a5f;
+  color: #ffffff;
+  padding: 9px 12px;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid #1e3a5f;
+}
+
+.editor-content table td {
+  border: 1px solid #c8d3df;
   padding: 8px 12px;
   text-align: left;
+  vertical-align: top;
 }
 
-.editor-content table th {
+.editor-content table tbody tr:nth-child(even) td {
+  background: #f4f7fb;
+}
+
+/* Table picker popover */
+.toolbar-table-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.table-picker-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+}
+
+.table-picker-popover.active { display: block; }
+
+.table-picker-label {
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.table-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 22px);
+  gap: 3px;
+}
+
+.tp-cell {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e2e8f0;
   background: #f8fafc;
-  font-weight: 600;
-  color: #374151;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.tp-cell.highlighted {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+/* Table context menu */
+.table-ctx-menu {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 4px 0;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+  min-width: 170px;
+}
+
+.table-ctx-menu.active { display: block; }
+
+.ctx-item {
+  padding: 7px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.ctx-item:hover { background: #f1f5f9; }
+
+.ctx-item.danger { color: #dc2626; }
+
+.ctx-item.danger:hover { background: #fef2f2; }
+
+.ctx-divider {
+  border-top: 1px solid #e2e8f0;
+  margin: 4px 0;
 }
 
 .editor-content img {
@@ -2850,11 +2962,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 break;
             case 'insertTable':
-                const rows = prompt('Enter number of rows:', '3');
-                const cols = prompt('Enter number of columns:', '3');
-                if (rows && cols) {
-                    insertTable(parseInt(rows), parseInt(cols));
-                }
+                // handled by grid picker — no-op here
                 break;
             case 'insertHorizontalRule':
                 document.execCommand('insertHorizontalRule', false);
@@ -2868,25 +2976,187 @@ document.addEventListener('DOMContentLoaded', function() {
         updateButtonStates();
     }
     
-    // Insert table function
+    // Insert institutional table
     function insertTable(rows, cols) {
-        let tableHTML = '<table border="1" style="border-collapse: collapse; width: 100%;">';
-        
-        for (let i = 0; i < rows; i++) {
-            tableHTML += '<tr>';
-            for (let j = 0; j < cols; j++) {
-                if (i === 0) {
-                    tableHTML += '<th style="padding: 8px; border: 1px solid #ccc; background: #f8f9fa;">Header ' + (j + 1) + '</th>';
-                } else {
-                    tableHTML += '<td style="padding: 8px; border: 1px solid #ccc;">Cell ' + (i + 1) + '-' + (j + 1) + '</td>';
-                }
-            }
-            tableHTML += '</tr>';
+        const hBg  = '#1e3a5f';
+        const hTxt = '#ffffff';
+        const bdr  = '#c8d3df';
+        const alt  = '#f4f7fb';
+
+        let html = `<table style="border-collapse:collapse;width:100%;margin:14px 0;font-family:inherit;font-size:14px;">`;
+        html += `<thead><tr>`;
+        for (let j = 0; j < cols; j++) {
+            html += `<th style="background:${hBg};color:${hTxt};padding:9px 12px;text-align:left;font-weight:600;border:1px solid ${hBg};min-width:80px;">Column ${j + 1}</th>`;
         }
-        
-        tableHTML += '</table>';
-        document.execCommand('insertHTML', false, tableHTML);
+        html += `</tr></thead><tbody>`;
+        for (let i = 0; i < rows - 1; i++) {
+            const bg = i % 2 === 0 ? '#ffffff' : alt;
+            html += `<tr>`;
+            for (let j = 0; j < cols; j++) {
+                html += `<td style="padding:8px 12px;border:1px solid ${bdr};background:${bg};vertical-align:top;min-width:80px;"><br></td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `</tbody></table><p><br></p>`;
+        editorContent.focus();
+        document.execCommand('insertHTML', false, html);
+        updateTextareaContent();
     }
+
+    // ── Table picker popover ──────────────────────────────────────
+    (function () {
+        const btn     = document.getElementById('tablePickerBtn');
+        const popover = document.getElementById('tablePickerPopover');
+        const grid    = document.getElementById('tablePickerGrid');
+        const label   = document.getElementById('tablePickerLabel');
+        const COLS = 8, ROWS = 8;
+        const cells = [];
+
+        for (let r = 1; r <= ROWS; r++) {
+            for (let c = 1; c <= COLS; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'tp-cell';
+                cell.dataset.r = r;
+                cell.dataset.c = c;
+                cells.push(cell);
+                grid.appendChild(cell);
+            }
+        }
+
+        grid.addEventListener('mouseover', function (e) {
+            const t = e.target.closest('.tp-cell');
+            if (!t) return;
+            const r = +t.dataset.r, c = +t.dataset.c;
+            label.textContent = `${r} × ${c} Table`;
+            cells.forEach(cell => {
+                cell.classList.toggle('highlighted', +cell.dataset.r <= r && +cell.dataset.c <= c);
+            });
+        });
+
+        grid.addEventListener('mouseleave', function () {
+            label.textContent = 'Insert Table';
+            cells.forEach(cell => cell.classList.remove('highlighted'));
+        });
+
+        grid.addEventListener('click', function (e) {
+            const t = e.target.closest('.tp-cell');
+            if (!t) return;
+            insertTable(+t.dataset.r, +t.dataset.c);
+            popover.classList.remove('active');
+        });
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            popover.classList.toggle('active');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!popover.contains(e.target) && e.target !== btn) {
+                popover.classList.remove('active');
+            }
+        });
+    })();
+
+    // ── Table right-click context menu ────────────────────────────
+    (function () {
+        const menu = document.getElementById('tableCtxMenu');
+        let targetCell = null;
+
+        editorContent.addEventListener('contextmenu', function (e) {
+            const cell = e.target.closest('td, th');
+            if (!cell) { menu.classList.remove('active'); return; }
+            e.preventDefault();
+            targetCell = cell;
+            menu.style.left = e.clientX + 'px';
+            menu.style.top  = e.clientY + 'px';
+            menu.classList.add('active');
+        });
+
+        document.addEventListener('click', function () { menu.classList.remove('active'); });
+        document.addEventListener('contextmenu', function (e) {
+            if (!e.target.closest('#editor-content')) menu.classList.remove('active');
+        });
+
+        function cloneStyle(src, tag) {
+            const el = document.createElement(tag);
+            el.setAttribute('style', src.getAttribute('style') || '');
+            el.innerHTML = '<br>';
+            return el;
+        }
+
+        document.getElementById('ctxAddRowAbove').addEventListener('click', function () {
+            if (!targetCell) return;
+            const row = targetCell.closest('tr');
+            const newRow = document.createElement('tr');
+            Array.from(row.cells).forEach(c => newRow.appendChild(cloneStyle(c, c.tagName.toLowerCase())));
+            row.parentNode.insertBefore(newRow, row);
+            updateTextareaContent();
+        });
+
+        document.getElementById('ctxAddRowBelow').addEventListener('click', function () {
+            if (!targetCell) return;
+            const row = targetCell.closest('tr');
+            const newRow = document.createElement('tr');
+            const bdr  = '#c8d3df', alt = '#f4f7fb';
+            Array.from(row.cells).forEach(() => {
+                const td = document.createElement('td');
+                td.setAttribute('style', `padding:8px 12px;border:1px solid ${bdr};background:#ffffff;vertical-align:top;min-width:80px;`);
+                td.innerHTML = '<br>';
+                newRow.appendChild(td);
+            });
+            row.parentNode.insertBefore(newRow, row.nextSibling);
+            updateTextareaContent();
+        });
+
+        document.getElementById('ctxAddColLeft').addEventListener('click', function () {
+            if (!targetCell) return;
+            const table = targetCell.closest('table');
+            const idx   = targetCell.cellIndex;
+            Array.from(table.rows).forEach(row => {
+                const ref = row.cells[idx];
+                if (!ref) return;
+                const newCell = cloneStyle(ref, ref.tagName.toLowerCase());
+                row.insertBefore(newCell, ref);
+            });
+            updateTextareaContent();
+        });
+
+        document.getElementById('ctxAddColRight').addEventListener('click', function () {
+            if (!targetCell) return;
+            const table = targetCell.closest('table');
+            const idx   = targetCell.cellIndex;
+            Array.from(table.rows).forEach(row => {
+                const ref = row.cells[idx];
+                if (!ref) return;
+                const newCell = cloneStyle(ref, ref.tagName.toLowerCase());
+                ref.after(newCell);
+            });
+            updateTextareaContent();
+        });
+
+        document.getElementById('ctxDeleteRow').addEventListener('click', function () {
+            if (!targetCell) return;
+            const row = targetCell.closest('tr');
+            if (row.closest('table').rows.length > 1) row.remove();
+            updateTextareaContent();
+        });
+
+        document.getElementById('ctxDeleteCol').addEventListener('click', function () {
+            if (!targetCell) return;
+            const table = targetCell.closest('table');
+            const idx   = targetCell.cellIndex;
+            if (table.rows[0] && table.rows[0].cells.length > 1) {
+                Array.from(table.rows).forEach(row => { if (row.cells[idx]) row.deleteCell(idx); });
+            }
+            updateTextareaContent();
+        });
+
+        document.getElementById('ctxDeleteTable').addEventListener('click', function () {
+            if (!targetCell) return;
+            targetCell.closest('table').remove();
+            updateTextareaContent();
+        });
+    })();
     
     // Update button states based on current selection
     function updateButtonStates() {

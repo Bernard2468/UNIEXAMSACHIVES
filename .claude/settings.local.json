@@ -63,7 +63,9 @@
       "Bash(cat)",
       "Bash(bash /tmp/check_views.sh)",
       "Bash(xargs grep *)",
-      "PowerShell(Get-Command php -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Command php -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\" -Directory)",
+      "Bash(Select-Object -First 20)"
     ],
     "deny": []
   }
