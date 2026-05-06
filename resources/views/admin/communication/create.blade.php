@@ -92,7 +92,7 @@
                                                     <div class="letterhead-card {{ old('letterhead') === 'cug' ? 'active' : '' }}"
                                                          data-value="cug" onclick="selectLetterhead(this)">
                                                         <div class="letterhead-card-preview">
-                                                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1778065984/57a43cc8-0c87-4b69-9679-6299960a52d2.png"
+                                                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1778084083/1908c951-dd89-405e-8b29-ec367df1969e.png"
                                                                  alt="CUG Official Letterhead" class="letterhead-preview-img">
                                                         </div>
                                                         <div class="letterhead-card-label">
@@ -3422,7 +3422,7 @@ window.formatFileSize = function(bytes) {
 
 /* ===== LETTERHEAD ===== */
 const LETTERHEAD_URLS = {
-    cug: 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778065984/57a43cc8-0c87-4b69-9679-6299960a52d2.png',
+    cug: 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778084083/1908c951-dd89-405e-8b29-ec367df1969e.png',
     internal_memo: 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png',
 };
 
