@@ -455,12 +455,28 @@
                                                 </div>
 
                                                 <!-- Committees & Boards Section -->
+                                                @php
+                                                    $committeeSelected = str_starts_with(old('recipient_type', ''), 'committee_');
+                                                @endphp
                                                 <div class="committees-section mt-4">
-                                                    <h6 class="section-title">Committees & Boards</h6>
-                                                    <div class="committees-grid">
+                                                    <button type="button"
+                                                            class="committees-toggle-btn"
+                                                            id="committees-toggle"
+                                                            onclick="toggleCommittees()"
+                                                            aria-expanded="{{ $committeeSelected ? 'true' : 'false' }}">
+                                                        <span class="committees-toggle-left">
+                                                            <i class="icofont-users-alt-5"></i>
+                                                            <span>Committees &amp; Boards</span>
+                                                            <span class="committees-count-badge">{{ $committees->count() }}</span>
+                                                        </span>
+                                                        <i class="icofont-rounded-down committees-caret" id="committees-caret"></i>
+                                                    </button>
+
+                                                    <div class="committees-grid" id="committees-grid"
+                                                         style="{{ $committeeSelected ? '' : 'display:none;' }}">
                                                         @forelse ($committees as $committee)
                                                         <div class="option-card">
-                                                            <input class="option-radio" type="radio" name="recipient_type" 
+                                                            <input class="option-radio" type="radio" name="recipient_type"
                                                                    id="committee_{{ $committee->id }}" value="committee_{{ $committee->id }}"
                                                                    data-committee-name="{{ $committee->name }}"
                                                                    data-committee-members="{{ $committee->users_count }}"
@@ -477,7 +493,7 @@
                                                         </div>
                                                         @empty
                                                         <div class="alert alert-info">
-                                                            <i class="icofont-info-circle"></i> No active committees/boards available. Create one in the Committees & Boards section.
+                                                            <i class="icofont-info-circle"></i> No active committees/boards available. Create one in the Committees &amp; Boards section.
                                                         </div>
                                                         @endforelse
                                                     </div>
@@ -829,6 +845,52 @@
   padding: 14px;
   background: #fafbff;
   margin-top: 8px;
+}
+
+/* ===== COMMITTEES COLLAPSE ===== */
+.committees-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  transition: background 0.18s, border-color 0.18s;
+  text-align: left;
+}
+.committees-toggle-btn:hover {
+  background: #e9f0fa;
+  border-color: #1a4a9b;
+}
+.committees-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.committees-count-badge {
+  background: #1a4a9b;
+  color: #fff;
+  border-radius: 20px;
+  padding: 1px 9px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.committees-caret {
+  font-size: 18px;
+  color: #64748b;
+  transition: transform 0.22s ease;
+}
+.committees-caret.open {
+  transform: rotate(180deg);
+}
+.committees-grid {
+  margin-top: 12px;
 }
 
 .required { 
@@ -3116,5 +3178,25 @@ function clearAllCc() {
     document.querySelectorAll('.cc-checkbox').forEach(cb => cb.checked = false);
     updateCcCount();
 }
+
+/* ===== COMMITTEES COLLAPSE ===== */
+function toggleCommittees() {
+    const grid  = document.getElementById('committees-grid');
+    const caret = document.getElementById('committees-caret');
+    const btn   = document.getElementById('committees-toggle');
+    const open  = grid.style.display !== 'none';
+    grid.style.display  = open ? 'none' : '';
+    caret.classList.toggle('open', !open);
+    btn.setAttribute('aria-expanded', String(!open));
+}
+
+// On load: open the section if a committee radio is already selected
+document.addEventListener('DOMContentLoaded', function () {
+    const anyCommitteeChecked = !!document.querySelector('input[name="recipient_type"][value^="committee_"]:checked');
+    if (anyCommitteeChecked) {
+        const caret = document.getElementById('committees-caret');
+        if (caret) caret.classList.add('open');
+    }
+});
 </script>
 @endsection
