@@ -38,25 +38,33 @@
 
     .otp-input-row {
         display: flex;
-        justify-content: space-between;
-        gap: 0.5rem;
+        justify-content: center;
+        gap: 0.45rem;
         margin: 1.25rem 0;
+        flex-wrap: nowrap;
     }
 
     .otp-digit {
-        flex: 1;
-        height: 60px;
-        font-size: 1.6rem;
+        width: 44px;
+        height: 52px;
+        flex: 0 0 44px;
+        padding: 0;
+        font-size: 1.35rem;
         font-weight: 700;
         text-align: center;
         border: 2px solid #d1d5db;
-        border-radius: 12px;
+        border-radius: 10px;
         background: #ffffff;
         color: #111827;
         transition: all 0.2s ease;
         font-family: 'Courier New', Courier, monospace;
         outline: none;
         -moz-appearance: textfield;
+    }
+
+    @media (max-width: 420px) {
+        .otp-input-row { gap: 0.3rem; }
+        .otp-digit { width: 40px; height: 48px; flex-basis: 40px; font-size: 1.2rem; }
     }
     .otp-digit::-webkit-outer-spin-button,
     .otp-digit::-webkit-inner-spin-button {
