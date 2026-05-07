@@ -253,9 +253,21 @@
                 $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
                 $out .= '<div class="doc-html-content">' . ($att['html'] ?? '') . '</div>';
                 break;
+            case 'pdf_text':
+                $out .= '<div class="pdf-label">&#128196; PDF Content — ' . e($att['name']) . '</div>';
+                $out .= '<div class="attachment-pdf-text">' . ($att['text'] ?? '') . '</div>';
+                break;
+            case 'doc_text':
+                $out .= '<div class="pdf-label">&#128196; Word Document Content — ' . e($att['name']) . '</div>';
+                $out .= '<div class="attachment-pdf-text">' . ($att['text'] ?? '') . '</div>';
+                break;
+            case 'pdf':
+                $out .= '<div class="pdf-label">&#128196; PDF Document — ' . e($att['name']) . '</div>';
+                $out .= '<div class="attachment-unavailable">PDF content could not be extracted. Verify <code>smalot/pdfparser</code> or <code>setasign/fpdi</code> is installed on the server.</div>';
+                break;
             case 'doc':
                 $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-unavailable">Document content could not be extracted. Make sure <code>phpoffice/phpword</code> is installed on the server.</div>';
+                $out .= '<div class="attachment-unavailable">Document content could not be extracted from this file format.</div>';
                 break;
             case 'missing':
                 $out .= '<div class="attachment-unavailable">&#9888; File not found on server: ' . e($att['name']) . '</div>';

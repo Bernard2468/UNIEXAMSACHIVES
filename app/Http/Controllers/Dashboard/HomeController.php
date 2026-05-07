@@ -1231,12 +1231,34 @@ class HomeController extends Controller
                 $entry['text'] = htmlspecialchars(file_get_contents($filePath));
 
             } elseif ($mime === 'application/pdf') {
-                // Queue the PDF for merging — actual pages will be appended after the main content
-                $pdfMergeQueue[] = [
-                    'label' => $sourceLabel . ': ' . $name,
-                    'path'  => $filePath,
-                ];
-                $entry['type'] = 'merged_ref';
+                $hasFpdi = class_exists(\setasign\Fpdi\Fpdi::class);
+
+                if ($hasFpdi) {
+                    // Best path: queue for merging — actual PDF pages appended after main content
+                    $pdfMergeQueue[] = [
+                        'label' => $sourceLabel . ': ' . $name,
+                        'path'  => $filePath,
+                    ];
+                    $entry['type'] = 'merged_ref';
+                } else {
+                    // Fallback: extract text via smalot/pdfparser and show inline
+                    $extractedText = null;
+                    if (class_exists(\Smalot\PdfParser\Parser::class)) {
+                        try {
+                            $parser  = new \Smalot\PdfParser\Parser();
+                            $parsed  = $parser->parseFile($filePath);
+                            $extractedText = trim($parsed->getText());
+                        } catch (\Throwable $e) {
+                            \Log::warning('PDF text extraction failed for ' . $name . ': ' . $e->getMessage());
+                        }
+                    }
+                    if ($extractedText) {
+                        $entry['type'] = 'pdf_text';
+                        $entry['text'] = htmlspecialchars($extractedText);
+                    } else {
+                        $entry['type'] = 'pdf';
+                    }
+                }
 
             } elseif (in_array($mime, [
                 'application/msword',
@@ -1244,9 +1266,11 @@ class HomeController extends Controller
             ])) {
                 $hasFpdi    = class_exists(\setasign\Fpdi\Fpdi::class);
                 $hasPhpWord = class_exists(\PhpOffice\PhpWord\IOFactory::class);
+                $isDocx     = $mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                           || str_ends_with(strtolower($name), '.docx');
                 $handled    = false;
 
-                // Best path: convert to PDF + merge real pages (preserves formatting perfectly)
+                // Tier 1 (best): convert to PDF + merge real pages — preserves all formatting
                 if ($hasFpdi && $hasPhpWord) {
                     $tempPdf = $convertWordToPdf($filePath);
                     if ($tempPdf) {
@@ -1259,13 +1283,38 @@ class HomeController extends Controller
                     }
                 }
 
-                // Fallback: render Word as inline HTML inside the main PDF (preserves bold/tables/headings)
+                // Tier 2: render as inline HTML in main PDF — preserves bold, headings, tables, lists
                 if (!$handled && $hasPhpWord) {
                     $bodyHtml = $extractWordHtml($filePath);
                     if ($bodyHtml) {
                         $entry['type'] = 'doc_html';
                         $entry['html'] = $bodyHtml;
                         $handled = true;
+                    }
+                }
+
+                // Tier 3: ZipArchive text extraction — pure PHP built-in, always works for .docx
+                if (!$handled && $isDocx) {
+                    try {
+                        $zip = new \ZipArchive();
+                        if ($zip->open($filePath) === true) {
+                            $xml = $zip->getFromName('word/document.xml');
+                            $zip->close();
+                            if ($xml) {
+                                $xml  = str_replace(['</w:p>', '</w:tr>'], "\n", $xml);
+                                $text = strip_tags($xml);
+                                $text = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                                $text = preg_replace('/[ \t]+/', ' ', $text);
+                                $text = preg_replace('/\n{3,}/', "\n\n", trim($text));
+                                if ($text) {
+                                    $entry['type'] = 'doc_text';
+                                    $entry['text'] = htmlspecialchars($text);
+                                    $handled = true;
+                                }
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::warning('ZipArchive .docx extraction failed: ' . $e->getMessage());
                     }
                 }
 
