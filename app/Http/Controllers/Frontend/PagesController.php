@@ -21,6 +21,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
 use App\Mail\PasswordResetConfirmation;
 use App\Models\SystemSetting;
+use App\Http\Controllers\Frontend\EmailVerificationController;
 
 class PagesController extends Controller
 {
@@ -106,6 +107,13 @@ class PagesController extends Controller
             return redirect()->back()->with('error', 'This login portal is only for advance communication system users. Please use the regular login.');
         }
 
+        if (!$user->hasVerifiedEmail()) {
+            $request->session()->put('verify_email', $user->email);
+            EmailVerificationController::sendOtp($user);
+            return redirect()->route('verification.show')
+                ->with('error', 'Please verify your email first. We just sent a fresh 6-digit code to ' . $user->email . '.');
+        }
+
         if (!$user->is_approve) {
             return redirect()->back()->with('error', 'Your account is not yet approved.');
         }
@@ -184,7 +192,7 @@ class PagesController extends Controller
             }
         }
 
-        User::create([
+        $user = User::create([
             'first_name' => $validatedData['first_name'],
             'last_name' => $validatedData['last_name'],
             'email' => $validatedData['email'],
@@ -195,49 +203,16 @@ class PagesController extends Controller
             'department_id' => $validatedData['department_id'],
             'staff_category' => $validatedData['staff_category'],
             'position_id' => $validatedData['position_id'] ?? null,
+            'email_verified_at' => null,
         ]);
 
-        // Send registration confirmation email to user (always attempt send)
-        try {
-            $resendService = new ResendMailService();
-            
-            $htmlContent = view('mails.registration', [
-                'firstname' => $validatedData['first_name'],
-                'email' => $validatedData['email']
-            ])->render();
-            
-            \Log::info('Attempting to send registration email', [
-                'user_email' => $validatedData['email'],
-                'user_name' => $validatedData['first_name']
-            ]);
-            
-            $response = $resendService->sendEmail(
-                $validatedData['email'],
-                'Registration Successful - Awaiting Approval',
-                $htmlContent,
-                config('mail.from.address')
-            );
-            
-            if (!empty($response['success'])) {
-                \Log::info('Registration email sent successfully', [
-                    'user_email' => $validatedData['email'],
-                    'message_id' => $response['message_id'] ?? 'N/A'
-                ]);
-            } else {
-                \Log::error('Failed to send registration email', [
-                    'user_email' => $validatedData['email'],
-                    'error' => $response['error'] ?? 'Unknown error',
-                    'response' => $response
-                ]);
-            }
-        } catch (\Exception $e) {
-            \Log::error('Error sending registration email', [
-                'user_email' => $validatedData['email'],
-                'error' => $e->getMessage()
-            ]);
-        }
+        // Generate + email a 6-digit OTP. The user is unverified until they confirm it.
+        EmailVerificationController::sendOtp($user);
 
-        return redirect()->route('frontend.login')->with('success', 'Registration successful! Please wait while your account is being approved.');
+        $request->session()->put('verify_email', $user->email);
+
+        return redirect()->route('verification.show')
+            ->with('success', 'We sent a 6-digit verification code to ' . $user->email . '. Enter it below to confirm your email.');
     }
 
     public function loginUser(Request $request)
@@ -260,6 +235,13 @@ class PagesController extends Controller
         // Block advance communication users from using regular login
         if (!$user->is_admin) {
             return redirect()->back()->with('error', 'Advance communication system users must use the admin portal at /admin. Please use that login instead.');
+        }
+
+        if (!$user->hasVerifiedEmail()) {
+            $request->session()->put('verify_email', $user->email);
+            EmailVerificationController::sendOtp($user);
+            return redirect()->route('verification.show')
+                ->with('error', 'Please verify your email first. We just sent a fresh 6-digit code to ' . $user->email . '.');
         }
 
         if ($user->is_admin && !$user->is_approve) {

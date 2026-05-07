@@ -10,6 +10,7 @@ use App\Http\Controllers\Dashboard\ExamsController;
 use App\Http\Controllers\Dashboard\FilesController;
 use App\Http\Controllers\Dashboard\FoldersController;
 use App\Http\Controllers\Dashboard\HomeController;
+use App\Http\Controllers\Frontend\EmailVerificationController;
 use App\Http\Controllers\Frontend\PagesController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,15 @@ Route::post('/admin/access-request', [PagesController::class, 'adminAccessReques
 Route::get('/login', [PagesController::class, 'login'])->name('frontend.login');
 Route::post('/login', [PagesController::class, 'loginUser'])->name('login');
 Route::post('/register', [PagesController::class, 'register'])->name('register');
+
+// Email Verification Routes (OTP)
+Route::get('/verify-email', [EmailVerificationController::class, 'show'])->name('verification.show');
+Route::post('/verify-email', [EmailVerificationController::class, 'verify'])
+    ->middleware('throttle:10,1')
+    ->name('verification.verify');
+Route::post('/verify-email/resend', [EmailVerificationController::class, 'resend'])
+    ->middleware('throttle:5,1')
+    ->name('verification.resend');
 
 // Password Reset Routes
 Route::get('/forgot-password', [PagesController::class, 'forgotPassword'])->name('password.request');

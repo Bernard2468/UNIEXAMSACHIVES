@@ -66,7 +66,8 @@
       "PowerShell(Get-Command php -ErrorAction SilentlyContinue)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\" -Directory)",
       "Bash(Select-Object -First 20)",
-      "Bash(composer require *)"
+      "Bash(composer require *)",
+      "PowerShell(php artisan migrate --force)"
     ],
     "deny": []
   }

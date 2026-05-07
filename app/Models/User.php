@@ -37,6 +37,11 @@ class User extends Authenticatable
         'admin_access_supervisor',
         'admin_access_supervisor_email',
         'admin_access_requested_at',
+        'email_verified_at',
+        'email_otp',
+        'email_otp_expires_at',
+        'email_otp_attempts',
+        'email_otp_last_sent_at',
     ];
 
     /**
@@ -58,6 +63,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'email_otp_expires_at' => 'datetime',
+            'email_otp_last_sent_at' => 'datetime',
             'password' => 'hashed',
             'super_admin_access_granted_at' => 'datetime',
             'admin_access_requested_at' => 'datetime',
@@ -342,5 +349,27 @@ class User extends Authenticatable
     public function activeCommittees()
     {
         return $this->committees()->where('status', 'active');
+    }
+
+    // ===== Email OTP Verification =====
+
+    public function hasVerifiedEmail(): bool
+    {
+        return ! is_null($this->email_verified_at);
+    }
+
+    public function markEmailVerified(): void
+    {
+        $this->forceFill([
+            'email_verified_at' => now(),
+            'email_otp' => null,
+            'email_otp_expires_at' => null,
+            'email_otp_attempts' => 0,
+        ])->save();
+    }
+
+    public function isOtpExpired(): bool
+    {
+        return ! $this->email_otp_expires_at || $this->email_otp_expires_at->isPast();
     }
 }
