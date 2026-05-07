@@ -1208,61 +1208,62 @@ class HomeController extends Controller
                 'application/msword',
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ])) {
-                $extractedText = null;
+                $isDocx = $mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                       || str_ends_with(strtolower($attachment['name'] ?? ''), '.docx');
 
-                // .docx is a ZIP of XML — extract text without any extra library
-                if (in_array($mime, ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
-                    || str_ends_with(strtolower($attachment['name'] ?? ''), '.docx')
-                ) {
+                // Best path: phpoffice/phpword HTML writer → DomPDF renders full formatting
+                if (class_exists(\PhpOffice\PhpWord\IOFactory::class)) {
+                    try {
+                        $phpWord    = \PhpOffice\PhpWord\IOFactory::load($filePath);
+                        $htmlWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'HTML');
+                        $tempFile   = tempnam(sys_get_temp_dir(), 'phpword_') . '.html';
+                        $htmlWriter->save($tempFile);
+                        $rawHtml    = file_get_contents($tempFile);
+                        @unlink($tempFile);
+
+                        // Extract body content only
+                        if (preg_match('/<body[^>]*>(.*?)<\/body>/si', $rawHtml, $m)) {
+                            $bodyHtml = trim($m[1]);
+                        } else {
+                            $bodyHtml = $rawHtml;
+                        }
+                        // Strip scripts for safety
+                        $bodyHtml = preg_replace('/<script\b[^>]*>.*?<\/script>/si', '', $bodyHtml ?? '');
+
+                        if ($bodyHtml) {
+                            $entry['type'] = 'doc_html';
+                            $entry['html'] = $bodyHtml;
+                        }
+                    } catch (\Throwable $e) {
+                        // fall through to ZipArchive
+                    }
+                }
+
+                // Fallback for .docx: ZipArchive text extraction (no extra library)
+                if ($entry['type'] === 'unsupported' && $isDocx) {
                     try {
                         $zip = new \ZipArchive();
                         if ($zip->open($filePath) === true) {
                             $xml = $zip->getFromName('word/document.xml');
                             $zip->close();
                             if ($xml) {
-                                // Each </w:p> is a paragraph break
-                                $xml = str_replace(['</w:p>', '</w:tr>'], "\n", $xml);
+                                $xml  = str_replace(['</w:p>', '</w:tr>'], "\n", $xml);
                                 $text = strip_tags($xml);
                                 $text = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
                                 $text = preg_replace('/[ \t]+/', ' ', $text);
                                 $text = preg_replace('/\n{3,}/', "\n\n", trim($text));
-                                if ($text) $extractedText = $text;
-                            }
-                        }
-                    } catch (\Throwable $e) {
-                        $extractedText = null;
-                    }
-                }
-
-                // Fallback: try phpoffice/phpword for old .doc binary format
-                if (!$extractedText && class_exists(\PhpOffice\PhpWord\IOFactory::class)) {
-                    try {
-                        $phpWord = \PhpOffice\PhpWord\IOFactory::load($filePath);
-                        $lines   = [];
-                        foreach ($phpWord->getSections() as $section) {
-                            foreach ($section->getElements() as $element) {
-                                if (method_exists($element, 'getText')) {
-                                    $t = $element->getText();
-                                    if ($t) $lines[] = $t;
-                                } elseif ($element instanceof \PhpOffice\PhpWord\Element\TextRun) {
-                                    $line = '';
-                                    foreach ($element->getElements() as $el) {
-                                        if (method_exists($el, 'getText')) $line .= $el->getText();
-                                    }
-                                    if ($line) $lines[] = $line;
+                                if ($text) {
+                                    $entry['type'] = 'doc_text';
+                                    $entry['text'] = htmlspecialchars($text);
                                 }
                             }
                         }
-                        if ($lines) $extractedText = implode("\n", $lines);
                     } catch (\Throwable $e) {
-                        $extractedText = null;
+                        // noop
                     }
                 }
 
-                if ($extractedText) {
-                    $entry['type'] = 'doc_text';
-                    $entry['text'] = htmlspecialchars($extractedText);
-                } else {
+                if (!in_array($entry['type'], ['doc_html', 'doc_text'])) {
                     $entry['type'] = 'doc';
                 }
 

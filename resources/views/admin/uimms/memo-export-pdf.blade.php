@@ -113,6 +113,33 @@
             font-weight: bold;
             margin-bottom: 6px;
         }
+        /* ── Formatted Word / HTML document content ── */
+        .doc-html-content {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            font-size: 10.5pt;
+            line-height: 1.7;
+            color: #111827;
+            padding: 8px 4px;
+        }
+        .doc-html-content p     { margin-bottom: 8px; }
+        .doc-html-content h1    { font-size: 15pt; font-weight: bold; margin: 10px 0 6px; color: #1e3a5f; }
+        .doc-html-content h2    { font-size: 13pt; font-weight: bold; margin: 10px 0 6px; color: #1e3a5f; }
+        .doc-html-content h3    { font-size: 11.5pt; font-weight: bold; margin: 8px 0 4px; color: #374151; }
+        .doc-html-content h4,
+        .doc-html-content h5,
+        .doc-html-content h6    { font-size: 10.5pt; font-weight: bold; margin: 6px 0 4px; }
+        .doc-html-content b,
+        .doc-html-content strong { font-weight: bold; }
+        .doc-html-content i,
+        .doc-html-content em     { font-style: italic; }
+        .doc-html-content u      { text-decoration: underline; }
+        .doc-html-content ul,
+        .doc-html-content ol     { margin: 6px 0 6px 20px; }
+        .doc-html-content li     { margin-bottom: 3px; }
+        .doc-html-content table  { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }
+        .doc-html-content th     { background: #1e3a5f; color: #fff; padding: 6px 8px; font-weight: bold; border: 1px solid #1e3a5f; text-align: left; }
+        .doc-html-content td     { padding: 5px 8px; border: 1px solid #c8d3df; vertical-align: top; }
+        .doc-html-content tr:nth-child(even) td { background: #f8fafc; }
 
         /* ── Chat thread ── */
         .chat-section { margin-top: 32px; }
@@ -196,13 +223,17 @@
                 $out .= '<div class="pdf-label">&#128196; PDF Document — ' . e($att['name']) . '</div>';
                 $out .= '<div class="attachment-unavailable">PDF content preview requires the smalot/pdfparser library. Install it on the server to see full PDF text inline.</div>';
                 break;
+            case 'doc_html':
+                $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
+                $out .= '<div class="doc-html-content">' . ($att['html'] ?? '') . '</div>';
+                break;
             case 'doc_text':
-                $out .= '<div class="pdf-label">&#128196; Word Document Content — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-pdf-text">' . $att['text'] . '</div>';
+                $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
+                $out .= '<div class="attachment-pdf-text">' . ($att['text'] ?? '') . '</div>';
                 break;
             case 'doc':
                 $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-unavailable">This file is in the old .doc binary format. Install phpoffice/phpword on the server to extract its content inline.</div>';
+                $out .= '<div class="attachment-unavailable">Install phpoffice/phpword on the server to render this document inline: <code>composer require phpoffice/phpword</code></div>';
                 break;
             case 'missing':
                 $out .= '<div class="attachment-unavailable">&#9888; File not found on server: ' . e($att['name']) . '</div>';
