@@ -1157,52 +1157,96 @@ class HomeController extends Controller
             default         => null,
         };
 
-        // ── Process attachments for inline preview ──
+        // ── Shared attachment processor (used for both memo and reply attachments) ──
+        $processAttachment = function (array $attachment, int $index, string $context = 'memo', int $contextId = 0) use ($memo): array {
+            $filePath = storage_path('app/public/' . $attachment['path']);
+            $mime     = $attachment['type'] ?? '';
+            $name     = $attachment['name'] ?? 'attachment';
+            $entry    = [
+                'index'   => $index,
+                'name'    => $name,
+                'size'    => isset($attachment['size']) ? round($attachment['size'] / 1024, 1) . ' KB' : '',
+                'mime'    => $mime,
+                'type'    => 'unsupported',
+                'data'    => null,
+                'text'    => null,
+            ];
+
+            if (!file_exists($filePath)) {
+                $entry['type'] = 'missing';
+                return $entry;
+            }
+
+            if (str_starts_with($mime, 'image/')) {
+                $entry['type'] = 'image';
+                $entry['data'] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($filePath));
+
+            } elseif ($mime === 'application/pdf') {
+                // Try to extract readable text from the PDF using smalot/pdfparser if installed
+                $extractedText = null;
+                if (class_exists(\Smalot\PdfParser\Parser::class)) {
+                    try {
+                        $parser       = new \Smalot\PdfParser\Parser();
+                        $parsedPdf    = $parser->parseFile($filePath);
+                        $extractedText = trim($parsedPdf->getText());
+                    } catch (\Throwable $e) {
+                        $extractedText = null;
+                    }
+                }
+                if ($extractedText) {
+                    $entry['type'] = 'pdf_text';
+                    $entry['text'] = htmlspecialchars($extractedText);
+                } else {
+                    $entry['type'] = 'pdf';
+                }
+
+            } elseif ($mime === 'text/plain') {
+                $entry['type'] = 'text';
+                $entry['text'] = htmlspecialchars(file_get_contents($filePath));
+
+            } elseif (in_array($mime, [
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])) {
+                $entry['type'] = 'doc';
+
+            } else {
+                $entry['type'] = 'other';
+            }
+
+            return $entry;
+        };
+
+        // ── Process memo-level attachments ──
         $processedAttachments = [];
         if ($memo->attachments) {
             foreach ($memo->attachments as $index => $attachment) {
-                $filePath = storage_path('app/public/' . $attachment['path']);
-                $mime     = $attachment['type'] ?? '';
-                $name     = $attachment['name'] ?? 'attachment';
-                $entry    = [
-                    'index' => $index,
-                    'name'  => $name,
-                    'size'  => isset($attachment['size']) ? round($attachment['size'] / 1024, 1) . ' KB' : '',
-                    'mime'  => $mime,
-                    'type'  => 'unsupported',
-                    'data'  => null,
-                    'text'  => null,
-                ];
-
-                if (file_exists($filePath)) {
-                    if (str_starts_with($mime, 'image/')) {
-                        // Embed image as base64
-                        $entry['type'] = 'image';
-                        $entry['data'] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($filePath));
-                    } elseif ($mime === 'application/pdf') {
-                        // PDF — provide a view link (DomPDF cannot embed external PDFs)
-                        $entry['type'] = 'pdf';
-                        $entry['url']  = route('dashboard.uimms.chat.attachment.view', ['memo' => $memo->id, 'index' => $index]);
-                    } elseif (in_array($mime, ['text/plain'])) {
-                        // Plain text — embed content
-                        $entry['type'] = 'text';
-                        $entry['text'] = htmlspecialchars(file_get_contents($filePath));
-                    } elseif (in_array($mime, [
-                        'application/msword',
-                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    ])) {
-                        $entry['type'] = 'doc';
-                        $entry['url']  = route('dashboard.uimms.chat.attachment.download', ['memo' => $memo->id, 'index' => $index]);
-                    } else {
-                        $entry['url'] = route('dashboard.uimms.chat.attachment.download', ['memo' => $memo->id, 'index' => $index]);
-                    }
-                }
-
-                $processedAttachments[] = $entry;
+                $processedAttachments[] = $processAttachment($attachment, $index, 'memo', $memo->id);
             }
         }
 
-        // ── Letterhead as base64 for DomPDF (DomPDF works best with local or base64 images) ──
+        // ── Process every reply and its attachments ──
+        $processedReplies = [];
+        foreach ($memo->replies->sortBy('created_at') as $reply) {
+            $replyAttachments = [];
+            if ($reply->attachments) {
+                foreach ($reply->attachments as $index => $attachment) {
+                    $replyAttachments[] = $processAttachment($attachment, $index, 'reply', $reply->id);
+                }
+            }
+            $senderName = trim(($reply->user->first_name ?? '') . ' ' . ($reply->user->last_name ?? ''));
+            if (!$senderName) $senderName = $reply->user->name ?? 'Unknown';
+
+            $processedReplies[] = [
+                'id'          => $reply->id,
+                'sender'      => $senderName,
+                'sent_at'     => $reply->created_at ? $reply->created_at->format('d M Y, H:i') : '',
+                'message'     => $reply->message ?? '',
+                'attachments' => $replyAttachments,
+            ];
+        }
+
+        // ── Letterhead as base64 for DomPDF ──
         $letterheadBase64 = null;
         if ($letterheadUrl) {
             try {
@@ -1220,6 +1264,7 @@ class HomeController extends Controller
             'letterheadBase64'     => $letterheadBase64,
             'hasLetterhead'        => !empty($memo->letterhead),
             'processedAttachments' => $processedAttachments,
+            'processedReplies'     => $processedReplies,
             'toRecipients'         => $memo->toRecipients,
             'ccRecipients'         => $memo->ccRecipients,
         ])->setPaper('a4', 'portrait');
