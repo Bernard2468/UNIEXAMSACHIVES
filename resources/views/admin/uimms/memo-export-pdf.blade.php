@@ -249,9 +249,13 @@
                 $out .= '<div class="pdf-label">&#128196; ' . e($att['name']) . '</div>';
                 $out .= '<div class="merged-ref-note">&#10142; Full document content is appended after the chat thread, with original formatting preserved.</div>';
                 break;
+            case 'doc_html':
+                $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
+                $out .= '<div class="doc-html-content">' . ($att['html'] ?? '') . '</div>';
+                break;
             case 'doc':
                 $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-unavailable">Install <code>phpoffice/phpword</code> and <code>setasign/fpdi setasign/fpdf</code> on the server to render this document inline.</div>';
+                $out .= '<div class="attachment-unavailable">Document content could not be extracted. Make sure <code>phpoffice/phpword</code> is installed on the server.</div>';
                 break;
             case 'missing':
                 $out .= '<div class="attachment-unavailable">&#9888; File not found on server: ' . e($att['name']) . '</div>';

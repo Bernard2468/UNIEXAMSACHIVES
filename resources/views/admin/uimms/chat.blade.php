@@ -379,9 +379,9 @@
                         <div class="chat-container">
                             <div class="chat-messages" id="chat-messages">
                                 @foreach($memo->replies as $message)
-                                    <div class="message {{ $message->user_id === auth()->id() ? 'message-sent' : 'message-received' }}">
+                                    <div class="message {{ $message->user_id === auth()->id() ? 'message-sent' : 'message-received' }}" data-reply-id="{{ $message->id }}">
                                         <div class="message-avatar">
-                                            <img src="{{ $message->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}" 
+                                            <img src="{{ $message->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
                                                  alt="{{ $message->user->first_name }}">
                                         </div>
                                         <div class="message-content">
@@ -417,6 +417,13 @@
                                                 </div>
                                                 <div class="message-header-right">
                                                     <span class="message-time">{{ $message->created_at->format('M d, Y H:i') }}</span>
+                                                    @if($message->user_id === auth()->id() && !in_array($memo->memo_status, ['completed', 'archived']))
+                                                        <button type="button" class="message-delete-btn"
+                                                                onclick="deleteMessage({{ $message->id }}, this)"
+                                                                title="Delete message">
+                                                            <i class="icofont-trash"></i>
+                                                        </button>
+                                                    @endif
                                                 </div>
                                             </div>
                                             <div class="message-text">{!! $message->message !!}</div>
@@ -2093,7 +2100,44 @@
 .message-header-right {
     display: flex;
     align-items: center;
+    gap: 6px;
     flex-shrink: 0;
+}
+
+.message-delete-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.message-sent:hover .message-delete-btn,
+.message-delete-btn:focus {
+    opacity: 1;
+}
+.message-delete-btn:hover {
+    background: rgba(220, 38, 38, 0.15);
+    color: #fca5a5;
+}
+.message-received .message-delete-btn {
+    color: rgba(0, 0, 0, 0.4);
+}
+.message-received .message-delete-btn:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+.message.deleting {
+    opacity: 0.4;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+@media (max-width: 768px) {
+    .message-delete-btn { opacity: 0.6; }
 }
 
 .message-text {
@@ -3378,9 +3422,9 @@ function addMessageToChat(message) {
     }
     
     const messageHtml = `
-        <div class="message message-sent">
+        <div class="message message-sent" data-reply-id="${message.id}">
             <div class="message-avatar">
-                <img src="${message.user.profile_picture_url || '/profile_pictures/default-profile.png'}" 
+                <img src="${message.user.profile_picture_url || '/profile_pictures/default-profile.png'}"
                      alt="${message.user.first_name}">
             </div>
             <div class="message-content">
@@ -3391,16 +3435,65 @@ function addMessageToChat(message) {
                     </div>
                     <div class="message-header-right">
                         <span class="message-time">${new Date(message.created_at).toLocaleString()}</span>
+                        <button type="button" class="message-delete-btn"
+                                onclick="deleteMessage(${message.id}, this)"
+                                title="Delete message">
+                            <i class="icofont-trash"></i>
+                        </button>
                     </div>
                 </div>
-                <div class="message-text">${message.message}</div>
+                <div class="message-text">${message.message || ''}</div>
                 ${attachmentsHtml}
             </div>
         </div>
     `;
-    
+
     messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
     scrollToBottom();
+}
+
+// Delete a chat message — only works on the user's own messages
+function deleteMessage(replyId, buttonEl) {
+    if (!confirm('Delete this message? This action cannot be undone.')) return;
+
+    const messageEl = buttonEl ? buttonEl.closest('.message') : document.querySelector(`.message[data-reply-id="${replyId}"]`);
+    if (messageEl) messageEl.classList.add('deleting');
+
+    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    fetch(`/dashboard/uimms/chat/reply/${replyId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': csrf,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        credentials: 'same-origin',
+    })
+    .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Failed to delete message.');
+        }
+        return data;
+    })
+    .then(() => {
+        if (messageEl) {
+            messageEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            messageEl.style.opacity = '0';
+            messageEl.style.transform = 'translateX(20px)';
+            setTimeout(() => messageEl.remove(), 300);
+        }
+        // Keep counters consistent so polling doesn't think a message was lost
+        if (typeof lastMessageCount === 'number' && lastMessageCount > 0) {
+            lastMessageCount--;
+        }
+    })
+    .catch((err) => {
+        console.error('Delete error:', err);
+        if (messageEl) messageEl.classList.remove('deleting');
+        alert(err.message || 'Could not delete the message. Please try again.');
+    });
 }
 
 // Add new message to chat (for received messages with animation)
@@ -3496,10 +3589,13 @@ function addNewMessageToChat(message) {
     }
     
     const messageClass = isOwnMessage ? 'message-sent' : 'message-received';
+    const deleteBtnHtml = isOwnMessage
+        ? `<button type="button" class="message-delete-btn" onclick="deleteMessage(${message.id}, this)" title="Delete message"><i class="icofont-trash"></i></button>`
+        : '';
     const messageHtml = `
-        <div class="message ${messageClass} new-message">
+        <div class="message ${messageClass} new-message" data-reply-id="${message.id}">
             <div class="message-avatar">
-                <img src="${message.user.profile_picture_url || '/profile_pictures/default-profile.png'}" 
+                <img src="${message.user.profile_picture_url || '/profile_pictures/default-profile.png'}"
                      alt="${message.user.first_name}">
             </div>
             <div class="message-content">
@@ -3510,9 +3606,10 @@ function addNewMessageToChat(message) {
                     </div>
                     <div class="message-header-right">
                         <span class="message-time">${new Date(message.created_at).toLocaleString()}</span>
+                        ${deleteBtnHtml}
                     </div>
                 </div>
-                <div class="message-text">${message.message}</div>
+                <div class="message-text">${message.message || ''}</div>
                 ${attachmentsHtml}
             </div>
         </div>

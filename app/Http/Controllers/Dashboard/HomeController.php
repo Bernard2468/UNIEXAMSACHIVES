@@ -1161,8 +1161,8 @@ class HomeController extends Controller
         $tempFiles      = [];
         $pdfMergeQueue  = []; // [['label' => 'Memo Attachment: foo.pdf', 'path' => '/tmp/x.pdf'], ...]
 
-        // ── Helper: convert a Word document to a temp PDF using phpoffice/phpword + DomPDF ──
-        $convertWordToPdf = function (string $docPath) use (&$tempFiles): ?string {
+        // ── Helper: extract a Word document's body HTML using phpoffice/phpword ──
+        $extractWordHtml = function (string $docPath): ?string {
             if (!class_exists(\PhpOffice\PhpWord\IOFactory::class)) return null;
             try {
                 $phpWord    = \PhpOffice\PhpWord\IOFactory::load($docPath);
@@ -1171,10 +1171,27 @@ class HomeController extends Controller
                 $htmlWriter->save($tempHtml);
                 $rawHtml    = file_get_contents($tempHtml);
                 @unlink($tempHtml);
-                $rawHtml    = preg_replace('/<script\b[^>]*>.*?<\/script>/si', '', $rawHtml ?? '');
                 if (!$rawHtml) return null;
+                if (preg_match('/<body[^>]*>(.*?)<\/body>/si', $rawHtml, $m)) {
+                    $body = trim($m[1]);
+                } else {
+                    $body = $rawHtml;
+                }
+                return preg_replace('/<script\b[^>]*>.*?<\/script>/si', '', $body ?? '');
+            } catch (\Throwable $e) {
+                \Log::warning('Word HTML extraction failed: ' . $e->getMessage());
+                return null;
+            }
+        };
+
+        // ── Helper: convert Word to a temp PDF (only used when FPDI is available) ──
+        $convertWordToPdf = function (string $docPath) use (&$tempFiles, $extractWordHtml): ?string {
+            $bodyHtml = $extractWordHtml($docPath);
+            if (!$bodyHtml) return null;
+            try {
                 $tempPdf = tempnam(sys_get_temp_dir(), 'docpdf_') . '.pdf';
-                $docPdf  = Pdf::loadHTML($rawHtml)->setPaper('a4', 'portrait');
+                $docPdf  = Pdf::loadHTML('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' . $bodyHtml . '</body></html>')
+                              ->setPaper('a4', 'portrait');
                 file_put_contents($tempPdf, $docPdf->output());
                 $tempFiles[] = $tempPdf;
                 return $tempPdf;
@@ -1185,7 +1202,7 @@ class HomeController extends Controller
         };
 
         // ── Shared attachment processor (used for both memo and reply attachments) ──
-        $processAttachment = function (array $attachment, int $index, string $sourceLabel) use ($convertWordToPdf, &$pdfMergeQueue): array {
+        $processAttachment = function (array $attachment, int $index, string $sourceLabel) use ($convertWordToPdf, $extractWordHtml, &$pdfMergeQueue): array {
             $filePath = storage_path('app/public/' . ($attachment['path'] ?? ''));
             $mime     = $attachment['type'] ?? '';
             $name     = $attachment['name'] ?? 'attachment';
@@ -1225,15 +1242,34 @@ class HomeController extends Controller
                 'application/msword',
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ])) {
-                // Convert Word → temp PDF, then queue it for merging
-                $tempPdf = $convertWordToPdf($filePath);
-                if ($tempPdf) {
-                    $pdfMergeQueue[] = [
-                        'label' => $sourceLabel . ': ' . $name,
-                        'path'  => $tempPdf,
-                    ];
-                    $entry['type'] = 'merged_ref';
-                } else {
+                $hasFpdi    = class_exists(\setasign\Fpdi\Fpdi::class);
+                $hasPhpWord = class_exists(\PhpOffice\PhpWord\IOFactory::class);
+                $handled    = false;
+
+                // Best path: convert to PDF + merge real pages (preserves formatting perfectly)
+                if ($hasFpdi && $hasPhpWord) {
+                    $tempPdf = $convertWordToPdf($filePath);
+                    if ($tempPdf) {
+                        $pdfMergeQueue[] = [
+                            'label' => $sourceLabel . ': ' . $name,
+                            'path'  => $tempPdf,
+                        ];
+                        $entry['type'] = 'merged_ref';
+                        $handled = true;
+                    }
+                }
+
+                // Fallback: render Word as inline HTML inside the main PDF (preserves bold/tables/headings)
+                if (!$handled && $hasPhpWord) {
+                    $bodyHtml = $extractWordHtml($filePath);
+                    if ($bodyHtml) {
+                        $entry['type'] = 'doc_html';
+                        $entry['html'] = $bodyHtml;
+                        $handled = true;
+                    }
+                }
+
+                if (!$handled) {
                     $entry['type'] = 'doc';
                 }
 
@@ -1789,6 +1825,48 @@ class HomeController extends Controller
         
         // Return file view response
         return response()->file($filePath);
+    }
+
+    /**
+     * Delete a chat message — only the sender can delete their own message
+     */
+    public function deleteChatMessage(MemoReply $reply)
+    {
+        $userId = Auth::id();
+
+        if ($reply->user_id !== $userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only delete your own messages.',
+            ], 403);
+        }
+
+        $memo = $reply->campaign;
+        if ($memo && in_array($memo->memo_status, ['completed', 'archived'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot delete messages in a ' . $memo->memo_status . ' memo.',
+            ], 403);
+        }
+
+        // Delete attachment files from storage
+        if ($reply->attachments) {
+            foreach ($reply->attachments as $attachment) {
+                $path = $attachment['path'] ?? null;
+                if ($path && \Storage::disk('public')->exists($path)) {
+                    \Storage::disk('public')->delete($path);
+                }
+            }
+        }
+
+        $replyId = $reply->id;
+        $reply->delete();
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Message deleted',
+            'reply_id' => $replyId,
+        ]);
     }
 
     public function downloadUimmsChatAttachment(MemoReply $reply, $index)

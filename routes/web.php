@@ -165,6 +165,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/uimms/chat/{memo}/export-pdf', [HomeController::class, 'exportMemoPdf'])->name('dashboard.uimms.chat.export-pdf');
     Route::get('/dashboard/uimms/chat/reply/{reply}/attachment/{index}/download', [HomeController::class, 'downloadUimmsChatAttachment'])->name('dashboard.uimms.chat.reply.attachment.download');
     Route::get('/dashboard/uimms/chat/reply/{reply}/attachment/{index}/view', [HomeController::class, 'viewUimmsChatAttachment'])->name('dashboard.uimms.chat.reply.attachment.view');
+    Route::delete('/dashboard/uimms/chat/reply/{reply}', [HomeController::class, 'deleteChatMessage'])->name('dashboard.uimms.chat.reply.delete');
     
     #notifications
     Route::get('/dashboard/notifications', [HomeController::class, 'getNotifications'])->name('dashboard.notifications');
