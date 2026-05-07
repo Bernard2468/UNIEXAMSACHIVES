@@ -1157,19 +1157,46 @@ class HomeController extends Controller
             default         => null,
         };
 
+        // ── Track temp files for cleanup + the ordered list of PDFs to merge after the main memo ──
+        $tempFiles      = [];
+        $pdfMergeQueue  = []; // [['label' => 'Memo Attachment: foo.pdf', 'path' => '/tmp/x.pdf'], ...]
+
+        // ── Helper: convert a Word document to a temp PDF using phpoffice/phpword + DomPDF ──
+        $convertWordToPdf = function (string $docPath) use (&$tempFiles): ?string {
+            if (!class_exists(\PhpOffice\PhpWord\IOFactory::class)) return null;
+            try {
+                $phpWord    = \PhpOffice\PhpWord\IOFactory::load($docPath);
+                $htmlWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'HTML');
+                $tempHtml   = tempnam(sys_get_temp_dir(), 'phpword_') . '.html';
+                $htmlWriter->save($tempHtml);
+                $rawHtml    = file_get_contents($tempHtml);
+                @unlink($tempHtml);
+                $rawHtml    = preg_replace('/<script\b[^>]*>.*?<\/script>/si', '', $rawHtml ?? '');
+                if (!$rawHtml) return null;
+                $tempPdf = tempnam(sys_get_temp_dir(), 'docpdf_') . '.pdf';
+                $docPdf  = Pdf::loadHTML($rawHtml)->setPaper('a4', 'portrait');
+                file_put_contents($tempPdf, $docPdf->output());
+                $tempFiles[] = $tempPdf;
+                return $tempPdf;
+            } catch (\Throwable $e) {
+                \Log::warning('Word to PDF conversion failed: ' . $e->getMessage());
+                return null;
+            }
+        };
+
         // ── Shared attachment processor (used for both memo and reply attachments) ──
-        $processAttachment = function (array $attachment, int $index, string $context = 'memo', int $contextId = 0) use ($memo): array {
-            $filePath = storage_path('app/public/' . $attachment['path']);
+        $processAttachment = function (array $attachment, int $index, string $sourceLabel) use ($convertWordToPdf, &$pdfMergeQueue): array {
+            $filePath = storage_path('app/public/' . ($attachment['path'] ?? ''));
             $mime     = $attachment['type'] ?? '';
             $name     = $attachment['name'] ?? 'attachment';
             $entry    = [
-                'index'   => $index,
-                'name'    => $name,
-                'size'    => isset($attachment['size']) ? round($attachment['size'] / 1024, 1) . ' KB' : '',
-                'mime'    => $mime,
-                'type'    => 'unsupported',
-                'data'    => null,
-                'text'    => null,
+                'index' => $index,
+                'name'  => $name,
+                'size'  => isset($attachment['size']) ? round($attachment['size'] / 1024, 1) . ' KB' : '',
+                'mime'  => $mime,
+                'type'  => 'unsupported',
+                'data'  => null,
+                'text'  => null,
             ];
 
             if (!file_exists($filePath)) {
@@ -1178,92 +1205,35 @@ class HomeController extends Controller
             }
 
             if (str_starts_with($mime, 'image/')) {
+                // Inline-renderable: embed image directly in main PDF
                 $entry['type'] = 'image';
                 $entry['data'] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($filePath));
-
-            } elseif ($mime === 'application/pdf') {
-                // Try to extract readable text from the PDF using smalot/pdfparser if installed
-                $extractedText = null;
-                if (class_exists(\Smalot\PdfParser\Parser::class)) {
-                    try {
-                        $parser       = new \Smalot\PdfParser\Parser();
-                        $parsedPdf    = $parser->parseFile($filePath);
-                        $extractedText = trim($parsedPdf->getText());
-                    } catch (\Throwable $e) {
-                        $extractedText = null;
-                    }
-                }
-                if ($extractedText) {
-                    $entry['type'] = 'pdf_text';
-                    $entry['text'] = htmlspecialchars($extractedText);
-                } else {
-                    $entry['type'] = 'pdf';
-                }
 
             } elseif ($mime === 'text/plain') {
                 $entry['type'] = 'text';
                 $entry['text'] = htmlspecialchars(file_get_contents($filePath));
 
+            } elseif ($mime === 'application/pdf') {
+                // Queue the PDF for merging — actual pages will be appended after the main content
+                $pdfMergeQueue[] = [
+                    'label' => $sourceLabel . ': ' . $name,
+                    'path'  => $filePath,
+                ];
+                $entry['type'] = 'merged_ref';
+
             } elseif (in_array($mime, [
                 'application/msword',
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ])) {
-                $isDocx = $mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                       || str_ends_with(strtolower($attachment['name'] ?? ''), '.docx');
-
-                // Best path: phpoffice/phpword HTML writer → DomPDF renders full formatting
-                if (class_exists(\PhpOffice\PhpWord\IOFactory::class)) {
-                    try {
-                        $phpWord    = \PhpOffice\PhpWord\IOFactory::load($filePath);
-                        $htmlWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'HTML');
-                        $tempFile   = tempnam(sys_get_temp_dir(), 'phpword_') . '.html';
-                        $htmlWriter->save($tempFile);
-                        $rawHtml    = file_get_contents($tempFile);
-                        @unlink($tempFile);
-
-                        // Extract body content only
-                        if (preg_match('/<body[^>]*>(.*?)<\/body>/si', $rawHtml, $m)) {
-                            $bodyHtml = trim($m[1]);
-                        } else {
-                            $bodyHtml = $rawHtml;
-                        }
-                        // Strip scripts for safety
-                        $bodyHtml = preg_replace('/<script\b[^>]*>.*?<\/script>/si', '', $bodyHtml ?? '');
-
-                        if ($bodyHtml) {
-                            $entry['type'] = 'doc_html';
-                            $entry['html'] = $bodyHtml;
-                        }
-                    } catch (\Throwable $e) {
-                        // fall through to ZipArchive
-                    }
-                }
-
-                // Fallback for .docx: ZipArchive text extraction (no extra library)
-                if ($entry['type'] === 'unsupported' && $isDocx) {
-                    try {
-                        $zip = new \ZipArchive();
-                        if ($zip->open($filePath) === true) {
-                            $xml = $zip->getFromName('word/document.xml');
-                            $zip->close();
-                            if ($xml) {
-                                $xml  = str_replace(['</w:p>', '</w:tr>'], "\n", $xml);
-                                $text = strip_tags($xml);
-                                $text = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
-                                $text = preg_replace('/[ \t]+/', ' ', $text);
-                                $text = preg_replace('/\n{3,}/', "\n\n", trim($text));
-                                if ($text) {
-                                    $entry['type'] = 'doc_text';
-                                    $entry['text'] = htmlspecialchars($text);
-                                }
-                            }
-                        }
-                    } catch (\Throwable $e) {
-                        // noop
-                    }
-                }
-
-                if (!in_array($entry['type'], ['doc_html', 'doc_text'])) {
+                // Convert Word → temp PDF, then queue it for merging
+                $tempPdf = $convertWordToPdf($filePath);
+                if ($tempPdf) {
+                    $pdfMergeQueue[] = [
+                        'label' => $sourceLabel . ': ' . $name,
+                        'path'  => $tempPdf,
+                    ];
+                    $entry['type'] = 'merged_ref';
+                } else {
                     $entry['type'] = 'doc';
                 }
 
@@ -1278,21 +1248,22 @@ class HomeController extends Controller
         $processedAttachments = [];
         if ($memo->attachments) {
             foreach ($memo->attachments as $index => $attachment) {
-                $processedAttachments[] = $processAttachment($attachment, $index, 'memo', $memo->id);
+                $processedAttachments[] = $processAttachment($attachment, $index, 'Memo Attachment');
             }
         }
 
         // ── Process every reply and its attachments ──
         $processedReplies = [];
         foreach ($memo->replies->sortBy('created_at') as $reply) {
+            $senderName = trim(($reply->user->first_name ?? '') . ' ' . ($reply->user->last_name ?? ''));
+            if (!$senderName) $senderName = $reply->user->name ?? 'Unknown';
+
             $replyAttachments = [];
             if ($reply->attachments) {
                 foreach ($reply->attachments as $index => $attachment) {
-                    $replyAttachments[] = $processAttachment($attachment, $index, 'reply', $reply->id);
+                    $replyAttachments[] = $processAttachment($attachment, $index, 'From ' . $senderName);
                 }
             }
-            $senderName = trim(($reply->user->first_name ?? '') . ' ' . ($reply->user->last_name ?? ''));
-            if (!$senderName) $senderName = $reply->user->name ?? 'Unknown';
 
             $processedReplies[] = [
                 'id'          => $reply->id,
@@ -1316,7 +1287,10 @@ class HomeController extends Controller
             }
         }
 
-        $pdf = Pdf::loadView('admin.uimms.memo-export-pdf', [
+        $filename = 'Memo-' . ($memo->reference ?? $memo->id) . '.pdf';
+
+        // ── Generate the main memo PDF (memo content + chat thread + image/text inline) ──
+        $mainPdf = Pdf::loadView('admin.uimms.memo-export-pdf', [
             'memo'                 => $memo,
             'letterheadBase64'     => $letterheadBase64,
             'hasLetterhead'        => !empty($memo->letterhead),
@@ -1324,11 +1298,63 @@ class HomeController extends Controller
             'processedReplies'     => $processedReplies,
             'toRecipients'         => $memo->toRecipients,
             'ccRecipients'         => $memo->ccRecipients,
+            'pdfMergeQueue'        => $pdfMergeQueue,
         ])->setPaper('a4', 'portrait');
 
-        $filename = 'Memo-' . ($memo->reference ?? $memo->id) . '.pdf';
+        // ── If nothing to merge, stream main PDF as-is ──
+        if (empty($pdfMergeQueue) || !class_exists(\setasign\Fpdi\Fpdi::class)) {
+            // Cleanup any temp Word→PDF files (not used since we can't merge)
+            foreach ($tempFiles as $tf) @unlink($tf);
+            return $mainPdf->stream($filename);
+        }
 
-        return $pdf->stream($filename);
+        // ── Use FPDI to merge: main PDF + each attachment PDF (real pages, original formatting preserved) ──
+        try {
+            $tempMain = tempnam(sys_get_temp_dir(), 'memo_main_') . '.pdf';
+            file_put_contents($tempMain, $mainPdf->output());
+            $tempFiles[] = $tempMain;
+
+            $merger = new \setasign\Fpdi\Fpdi();
+
+            // Append main memo PDF
+            $pageCount = $merger->setSourceFile($tempMain);
+            for ($i = 1; $i <= $pageCount; $i++) {
+                $tplId = $merger->importPage($i);
+                $size  = $merger->getTemplateSize($tplId);
+                $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $merger->useTemplate($tplId);
+            }
+
+            // Append each queued attachment PDF
+            foreach ($pdfMergeQueue as $item) {
+                try {
+                    $pageCount = $merger->setSourceFile($item['path']);
+                    for ($i = 1; $i <= $pageCount; $i++) {
+                        $tplId = $merger->importPage($i);
+                        $size  = $merger->getTemplateSize($tplId);
+                        $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                        $merger->useTemplate($tplId);
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('FPDI failed to import "' . $item['label'] . '": ' . $e->getMessage());
+                }
+            }
+
+            $mergedBytes = $merger->Output('S');
+
+            // Cleanup all temp files
+            foreach ($tempFiles as $tf) @unlink($tf);
+
+            return response($mergedBytes, 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+
+        } catch (\Throwable $e) {
+            \Log::error('Memo PDF merge failed: ' . $e->getMessage());
+            foreach ($tempFiles as $tf) @unlink($tf);
+            // Fallback: just stream the main PDF
+            return $mainPdf->stream($filename);
+        }
     }
 
     /**
@@ -1395,11 +1421,11 @@ class HomeController extends Controller
         }
 
         $reply = MemoReply::create([
-            'campaign_id' => $memo->id,
-            'user_id' => $userId,
-            'message' => $request->message,
-            'attachments' => $attachments,
-            'reply_mode' => $request->reply_mode,
+            'campaign_id'         => $memo->id,
+            'user_id'             => $userId,
+            'message'             => $request->message ?? '',
+            'attachments'         => $attachments,
+            'reply_mode'          => $request->reply_mode,
             'specific_recipients' => $specificRecipients,
         ]);
 

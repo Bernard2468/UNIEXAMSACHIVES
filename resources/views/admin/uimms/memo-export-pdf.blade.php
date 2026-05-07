@@ -107,6 +107,36 @@
             font-style: italic;
             padding: 4px 0;
         }
+        .merged-ref-note {
+            font-size: 9.5pt;
+            color: #166534;
+            background: #f0fdf4;
+            border-left: 3px solid #22c55e;
+            padding: 6px 10px;
+            margin-top: 4px;
+        }
+        .appended-section {
+            margin-top: 32px;
+            padding: 14px 18px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 4px;
+        }
+        .appended-section-title {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #92400e;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .appended-list {
+            font-size: 9.5pt;
+            color: #1f2937;
+            margin: 0;
+            padding-left: 20px;
+        }
+        .appended-list li { margin-bottom: 4px; }
         .pdf-label {
             font-size: 9.5pt;
             color: #1e40af;
@@ -215,25 +245,13 @@
             case 'text':
                 $out .= '<div class="attachment-text">' . $att['text'] . '</div>';
                 break;
-            case 'pdf_text':
-                $out .= '<div class="pdf-label">&#128196; PDF Content — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-pdf-text">' . $att['text'] . '</div>';
-                break;
-            case 'pdf':
-                $out .= '<div class="pdf-label">&#128196; PDF Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-unavailable">PDF content preview requires the smalot/pdfparser library. Install it on the server to see full PDF text inline.</div>';
-                break;
-            case 'doc_html':
-                $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="doc-html-content">' . ($att['html'] ?? '') . '</div>';
-                break;
-            case 'doc_text':
-                $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-pdf-text">' . ($att['text'] ?? '') . '</div>';
+            case 'merged_ref':
+                $out .= '<div class="pdf-label">&#128196; ' . e($att['name']) . '</div>';
+                $out .= '<div class="merged-ref-note">&#10142; Full document content is appended after the chat thread, with original formatting preserved.</div>';
                 break;
             case 'doc':
                 $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-unavailable">Install phpoffice/phpword on the server to render this document inline: <code>composer require phpoffice/phpword</code></div>';
+                $out .= '<div class="attachment-unavailable">Install <code>phpoffice/phpword</code> and <code>setasign/fpdi setasign/fpdf</code> on the server to render this document inline.</div>';
                 break;
             case 'missing':
                 $out .= '<div class="attachment-unavailable">&#9888; File not found on server: ' . e($att['name']) . '</div>';
@@ -374,6 +392,21 @@
             @endforeach
         @endif
     </div>
+
+    {{-- ══ APPENDED DOCUMENTS INDEX ══ --}}
+    @if(!empty($pdfMergeQueue))
+    <div class="appended-section">
+        <div class="appended-section-title">Documents Appended ({{ count($pdfMergeQueue) }})</div>
+        <p style="font-size:9.5pt; color:#92400e; margin-bottom:8px;">
+            The following documents are appended to this PDF in their original format:
+        </p>
+        <ol class="appended-list">
+            @foreach($pdfMergeQueue as $doc)
+                <li>{{ $doc['label'] }}</li>
+            @endforeach
+        </ol>
+    </div>
+    @endif
 
     {{-- ══ FOOTER ══ --}}
     <div class="pdf-footer">
