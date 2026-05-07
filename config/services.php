@@ -66,4 +66,8 @@ return [
         'domain' => env('RESEND_DOMAIN', 'academicdigital.space'),
     ],
 
+    'pdfshift' => [
+        'key' => env('PDFSHIFT_API_KEY'),
+    ],
+
 ];

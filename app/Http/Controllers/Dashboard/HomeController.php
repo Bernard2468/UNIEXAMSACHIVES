@@ -1188,15 +1188,72 @@ class HomeController extends Controller
         $convertWordToPdf = function (string $docPath) use (&$tempFiles, $extractWordHtml): ?string {
             $bodyHtml = $extractWordHtml($docPath);
             if (!$bodyHtml) return null;
+
+            // Wrap with proper styling so the rendering engine has good defaults
+            $fullHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; padding: 28px 36px; color: #1a1a1a; font-size: 11pt; }
+                h1 { font-size: 22pt; margin: 18px 0 10px; color: #1e3a5f; }
+                h2 { font-size: 18pt; margin: 16px 0 8px; color: #1e3a5f; }
+                h3 { font-size: 14pt; margin: 12px 0 6px; color: #374151; }
+                h4, h5, h6 { font-size: 12pt; font-weight: bold; margin: 10px 0 6px; }
+                p { margin-bottom: 10px; }
+                table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+                table th { background: #1e3a5f; color: #fff; padding: 8px 10px; text-align: left; border: 1px solid #1e3a5f; }
+                table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; }
+                ul, ol { margin: 8px 0 8px 24px; }
+                li { margin-bottom: 4px; }
+                b, strong { font-weight: bold; }
+                i, em { font-style: italic; }
+                u { text-decoration: underline; }
+            </style></head><body>' . $bodyHtml . '</body></html>';
+
+            // ── Tier 0: PDFShift via RapidAPI (Chromium-rendered, near-perfect quality) ──
+            $pdfShiftKey = config('services.pdfshift.key') ?: env('PDFSHIFT_API_KEY');
+            if ($pdfShiftKey) {
+                try {
+                    $ch = curl_init();
+                    curl_setopt_array($ch, [
+                        CURLOPT_URL            => 'https://pdfshift-v2.p.rapidapi.com/convert/',
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_POST           => true,
+                        CURLOPT_TIMEOUT        => 60,
+                        CURLOPT_POSTFIELDS     => json_encode([
+                            'source'    => $fullHtml,
+                            'landscape' => false,
+                            'format'    => 'A4',
+                        ]),
+                        CURLOPT_HTTPHEADER => [
+                            'Content-Type: application/json',
+                            'x-rapidapi-host: pdfshift-v2.p.rapidapi.com',
+                            'x-rapidapi-key: ' . $pdfShiftKey,
+                        ],
+                    ]);
+                    $pdfBytes = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    $curlErr  = curl_error($ch);
+                    curl_close($ch);
+
+                    if ($pdfBytes && $httpCode >= 200 && $httpCode < 300 && strncmp($pdfBytes, '%PDF', 4) === 0) {
+                        $tempPdf = tempnam(sys_get_temp_dir(), 'pdfshift_') . '.pdf';
+                        file_put_contents($tempPdf, $pdfBytes);
+                        $tempFiles[] = $tempPdf;
+                        return $tempPdf;
+                    }
+                    \Log::warning('PDFShift returned non-PDF (' . $httpCode . '): ' . substr((string)$pdfBytes, 0, 300) . ' err=' . $curlErr);
+                } catch (\Throwable $e) {
+                    \Log::warning('PDFShift API call failed: ' . $e->getMessage());
+                }
+            }
+
+            // ── Tier 1 fallback: DomPDF ──
             try {
                 $tempPdf = tempnam(sys_get_temp_dir(), 'docpdf_') . '.pdf';
-                $docPdf  = Pdf::loadHTML('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' . $bodyHtml . '</body></html>')
-                              ->setPaper('a4', 'portrait');
+                $docPdf  = Pdf::loadHTML($fullHtml)->setPaper('a4', 'portrait');
                 file_put_contents($tempPdf, $docPdf->output());
                 $tempFiles[] = $tempPdf;
                 return $tempPdf;
             } catch (\Throwable $e) {
-                \Log::warning('Word to PDF conversion failed: ' . $e->getMessage());
+                \Log::warning('Word to PDF (DomPDF) conversion failed: ' . $e->getMessage());
                 return null;
             }
         };
