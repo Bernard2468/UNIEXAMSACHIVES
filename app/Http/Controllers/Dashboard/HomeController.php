@@ -1208,7 +1208,63 @@ class HomeController extends Controller
                 'application/msword',
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ])) {
-                $entry['type'] = 'doc';
+                $extractedText = null;
+
+                // .docx is a ZIP of XML — extract text without any extra library
+                if (in_array($mime, ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+                    || str_ends_with(strtolower($attachment['name'] ?? ''), '.docx')
+                ) {
+                    try {
+                        $zip = new \ZipArchive();
+                        if ($zip->open($filePath) === true) {
+                            $xml = $zip->getFromName('word/document.xml');
+                            $zip->close();
+                            if ($xml) {
+                                // Each </w:p> is a paragraph break
+                                $xml = str_replace(['</w:p>', '</w:tr>'], "\n", $xml);
+                                $text = strip_tags($xml);
+                                $text = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
+                                $text = preg_replace('/[ \t]+/', ' ', $text);
+                                $text = preg_replace('/\n{3,}/', "\n\n", trim($text));
+                                if ($text) $extractedText = $text;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        $extractedText = null;
+                    }
+                }
+
+                // Fallback: try phpoffice/phpword for old .doc binary format
+                if (!$extractedText && class_exists(\PhpOffice\PhpWord\IOFactory::class)) {
+                    try {
+                        $phpWord = \PhpOffice\PhpWord\IOFactory::load($filePath);
+                        $lines   = [];
+                        foreach ($phpWord->getSections() as $section) {
+                            foreach ($section->getElements() as $element) {
+                                if (method_exists($element, 'getText')) {
+                                    $t = $element->getText();
+                                    if ($t) $lines[] = $t;
+                                } elseif ($element instanceof \PhpOffice\PhpWord\Element\TextRun) {
+                                    $line = '';
+                                    foreach ($element->getElements() as $el) {
+                                        if (method_exists($el, 'getText')) $line .= $el->getText();
+                                    }
+                                    if ($line) $lines[] = $line;
+                                }
+                            }
+                        }
+                        if ($lines) $extractedText = implode("\n", $lines);
+                    } catch (\Throwable $e) {
+                        $extractedText = null;
+                    }
+                }
+
+                if ($extractedText) {
+                    $entry['type'] = 'doc_text';
+                    $entry['text'] = htmlspecialchars($extractedText);
+                } else {
+                    $entry['type'] = 'doc';
+                }
 
             } else {
                 $entry['type'] = 'other';
@@ -1305,12 +1361,17 @@ class HomeController extends Controller
         }
 
         $request->validate([
-            'message' => 'required|string|max:5000',
-            'attachments' => 'nullable|array|max:5',
-            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,txt,jpg,jpeg,png,gif',
-            'reply_mode' => 'required|in:all,specific',
-            'specific_recipients' => 'nullable|string',
+            'message'            => 'nullable|string|max:5000',
+            'attachments'        => 'nullable|array|max:5',
+            'attachments.*'      => 'file|max:10240|mimes:pdf,doc,docx,txt,jpg,jpeg,png,gif',
+            'reply_mode'         => 'required|in:all,specific',
+            'specific_recipients'=> 'nullable|string',
         ]);
+
+        // Must have at least a message or an attachment — same as WhatsApp
+        if (!$request->filled('message') && !$request->hasFile('attachments')) {
+            return response()->json(['success' => false, 'message' => 'Please type a message or attach a file.'], 422);
+        }
 
         $attachments = [];
         if ($request->hasFile('attachments')) {

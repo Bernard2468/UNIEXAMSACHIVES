@@ -535,11 +535,10 @@
                                     </button>
                                     
                                     <div class="input-field-wrapper">
-                                        <textarea id="message-input" 
-                                                  name="message" 
-                                                  placeholder="Minute on Memo..." 
-                                                  rows="1" 
-                                                  required></textarea>
+                                        <textarea id="message-input"
+                                                  name="message"
+                                                  placeholder="Minute on Memo..."
+                                                  rows="1"></textarea>
                                     </div>
                                     
                                     <button type="submit" class="send-btn">

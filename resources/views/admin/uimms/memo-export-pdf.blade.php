@@ -196,9 +196,13 @@
                 $out .= '<div class="pdf-label">&#128196; PDF Document — ' . e($att['name']) . '</div>';
                 $out .= '<div class="attachment-unavailable">PDF content preview requires the smalot/pdfparser library. Install it on the server to see full PDF text inline.</div>';
                 break;
+            case 'doc_text':
+                $out .= '<div class="pdf-label">&#128196; Word Document Content — ' . e($att['name']) . '</div>';
+                $out .= '<div class="attachment-pdf-text">' . $att['text'] . '</div>';
+                break;
             case 'doc':
                 $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-unavailable">Word document content cannot be embedded in PDF exports. Open the file from the portal to view its contents.</div>';
+                $out .= '<div class="attachment-unavailable">This file is in the old .doc binary format. Install phpoffice/phpword on the server to extract its content inline.</div>';
                 break;
             case 'missing':
                 $out .= '<div class="attachment-unavailable">&#9888; File not found on server: ' . e($att['name']) . '</div>';
