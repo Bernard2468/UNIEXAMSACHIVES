@@ -144,21 +144,6 @@
         .plain-header-title   { font-size: 16pt; font-weight: bold; letter-spacing: 0.03em; }
         .plain-header-sub     { font-size: 9.5pt; opacity: 0.85; margin-top: 3px; }
 
-        /* ── Status badge ── */
-        .status-badge {
-            display: inline-block;
-            padding: 2px 9px;
-            border-radius: 12px;
-            font-size: 8pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .status-pending   { background: #fef9c3; color: #854d0e; }
-        .status-completed { background: #dcfce7; color: #166534; }
-        .status-suspended { background: #fee2e2; color: #991b1b; }
-        .status-archived  { background: #f3f4f6; color: #374151; }
-
         /* ── Footer ── */
         .pdf-footer {
             margin-top: 40px;
@@ -295,35 +280,6 @@
             <td class="fh-colon">:</td>
             <td class="fh-subject-value">{{ strtoupper($memo->subject ?? '') }}</td>
         </tr>
-        @if($memo->memo_status)
-        <tr>
-            <td class="fh-label">Status</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">
-                <span class="status-badge status-{{ $memo->memo_status }}">{{ ucfirst($memo->memo_status) }}</span>
-            </td>
-        </tr>
-        @endif
-        @if($memo->priority)
-        <tr>
-            <td class="fh-label">Priority</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">{{ ucfirst($memo->priority) }}</td>
-        </tr>
-        @endif
-        @if($memo->currentAssignee)
-        <tr>
-            <td class="fh-label">Assigned To</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">
-                @php
-                    $aName = trim(($memo->currentAssignee->first_name ?? '') . ' ' . ($memo->currentAssignee->last_name ?? ''));
-                    if (!$aName) $aName = $memo->currentAssignee->name ?? 'N/A';
-                @endphp
-                {{ $aName }}
-            </td>
-        </tr>
-        @endif
     </table>
 
     <hr class="formal-divider">
