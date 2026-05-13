@@ -65,48 +65,58 @@
 
                                             {{-- ===== LETTERHEAD SELECTOR ===== --}}
                                             <div class="form-group">
-                                                <label class="form-label">
-                                                    <i class="icofont-paper"></i> Select Letterhead
-                                                </label>
-                                                <p class="form-help" style="margin-bottom:12px;">Choose the official letterhead that will appear at the top of your memo. Recipients will see it exactly as an institutional letter.</p>
+                                                <div class="lhpk-head-row">
+                                                    <label class="form-label" style="margin-bottom:0;">
+                                                        <i class="icofont-paper"></i> Letterhead
+                                                    </label>
+                                                    <span class="lhpk-count">{{ $letterheads->count() }} available</span>
+                                                </div>
+                                                <p class="form-help" style="margin-bottom:10px;">Pick the official letterhead that should appear at the top of your memo.</p>
                                                 <input type="hidden" name="letterhead" id="letterhead-input" value="{{ old('letterhead', '') }}">
 
-                                                <div class="letterhead-cards">
-                                                    <div class="letterhead-card {{ old('letterhead', '') === '' ? 'active' : '' }}"
-                                                         data-value="" onclick="selectLetterhead(this)">
-                                                        <div class="letterhead-card-preview no-letterhead-preview">
-                                                            <div class="no-letterhead-icon">
-                                                                <i class="icofont-close-line-circled"></i>
-                                                                <span>None</span>
-                                                            </div>
+                                                <div class="lhpk">
+                                                    <div class="lhpk-rail-wrap">
+                                                        <button type="button" class="lhpk-nav lhpk-nav--prev" data-dir="-1" aria-label="Scroll left"><i class="icofont-simple-left"></i></button>
+                                                        <div class="lhpk-rail" id="lhpk-rail">
+                                                            <button type="button" class="lhpk-thumb {{ old('letterhead', '') === '' ? 'is-active' : '' }}"
+                                                                    data-value="" data-name="No Letterhead" data-desc="Plain memo format"
+                                                                    onclick="selectLetterhead(this)">
+                                                                <div class="lhpk-thumb-img lhpk-thumb-img--none">
+                                                                    <i class="icofont-close-line-circled"></i>
+                                                                </div>
+                                                                <div class="lhpk-thumb-name">None</div>
+                                                                <span class="lhpk-thumb-check"><i class="icofont-check"></i></span>
+                                                            </button>
+
+                                                            @foreach($letterheads as $lh)
+                                                                <button type="button" class="lhpk-thumb {{ old('letterhead') === $lh->slug ? 'is-active' : '' }}"
+                                                                        data-value="{{ $lh->slug }}"
+                                                                        data-name="{{ $lh->name }}"
+                                                                        data-desc="{{ $lh->description ?: 'Official letterhead' }}"
+                                                                        onclick="selectLetterhead(this)">
+                                                                    <div class="lhpk-thumb-img">
+                                                                        <img src="{{ $lh->image_url }}" alt="{{ $lh->name }}">
+                                                                    </div>
+                                                                    <div class="lhpk-thumb-name">{{ $lh->name }}</div>
+                                                                    <span class="lhpk-thumb-check"><i class="icofont-check"></i></span>
+                                                                </button>
+                                                            @endforeach
                                                         </div>
-                                                        <div class="letterhead-card-label">
-                                                            <strong>No Letterhead</strong>
-                                                            <span>Plain memo format</span>
-                                                        </div>
-                                                        <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
+                                                        <button type="button" class="lhpk-nav lhpk-nav--next" data-dir="1" aria-label="Scroll right"><i class="icofont-simple-right"></i></button>
                                                     </div>
 
-                                                    @foreach($letterheads as $lh)
-                                                        <div class="letterhead-card {{ old('letterhead') === $lh->slug ? 'active' : '' }}"
-                                                             data-value="{{ $lh->slug }}" onclick="selectLetterhead(this)">
-                                                            <div class="letterhead-card-preview">
-                                                                <img src="{{ $lh->image_url }}"
-                                                                     alt="{{ $lh->name }} Letterhead" class="letterhead-preview-img">
-                                                            </div>
-                                                            <div class="letterhead-card-label">
-                                                                <strong>{{ $lh->name }}</strong>
-                                                                <span>{{ $lh->description ?: 'Official letterhead' }}</span>
-                                                            </div>
-                                                            <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
+                                                    <div class="lhpk-preview">
+                                                        <div class="lhpk-preview-bar">
+                                                            <span class="lhpk-preview-tag"><i class="icofont-eye"></i> Live preview</span>
+                                                            <span class="lhpk-preview-meta" id="lhpk-preview-meta">No letterhead selected</span>
                                                         </div>
-                                                    @endforeach
-                                                </div>
-
-                                                <div id="letterhead-live-preview" class="letterhead-live-preview" style="display:none;">
-                                                    <div class="lhp-label"><i class="icofont-eye"></i> Letterhead preview — this is exactly what recipients will see</div>
-                                                    <div class="lhp-img-wrap">
-                                                        <img id="lhp-img" src="" alt="Letterhead Preview">
+                                                        <div class="lhpk-preview-canvas">
+                                                            <div class="lhpk-preview-empty" id="lhpk-preview-empty">
+                                                                <i class="icofont-paper"></i>
+                                                                <p>Your memo will use the plain header.<br><small>Pick a letterhead above to give it the institutional letter look.</small></p>
+                                                            </div>
+                                                            <img id="lhpk-preview-img" src="" alt="Letterhead preview" style="display:none;">
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -672,25 +682,44 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-/* ===== LETTERHEAD CARDS ===== */
-.letterhead-cards { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
-.letterhead-card { flex:1; min-width:180px; max-width:260px; border:2px solid #e2e8f0; border-radius:12px; overflow:hidden; cursor:pointer; transition:all 0.22s ease; background:#fff; position:relative; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
-.letterhead-card:hover { border-color:#1a4a9b; box-shadow:0 4px 16px rgba(26,74,155,0.12); transform:translateY(-2px); }
-.letterhead-card.active { border-color:#1a4a9b; box-shadow:0 4px 20px rgba(26,74,155,0.2); background:#f0f5ff; }
-.letterhead-card-preview { height:120px; overflow:hidden; background:#f8fafc; display:flex; align-items:center; justify-content:center; }
-.letterhead-preview-img { width:100%; height:100%; object-fit:contain; object-position:center; display:block; }
-.no-letterhead-preview { background:#f1f5f9; }
-.no-letterhead-icon { display:flex; flex-direction:column; align-items:center; gap:6px; color:#94a3b8; font-size:13px; }
-.no-letterhead-icon i { font-size:36px; }
-.letterhead-card-label { padding:10px 14px; display:flex; flex-direction:column; gap:2px; }
-.letterhead-card-label strong { font-size:14px; color:#1e293b; font-weight:700; }
-.letterhead-card-label span { font-size:11px; color:#64748b; }
-.letterhead-check { position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:50%; background:#1a4a9b; color:#fff; display:none; align-items:center; justify-content:center; font-size:14px; }
-.letterhead-card.active .letterhead-check { display:flex; }
-.letterhead-live-preview { margin-top:12px; border:1px solid #c7d7f5; border-radius:10px; overflow:hidden; background:#f8fafc; }
-.lhp-label { padding:8px 14px; font-size:12px; color:#1a4a9b; font-weight:600; background:#eef3ff; border-bottom:1px solid #c7d7f5; }
-.lhp-img-wrap { padding:10px; text-align:center; }
-.lhp-img-wrap img { max-width:100%; max-height:200px; object-fit:contain; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+/* ===== LETTERHEAD PICKER ===== */
+.lhpk-head-row { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.lhpk-count { font-size:11px; font-weight:700; color:#1a4a9b; background:#eef3ff; padding:3px 10px; border-radius:20px; letter-spacing:0.3px; text-transform:uppercase; }
+.lhpk { display:flex; flex-direction:column; gap:14px; }
+.lhpk-rail-wrap { position:relative; }
+.lhpk-rail { display:flex; gap:10px; overflow-x:auto; scroll-behavior:smooth; scroll-snap-type:x proximity; padding:6px 2px 10px; scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent; }
+.lhpk-rail::-webkit-scrollbar { height:6px; }
+.lhpk-rail::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+.lhpk-rail::-webkit-scrollbar-track { background:transparent; }
+.lhpk-thumb { flex:0 0 96px; scroll-snap-align:start; background:#fff; border:2px solid #e2e8f0; border-radius:10px; padding:0; margin:0; cursor:pointer; position:relative; overflow:hidden; transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease; display:flex; flex-direction:column; font:inherit; color:inherit; text-align:center; }
+.lhpk-thumb:hover { border-color:#94a3b8; transform:translateY(-2px); box-shadow:0 4px 12px rgba(15,23,42,.08); }
+.lhpk-thumb.is-active { border-color:#1a4a9b; box-shadow:0 0 0 3px rgba(26,74,155,.15), 0 6px 16px rgba(26,74,155,.18); transform:translateY(-2px); }
+.lhpk-thumb-img { height:58px; background:#f8fafc; display:flex; align-items:center; justify-content:center; overflow:hidden; border-bottom:1px solid #f1f5f9; }
+.lhpk-thumb-img img { width:100%; height:100%; object-fit:contain; }
+.lhpk-thumb-img--none { color:#94a3b8; }
+.lhpk-thumb-img--none i { font-size:24px; }
+.lhpk-thumb-name { padding:6px 8px; font-size:11px; font-weight:600; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:#fff; }
+.lhpk-thumb.is-active .lhpk-thumb-name { color:#1a4a9b; }
+.lhpk-thumb-check { position:absolute; top:5px; right:5px; width:18px; height:18px; border-radius:50%; background:#1a4a9b; color:#fff; display:none; align-items:center; justify-content:center; font-size:10px; box-shadow:0 2px 6px rgba(26,74,155,.4); }
+.lhpk-thumb.is-active .lhpk-thumb-check { display:flex; }
+.lhpk-nav { position:absolute; top:calc(50% - 5px); transform:translateY(-50%); width:30px; height:30px; border-radius:50%; background:#fff; border:1px solid #e2e8f0; color:#475569; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:2; box-shadow:0 4px 12px rgba(15,23,42,.12); transition:all .15s ease; font-size:13px; }
+.lhpk-nav:hover { color:#1a4a9b; border-color:#1a4a9b; }
+.lhpk-nav--prev { left:-10px; }
+.lhpk-nav--next { right:-10px; }
+.lhpk-rail-wrap.has-overflow .lhpk-nav { display:flex; }
+.lhpk-nav:disabled { opacity:0.35; cursor:not-allowed; }
+.lhpk-preview { border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 1px 3px rgba(15,23,42,.04); }
+.lhpk-preview-bar { padding:8px 14px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:#f8fafc; border-bottom:1px solid #e2e8f0; }
+.lhpk-preview-tag { font-size:11px; font-weight:700; color:#1a4a9b; text-transform:uppercase; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:6px; }
+.lhpk-preview-meta { font-size:12px; color:#64748b; font-weight:500; text-align:right; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%; }
+.lhpk-preview-canvas { padding:14px; background:linear-gradient(180deg, #fff 0%, #f8fafc 100%); min-height:120px; display:flex; align-items:center; justify-content:center; }
+.lhpk-preview-canvas img { max-width:100%; max-height:180px; object-fit:contain; border-radius:4px; box-shadow:0 4px 16px rgba(15,23,42,.08); animation:lhpkFade .25s ease; }
+.lhpk-preview-empty { text-align:center; color:#94a3b8; padding:8px 14px; }
+.lhpk-preview-empty i { font-size:32px; display:block; margin-bottom:6px; color:#cbd5e1; }
+.lhpk-preview-empty p { margin:0; font-size:13px; line-height:1.5; }
+.lhpk-preview-empty small { font-size:11px; color:#94a3b8; }
+@keyframes lhpkFade { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+@media (max-width:600px) { .lhpk-thumb { flex-basis:84px; } .lhpk-nav { display:none !important; } }
 
 /* ===== CC SECTION ===== */
 .cc-form-group { margin-bottom:16px; }
@@ -2932,21 +2961,58 @@ window.formatFileSize = function(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-/* ===== LETTERHEAD ===== */
+/* ===== LETTERHEAD PICKER ===== */
 const LETTERHEAD_URLS = @json($letterheads->mapWithKeys(fn($lh) => [$lh->slug => $lh->image_url]));
-function selectLetterhead(card) {
-    document.querySelectorAll('.letterhead-card').forEach(c => c.classList.remove('active'));
-    card.classList.add('active');
-    const val = card.getAttribute('data-value');
+
+function selectLetterhead(thumb) {
+    document.querySelectorAll('.lhpk-thumb').forEach(t => t.classList.remove('is-active'));
+    thumb.classList.add('is-active');
+
+    const val  = thumb.getAttribute('data-value');
+    const name = thumb.getAttribute('data-name') || '';
+    const desc = thumb.getAttribute('data-desc') || '';
     document.getElementById('letterhead-input').value = val;
-    const preview = document.getElementById('letterhead-live-preview');
-    const img = document.getElementById('lhp-img');
-    if (val && LETTERHEAD_URLS[val]) { img.src = LETTERHEAD_URLS[val]; preview.style.display = 'block'; }
-    else { preview.style.display = 'none'; img.src = ''; }
+
+    const img   = document.getElementById('lhpk-preview-img');
+    const empty = document.getElementById('lhpk-preview-empty');
+    const meta  = document.getElementById('lhpk-preview-meta');
+
+    if (val && LETTERHEAD_URLS[val]) {
+        img.src = LETTERHEAD_URLS[val];
+        img.style.display = 'block';
+        img.style.animation = 'none'; void img.offsetWidth; img.style.animation = '';
+        empty.style.display = 'none';
+        meta.textContent = name + (desc ? ' — ' + desc : '');
+    } else {
+        img.style.display = 'none';
+        img.src = '';
+        empty.style.display = 'block';
+        meta.textContent = 'No letterhead selected';
+    }
+
+    if (typeof thumb.scrollIntoView === 'function') {
+        thumb.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'nearest' });
+    }
 }
+
+(function() {
+    const rail = document.getElementById('lhpk-rail');
+    const wrap = rail ? rail.parentElement : null;
+    if (!rail || !wrap) return;
+    function checkOverflow() { wrap.classList.toggle('has-overflow', rail.scrollWidth > rail.clientWidth + 2); }
+    wrap.querySelectorAll('.lhpk-nav').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const dir = parseInt(btn.getAttribute('data-dir'), 10);
+            rail.scrollBy({ left: dir * Math.max(220, rail.clientWidth * 0.6), behavior:'smooth' });
+        });
+    });
+    window.addEventListener('resize', checkOverflow);
+    requestAnimationFrame(checkOverflow);
+})();
+
 document.addEventListener('DOMContentLoaded', function () {
-    const savedVal = document.getElementById('letterhead-input').value;
-    if (savedVal) { const card = document.querySelector('.letterhead-card[data-value="' + savedVal + '"]'); if (card) selectLetterhead(card); }
+    const activeThumb = document.querySelector('.lhpk-thumb.is-active');
+    if (activeThumb) selectLetterhead(activeThumb);
     updateCcCount();
     if (document.querySelectorAll('.cc-checkbox:checked').length > 0) {
         document.getElementById('cc-section').style.display = 'block';
