@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+
+class SystemLetterhead extends Model
+{
+    use HasFactory;
+
+    protected $guarded = [];
+
+    protected $casts = [
+        'is_active'     => 'boolean',
+        'display_order' => 'integer',
+    ];
+
+    public function uploader()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('display_order')->orderBy('id');
+    }
+
+    /**
+     * Resolve the public-facing URL for this letterhead's image, whether the
+     * stored value is a remote URL (legacy Cloudinary entries) or a path on
+     * the local 'public' disk (admin-uploaded files).
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        $path = $this->image_path;
+        if (!$path) {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+        return Storage::disk('public')->url($path);
+    }
+
+    /**
+     * Look up a letterhead by the slug stored on a memo's `letterhead` column.
+     */
+    public static function findBySlug(?string $slug): ?self
+    {
+        if (!$slug) {
+            return null;
+        }
+        return static::where('slug', $slug)->first();
+    }
+}

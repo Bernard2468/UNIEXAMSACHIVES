@@ -88,33 +88,20 @@
                                                         <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
                                                     </div>
 
-                                                    {{-- CUG Official --}}
-                                                    <div class="letterhead-card {{ old('letterhead') === 'cug' ? 'active' : '' }}"
-                                                         data-value="cug" onclick="selectLetterhead(this)">
-                                                        <div class="letterhead-card-preview">
-                                                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1778084083/1908c951-dd89-405e-8b29-ec367df1969e.png"
-                                                                 alt="CUG Official Letterhead" class="letterhead-preview-img">
+                                                    @foreach($letterheads as $lh)
+                                                        <div class="letterhead-card {{ old('letterhead') === $lh->slug ? 'active' : '' }}"
+                                                             data-value="{{ $lh->slug }}" onclick="selectLetterhead(this)">
+                                                            <div class="letterhead-card-preview">
+                                                                <img src="{{ $lh->image_url }}"
+                                                                     alt="{{ $lh->name }} Letterhead" class="letterhead-preview-img">
+                                                            </div>
+                                                            <div class="letterhead-card-label">
+                                                                <strong>{{ $lh->name }}</strong>
+                                                                <span>{{ $lh->description ?: 'Official letterhead' }}</span>
+                                                            </div>
+                                                            <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
                                                         </div>
-                                                        <div class="letterhead-card-label">
-                                                            <strong>CUG Official</strong>
-                                                            <span>Standard institutional header</span>
-                                                        </div>
-                                                        <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
-                                                    </div>
-
-                                                    {{-- Internal Memo --}}
-                                                    <div class="letterhead-card {{ old('letterhead') === 'internal_memo' ? 'active' : '' }}"
-                                                         data-value="internal_memo" onclick="selectLetterhead(this)">
-                                                        <div class="letterhead-card-preview">
-                                                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png"
-                                                                 alt="Internal Memo Letterhead" class="letterhead-preview-img">
-                                                        </div>
-                                                        <div class="letterhead-card-label">
-                                                            <strong>Internal Memo</strong>
-                                                            <span>Formal internal communication</span>
-                                                        </div>
-                                                        <div class="letterhead-check"><i class="icofont-check-circled"></i></div>
-                                                    </div>
+                                                    @endforeach
                                                 </div>
 
                                                 {{-- Live Preview Strip --}}
@@ -3421,10 +3408,7 @@ window.formatFileSize = function(bytes) {
 }
 
 /* ===== LETTERHEAD ===== */
-const LETTERHEAD_URLS = {
-    cug: 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778084083/1908c951-dd89-405e-8b29-ec367df1969e.png',
-    internal_memo: 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png',
-};
+const LETTERHEAD_URLS = @json($letterheads->mapWithKeys(fn($lh) => [$lh->slug => $lh->image_url]));
 
 function selectLetterhead(card) {
     document.querySelectorAll('.letterhead-card').forEach(c => c.classList.remove('active'));

@@ -1180,11 +1180,8 @@ class HomeController extends Controller
         $memo->load(['creator.position', 'creator.department', 'currentAssignee', 'toRecipients.user', 'ccRecipients.user', 'recipients.user', 'replies.user']);
 
         // ── Letterhead ──
-        $letterheadUrl = match ($memo->letterhead ?? '') {
-            'cug'           => 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778084083/1908c951-dd89-405e-8b29-ec367df1969e.png',
-            'internal_memo' => 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png',
-            default         => null,
-        };
+        $letterheadRecord = \App\Models\SystemLetterhead::findBySlug($memo->letterhead ?? null);
+        $letterheadUrl    = $letterheadRecord?->image_url;
 
         // ── Track temp files for cleanup + the ordered list of PDFs to merge after the main memo ──
         $tempFiles      = [];
@@ -1390,9 +1387,16 @@ class HomeController extends Controller
 
         // ── Letterhead as base64 for DomPDF ──
         $letterheadBase64 = null;
-        if ($letterheadUrl) {
+        if ($letterheadRecord) {
             try {
-                $imgData = @file_get_contents($letterheadUrl);
+                $rawPath = $letterheadRecord->image_path;
+                if (preg_match('#^https?://#i', $rawPath)) {
+                    $imgData = @file_get_contents($rawPath);
+                } elseif (\Storage::disk('public')->exists($rawPath)) {
+                    $imgData = \Storage::disk('public')->get($rawPath);
+                } else {
+                    $imgData = null;
+                }
                 if ($imgData) {
                     $letterheadBase64 = 'data:image/png;base64,' . base64_encode($imgData);
                 }
@@ -1407,7 +1411,7 @@ class HomeController extends Controller
         $mainPdf = Pdf::loadView('admin.uimms.memo-export-pdf', [
             'memo'                 => $memo,
             'letterheadBase64'     => $letterheadBase64,
-            'hasLetterhead'        => !empty($memo->letterhead),
+            'hasLetterhead'        => (bool) $letterheadRecord,
             'processedAttachments' => $processedAttachments,
             'processedReplies'     => $processedReplies,
             'toRecipients'         => $memo->toRecipients,

@@ -248,6 +248,14 @@ Route::middleware(['auth'])->group(function () {
     #positions
     Route::resource('positions', PositionController::class);
 
+    #system letterheads (admin-managed letterheads for memo composer)
+    Route::get('/dashboard/system-letterheads', [\App\Http\Controllers\Dashboard\SystemLetterheadController::class, 'index'])->name('dashboard.system-letterheads.index');
+    Route::post('/dashboard/system-letterheads', [\App\Http\Controllers\Dashboard\SystemLetterheadController::class, 'store'])->name('dashboard.system-letterheads.store');
+    Route::put('/dashboard/system-letterheads/{system_letterhead}', [\App\Http\Controllers\Dashboard\SystemLetterheadController::class, 'update'])->name('dashboard.system-letterheads.update');
+    Route::post('/dashboard/system-letterheads/{system_letterhead}/toggle', [\App\Http\Controllers\Dashboard\SystemLetterheadController::class, 'toggle'])->name('dashboard.system-letterheads.toggle');
+    Route::post('/dashboard/system-letterheads/reorder', [\App\Http\Controllers\Dashboard\SystemLetterheadController::class, 'reorder'])->name('dashboard.system-letterheads.reorder');
+    Route::delete('/dashboard/system-letterheads/{system_letterhead}', [\App\Http\Controllers\Dashboard\SystemLetterheadController::class, 'destroy'])->name('dashboard.system-letterheads.destroy');
+
     #committees & boards
     Route::resource('committees', \App\Http\Controllers\Dashboard\CommitteesController::class)->except(['show', 'create', 'edit']);
     Route::get('/committees/{committee}/show', [\App\Http\Controllers\Dashboard\CommitteesController::class, 'show'])->name('committees.show');

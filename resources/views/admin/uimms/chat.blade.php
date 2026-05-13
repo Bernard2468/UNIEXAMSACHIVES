@@ -148,12 +148,9 @@
 
                         {{-- ===== MEMO DETAILS / FORMAL LETTER ===== --}}
                         @php
-                            $hasLetterhead = !empty($memo->letterhead);
-                            $letterheadUrl = match($memo->letterhead ?? '') {
-                                'cug'           => 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778084083/1908c951-dd89-405e-8b29-ec367df1969e.png',
-                                'internal_memo' => 'https://res.cloudinary.com/dsypclqxk/image/upload/v1778066477/81d0f580-93e2-429e-b86a-d3221b0ff84e.png',
-                                default         => null,
-                            };
+                            $letterheadRecord = \App\Models\SystemLetterhead::findBySlug($memo->letterhead ?? null);
+                            $hasLetterhead    = (bool) $letterheadRecord;
+                            $letterheadUrl    = $letterheadRecord?->image_url;
                             $ccRecipients = $memo->ccRecipients->load('user');
                             $toRecipients = $memo->recipients->filter(fn($r) => $r->recipient_role === 'to');
                             $isCC = $memo->recipients->where('user_id', auth()->id())->where('recipient_role', 'cc')->isNotEmpty();

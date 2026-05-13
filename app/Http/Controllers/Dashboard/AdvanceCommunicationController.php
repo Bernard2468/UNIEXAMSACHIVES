@@ -9,6 +9,7 @@ use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
 use App\Models\User;
 use App\Models\Committee;
+use App\Models\SystemLetterhead;
 use App\Services\ResendMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -106,7 +107,9 @@ class AdvanceCommunicationController extends Controller
         // Get active committees for selection (for users who manage committees/boards)
         $committees = Committee::active()->withCount('users')->get();
 
-        return view('admin.communication.create', compact('users', 'staffCategoryCounts', 'committees'));
+        $letterheads = SystemLetterhead::active()->ordered()->get();
+
+        return view('admin.communication.create', compact('users', 'staffCategoryCounts', 'committees', 'letterheads'));
     }
 
     public function store(Request $request)
@@ -129,7 +132,7 @@ class AdvanceCommunicationController extends Controller
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,png,gif,zip',
-            'letterhead' => 'nullable|in:cug,internal_memo',
+            'letterhead' => 'nullable|string|exists:system_letterheads,slug',
             'cc_users' => 'nullable|array',
             'cc_users.*' => 'exists:users,id',
             'send_immediately' => 'boolean',
@@ -890,7 +893,9 @@ class AdvanceCommunicationController extends Controller
 
         $committees = Committee::active()->withCount('users')->get();
 
-        return view('admin.communication-admin.create', compact('users', 'staffCategoryCounts', 'committees'));
+        $letterheads = SystemLetterhead::active()->ordered()->get();
+
+        return view('admin.communication-admin.create', compact('users', 'staffCategoryCounts', 'committees', 'letterheads'));
     }
 
     public function adminStore(Request $request)
@@ -913,7 +918,7 @@ class AdvanceCommunicationController extends Controller
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,png,gif,zip',
             'send_immediately' => 'boolean',
             'scheduled_at' => $isDraft ? 'nullable|date' : 'nullable|required_if:send_immediately,false|date|after:now',
-            'letterhead' => 'nullable|in:cug,internal_memo',
+            'letterhead' => 'nullable|string|exists:system_letterheads,slug',
             'cc_users' => 'nullable|array',
             'cc_users.*' => 'exists:users,id',
         ]);
