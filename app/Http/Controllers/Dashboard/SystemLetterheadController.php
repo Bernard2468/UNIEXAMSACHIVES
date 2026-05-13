@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\SystemLetterhead;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SystemLetterheadController extends Controller
@@ -40,7 +39,7 @@ class SystemLetterheadController extends Controller
             'image'       => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
-        $path = $request->file('image')->store('letterheads', 'public');
+        $path = $this->moveImage($request->file('image'));
 
         $slug = $this->generateUniqueSlug($request->name);
 
@@ -76,11 +75,8 @@ class SystemLetterheadController extends Controller
         ];
 
         if ($request->hasFile('image')) {
-            // Delete old local file (skip if the legacy entry points to a remote URL).
-            if ($system_letterhead->image_path && !preg_match('#^https?://#i', $system_letterhead->image_path)) {
-                Storage::disk('public')->delete($system_letterhead->image_path);
-            }
-            $payload['image_path'] = $request->file('image')->store('letterheads', 'public');
+            $this->deleteLocalImage($system_letterhead->image_path);
+            $payload['image_path'] = $this->moveImage($request->file('image'));
         }
 
         $system_letterhead->update($payload);
@@ -132,9 +128,7 @@ class SystemLetterheadController extends Controller
                 ->with('error', 'Cannot delete "' . $system_letterhead->name . '": it is still used by one or more memos. Deactivate it instead to hide it from new memos while preserving history.');
         }
 
-        if ($system_letterhead->image_path && !preg_match('#^https?://#i', $system_letterhead->image_path)) {
-            Storage::disk('public')->delete($system_letterhead->image_path);
-        }
+        $this->deleteLocalImage($system_letterhead->image_path);
 
         $system_letterhead->delete();
 
@@ -151,5 +145,36 @@ class SystemLetterheadController extends Controller
             $slug = $base . '-' . $i++;
         }
         return $slug;
+    }
+
+    /**
+     * Save the uploaded image directly under public/letterheads (no symlink
+     * needed — works on shared hosting where symlink() is disabled). Returns
+     * the path relative to the public directory, e.g. "letterheads/abc.png".
+     */
+    private function moveImage($file): string
+    {
+        $dir = public_path('letterheads');
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        $filename = time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+        $file->move($dir, $filename);
+        return 'letterheads/' . $filename;
+    }
+
+    /**
+     * Remove a local image file. Skips entries pointing to remote URLs
+     * (legacy Cloudinary seeds).
+     */
+    private function deleteLocalImage(?string $path): void
+    {
+        if (!$path || preg_match('#^https?://#i', $path)) {
+            return;
+        }
+        $abs = public_path($path);
+        if (file_exists($abs)) {
+            @unlink($abs);
+        }
     }
 }

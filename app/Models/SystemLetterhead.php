@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class SystemLetterhead extends Model
 {
@@ -33,9 +32,10 @@ class SystemLetterhead extends Model
     }
 
     /**
-     * Resolve the public-facing URL for this letterhead's image, whether the
-     * stored value is a remote URL (legacy Cloudinary entries) or a path on
-     * the local 'public' disk (admin-uploaded files).
+     * Resolve the public-facing URL for this letterhead's image. Stored values
+     * are either remote URLs (legacy Cloudinary seeds) or paths relative to
+     * the `public/` directory (admin-uploaded files — chosen over the public
+     * disk because shared hosting disables symlink()).
      */
     public function getImageUrlAttribute(): ?string
     {
@@ -46,7 +46,7 @@ class SystemLetterhead extends Model
         if (preg_match('#^https?://#i', $path)) {
             return $path;
         }
-        return Storage::disk('public')->url($path);
+        return asset($path);
     }
 
     /**

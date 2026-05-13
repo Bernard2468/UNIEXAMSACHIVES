@@ -1392,10 +1392,9 @@ class HomeController extends Controller
                 $rawPath = $letterheadRecord->image_path;
                 if (preg_match('#^https?://#i', $rawPath)) {
                     $imgData = @file_get_contents($rawPath);
-                } elseif (\Storage::disk('public')->exists($rawPath)) {
-                    $imgData = \Storage::disk('public')->get($rawPath);
                 } else {
-                    $imgData = null;
+                    $abs = public_path($rawPath);
+                    $imgData = file_exists($abs) ? file_get_contents($abs) : null;
                 }
                 if ($imgData) {
                     $letterheadBase64 = 'data:image/png;base64,' . base64_encode($imgData);
