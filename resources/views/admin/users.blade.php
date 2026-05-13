@@ -652,18 +652,25 @@
                     <!-- Search and Filter Section -->
                     <div class="search-filter-section">
                         <div class="container">
-                            <div class="search-box">
-                                <input type="text" class="search-input" id="searchInput" placeholder="Search users by name or email...">
-                                <button class="search-btn" onclick="performSearch()">
+                            <form method="GET" action="{{ route('dashboard.users') }}" class="search-box" role="search">
+                                <input type="text" name="search" class="search-input" id="searchInput" placeholder="Search users by name or email..." value="{{ $search ?? '' }}" autocomplete="off">
+                                <input type="hidden" name="filter" value="{{ $activeFilter ?? 'all' }}">
+                                <input type="hidden" name="per_page" value="{{ request('per_page', 15) }}">
+                                <button type="submit" class="search-btn">
                                     <i class="fas fa-search"></i>
                                 </button>
-                            </div>
-                            
+                                @if(!empty($search))
+                                    <a href="{{ route('dashboard.users', ['filter' => $activeFilter ?? 'all', 'per_page' => request('per_page', 15)]) }}" class="search-btn" style="right: 56px; background:#94a3b8;" title="Clear search">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                @endif
+                            </form>
+
                             <div class="filter-tabs">
-                                <a href="#" class="filter-tab active" data-filter="all">All Users</a>
-                                <a href="#" class="filter-tab" data-filter="approved">Approved Only</a>
-                                <a href="#" class="filter-tab" data-filter="pending">Pending Only</a>
-                                <a href="#" class="filter-tab" data-filter="recent">Recently Added</a>
+                                <a href="{{ route('dashboard.users', ['filter' => 'all', 'search' => $search ?? null, 'per_page' => request('per_page', 15)]) }}" class="filter-tab {{ ($activeFilter ?? 'all') === 'all' ? 'active' : '' }}">All Users</a>
+                                <a href="{{ route('dashboard.users', ['filter' => 'approved', 'search' => $search ?? null, 'per_page' => request('per_page', 15)]) }}" class="filter-tab {{ ($activeFilter ?? '') === 'approved' ? 'active' : '' }}">Approved Only</a>
+                                <a href="{{ route('dashboard.users', ['filter' => 'pending', 'search' => $search ?? null, 'per_page' => request('per_page', 15)]) }}" class="filter-tab {{ ($activeFilter ?? '') === 'pending' ? 'active' : '' }}">Pending Only</a>
+                                <a href="{{ route('dashboard.users', ['filter' => 'recent', 'search' => $search ?? null, 'per_page' => request('per_page', 15)]) }}" class="filter-tab {{ ($activeFilter ?? '') === 'recent' ? 'active' : '' }}">Recently Added</a>
                             </div>
                             <div style="margin-top:1rem; display:flex; justify-content:center;">
                                 <div class="view-toggle" role="group" aria-label="View toggle">
@@ -897,8 +904,14 @@
                             @else
                                 <div class="no-users">
                                     <i class="fas fa-users"></i>
-                                    <h4>No Users Found</h4>
-                                    <p>There are no users currently registered in the system.</p>
+                                    @if(!empty($search))
+                                        <h4>No matches for "{{ $search }}"</h4>
+                                        <p>No users match your search. Try a different name or email.</p>
+                                        <a href="{{ route('dashboard.users') }}" class="filter-tab" style="margin-top:1rem; display:inline-block;">Clear search</a>
+                                    @else
+                                        <h4>No Users Found</h4>
+                                        <p>There are no users currently registered in the system.</p>
+                                    @endif
                                 </div>
                             @endif
                         </div>
@@ -1332,92 +1345,29 @@ document.addEventListener('DOMContentLoaded', function() {
 @endsection
 
 <script>
-// Search and Filter functionality for Users Management
+// View toggle (Grid/Table) for Users Management
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchInput');
-    const filterTabs = document.querySelectorAll('.filter-tab');
-    const userCards = document.querySelectorAll('.user-card');
     const gridView = document.getElementById('gridView');
     const tableView = document.getElementById('tableView');
     const gridViewBtn = document.getElementById('gridViewBtn');
     const tableViewBtn = document.getElementById('tableViewBtn');
-    const tableRows = document.querySelectorAll('#usersTable tbody tr');
 
-    // Search functionality
-    function performSearch() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const activeFilter = document.querySelector('.filter-tab.active').getAttribute('data-filter');
-
-        // Grid items
-        userCards.forEach(card => {
-            const searchData = card.getAttribute('data-search');
-            const cardStatus = card.getAttribute('data-status');
-            let showBySearch = searchData.includes(searchTerm);
-            let showByFilter = activeFilter === 'all' || (activeFilter === 'approved' && cardStatus === 'approved') || (activeFilter === 'pending' && cardStatus === 'pending') || (activeFilter === 'recent');
-            card.style.display = (showBySearch && showByFilter) ? 'block' : 'none';
-            if (showBySearch && showByFilter) card.style.animation = 'fadeIn 0.3s ease';
+    if (gridViewBtn && tableViewBtn && gridView && tableView) {
+        gridViewBtn.addEventListener('click', function() {
+            gridViewBtn.classList.add('active');
+            tableViewBtn.classList.remove('active');
+            gridView.style.display = 'grid';
+            tableView.style.display = 'none';
         });
 
-        // Table rows
-        tableRows.forEach(row => {
-            const searchData = row.getAttribute('data-search');
-            const rowStatus = row.getAttribute('data-status');
-            let showBySearch = searchData.includes(searchTerm);
-            let showByFilter = activeFilter === 'all' || (activeFilter === 'approved' && rowStatus === 'approved') || (activeFilter === 'pending' && rowStatus === 'pending') || (activeFilter === 'recent');
-            row.style.display = (showBySearch && showByFilter) ? '' : 'none';
+        tableViewBtn.addEventListener('click', function() {
+            tableViewBtn.classList.add('active');
+            gridViewBtn.classList.remove('active');
+            gridView.style.display = 'none';
+            tableView.style.display = 'block';
         });
     }
-
-    // Search on input
-    searchInput.addEventListener('input', performSearch);
-
-    // Filter tabs
-    filterTabs.forEach(tab => {
-        tab.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Remove active class from all tabs
-            filterTabs.forEach(t => t.classList.remove('active'));
-            
-            // Add active class to clicked tab
-            this.classList.add('active');
-            
-            // Perform search with new filter
-            performSearch();
-        });
-    });
-
-    // Add fade-in animation
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Toggle view handlers
-    gridViewBtn.addEventListener('click', function() {
-        gridViewBtn.classList.add('active');
-        tableViewBtn.classList.remove('active');
-        gridView.style.display = 'grid';
-        tableView.style.display = 'none';
-    });
-
-    tableViewBtn.addEventListener('click', function() {
-        tableViewBtn.classList.add('active');
-        gridViewBtn.classList.remove('active');
-        gridView.style.display = 'none';
-        tableView.style.display = 'block';
-    });
 });
-
-// Make performSearch global for the search button
-function performSearch() {
-    const event = new Event('input');
-    document.getElementById('searchInput').dispatchEvent(event);
-}
 
 // Confirmation modal function for user deletion
 function confirmDeleteUser(userId, userName) {

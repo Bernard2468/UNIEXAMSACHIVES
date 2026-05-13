@@ -680,7 +680,34 @@ class HomeController extends Controller
 
     public function users(Request $request){
         $perPage = $request->get('per_page', 15);
-        $users = User::with('position')->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
+        $search = trim((string) $request->get('search', ''));
+        $filter = $request->get('filter', 'all');
+
+        $query = User::with('position');
+
+        if ($search !== '') {
+            $tokens = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
+            $query->where(function ($outer) use ($tokens) {
+                foreach ($tokens as $token) {
+                    $like = '%' . $token . '%';
+                    $outer->where(function ($q) use ($like) {
+                        $q->where('first_name', 'like', $like)
+                          ->orWhere('last_name', 'like', $like)
+                          ->orWhere('email', 'like', $like);
+                    });
+                }
+            });
+        }
+
+        if ($filter === 'approved') {
+            $query->where('is_approve', 1);
+        } elseif ($filter === 'pending') {
+            $query->where('is_approve', 0);
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        $users = $query->paginate($perPage)->withQueryString();
         $totalUsers = User::count();
         $approvedCount = User::where('is_approve', 1)->count();
         $pendingCount = User::where('is_approve', 0)->count();
@@ -689,6 +716,8 @@ class HomeController extends Controller
             'totalUsers' => $totalUsers,
             'approvedCount' => $approvedCount,
             'pendingCount' => $pendingCount,
+            'search' => $search,
+            'activeFilter' => $filter,
             'departments' => \App\Models\Department::orderBy('name')->get(),
             'positions' => \App\Models\Position::orderBy('name')->get(),
         ]);
