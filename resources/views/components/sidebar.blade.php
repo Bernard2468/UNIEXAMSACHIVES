@@ -357,16 +357,6 @@
                                 Manage Users</a>
                         </li>
                         <li>
-                            <a class="{{ request()->routeIs('dashboard.system-letterheads.*') ? 'active' : '' }}" href="{{route('dashboard.system-letterheads.index')}}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="8" y1="13" x2="16" y2="13"></line>
-                                    <line x1="8" y1="17" x2="16" y2="17"></line>
-                                </svg>
-                                System Letterheads</a>
-                        </li>
-                        <li>
                             <a class="{{ request()->routeIs('departments.index') ? 'active' : '' }}" href="{{route('departments.index')}}">
                                 <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762944351/ce210acd-b07b-4e1b-a70f-6fdb86586806.png" alt="Department/Faculty" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
                                 Department/Faculty</a>
@@ -375,6 +365,11 @@
                             <a class="{{ request()->routeIs('positions.index') ? 'active' : '' }}" href="{{route('positions.index')}}">
                                 <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762944556/48e4d7be-3f74-4aa9-9b87-8a7b435683d5.png" alt="Positions" style="width: 22px; height: 22px; object-fit: contain; margin-right: 10px;">
                                 Positions</a>
+                        </li>
+                        <li>
+                            <a class="{{ request()->routeIs('dashboard.system-letterheads.*') ? 'active' : '' }}" href="{{route('dashboard.system-letterheads.index')}}">
+                                <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1778686904/letterhead_d4ebcs.png" alt="System Letterheads" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
+                                System Letterheads</a>
                         </li>
                         <li>
                             <a class="{{ request()->routeIs('dashboard.payment-history.*') ? 'active' : '' }}" href="{{route('dashboard.payment-history.index')}}">
