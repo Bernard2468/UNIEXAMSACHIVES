@@ -490,6 +490,37 @@
         .page-size-selector { justify-content: center; }
     }
 
+    /* Live search loading state */
+    .search-input.is-searching {
+        background-image: linear-gradient(90deg, transparent, rgba(100,116,139,0.08), transparent);
+        background-size: 200% 100%;
+        animation: searchShimmer 1.2s linear infinite;
+    }
+    @keyframes searchShimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+    #usersResultsContainer.is-loading {
+        opacity: 0.55;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
+    }
+    .search-spinner {
+        position: absolute;
+        right: 56px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        border: 2px solid #cbd5e1;
+        border-top-color: #475569;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        display: none;
+    }
+    .search-spinner.visible { display: block; }
+    @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
     /* Staff Category Styles */
     .staff-category-badge {
         display: flex;
@@ -652,18 +683,17 @@
                     <!-- Search and Filter Section -->
                     <div class="search-filter-section">
                         <div class="container">
-                            <form method="GET" action="{{ route('dashboard.users') }}" class="search-box" role="search">
+                            <form method="GET" action="{{ route('dashboard.users') }}" class="search-box" role="search" id="usersSearchForm">
                                 <input type="text" name="search" class="search-input" id="searchInput" placeholder="Search users by name or email..." value="{{ $search ?? '' }}" autocomplete="off">
                                 <input type="hidden" name="filter" value="{{ $activeFilter ?? 'all' }}">
                                 <input type="hidden" name="per_page" value="{{ request('per_page', 15) }}">
+                                <div class="search-spinner" id="searchSpinner" aria-hidden="true"></div>
+                                <button type="button" class="search-btn" id="clearSearchBtn" style="right: 56px; background:#94a3b8; display: {{ !empty($search) ? 'flex' : 'none' }};" title="Clear search">
+                                    <i class="fas fa-times"></i>
+                                </button>
                                 <button type="submit" class="search-btn">
                                     <i class="fas fa-search"></i>
                                 </button>
-                                @if(!empty($search))
-                                    <a href="{{ route('dashboard.users', ['filter' => $activeFilter ?? 'all', 'per_page' => request('per_page', 15)]) }}" class="search-btn" style="right: 56px; background:#94a3b8;" title="Clear search">
-                                        <i class="fas fa-times"></i>
-                                    </a>
-                                @endif
                             </form>
 
                             <div class="filter-tabs">
@@ -683,7 +713,7 @@
 
                     <!-- Users Section -->
                     <div class="users-section">
-                        <div class="container">
+                        <div class="container" id="usersResultsContainer">
                             @if ($users->total() > 0)
                                 <div class="users-list" id="gridView">
                                     @foreach ($users as $user)
@@ -1345,29 +1375,162 @@ document.addEventListener('DOMContentLoaded', function() {
 @endsection
 
 <script>
-// View toggle (Grid/Table) for Users Management
-document.addEventListener('DOMContentLoaded', function() {
-    const gridView = document.getElementById('gridView');
-    const tableView = document.getElementById('tableView');
-    const gridViewBtn = document.getElementById('gridViewBtn');
-    const tableViewBtn = document.getElementById('tableViewBtn');
+// View toggle + live search for Users Management
+(function() {
+    let currentView = 'grid';
+    let searchDebounce = null;
+    let activeRequest = null;
 
-    if (gridViewBtn && tableViewBtn && gridView && tableView) {
-        gridViewBtn.addEventListener('click', function() {
-            gridViewBtn.classList.add('active');
-            tableViewBtn.classList.remove('active');
-            gridView.style.display = 'grid';
-            tableView.style.display = 'none';
-        });
+    function applyView() {
+        const gridView = document.getElementById('gridView');
+        const tableView = document.getElementById('tableView');
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const tableViewBtn = document.getElementById('tableViewBtn');
+        if (!gridView || !tableView || !gridViewBtn || !tableViewBtn) return;
 
-        tableViewBtn.addEventListener('click', function() {
+        if (currentView === 'table') {
             tableViewBtn.classList.add('active');
             gridViewBtn.classList.remove('active');
             gridView.style.display = 'none';
             tableView.style.display = 'block';
+        } else {
+            gridViewBtn.classList.add('active');
+            tableViewBtn.classList.remove('active');
+            gridView.style.display = 'grid';
+            tableView.style.display = 'none';
+        }
+    }
+
+    function bindViewToggle() {
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const tableViewBtn = document.getElementById('tableViewBtn');
+        if (gridViewBtn) gridViewBtn.addEventListener('click', function() { currentView = 'grid'; applyView(); });
+        if (tableViewBtn) tableViewBtn.addEventListener('click', function() { currentView = 'table'; applyView(); });
+    }
+
+    function runLiveSearch() {
+        const form = document.getElementById('usersSearchForm');
+        const container = document.getElementById('usersResultsContainer');
+        const spinner = document.getElementById('searchSpinner');
+        const input = document.getElementById('searchInput');
+        if (!form || !container) return;
+
+        const params = new URLSearchParams(new FormData(form));
+        params.set('page', '1');
+        const url = form.action + '?' + params.toString();
+
+        if (activeRequest) activeRequest.abort();
+        const controller = new AbortController();
+        activeRequest = controller;
+
+        container.classList.add('is-loading');
+        if (spinner) spinner.classList.add('visible');
+        if (input) input.classList.add('is-searching');
+
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+            signal: controller.signal,
+            credentials: 'same-origin'
+        })
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const fresh = doc.getElementById('usersResultsContainer');
+            if (fresh) {
+                container.innerHTML = fresh.innerHTML;
+                applyView();
+            }
+            window.history.replaceState({}, '', url);
+        })
+        .catch(function(err) {
+            if (err.name !== 'AbortError') console.error('Live search failed:', err);
+        })
+        .finally(function() {
+            if (activeRequest === controller) {
+                container.classList.remove('is-loading');
+                if (spinner) spinner.classList.remove('visible');
+                if (input) input.classList.remove('is-searching');
+                activeRequest = null;
+            }
         });
     }
-});
+
+    function scheduleSearch() {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(runLiveSearch, 300);
+    }
+
+    function updateClearButton() {
+        const input = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        if (!input || !clearBtn) return;
+        clearBtn.style.display = input.value.trim() !== '' ? 'flex' : 'none';
+    }
+
+    function bindFilterTabs() {
+        const tabs = document.querySelectorAll('.filter-tab');
+        const filterInput = document.querySelector('#usersSearchForm input[name="filter"]');
+        tabs.forEach(function(tab) {
+            tab.addEventListener('click', function(e) {
+                const href = tab.getAttribute('href');
+                if (!href || href === '#') return;
+                let tabFilter = 'all';
+                try {
+                    const tabUrl = new URL(href, window.location.origin);
+                    tabFilter = tabUrl.searchParams.get('filter') || 'all';
+                } catch (err) { return; }
+                e.preventDefault();
+                if (filterInput) filterInput.value = tabFilter;
+                tabs.forEach(function(t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                clearTimeout(searchDebounce);
+                runLiveSearch();
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        bindViewToggle();
+        bindFilterTabs();
+        updateClearButton();
+
+        const input = document.getElementById('searchInput');
+        const form = document.getElementById('usersSearchForm');
+        const clearBtn = document.getElementById('clearSearchBtn');
+
+        if (input) {
+            input.addEventListener('input', function() {
+                updateClearButton();
+                scheduleSearch();
+            });
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && input.value) {
+                    input.value = '';
+                    updateClearButton();
+                    scheduleSearch();
+                }
+            });
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                if (!input) return;
+                input.value = '';
+                updateClearButton();
+                input.focus();
+                clearTimeout(searchDebounce);
+                runLiveSearch();
+            });
+        }
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                clearTimeout(searchDebounce);
+                runLiveSearch();
+            });
+        }
+    });
+})();
 
 // Confirmation modal function for user deletion
 function confirmDeleteUser(userId, userName) {
