@@ -495,6 +495,10 @@
 .nf-password-block.show { display: block; }
 .nf-password-block .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+/* Share-with-people collapsible (same pattern as password) */
+.nf-share-block { display: none; margin-top: 12px; }
+.nf-share-block.show { display: block; }
+
 /* ===== Share with people picker (compose-memo style) ===== */
 .nf-share-picker {
     border: 1px solid #e2e8f0;
@@ -607,11 +611,11 @@
     font-size: 11.5px; font-weight: 600;
     font-family: inherit; cursor: pointer;
     flex-shrink: 0;
-    transition: opacity .15s, border-color .15s, color .15s;
-    opacity: 0.5;
+    transition: border-color .15s, color .15s, background .15s;
 }
+.nf-share-perm:hover { border-color: #cbd5e1; }
 .nf-share-user.selected .nf-share-perm {
-    opacity: 1; border-color: #bfdbfe; color: #1e40af;
+    border-color: #bfdbfe; color: #1e40af; background: #eff6ff;
 }
 .nf-share-perm:focus { outline: none; border-color: #0ea5e9; }
 
@@ -1004,11 +1008,15 @@
             </div>
 
             <div class="nf-section">
-                <label class="nf-label">
-                    Share with people <span class="opt">Optional</span>
+                <label class="nf-toggle-row" for="nfShareToggle">
+                    <input type="checkbox" id="nfShareToggle">
+                    <div>
+                        <div class="lbl">Share with people <span class="opt">Optional</span></div>
+                        <div class="desc">Tag teammates to give them access. They'll get an in-app notification.</div>
+                    </div>
                 </label>
-                <p class="nf-hint">Select teammates to share this folder with. They'll get an in-app notification.</p>
 
+                <div class="nf-share-block" id="nfShareBlock">
                 <div class="nf-share-picker">
                     <div class="nf-share-toolbar">
                         <div class="nf-share-search-box">
@@ -1059,7 +1067,7 @@
                                         @endif
                                     </div>
                                 </div>
-                                <select class="nf-share-perm" data-user-id="{{ $u->id }}" disabled>
+                                <select class="nf-share-perm" data-user-id="{{ $u->id }}">
                                     <option value="viewer" selected>Viewer</option>
                                     <option value="editor">Editor</option>
                                 </select>
@@ -1080,6 +1088,7 @@
                             <button type="button" class="nf-share-action-btn" id="nfShareClearAll"><i class="fas fa-times-circle"></i> Clear All</button>
                         </div>
                     @endif
+                </div>
                 </div>
             </div>
         </div>
@@ -1318,6 +1327,8 @@
     const nfPasswordBlock = document.getElementById('nfPasswordBlock');
     const nfPassword = document.getElementById('nfPassword');
     const nfPasswordConfirm = document.getElementById('nfPasswordConfirm');
+    const nfShareToggle = document.getElementById('nfShareToggle');
+    const nfShareBlock = document.getElementById('nfShareBlock');
     const nfShareSearch = document.getElementById('nfShareSearch');
     const nfShareList = document.getElementById('nfShareList');
     const nfShareNoResults = document.getElementById('nfShareNoResults');
@@ -1367,6 +1378,19 @@
             if (!on) { nfPassword.value = ''; nfPasswordConfirm.value = ''; }
         });
 
+        // ---- Share-with-people collapsible (toggle reveals/hides the picker) ----
+        nfShareToggle?.addEventListener('change', () => {
+            const on = nfShareToggle.checked;
+            nfShareBlock.classList.toggle('show', on);
+            if (!on) {
+                // Closing the section clears every selection so we don't
+                // accidentally share with someone the user un-toggled.
+                shareUserRows.forEach(row => setRowSelected(row, false));
+                if (nfShareSearch) nfShareSearch.value = '';
+                applyShareFilter();
+            }
+        });
+
         // ---- Share picker (compose-memo style: full list + client-side filter) ----
         const shareUserRows = nfShareList ? Array.from(nfShareList.querySelectorAll('.nf-share-user')) : [];
 
@@ -1383,18 +1407,13 @@
             if (isSelected) {
                 row.classList.add('selected');
                 if (checkbox) checkbox.checked = true;
-                if (permSelect) {
-                    permSelect.disabled = false;
-                    if (permission) permSelect.value = permission;
-                }
-                selectedShares.set(String(userId), permission || (permSelect ? permSelect.value : 'viewer') || 'viewer');
+                if (permSelect && permission) permSelect.value = permission;
+                const finalPerm = permission || (permSelect ? permSelect.value : 'viewer') || 'viewer';
+                selectedShares.set(String(userId), finalPerm);
             } else {
                 row.classList.remove('selected');
                 if (checkbox) checkbox.checked = false;
-                if (permSelect) {
-                    permSelect.disabled = true;
-                    permSelect.value = 'viewer';
-                }
+                if (permSelect) permSelect.value = 'viewer';
                 selectedShares.delete(String(userId));
             }
             updateSelectedCount();
@@ -1433,11 +1452,20 @@
 
             const permSelect = row.querySelector('.nf-share-perm');
             if (permSelect) {
+                // Stop the row's click toggle from firing when the user opens
+                // or picks an option from the permission dropdown.
                 permSelect.addEventListener('click', e => e.stopPropagation());
-                permSelect.addEventListener('change', () => {
+                permSelect.addEventListener('mousedown', e => e.stopPropagation());
+                permSelect.addEventListener('change', e => {
+                    e.stopPropagation();
                     const userId = row.getAttribute('data-user-id');
-                    if (userId && selectedShares.has(String(userId))) {
+                    if (!userId) return;
+                    // Changing the permission auto-selects the user (if they
+                    // weren't already), so the picker just works.
+                    if (selectedShares.has(String(userId))) {
                         selectedShares.set(String(userId), permSelect.value);
+                    } else {
+                        setRowSelected(row, true, permSelect.value);
                     }
                 });
             }
