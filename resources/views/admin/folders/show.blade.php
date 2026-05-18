@@ -576,6 +576,19 @@
 </div>
 
 @if($isOwner)
+@php
+    // Users available to invite into this folder — excludes the owner and
+    // anyone already on the members list. Mirrors the create-folder picker.
+    $existingMemberIds = $folder->members->pluck('id')->all();
+    $invitableUsers = \App\Models\User::query()
+        ->where('is_approve', true)
+        ->where('id', '!=', auth()->id())
+        ->whereNotIn('id', $existingMemberIds)
+        ->with(['position:id,name', 'department:id,name'])
+        ->orderBy('first_name')
+        ->orderBy('last_name')
+        ->get(['id', 'first_name', 'last_name', 'email', 'profile_picture', 'position_id', 'department_id']);
+@endphp
 {{-- ===== MEMBERS MODAL ===== --}}
 <style>
 .members-list { max-height: 260px; overflow-y: auto; margin-top: 4px; }
@@ -609,29 +622,156 @@
 }
 .member-row .remove-btn:hover { background:#fef2f2; color:#dc2626; }
 
-.search-results {
-    position: relative;
-    max-height: 280px; overflow-y: auto;
-    margin-top: 8px;
+/* ===== Member picker (matches the create-folder Share-with-people UI) ===== */
+.mp-picker {
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background:#fff;
-    display: none;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
 }
-.search-results.show { display:block; }
-.search-row {
+.mp-toolbar {
     display:flex; align-items:center; gap:12px;
     padding: 10px 12px;
-    cursor:pointer; transition: background .12s;
-    border-bottom: 1px solid #f1f5f9;
+    background:#f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
 }
-.search-row:last-child { border-bottom: none; }
-.search-row:hover { background:#f1f5fa; }
-.search-row .avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:#f1f5f9; }
-.search-row .info { flex:1; min-width: 0; }
-.search-row .info .name { font-size:13.5px; font-weight:600; color:#0f172a; }
-.search-row .info .email { font-size: 11.5px; color:#64748b; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
-.search-empty { padding: 16px; text-align:center; color:#94a3b8; font-size: 13px; }
+.mp-search-box { position: relative; flex:1; min-width:200px; display:flex; align-items:center; }
+.mp-search-box i {
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    color:#94a3b8; font-size:13px; pointer-events:none;
+}
+.mp-search-box input {
+    width:100%; padding: 9px 12px 9px 34px;
+    border: 1px solid #e2e8f0; border-radius:8px;
+    background:#fff; font-size:13px; color:#0f172a;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+    font-family: inherit;
+}
+.mp-search-box input:focus {
+    border-color:#0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
+}
+.mp-stats { font-size:12px; color:#475569; font-weight:600; white-space:nowrap; }
+.mp-stats #mpSelectedCount { color:#0ea5e9; font-weight:700; }
+
+.mp-list { max-height: 280px; overflow-y: auto; background:#fff; }
+.mp-list::-webkit-scrollbar { width:8px; }
+.mp-list::-webkit-scrollbar-track { background:#f1f5f9; }
+.mp-list::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+
+.mp-user {
+    display:flex; align-items:center; gap:12px;
+    padding: 10px 14px;
+    border-bottom:1px solid #f1f5f9;
+    cursor:pointer; transition: background .12s;
+}
+.mp-user:last-of-type { border-bottom: none; }
+.mp-user:hover { background:#f8fafc; }
+.mp-user.selected { background:#eff6ff; }
+.mp-user.selected:hover { background:#dbeafe; }
+
+.mp-av {
+    width:40px; height:40px; border-radius:50%;
+    flex-shrink:0; overflow:hidden; background:#f1f5f9;
+    display:flex; align-items:center; justify-content:center;
+}
+.mp-av img { width:100%; height:100%; object-fit:cover; }
+.mp-av-fallback {
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(135deg,#0ea5e9,#6366f1);
+    color:#fff; font-weight:700; font-size:13px;
+}
+.mp-info { flex:1; min-width:0; }
+.mp-name {
+    display:flex; align-items:center; gap:8px;
+    font-size:13.5px; font-weight:600; color:#0f172a;
+    line-height:1.3;
+}
+.mp-name > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mp-pos {
+    display:inline-flex; align-items:center; gap:4px;
+    background:#eff6ff; color:#1e40af;
+    padding: 1px 8px; border-radius:100px;
+    font-size:10.5px; font-weight:600; white-space:nowrap;
+}
+.mp-pos i { font-size:9px; }
+.mp-meta {
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; color:#64748b; margin-top:2px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.mp-dot { color:#cbd5e1; }
+
+.mp-perm {
+    border: 1px solid #e2e8f0; border-radius:6px;
+    background:#fff; color:#475569;
+    padding: 4px 8px;
+    font-size:11.5px; font-weight:600;
+    font-family: inherit; cursor:pointer; flex-shrink:0;
+    transition: border-color .15s, color .15s, background .15s;
+}
+.mp-perm:hover { border-color:#cbd5e1; }
+.mp-user.selected .mp-perm {
+    border-color:#bfdbfe; color:#1e40af; background:#eff6ff;
+}
+.mp-perm:focus { outline:none; border-color:#0ea5e9; }
+
+.mp-check {
+    position:relative;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; cursor:pointer;
+    width:22px; height:22px;
+}
+.mp-checkbox { position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+.mp-checkmark {
+    width:20px; height:20px;
+    border:2px solid #cbd5e1; border-radius:5px;
+    background:#fff; position:relative;
+    transition: all .15s;
+}
+.mp-user:hover .mp-checkmark { border-color:#94a3b8; }
+.mp-checkbox:checked + .mp-checkmark { background:#0ea5e9; border-color:#0ea5e9; }
+.mp-checkbox:checked + .mp-checkmark::after {
+    content:''; position:absolute;
+    left:5px; top:1px; width:6px; height:11px;
+    border:solid #fff; border-width:0 2px 2px 0;
+    transform:rotate(45deg);
+}
+
+.mp-empty, .mp-no-results {
+    padding: 28px 18px; text-align:center;
+    color:#94a3b8; font-size:13px;
+}
+
+.mp-actions {
+    display:flex; align-items:center; gap:8px;
+    padding:10px 12px;
+    background:#f8fafc;
+    border-top:1px solid #e2e8f0;
+    flex-wrap: wrap;
+}
+.mp-action-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding: 6px 12px;
+    border:1px solid #e2e8f0; border-radius:8px;
+    background:#fff; color:#475569;
+    font-size:12px; font-weight:600;
+    cursor:pointer; font-family:inherit;
+    transition: all .15s;
+}
+.mp-action-btn:hover { background:#eff6ff; color:#1e40af; border-color:#bfdbfe; }
+.mp-action-btn.primary {
+    background:#0ea5e9; color:#fff; border-color:#0ea5e9;
+    margin-left:auto;
+}
+.mp-action-btn.primary:hover { background:#0284c7; border-color:#0284c7; color:#fff; }
+.mp-action-btn.primary:disabled {
+    background:#cbd5e1; border-color:#cbd5e1;
+    cursor:not-allowed; color:#fff;
+}
+.mp-action-btn.primary:disabled:hover { background:#cbd5e1; border-color:#cbd5e1; color:#fff; }
+.mp-action-btn i { font-size:11px; }
 
 .shared-chips { display:flex; flex-wrap: wrap; gap:6px; margin-top: 8px; }
 .shared-chip {
@@ -660,16 +800,83 @@
             </div>
         @endif
 
-        <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Invite by name or email</label>
-        <div style="position: relative;">
-            <input type="text" id="memberSearchInput" placeholder="Type at least 2 characters..." autocomplete="off"
-                style="width:100%; padding: 11px 14px; border:1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-family: inherit; outline: none;">
-            <div class="search-results" id="searchResults"></div>
+        <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Invite members</label>
+
+        <div class="mp-picker">
+            <div class="mp-toolbar">
+                <div class="mp-search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="memberPickerSearch" placeholder="Search by name, email, position, or department..." autocomplete="off">
+                </div>
+                <div class="mp-stats">
+                    <span id="mpSelectedCount">0</span> of <span id="mpTotalCount">{{ $invitableUsers->count() }}</span> selected
+                </div>
+            </div>
+
+            <div class="mp-list" id="mpList">
+                @forelse($invitableUsers as $u)
+                    @php
+                        $firstName = $u->first_name ?: '';
+                        $lastName = $u->last_name ?: '';
+                        $fullName = trim($firstName . ' ' . $lastName);
+                        if ($fullName === '') { $fullName = $u->email; }
+                        $initials = strtoupper(substr($firstName !== '' ? $firstName : 'U', 0, 1) . substr($lastName !== '' ? $lastName : '', 0, 1));
+                        if ($initials === '') { $initials = strtoupper(substr($u->email, 0, 1)); }
+                        $positionName = optional($u->position)->name;
+                        $departmentName = optional($u->department)->name;
+                        $searchTerms = strtolower(trim($fullName . ' ' . $u->email . ' ' . ($positionName ?? '') . ' ' . ($departmentName ?? '')));
+                        $avatarUrl = $u->profile_picture ? asset('profile_pictures/' . $u->profile_picture) : null;
+                    @endphp
+                    <div class="mp-user" data-user-id="{{ $u->id }}" data-search="{{ $searchTerms }}">
+                        <div class="mp-av">
+                            @if($avatarUrl)
+                                <img src="{{ $avatarUrl }}" alt="">
+                            @else
+                                <div class="mp-av-fallback">{{ $initials }}</div>
+                            @endif
+                        </div>
+                        <div class="mp-info">
+                            <div class="mp-name">
+                                <span>{{ $fullName }}</span>
+                                @if($positionName)
+                                    <span class="mp-pos"><i class="fas fa-briefcase"></i> {{ $positionName }}</span>
+                                @endif
+                            </div>
+                            <div class="mp-meta">
+                                <span class="mp-email">{{ $u->email }}</span>
+                                @if($departmentName)
+                                    <span class="mp-dot">·</span>
+                                    <span class="mp-dept">{{ $departmentName }}</span>
+                                @endif
+                            </div>
+                        </div>
+                        <select class="mp-perm" data-user-id="{{ $u->id }}">
+                            <option value="viewer" selected>Viewer</option>
+                            <option value="editor">Editor</option>
+                        </select>
+                        <label class="mp-check">
+                            <input type="checkbox" class="mp-checkbox" value="{{ $u->id }}">
+                            <span class="mp-checkmark"></span>
+                        </label>
+                    </div>
+                @empty
+                    <div class="mp-empty">Everyone in the system is already a member of this folder.</div>
+                @endforelse
+                <div class="mp-no-results" id="mpNoResults" style="display:none;">No users match your search.</div>
+            </div>
+
+            @if($invitableUsers->count() > 0)
+                <div class="mp-actions">
+                    <button type="button" class="mp-action-btn" id="mpSelectAll"><i class="fas fa-check-circle"></i> Select All</button>
+                    <button type="button" class="mp-action-btn" id="mpClearAll"><i class="fas fa-times-circle"></i> Clear All</button>
+                    <button type="button" class="mp-action-btn primary" id="mpInviteBtn" disabled><i class="fas fa-user-plus"></i> Invite <span id="mpInviteCount">0</span></button>
+                </div>
+            @endif
         </div>
 
         <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin: 16px 0 6px;">Current members</label>
         <div class="members-list" id="membersList">
-            <div class="empty-box" style="padding: 24px 8px;"><div class="ico-c" style="width:60px; height:60px; font-size:22px;"><i class="fas fa-user-plus"></i></div><h4>No members yet</h4><p>Search above to invite collaborators.</p></div>
+            <div class="empty-box" style="padding: 24px 8px;"><div class="ico-c" style="width:60px; height:60px; font-size:22px;"><i class="fas fa-user-plus"></i></div><h4>No members yet</h4><p>Tick users above and click <strong>Invite</strong> to add collaborators.</p></div>
         </div>
 
         <div class="add-actions">
@@ -839,10 +1046,95 @@
     // ===================================================================
     const membersBtn = document.getElementById('openMembersModal');
     const membersModal = document.getElementById('membersModal');
-    const memberSearch = document.getElementById('memberSearchInput');
-    const searchResults = document.getElementById('searchResults');
     const membersList = document.getElementById('membersList');
     const FOLDER_ID = {{ $folder->id }};
+
+    // ---- Invite picker (compose-memo style: full list + filter + batch invite) ----
+    const mpSearch = document.getElementById('memberPickerSearch');
+    const mpList = document.getElementById('mpList');
+    const mpNoResults = document.getElementById('mpNoResults');
+    const mpSelectedCount = document.getElementById('mpSelectedCount');
+    const mpSelectAll = document.getElementById('mpSelectAll');
+    const mpClearAll = document.getElementById('mpClearAll');
+    const mpInviteBtn = document.getElementById('mpInviteBtn');
+    const mpInviteCount = document.getElementById('mpInviteCount');
+
+    // Map<string user_id, 'viewer' | 'editor'>
+    const pickerSelections = new Map();
+    const mpRows = mpList ? Array.from(mpList.querySelectorAll('.mp-user')) : [];
+
+    function updatePickerCount() {
+        const n = pickerSelections.size;
+        if (mpSelectedCount) mpSelectedCount.textContent = String(n);
+        if (mpInviteCount) mpInviteCount.textContent = String(n);
+        if (mpInviteBtn) mpInviteBtn.disabled = n === 0;
+    }
+
+    function setPickerRow(row, isSelected, permission) {
+        const userId = row.getAttribute('data-user-id');
+        if (!userId) return;
+        const cb = row.querySelector('.mp-checkbox');
+        const sel = row.querySelector('.mp-perm');
+        if (isSelected) {
+            row.classList.add('selected');
+            if (cb) cb.checked = true;
+            if (sel && permission) sel.value = permission;
+            pickerSelections.set(String(userId), permission || (sel ? sel.value : 'viewer') || 'viewer');
+        } else {
+            row.classList.remove('selected');
+            if (cb) cb.checked = false;
+            if (sel) sel.value = 'viewer';
+            pickerSelections.delete(String(userId));
+        }
+        updatePickerCount();
+    }
+
+    function applyPickerFilter() {
+        const q = (mpSearch?.value || '').toLowerCase().trim();
+        let visible = 0;
+        mpRows.forEach(row => {
+            const terms = row.getAttribute('data-search') || '';
+            const match = q === '' || terms.includes(q);
+            row.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        if (mpNoResults) mpNoResults.style.display = (mpRows.length > 0 && visible === 0) ? '' : 'none';
+    }
+
+    mpRows.forEach(row => {
+        row.addEventListener('click', e => {
+            if (e.target.closest('.mp-perm')) return;
+            const cb = row.querySelector('.mp-checkbox');
+            if (!cb) return;
+            if (e.target !== cb) setPickerRow(row, !cb.checked);
+        });
+        const cb = row.querySelector('.mp-checkbox');
+        if (cb) cb.addEventListener('change', () => setPickerRow(row, cb.checked));
+
+        const sel = row.querySelector('.mp-perm');
+        if (sel) {
+            sel.addEventListener('click', e => e.stopPropagation());
+            sel.addEventListener('mousedown', e => e.stopPropagation());
+            sel.addEventListener('change', e => {
+                e.stopPropagation();
+                const uid = row.getAttribute('data-user-id');
+                if (!uid) return;
+                if (pickerSelections.has(String(uid))) {
+                    pickerSelections.set(String(uid), sel.value);
+                } else {
+                    setPickerRow(row, true, sel.value);
+                }
+            });
+        }
+    });
+
+    mpSearch?.addEventListener('input', applyPickerFilter);
+    mpSelectAll?.addEventListener('click', () => {
+        mpRows.forEach(row => { if (row.style.display !== 'none') setPickerRow(row, true); });
+    });
+    mpClearAll?.addEventListener('click', () => {
+        mpRows.forEach(row => setPickerRow(row, false));
+    });
 
     function escapeHtml(s) {
         return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -941,7 +1233,17 @@
         }
     }
 
-    async function inviteUser(userId, permission = 'viewer') {
+    async function inviteSelected() {
+        if (pickerSelections.size === 0) return;
+        const members = [];
+        pickerSelections.forEach((permission, userId) => {
+            members.push({ user_id: Number(userId), permission });
+        });
+
+        const originalHtml = mpInviteBtn.innerHTML;
+        mpInviteBtn.disabled = true;
+        mpInviteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inviting...';
+
         try {
             const res = await fetch('{{ route("dashboard.folders.share", $folder) }}', {
                 method: 'POST',
@@ -952,66 +1254,48 @@
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({ user_id: userId, permission }),
+                body: JSON.stringify({ members }),
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.ok) {
-                notify('Member added', 'ok');
-                memberSearch.value = '';
-                searchResults.classList.remove('show');
+                const addedIds = (data.added || []).map(a => String(a.id));
+                // Remove invited rows from the picker so they can't be added twice.
+                addedIds.forEach(id => {
+                    const row = mpList?.querySelector(`.mp-user[data-user-id="${id}"]`);
+                    if (row) row.remove();
+                });
+                // Drop them from the in-memory row list + selection map.
+                for (let i = mpRows.length - 1; i >= 0; i--) {
+                    if (addedIds.includes(mpRows[i].getAttribute('data-user-id'))) {
+                        mpRows.splice(i, 1);
+                    }
+                }
+                pickerSelections.clear();
+                if (mpSearch) mpSearch.value = '';
+                applyPickerFilter();
+                updatePickerCount();
+                const mpTotal = document.getElementById('mpTotalCount');
+                if (mpTotal) mpTotal.textContent = String(mpRows.length);
+                notify(addedIds.length + ' member(s) invited', 'ok');
                 loadMembers();
             } else {
-                notify(data.message || 'Could not add member', 'err');
+                notify(data.message || 'Could not add members', 'err');
             }
-        } catch (e) { notify('Network error', 'err'); }
+        } catch (e) {
+            notify('Network error', 'err');
+        } finally {
+            mpInviteBtn.innerHTML = originalHtml;
+            updatePickerCount();
+        }
     }
 
-    // Debounced search
-    let searchTimer = null;
-    if (memberSearch) {
-        memberSearch.addEventListener('input', () => {
-            clearTimeout(searchTimer);
-            const q = memberSearch.value.trim();
-            if (q.length < 2) { searchResults.classList.remove('show'); searchResults.innerHTML = ''; return; }
-            searchTimer = setTimeout(async () => {
-                try {
-                    const url = '{{ route("dashboard.folders.users.search") }}?q=' + encodeURIComponent(q) + '&folder_id=' + FOLDER_ID;
-                    const res = await fetch(url, {
-                        credentials: 'same-origin',
-                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    });
-                    const data = await res.json();
-                    if (!data.ok) return;
-                    if (data.users.length === 0) {
-                        searchResults.innerHTML = '<div class="search-empty">No matching users</div>';
-                    } else {
-                        searchResults.innerHTML = data.users.map(u => `
-                            <div class="search-row" data-user-id="${u.id}">
-                                <img class="avatar" src="${escapeHtml(u.avatar)}" alt="">
-                                <div class="info">
-                                    <div class="name">${escapeHtml(u.name)}</div>
-                                    <div class="email">${escapeHtml(u.email)}</div>
-                                </div>
-                                <button type="button" class="fbtn primary" style="padding:6px 12px; font-size:12px;"><i class="fas fa-plus"></i> Add</button>
-                            </div>
-                        `).join('');
-                        searchResults.querySelectorAll('.search-row').forEach(row => {
-                            row.addEventListener('click', () => inviteUser(row.getAttribute('data-user-id'), 'viewer'));
-                        });
-                    }
-                    searchResults.classList.add('show');
-                } catch (e) {
-                    console.error('[members] search failed:', e);
-                }
-            }, 250);
-        });
-    }
+    mpInviteBtn?.addEventListener('click', inviteSelected);
 
     if (membersBtn && membersModal) {
         membersBtn.addEventListener('click', () => {
             membersModal.classList.add('open');
             loadMembers();
-            setTimeout(() => memberSearch.focus(), 60);
+            setTimeout(() => mpSearch?.focus(), 60);
         });
         membersModal.addEventListener('click', e => {
             if (e.target === membersModal) membersModal.classList.remove('open');
