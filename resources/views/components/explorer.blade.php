@@ -20,6 +20,7 @@
     $showItemsSection = $showItemsSection ?? true;
     $itemsSectionLabel = $itemsSectionLabel ?? ($itemKind === 'exam' ? 'Exam Documents' : 'Files');
     $emptyStateText = $emptyStateText ?? 'Documents you upload will appear here.';
+    $sharedFolders = $sharedFolders ?? collect();
 @endphp
 
 @push('styles')
@@ -526,6 +527,46 @@
                             </div>
                             <div class="name">{{ $folder->name }}</div>
                             <div class="sub">{{ $folderCount }} {{ Str::plural('item', $folderCount) }}</div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        {{-- ===== SHARED WITH ME ===== --}}
+        @if($sharedFolders->count() > 0)
+            <div class="exp-section">
+                <div class="exp-section-head">
+                    <h3><i class="fas fa-user-group" style="color:#0ea5e9;"></i> Shared with me <span class="count">{{ $sharedFolders->count() }}</span></h3>
+                </div>
+                <div class="exp-grid">
+                    @foreach($sharedFolders as $folder)
+                        @php
+                            $folderCount = ($folder->files_count ?? 0) + ($folder->exams_count ?? 0);
+                            $folderColor = $folder->color ?: '#0ea5e9';
+                            $owner = $folder->user;
+                            $ownerName = $owner
+                                ? (trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? '')) ?: ($owner->name ?: $owner->email))
+                                : 'Someone';
+                            $perm = $folder->pivot->permission ?? 'viewer';
+                            $folderShowUrl = route('dashboard.folders.show', $folder)
+                                . '?from=' . urlencode(url()->full());
+                        @endphp
+                        <a href="{{ $folderShowUrl }}"
+                            class="exp-tile"
+                            data-search="{{ strtolower($folder->name . ' ' . $ownerName) }}"
+                            title="{{ $folder->name }} — shared by {{ $ownerName }} ({{ ucfirst($perm) }})">
+                            <div class="ico folder">
+                                <svg viewBox="0 0 64 50" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M2 10 Q2 4 8 4 L22 4 L28 10 L56 10 Q62 10 62 16 L62 42 Q62 48 56 48 L8 48 Q2 48 2 42 Z"
+                                          fill="{{ $folderColor }}" opacity="0.95"/>
+                                    <path d="M2 14 Q2 8 8 8 L60 8 Q64 8 62 14 L57 44 Q56 48 50 48 L8 48 Q2 48 2 42 Z"
+                                          fill="{{ $folderColor }}" opacity="0.7"/>
+                                </svg>
+                                <span class="lock-badge" style="background:#0ea5e9; color:#fff; font-size:8px;" title="Shared with you"><i class="fas fa-user-group"></i></span>
+                            </div>
+                            <div class="name">{{ $folder->name }}</div>
+                            <div class="sub">{{ $folderCount }} {{ Str::plural('item', $folderCount) }} · {{ $ownerName }}</div>
                         </a>
                     @endforeach
                 </div>

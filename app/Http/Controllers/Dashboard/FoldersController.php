@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\File;
 use App\Models\Folder;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -19,7 +21,13 @@ class FoldersController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('admin.folders.index', compact('folders'));
+        $sharedFolders = Auth::user()->sharedFolders()
+            ->withCount(['files', 'exams'])
+            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->orderBy('folder_shares.created_at', 'desc')
+            ->get();
+
+        return view('admin.folders.index', compact('folders', 'sharedFolders'));
     }
 
     public function create()
@@ -34,54 +42,90 @@ class FoldersController extends Controller
             'description' => 'nullable|string|max:1000',
             'color' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'password' => 'nullable|string|min:6|confirmed',
+            'share_members' => 'nullable|array',
+            'share_members.*.user_id' => 'integer|exists:users,id',
+            'share_members.*.permission' => 'in:viewer,editor',
         ]);
 
-        $validatedData['user_id'] = Auth::id();
+        $shareMembers = $validatedData['share_members'] ?? [];
 
-        // Remove password fields from mass-assignment and set hash if provided
-        $password = $validatedData['password'] ?? null;
-        unset($validatedData['password']);
-        unset($validatedData['password_confirmation']);
+        $folderData = [
+            'name' => $validatedData['name'],
+            'description' => $validatedData['description'] ?? null,
+            'color' => $validatedData['color'],
+            'user_id' => Auth::id(),
+        ];
 
-        $folder = Folder::create($validatedData);
+        $folder = Folder::create($folderData);
 
-        if (!empty($password)) {
-            $folder->password_hash = Hash::make($password);
+        if (!empty($validatedData['password'])) {
+            $folder->password_hash = Hash::make($validatedData['password']);
             $folder->save();
         }
 
+        // Apply any initial share members from the create form.
+        $sharedCount = 0;
+        foreach ($shareMembers as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            if (!$uid || $uid === Auth::id()) continue;
+            $perm = in_array(($row['permission'] ?? 'viewer'), ['viewer', 'editor'], true) ? $row['permission'] : 'viewer';
+            $user = User::find($uid);
+            if (!$user) continue;
+            $folder->members()->syncWithoutDetaching([
+                $uid => ['permission' => $perm, 'shared_by' => Auth::id()],
+            ]);
+            $this->sendShareNotification($folder, $user, $perm);
+            $sharedCount++;
+        }
+
+        $message = 'Folder created successfully.';
+        if ($sharedCount > 0) {
+            $message .= " Shared with {$sharedCount} " . ($sharedCount === 1 ? 'person' : 'people') . '.';
+        }
+
         return redirect()->route('dashboard.folders.show', $folder)
-            ->with('success', 'Folder created successfully.');
+            ->with('success', $message);
     }
 
     public function show(Folder $folder)
     {
-        if ($folder->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to folder.');
+        $user = Auth::user();
+        if (!$folder->isAccessibleBy($user)) {
+            abort(403, 'You do not have access to this folder.');
         }
-        // Gate access if password protected and not recently unlocked
-        if (!empty($folder->password_hash)) {
+
+        $isOwner = $folder->isOwnedBy($user);
+
+        // Password gate only applies to the owner. For shared members, the
+        // share itself IS the access — they should not be prompted.
+        if ($isOwner && !empty($folder->password_hash)) {
             if (!$this->isFolderRecentlyUnlocked($folder)) {
                 return redirect()->route('dashboard.folders.unlock.form', $folder)
                     ->with('info', 'This folder is password protected.');
             }
-            // Refresh the last-access timestamp to maintain the 1-minute window
             $this->markFolderUnlockedNow($folder);
         }
 
-        $folder->load(['files', 'exams']);
-        $availableFiles = File::where('user_id', Auth::id())
-            ->whereDoesntHave('folders', function ($query) use ($folder) {
-                $query->where('folder_id', $folder->id);
-            })
-            ->get();
-        $availableExams = Exam::where('user_id', Auth::id())
-            ->whereDoesntHave('folders', function ($query) use ($folder) {
-                $query->where('folder_id', $folder->id);
-            })
-            ->get();
+        $folder->load(['files', 'exams', 'members']);
 
-        return view('admin.folders.show', compact('folder', 'availableFiles', 'availableExams'));
+        // "Available to add" lists are scoped to the current user's own
+        // items only — you can only contribute your own uploads.
+        $availableFiles = collect();
+        $availableExams = collect();
+        if ($isOwner || $folder->canEditContents($user)) {
+            $availableFiles = File::where('user_id', $user->id)
+                ->whereDoesntHave('folders', function ($q) use ($folder) {
+                    $q->where('folder_id', $folder->id);
+                })
+                ->get();
+            $availableExams = Exam::where('user_id', $user->id)
+                ->whereDoesntHave('folders', function ($q) use ($folder) {
+                    $q->where('folder_id', $folder->id);
+                })
+                ->get();
+        }
+
+        return view('admin.folders.show', compact('folder', 'availableFiles', 'availableExams', 'isOwner'));
     }
 
     public function edit(Folder $folder)
@@ -125,8 +169,8 @@ class FoldersController extends Controller
 
     public function addFiles(Request $request, Folder $folder)
     {
-        if ($folder->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to folder.');
+        if (!$folder->canEditContents(Auth::user())) {
+            abort(403, 'You do not have permission to add items to this folder.');
         }
 
         $validatedData = $request->validate([
@@ -165,8 +209,8 @@ class FoldersController extends Controller
 
     public function addExams(Request $request, Folder $folder)
     {
-        if ($folder->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access to folder.');
+        if (!$folder->canEditContents(Auth::user())) {
+            abort(403, 'You do not have permission to add items to this folder.');
         }
 
         $validatedData = $request->validate([
@@ -210,10 +254,16 @@ class FoldersController extends Controller
      */
     public function moveItem(Request $request, Folder $folder)
     {
-        if ($folder->user_id !== Auth::id()) {
-            return response()->json(['ok' => false, 'message' => 'Unauthorized folder.'], 403);
+        if (!$folder->canEditContents(Auth::user())) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'You do not have permission to add items to this folder.',
+            ], 403);
         }
-        if (!empty($folder->password_hash) && !$this->isFolderRecentlyUnlocked($folder)) {
+        // Password gate only applies to the owner (editors bypass — share IS access).
+        if ($folder->isOwnedBy(Auth::user())
+            && !empty($folder->password_hash)
+            && !$this->isFolderRecentlyUnlocked($folder)) {
             return response()->json(['ok' => false, 'message' => 'Folder is locked. Unlock it first.', 'locked' => true], 423);
         }
 
@@ -381,5 +431,231 @@ class FoldersController extends Controller
         // Redirect back to unlock prompt (or provided return URL)
         $defaultUnlock = route('dashboard.folders.unlock.form', $folder);
         return redirect($returnTo ?: $defaultUnlock)->with('success', 'Folder password updated. Please unlock with the new password.');
+    }
+
+    // =================================================================
+    //  SHARING / MEMBERS
+    // =================================================================
+
+    /**
+     * Search users to invite. Returns up to 8 lightweight rows.
+     * Excludes the current user and (optionally) anyone already shared.
+     */
+    public function searchUsers(Request $request)
+    {
+        $q = trim((string) $request->input('q', ''));
+        $excludeFolder = $request->input('folder_id');
+
+        if (strlen($q) < 2) {
+            return response()->json(['ok' => true, 'users' => []]);
+        }
+
+        $query = User::query()
+            ->where('id', '!=', Auth::id())
+            ->where(function ($qq) use ($q) {
+                $qq->where('first_name', 'LIKE', "%{$q}%")
+                    ->orWhere('last_name', 'LIKE', "%{$q}%")
+                    ->orWhere('name', 'LIKE', "%{$q}%")
+                    ->orWhere('email', 'LIKE', "%{$q}%");
+            });
+
+        if ($excludeFolder) {
+            $folder = Folder::find($excludeFolder);
+            if ($folder && $folder->user_id === Auth::id()) {
+                $existingIds = $folder->members()->pluck('users.id')->all();
+                $query->whereNotIn('id', $existingIds);
+            }
+        }
+
+        $users = $query->limit(8)->get(['id', 'first_name', 'last_name', 'name', 'email', 'profile_picture']);
+
+        return response()->json([
+            'ok' => true,
+            'users' => $users->map(function ($u) {
+                $full = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) ?: ($u->name ?: $u->email);
+                return [
+                    'id' => $u->id,
+                    'name' => $full,
+                    'email' => $u->email,
+                    'avatar' => $u->profile_picture
+                        ? asset('profile_pictures/' . $u->profile_picture)
+                        : asset('profile_pictures/default-profile.png'),
+                ];
+            }),
+        ]);
+    }
+
+    /**
+     * Add one or more members to a folder. Owner only.
+     * Body: { members: [{ user_id, permission }, ...] }  OR  legacy { user_id, permission }
+     */
+    public function share(Request $request, Folder $folder)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can share.');
+        }
+
+        // Accept both an array of members and a single member.
+        $payload = $request->input('members');
+        if (!is_array($payload) || empty($payload)) {
+            $payload = [[
+                'user_id' => $request->input('user_id'),
+                'permission' => $request->input('permission'),
+            ]];
+        }
+
+        $added = [];
+        foreach ($payload as $row) {
+            $userId = (int) ($row['user_id'] ?? 0);
+            $permission = in_array(($row['permission'] ?? 'viewer'), ['viewer', 'editor'], true)
+                ? $row['permission'] : 'viewer';
+
+            if (!$userId || $userId === Auth::id()) continue;
+            $user = User::find($userId);
+            if (!$user) continue;
+
+            // syncWithoutDetaching with attributes lets us update permission if member already exists.
+            $folder->members()->syncWithoutDetaching([
+                $userId => ['permission' => $permission, 'shared_by' => Auth::id()],
+            ]);
+            // If they were already a member, update the permission explicitly:
+            $folder->members()->updateExistingPivot($userId, [
+                'permission' => $permission,
+                'shared_by' => Auth::id(),
+            ]);
+
+            $this->sendShareNotification($folder, $user, $permission);
+
+            $added[] = ['id' => $user->id, 'permission' => $permission];
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'added' => $added]);
+        }
+        return back()->with('success', count($added) . ' member(s) added to folder.');
+    }
+
+    /**
+     * Change a member's permission. Owner only.
+     */
+    public function updateMember(Request $request, Folder $folder, User $user)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can change permissions.');
+        }
+
+        $data = $request->validate([
+            'permission' => 'required|in:viewer,editor',
+        ]);
+
+        if (!$folder->members()->where('users.id', $user->id)->exists()) {
+            return $this->jsonOrAbort($request, 404, 'User is not a member of this folder.');
+        }
+
+        $folder->members()->updateExistingPivot($user->id, [
+            'permission' => $data['permission'],
+        ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+        return back()->with('success', 'Member permission updated.');
+    }
+
+    /**
+     * Remove a member from a folder. Owner only.
+     */
+    public function unshare(Request $request, Folder $folder, User $user)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can remove members.');
+        }
+
+        $folder->members()->detach($user->id);
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+        return back()->with('success', 'Member removed from folder.');
+    }
+
+    /**
+     * The recipient leaves a folder shared with them.
+     */
+    public function leave(Request $request, Folder $folder)
+    {
+        $user = Auth::user();
+        if ($folder->isOwnedBy($user)) {
+            return $this->jsonOrAbort($request, 422, 'Owners cannot leave their own folder. Delete it instead.');
+        }
+        $folder->members()->detach($user->id);
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+        return redirect()->route('dashboard.folders.index')->with('success', 'You left the folder.');
+    }
+
+    /**
+     * List members of a folder (owner + viewer/editor list). JSON. Owner only.
+     */
+    public function members(Request $request, Folder $folder)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can view members.');
+        }
+
+        $members = $folder->members()
+            ->orderBy('folder_shares.created_at', 'desc')
+            ->get(['users.id', 'first_name', 'last_name', 'name', 'email', 'profile_picture']);
+
+        return response()->json([
+            'ok' => true,
+            'members' => $members->map(function ($u) {
+                $full = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) ?: ($u->name ?: $u->email);
+                return [
+                    'id' => $u->id,
+                    'name' => $full,
+                    'email' => $u->email,
+                    'avatar' => $u->profile_picture
+                        ? asset('profile_pictures/' . $u->profile_picture)
+                        : asset('profile_pictures/default-profile.png'),
+                    'permission' => $u->pivot->permission,
+                    'shared_at' => optional($u->pivot->created_at)->diffForHumans(),
+                ];
+            }),
+        ]);
+    }
+
+    private function sendShareNotification(Folder $folder, User $recipient, string $permission): void
+    {
+        $ownerName = trim((Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? '')) ?: 'Someone';
+        try {
+            Notification::create([
+                'user_id' => $recipient->id,
+                'type' => 'folder_share',
+                'title' => 'A folder was shared with you',
+                'message' => "{$ownerName} shared the folder \"{$folder->name}\" with you as a " . ucfirst($permission) . '.',
+                'url' => route('dashboard.folders.show', $folder),
+                'is_read' => false,
+                'data' => [
+                    'folder_id' => $folder->id,
+                    'folder_name' => $folder->name,
+                    'shared_by' => Auth::id(),
+                    'permission' => $permission,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            // Notifications are best-effort — never block sharing on a notification failure.
+            \Log::warning('Folder share notification failed: ' . $e->getMessage());
+        }
+    }
+
+    private function jsonOrAbort(Request $request, int $status, string $message)
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => false, 'message' => $message], $status);
+        }
+        abort($status, $message);
     }
 }

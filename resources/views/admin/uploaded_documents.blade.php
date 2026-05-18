@@ -26,6 +26,7 @@
     'pageTitle' => 'All Exams Archive',
     'pageSubtitle' => 'Browse and organize your exam documents. Drag any item onto a folder, or right-click for more options.',
     'folders' => $folders,
+    'sharedFolders' => $sharedFolders ?? collect(),
     'items' => $items,
     'itemKind' => 'exam',
 ])

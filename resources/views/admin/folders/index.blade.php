@@ -12,6 +12,7 @@
     'pageTitle' => 'My Folders',
     'pageSubtitle' => 'Organize your files and exam documents into folders. Open any folder to manage its contents, or drag-drop items into folders from the archive pages.',
     'folders' => $folders,
+    'sharedFolders' => $sharedFolders ?? collect(),
     'items' => $items,
     'itemKind' => 'file',
     'allowNewFolder' => true,

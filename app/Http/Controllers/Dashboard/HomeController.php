@@ -66,7 +66,8 @@ class HomeController extends Controller
 
     public function document(){
         // Each user (including admins) only sees their own uploads on this page.
-        $userId = Auth::user()->id;
+        $user = Auth::user();
+        $userId = $user->id;
 
         $exams = Exam::where('user_id', $userId)
             ->whereDoesntHave('folders')
@@ -83,32 +84,50 @@ class HomeController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('admin.documents', compact('exams', 'files', 'folders'));
+        $sharedFolders = $user->sharedFolders()
+            ->withCount(['files', 'exams'])
+            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->orderBy('folder_shares.created_at', 'desc')
+            ->get();
+
+        return view('admin.documents', compact('exams', 'files', 'folders', 'sharedFolders'));
     }
 
     public function uploadedDocument(){
-        $exams = Exam::where('user_id', Auth::user()->id)
+        $user = Auth::user();
+        $exams = Exam::where('user_id', $user->id)
             ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
-        $folders = Folder::where('user_id', Auth::user()->id)
+        $folders = Folder::where('user_id', $user->id)
             ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
-        return view('admin.uploaded_documents', compact('exams', 'folders'));
+        $sharedFolders = $user->sharedFolders()
+            ->withCount(['files', 'exams'])
+            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->orderBy('folder_shares.created_at', 'desc')
+            ->get();
+        return view('admin.uploaded_documents', compact('exams', 'folders', 'sharedFolders'));
     }
 
     public function allUploadedDocument(){
         // Only show user's own exams (no approval system means users manage their own content)
-        $exams = Exam::where('user_id', Auth::user()->id)
+        $user = Auth::user();
+        $exams = Exam::where('user_id', $user->id)
             ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
-        $folders = Folder::where('user_id', Auth::user()->id)
+        $folders = Folder::where('user_id', $user->id)
             ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
-        return view('admin.all_uploaded_documents', compact('exams', 'folders'));
+        $sharedFolders = $user->sharedFolders()
+            ->withCount(['files', 'exams'])
+            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->orderBy('folder_shares.created_at', 'desc')
+            ->get();
+        return view('admin.all_uploaded_documents', compact('exams', 'folders', 'sharedFolders'));
     }
 
     // Unified Exams view (no more pending/approved separation)
@@ -119,15 +138,21 @@ class HomeController extends Controller
 
     public function allExams(){
         // Only show user's own exams (no approval system means users manage their own content)
-        $exams = Exam::where('user_id', Auth::user()->id)
+        $user = Auth::user();
+        $exams = Exam::where('user_id', $user->id)
             ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
-        $folders = Folder::where('user_id', Auth::user()->id)
+        $folders = Folder::where('user_id', $user->id)
             ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
-        return view('admin.all_exams', compact('exams', 'folders'));
+        $sharedFolders = $user->sharedFolders()
+            ->withCount(['files', 'exams'])
+            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->orderBy('folder_shares.created_at', 'desc')
+            ->get();
+        return view('admin.all_exams', compact('exams', 'folders', 'sharedFolders'));
     }
 
 

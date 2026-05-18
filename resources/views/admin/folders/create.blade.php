@@ -363,6 +363,24 @@
                                     </div>
                                 </div>
 
+                                {{-- ===== Optional: Share with people ===== --}}
+                                <div class="form-group" style="margin-top: 1.5rem;">
+                                    <label class="form-label">
+                                        <i class="fas fa-user-group me-2"></i>Share with people
+                                        <span style="font-size: 0.78rem; font-weight: 400; color:#94a3b8; margin-left:6px;">(optional)</span>
+                                    </label>
+                                    <p style="font-size: 0.85rem; color:#64748b; margin: -4px 0 8px;">
+                                        Add collaborators now, or do it later from inside the folder. They'll get a notification.
+                                    </p>
+
+                                    <div style="position: relative;">
+                                        <input type="text" id="folderShareSearchInput" class="form-control" placeholder="Search people by name or email..." autocomplete="off">
+                                        <div id="folderShareResults" style="position:absolute; top:100%; left:0; right:0; z-index:50; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 8px 24px rgba(15,23,42,0.10); max-height:260px; overflow-y:auto; margin-top:6px; display:none;"></div>
+                                    </div>
+
+                                    <div id="folderShareChips" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;"></div>
+                                </div>
+
                                 <div class="form-actions">
                                     <a href="{{ route('dashboard.folders.index') }}" class="btn btn-secondary">
                                         <i class="fas fa-times"></i>
@@ -424,6 +442,132 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     updatePreview();
+
+    // ===========================================================
+    //  Optional: Share with people during folder creation
+    //  Stores selected user ids as hidden inputs inside the form
+    //  so a single POST creates the folder AND adds members.
+    // ===========================================================
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || '{{ csrf_token() }}';
+    const createForm = document.getElementById('createFolderForm');
+    const shareInput = document.getElementById('folderShareSearchInput');
+    const shareResults = document.getElementById('folderShareResults');
+    const shareChips = document.getElementById('folderShareChips');
+    const selectedShares = new Map(); // user_id -> {name, email, permission}
+
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function renderChips() {
+        shareChips.innerHTML = '';
+        selectedShares.forEach((u, id) => {
+            const chip = document.createElement('div');
+            chip.style.cssText = 'display:flex; align-items:center; gap:8px; background:#e0f2fe; color:#0c4a6e; padding:5px 8px 5px 5px; border-radius:100px; font-size:12.5px; font-weight:500;';
+            chip.innerHTML = `
+                <img src="${esc(u.avatar)}" style="width:22px; height:22px; border-radius:50%;">
+                <span>${esc(u.name)}</span>
+                <select data-id="${id}" style="border:1px solid #bae6fd; border-radius:6px; padding:2px 6px; font-size:11.5px; font-weight:500; background:#fff;">
+                    <option value="viewer" ${u.permission === 'viewer' ? 'selected' : ''}>Viewer</option>
+                    <option value="editor" ${u.permission === 'editor' ? 'selected' : ''}>Editor</option>
+                </select>
+                <button type="button" data-id="${id}" class="chip-remove" style="border:none; background:transparent; color:#0c4a6e; cursor:pointer; padding:0 4px; font-size:14px;">&times;</button>
+            `;
+            shareChips.appendChild(chip);
+        });
+        shareChips.querySelectorAll('select').forEach(sel => {
+            sel.addEventListener('change', () => {
+                const u = selectedShares.get(sel.getAttribute('data-id'));
+                if (u) u.permission = sel.value;
+            });
+        });
+        shareChips.querySelectorAll('.chip-remove').forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectedShares.delete(btn.getAttribute('data-id'));
+                renderChips();
+            });
+        });
+    }
+
+    let searchT;
+    if (shareInput) {
+        shareInput.addEventListener('input', () => {
+            clearTimeout(searchT);
+            const q = shareInput.value.trim();
+            if (q.length < 2) { shareResults.style.display = 'none'; shareResults.innerHTML = ''; return; }
+            searchT = setTimeout(async () => {
+                try {
+                    const res = await fetch('{{ route("dashboard.folders.users.search") }}?q=' + encodeURIComponent(q), {
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    const data = await res.json();
+                    if (!data.ok) return;
+                    const filtered = data.users.filter(u => !selectedShares.has(String(u.id)));
+                    if (filtered.length === 0) {
+                        shareResults.innerHTML = '<div style="padding:16px; text-align:center; color:#94a3b8; font-size:13px;">No matching users</div>';
+                    } else {
+                        shareResults.innerHTML = filtered.map(u => `
+                            <div data-id="${u.id}" data-name="${esc(u.name)}" data-email="${esc(u.email)}" data-avatar="${esc(u.avatar)}"
+                                style="display:flex; align-items:center; gap:12px; padding:10px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;"
+                                class="folder-share-result">
+                                <img src="${esc(u.avatar)}" style="width:32px; height:32px; border-radius:50%;">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:13.5px; font-weight:600; color:#0f172a;">${esc(u.name)}</div>
+                                    <div style="font-size:11.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(u.email)}</div>
+                                </div>
+                                <i class="fas fa-plus" style="color:#0ea5e9;"></i>
+                            </div>
+                        `).join('');
+                        shareResults.querySelectorAll('.folder-share-result').forEach(row => {
+                            row.addEventListener('click', () => {
+                                const id = row.getAttribute('data-id');
+                                selectedShares.set(id, {
+                                    name: row.getAttribute('data-name'),
+                                    email: row.getAttribute('data-email'),
+                                    avatar: row.getAttribute('data-avatar'),
+                                    permission: 'viewer',
+                                });
+                                shareInput.value = '';
+                                shareResults.style.display = 'none';
+                                renderChips();
+                            });
+                            row.addEventListener('mouseenter', () => row.style.background = '#f1f5fa');
+                            row.addEventListener('mouseleave', () => row.style.background = '');
+                        });
+                    }
+                    shareResults.style.display = 'block';
+                } catch (e) {
+                    console.error('[create-folder] share search failed:', e);
+                }
+            }, 250);
+        });
+        document.addEventListener('click', e => {
+            if (!shareResults.contains(e.target) && e.target !== shareInput) {
+                shareResults.style.display = 'none';
+            }
+        });
+    }
+
+    // On submit, append hidden inputs for each selected member so the
+    // single POST creates the folder and (after redirect) we attach them.
+    if (createForm) {
+        createForm.addEventListener('submit', () => {
+            // Clear any old hidden inputs first
+            createForm.querySelectorAll('input[name^="share_members"]').forEach(el => el.remove());
+            let i = 0;
+            selectedShares.forEach((u, id) => {
+                const idIn = document.createElement('input');
+                idIn.type = 'hidden'; idIn.name = `share_members[${i}][user_id]`; idIn.value = id;
+                createForm.appendChild(idIn);
+                const permIn = document.createElement('input');
+                permIn.type = 'hidden'; permIn.name = `share_members[${i}][permission]`; permIn.value = u.permission || 'viewer';
+                createForm.appendChild(permIn);
+                i++;
+            });
+        });
+    }
 });
 </script>
 @endsection

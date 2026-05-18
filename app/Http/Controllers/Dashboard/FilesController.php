@@ -119,7 +119,12 @@ class FilesController extends Controller
             ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
-        return view('admin.all_files', compact('files', 'folders'));
+        $sharedFolders = Auth::user()->sharedFolders()
+            ->withCount(['files', 'exams'])
+            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->orderBy('folder_shares.created_at', 'desc')
+            ->get();
+        return view('admin.all_files', compact('files', 'folders', 'sharedFolders'));
     }
 
     // Unified Files view (no more pending/approved separation)
@@ -138,7 +143,12 @@ class FilesController extends Controller
             ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
-        return view('admin.all_files_list', compact('files', 'folders'));
+        $sharedFolders = Auth::user()->sharedFolders()
+            ->withCount(['files', 'exams'])
+            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->orderBy('folder_shares.created_at', 'desc')
+            ->get();
+        return view('admin.all_files_list', compact('files', 'folders', 'sharedFolders'));
     }
 
     public function destroy(File $file)
@@ -151,13 +161,21 @@ class FilesController extends Controller
     public function downloadFile(File $file)
     {
         $user = auth()->user();
-        
+
         // Permission logic:
-        // 1. Admins can download any file
-        // 2. Users can download their own files
-        // 3. Approvers can only VIEW files (not download) unless it's their own file
-        if (!$user->is_admin && $file->user_id !== $user->id) {
-            abort(403, 'You can only download your own files. Use the view button to review files for approval.');
+        // 1. The owner can always download
+        // 2. Anyone with access to a folder containing this file can download
+        //    (covers shared folders — viewer or editor)
+        // 3. Admins keep their existing access
+        $isOwner = $file->user_id === $user->id;
+        $viaSharedFolder = $file->folders()
+            ->whereHas('members', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })
+            ->exists();
+
+        if (!$isOwner && !$user->is_admin && !$viaSharedFolder) {
+            abort(403, 'You do not have access to this file.');
         }
 
         // Check if file exists in public storage

@@ -48,6 +48,7 @@
     'pageTitle' => 'All Documents',
     'pageSubtitle' => 'Everything you have uploaded — files and exam documents in one place. Drag any item onto a folder to organize. Right-click for options.',
     'folders' => $folders,
+    'sharedFolders' => $sharedFolders ?? collect(),
     'items' => $items,
     'itemKind' => 'file',
     'itemsSectionLabel' => 'Documents',

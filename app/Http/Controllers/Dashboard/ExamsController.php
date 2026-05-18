@@ -144,9 +144,15 @@ class ExamsController extends Controller
 
     public function downloadExam(Exam $exam)
     {
-        // Check if user has permission to download this exam
-        if (!auth()->user()->is_admin && $exam->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized access');
+        $user = auth()->user();
+        $isOwner = $exam->user_id === $user->id;
+        $viaSharedFolder = $exam->folders()
+            ->whereHas('members', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })
+            ->exists();
+        if (!$isOwner && !$user->is_admin && !$viaSharedFolder) {
+            abort(403, 'You do not have access to this exam.');
         }
 
         // Check if file exists in new storage
@@ -169,9 +175,15 @@ class ExamsController extends Controller
 
     public function downloadAnswerKey(Exam $exam)
     {
-        // Check if user has permission to download this exam
-        if (!auth()->user()->is_admin && $exam->user_id !== auth()->id()) {
-            abort(403, 'Unauthorized access');
+        $user = auth()->user();
+        $isOwner = $exam->user_id === $user->id;
+        $viaSharedFolder = $exam->folders()
+            ->whereHas('members', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })
+            ->exists();
+        if (!$isOwner && !$user->is_admin && !$viaSharedFolder) {
+            abort(403, 'You do not have access to this answer key.');
         }
 
         // Check if answer key exists in new storage

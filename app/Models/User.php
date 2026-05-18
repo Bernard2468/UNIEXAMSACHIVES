@@ -351,6 +351,17 @@ class User extends Authenticatable
         return $this->committees()->where('status', 'active');
     }
 
+    /**
+     * Folders that have been shared with this user (owner sharing them).
+     * Pivot carries: permission ('viewer'|'editor'), shared_by, timestamps.
+     */
+    public function sharedFolders()
+    {
+        return $this->belongsToMany(Folder::class, 'folder_shares')
+            ->withPivot('permission', 'shared_by')
+            ->withTimestamps();
+    }
+
     // ===== Email OTP Verification =====
 
     public function hasVerifiedEmail(): bool

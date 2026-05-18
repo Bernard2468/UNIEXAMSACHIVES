@@ -143,6 +143,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/folders/{folder}/move-item', [FoldersController::class, 'moveItem'])->name('dashboard.folders.move-item');
     Route::post('/dashboard/folders/quick-create', [FoldersController::class, 'quickStore'])->name('dashboard.folders.quick-create');
 
+    // Folder sharing (members)
+    Route::get('/dashboard/folders/users/search', [FoldersController::class, 'searchUsers'])->name('dashboard.folders.users.search');
+    Route::get('/dashboard/folders/{folder}/members', [FoldersController::class, 'members'])->name('dashboard.folders.members');
+    Route::post('/dashboard/folders/{folder}/share', [FoldersController::class, 'share'])->name('dashboard.folders.share');
+    Route::patch('/dashboard/folders/{folder}/members/{user}', [FoldersController::class, 'updateMember'])->name('dashboard.folders.members.update');
+    Route::delete('/dashboard/folders/{folder}/members/{user}', [FoldersController::class, 'unshare'])->name('dashboard.folders.unshare');
+    Route::delete('/dashboard/folders/{folder}/leave', [FoldersController::class, 'leave'])->name('dashboard.folders.leave');
+
     #memos (replaces legacy broadcast message)
     Route::get('/dashboard/message',[HomeController::class, 'message'])->name('dashboard.message');
     Route::get('/dashboard/memos/unread-count', [HomeController::class, 'unreadMemoCount'])->name('dashboard.memos.unreadCount');

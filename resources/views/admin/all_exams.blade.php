@@ -26,6 +26,7 @@
     'pageTitle' => 'My Exams',
     'pageSubtitle' => 'Every exam document you have uploaded. Drag any item onto a folder to organize, or right-click for options.',
     'folders' => $folders,
+    'sharedFolders' => $sharedFolders ?? collect(),
     'items' => $items,
     'itemKind' => 'exam',
 ])

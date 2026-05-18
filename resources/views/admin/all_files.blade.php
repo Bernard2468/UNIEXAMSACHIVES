@@ -28,6 +28,7 @@
     'pageTitle' => 'All Files Archive',
     'pageSubtitle' => 'Browse and organize the file documents you have deposited. Drag any item onto a folder to organize them.',
     'folders' => $folders,
+    'sharedFolders' => $sharedFolders ?? collect(),
     'items' => $items,
     'itemKind' => 'file',
 ])

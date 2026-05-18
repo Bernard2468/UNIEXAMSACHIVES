@@ -28,6 +28,7 @@
     'pageTitle' => 'My Uploaded Files',
     'pageSubtitle' => 'Every file document you have deposited. Right-click any item for options, or drag it onto a folder to organize.',
     'folders' => $folders,
+    'sharedFolders' => $sharedFolders ?? collect(),
     'items' => $items,
     'itemKind' => 'file',
 ])

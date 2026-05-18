@@ -408,18 +408,45 @@
                     <span><i class="fas fa-file-lines"></i>{{ $folderFiles->count() }} {{ Str::plural('file', $folderFiles->count()) }}</span>
                     <span><i class="fas fa-clipboard-list"></i>{{ $folderExams->count() }} {{ Str::plural('exam', $folderExams->count()) }}</span>
                     <span><i class="fas fa-calendar"></i>Created {{ $folder->created_at?->format('M j, Y') }}</span>
-                    @if($isLocked)<span><i class="fas fa-shield-halved" style="color:#0ea5e9;"></i>Password protected</span>@endif
+                    @if($isLocked && $isOwner)<span><i class="fas fa-shield-halved" style="color:#0ea5e9;"></i>Password protected</span>@endif
+                    @if($isOwner && $folder->members->count() > 0)
+                        <span><i class="fas fa-user-group" style="color:#0ea5e9;"></i>Shared with {{ $folder->members->count() }} {{ Str::plural('person', $folder->members->count()) }}</span>
+                    @endif
+                    @if(!$isOwner)
+                        @php
+                            $ownerName = $folder->user
+                                ? (trim(($folder->user->first_name ?? '') . ' ' . ($folder->user->last_name ?? '')) ?: ($folder->user->name ?: $folder->user->email))
+                                : 'Someone';
+                            $myPerm = optional($folder->members->firstWhere('id', auth()->id()))->pivot->permission ?? 'viewer';
+                        @endphp
+                        <span><i class="fas fa-user-group" style="color:#0ea5e9;"></i>Shared by {{ $ownerName }} · {{ ucfirst($myPerm) }}</span>
+                    @endif
                 </div>
             </div>
             <div class="actions">
                 <a href="{{ $backUrl }}" class="fbtn"><i class="fas fa-arrow-left"></i> Back to {{ $backLabel }}</a>
-                <button type="button" class="fbtn primary" id="openAddModal"><i class="fas fa-plus"></i> Add items</button>
-                <a href="{{ route('dashboard.folders.edit', $folder) }}{{ $forwardFrom }}" class="fbtn"><i class="fas fa-pen"></i> Edit</a>
-                <a href="{{ route('dashboard.folders.security', $folder) }}{{ $forwardFrom }}" class="fbtn"><i class="fas fa-shield-halved"></i> Security</a>
-                <form action="{{ route('dashboard.folders.destroy', $folder) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this folder? Its items will be detached but not deleted.');">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="fbtn danger"><i class="fas fa-trash"></i> Delete folder</button>
-                </form>
+                @if($isOwner || $folder->canEditContents(auth()->user()))
+                    <button type="button" class="fbtn primary" id="openAddModal"><i class="fas fa-plus"></i> Add items</button>
+                @endif
+                @if($isOwner)
+                    <button type="button" class="fbtn" id="openMembersModal">
+                        <i class="fas fa-user-group"></i> Members
+                        @if($folder->members->count() > 0)
+                            <span style="background:#0ea5e9; color:#fff; font-size:11px; padding:1px 7px; border-radius:100px; margin-left:2px;">{{ $folder->members->count() }}</span>
+                        @endif
+                    </button>
+                    <a href="{{ route('dashboard.folders.edit', $folder) }}{{ $forwardFrom }}" class="fbtn"><i class="fas fa-pen"></i> Edit</a>
+                    <a href="{{ route('dashboard.folders.security', $folder) }}{{ $forwardFrom }}" class="fbtn"><i class="fas fa-shield-halved"></i> Security</a>
+                    <form action="{{ route('dashboard.folders.destroy', $folder) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this folder? Its items will be detached but not deleted.');">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="fbtn danger"><i class="fas fa-trash"></i> Delete folder</button>
+                    </form>
+                @else
+                    <form action="{{ route('dashboard.folders.leave', $folder) }}" method="POST" style="display:inline;" onsubmit="return confirm('Leave this folder? You will lose access to its contents.');">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="fbtn danger"><i class="fas fa-right-from-bracket"></i> Leave folder</button>
+                    </form>
+                @endif
             </div>
         </div>
 
@@ -547,6 +574,110 @@
         </form>
     </div>
 </div>
+
+@if($isOwner)
+{{-- ===== MEMBERS MODAL ===== --}}
+<style>
+.members-list { max-height: 260px; overflow-y: auto; margin-top: 4px; }
+.member-row {
+    display:flex; align-items:center; gap:12px;
+    padding: 10px 8px;
+    border-radius: 8px;
+    transition: background .12s;
+}
+.member-row:hover { background:#f8fafc; }
+.member-row .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    object-fit: cover; flex-shrink: 0;
+    background: #f1f5f9;
+}
+.member-row .info { flex:1; min-width: 0; }
+.member-row .info .name { font-size: 13.5px; font-weight: 600; color:#0f172a; }
+.member-row .info .email { font-size: 12px; color:#64748b; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+.member-row select {
+    border: 1.5px solid #e2e8f0; border-radius: 8px;
+    padding: 6px 10px; font-size: 12.5px; font-weight: 500;
+    background:#fff; color:#0f172a;
+    cursor:pointer; font-family: inherit;
+}
+.member-row .remove-btn {
+    border: none; background: transparent;
+    color: #94a3b8;
+    width: 28px; height: 28px; border-radius: 6px;
+    cursor: pointer; transition: all .12s;
+    display:flex; align-items:center; justify-content:center;
+}
+.member-row .remove-btn:hover { background:#fef2f2; color:#dc2626; }
+
+.search-results {
+    position: relative;
+    max-height: 280px; overflow-y: auto;
+    margin-top: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background:#fff;
+    display: none;
+}
+.search-results.show { display:block; }
+.search-row {
+    display:flex; align-items:center; gap:12px;
+    padding: 10px 12px;
+    cursor:pointer; transition: background .12s;
+    border-bottom: 1px solid #f1f5f9;
+}
+.search-row:last-child { border-bottom: none; }
+.search-row:hover { background:#f1f5fa; }
+.search-row .avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:#f1f5f9; }
+.search-row .info { flex:1; min-width: 0; }
+.search-row .info .name { font-size:13.5px; font-weight:600; color:#0f172a; }
+.search-row .info .email { font-size: 11.5px; color:#64748b; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+.search-empty { padding: 16px; text-align:center; color:#94a3b8; font-size: 13px; }
+
+.shared-chips { display:flex; flex-wrap: wrap; gap:6px; margin-top: 8px; }
+.shared-chip {
+    display:flex; align-items:center; gap:8px;
+    background:#e0f2fe; color:#0c4a6e;
+    padding: 5px 8px 5px 5px;
+    border-radius: 100px;
+    font-size: 12.5px; font-weight: 500;
+}
+.shared-chip img { width:22px; height:22px; border-radius:50%; }
+.shared-chip button {
+    border:none; background:transparent; color:#0c4a6e;
+    cursor:pointer; padding: 0 2px; font-size: 12px;
+}
+.shared-chip button:hover { color:#dc2626; }
+</style>
+
+<div class="add-backdrop" id="membersModal">
+    <div class="add-modal" style="max-width: 560px;">
+        <h3><i class="fas fa-user-group"></i> Members of "{{ $folder->name }}"</h3>
+
+        @if($isLocked)
+            <div class="alert-pill" style="background:#eff6ff; border-color:#bfdbfe; color:#1e40af; font-size:12.5px; margin-bottom: 14px;">
+                <i class="fas fa-info-circle" style="color:#0ea5e9;"></i>
+                This folder has a password, but members you add bypass it — they access the folder directly.
+            </div>
+        @endif
+
+        <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Invite by name or email</label>
+        <div style="position: relative;">
+            <input type="text" id="memberSearchInput" placeholder="Type at least 2 characters..." autocomplete="off"
+                style="width:100%; padding: 11px 14px; border:1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-family: inherit; outline: none;">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
+        <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin: 16px 0 6px;">Current members</label>
+        <div class="members-list" id="membersList">
+            <div class="empty-box" style="padding: 24px 8px;"><div class="ico-c" style="width:60px; height:60px; font-size:22px;"><i class="fas fa-user-plus"></i></div><h4>No members yet</h4><p>Search above to invite collaborators.</p></div>
+        </div>
+
+        <div class="add-actions">
+            <button type="button" class="fbtn" onclick="document.getElementById('membersModal').classList.remove('open')">Done</button>
+        </div>
+    </div>
+</div>
+@endif
 
 <div class="toast-mini" id="folderToast"><i class="fas fa-circle-check"></i><span></span></div>
 @endsection
@@ -702,6 +833,190 @@
             }
         });
     });
+
+    // ===================================================================
+    //  MEMBERS MODAL (owner only — element won't exist for non-owners)
+    // ===================================================================
+    const membersBtn = document.getElementById('openMembersModal');
+    const membersModal = document.getElementById('membersModal');
+    const memberSearch = document.getElementById('memberSearchInput');
+    const searchResults = document.getElementById('searchResults');
+    const membersList = document.getElementById('membersList');
+    const FOLDER_ID = {{ $folder->id }};
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function loadMembers() {
+        if (!membersList) return;
+        try {
+            const res = await fetch('{{ route("dashboard.folders.members", $folder) }}', {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await res.json();
+            if (!data.ok) return;
+            renderMembers(data.members);
+        } catch (e) {
+            console.error('[members] load failed:', e);
+        }
+    }
+    function renderMembers(members) {
+        if (!members || members.length === 0) {
+            membersList.innerHTML = '<div class="empty-box" style="padding:24px 8px;"><div class="ico-c" style="width:60px;height:60px;font-size:22px;"><i class="fas fa-user-plus"></i></div><h4>No members yet</h4><p>Search above to invite collaborators.</p></div>';
+            return;
+        }
+        membersList.innerHTML = members.map(m => `
+            <div class="member-row" data-user-id="${m.id}">
+                <img class="avatar" src="${escapeHtml(m.avatar)}" alt="">
+                <div class="info">
+                    <div class="name">${escapeHtml(m.name)}</div>
+                    <div class="email">${escapeHtml(m.email)}</div>
+                </div>
+                <select class="member-perm" data-user-id="${m.id}">
+                    <option value="viewer" ${m.permission === 'viewer' ? 'selected' : ''}>Viewer</option>
+                    <option value="editor" ${m.permission === 'editor' ? 'selected' : ''}>Editor</option>
+                </select>
+                <button type="button" class="remove-btn" data-user-id="${m.id}" title="Remove from folder"><i class="fas fa-xmark"></i></button>
+            </div>
+        `).join('');
+
+        // Wire permission change
+        membersList.querySelectorAll('.member-perm').forEach(sel => {
+            sel.addEventListener('change', () => updateMemberPermission(sel.getAttribute('data-user-id'), sel.value));
+        });
+        // Wire remove
+        membersList.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', () => removeMember(btn.getAttribute('data-user-id')));
+        });
+    }
+
+    async function updateMemberPermission(userId, permission) {
+        try {
+            const res = await fetch(`/dashboard/folders/${FOLDER_ID}/members/${userId}`, {
+                method: 'PATCH',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': CSRF,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ permission }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) notify('Permission updated', 'ok');
+            else notify(data.message || 'Could not update permission', 'err');
+        } catch (e) { notify('Network error', 'err'); }
+    }
+
+    async function removeMember(userId) {
+        const row = membersList.querySelector(`.member-row[data-user-id="${userId}"]`);
+        if (!row) return;
+        if (!confirm('Remove this member from the folder?')) return;
+        row.style.transition = 'opacity .2s'; row.style.opacity = '0.4';
+        try {
+            const res = await fetch(`/dashboard/folders/${FOLDER_ID}/members/${userId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRF-TOKEN': CSRF,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                row.remove();
+                notify('Member removed', 'ok');
+                if (membersList.children.length === 0) renderMembers([]);
+            } else {
+                row.style.opacity = '1';
+                notify(data.message || 'Could not remove member', 'err');
+            }
+        } catch (e) {
+            row.style.opacity = '1';
+            notify('Network error', 'err');
+        }
+    }
+
+    async function inviteUser(userId, permission = 'viewer') {
+        try {
+            const res = await fetch('{{ route("dashboard.folders.share", $folder) }}', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': CSRF,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ user_id: userId, permission }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                notify('Member added', 'ok');
+                memberSearch.value = '';
+                searchResults.classList.remove('show');
+                loadMembers();
+            } else {
+                notify(data.message || 'Could not add member', 'err');
+            }
+        } catch (e) { notify('Network error', 'err'); }
+    }
+
+    // Debounced search
+    let searchTimer = null;
+    if (memberSearch) {
+        memberSearch.addEventListener('input', () => {
+            clearTimeout(searchTimer);
+            const q = memberSearch.value.trim();
+            if (q.length < 2) { searchResults.classList.remove('show'); searchResults.innerHTML = ''; return; }
+            searchTimer = setTimeout(async () => {
+                try {
+                    const url = '{{ route("dashboard.folders.users.search") }}?q=' + encodeURIComponent(q) + '&folder_id=' + FOLDER_ID;
+                    const res = await fetch(url, {
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    const data = await res.json();
+                    if (!data.ok) return;
+                    if (data.users.length === 0) {
+                        searchResults.innerHTML = '<div class="search-empty">No matching users</div>';
+                    } else {
+                        searchResults.innerHTML = data.users.map(u => `
+                            <div class="search-row" data-user-id="${u.id}">
+                                <img class="avatar" src="${escapeHtml(u.avatar)}" alt="">
+                                <div class="info">
+                                    <div class="name">${escapeHtml(u.name)}</div>
+                                    <div class="email">${escapeHtml(u.email)}</div>
+                                </div>
+                                <button type="button" class="fbtn primary" style="padding:6px 12px; font-size:12px;"><i class="fas fa-plus"></i> Add</button>
+                            </div>
+                        `).join('');
+                        searchResults.querySelectorAll('.search-row').forEach(row => {
+                            row.addEventListener('click', () => inviteUser(row.getAttribute('data-user-id'), 'viewer'));
+                        });
+                    }
+                    searchResults.classList.add('show');
+                } catch (e) {
+                    console.error('[members] search failed:', e);
+                }
+            }, 250);
+        });
+    }
+
+    if (membersBtn && membersModal) {
+        membersBtn.addEventListener('click', () => {
+            membersModal.classList.add('open');
+            loadMembers();
+            setTimeout(() => memberSearch.focus(), 60);
+        });
+        membersModal.addEventListener('click', e => {
+            if (e.target === membersModal) membersModal.classList.remove('open');
+        });
+    }
 })();
 </script>
 @endpush
