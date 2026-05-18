@@ -367,69 +367,6 @@
     line-height: 1.5;
 }
 
-/* ============ NEW FOLDER MODAL ============ */
-.exp-modal-backdrop {
-    position: fixed; inset: 0;
-    background: rgba(15,23,42,0.55);
-    z-index: 9998;
-    display:none;
-    align-items:center; justify-content:center;
-    backdrop-filter: blur(2px);
-}
-.exp-modal-backdrop.open { display:flex; }
-.exp-modal {
-    background:#fff;
-    border-radius: 16px;
-    width: 92%;
-    max-width: 440px;
-    padding: 24px 26px 22px;
-    box-shadow: 0 20px 60px rgba(15,23,42,0.25);
-}
-.exp-modal h3 {
-    font-size: 18px;
-    font-weight: 700;
-    color:#0f172a;
-    margin: 0 0 18px;
-    display:flex; align-items:center; gap:10px;
-    letter-spacing: -0.01em;
-}
-.exp-modal h3 i { color:#0ea5e9; }
-.exp-modal label {
-    font-size: 13px;
-    font-weight: 600;
-    color:#334155;
-    display:block;
-    margin-bottom: 8px;
-    letter-spacing: 0.005em;
-}
-.exp-modal input[type="text"] {
-    width: 100%; padding: 12px 14px;
-    border: 1.5px solid #e2e8f0; border-radius: 10px;
-    font-size: 14px;
-    font-weight: 400;
-    color:#0f172a; outline: none;
-    transition: all .2s;
-    font-family: inherit;
-}
-.exp-modal input[type="text"]::placeholder { color:#94a3b8; }
-.exp-modal input[type="text"]:focus { border-color:#0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
-.exp-colors {
-    display:flex; gap:8px; margin-top: 6px; flex-wrap: wrap;
-}
-.exp-color {
-    width: 28px; height: 28px;
-    border-radius: 8px;
-    cursor:pointer;
-    border: 2.5px solid transparent;
-    transition: transform .15s, border-color .15s;
-}
-.exp-color:hover { transform: scale(1.1); }
-.exp-color.selected { border-color: #0f172a; }
-.exp-modal-actions {
-    display:flex; justify-content:flex-end; gap:10px;
-    margin-top: 18px;
-}
-
 /* ============ TOAST ============ */
 .exp-toast {
     position: fixed; bottom: 24px; left: 50%;
@@ -478,7 +415,7 @@
                         <input type="text" id="expSearchInput" placeholder="Search items by name...">
                     </div>
                     @if($allowNewFolder)
-                        <button type="button" class="exp-btn" id="expNewFolderBtn"><i class="fas fa-folder-plus"></i> New Folder</button>
+                        <a href="{{ route('dashboard.folders.create') }}" class="exp-btn"><i class="fas fa-folder-plus"></i> New Folder</a>
                     @endif
                     <a href="{{ route('dashboard.folders.index') }}" class="exp-btn ghost"><i class="fas fa-folder"></i> All Folders</a>
                 </div>
@@ -660,30 +597,6 @@
     <a href="#" data-action="edit"><i class="fas fa-pen"></i> Edit details</a>
     <button type="button" data-action="delete" class="danger"><i class="fas fa-trash"></i> Delete</button>
 </div>
-
-{{-- ===== NEW FOLDER MODAL ===== --}}
-@if($allowNewFolder)
-<div class="exp-modal-backdrop" id="expNewFolderModal">
-    <div class="exp-modal">
-        <h3><i class="fas fa-folder-plus"></i> Create new folder</h3>
-        <label for="expFolderName">Folder name</label>
-        <input type="text" id="expFolderName" placeholder="e.g. Year 1 Exams" maxlength="120" autofocus>
-        <label style="margin-top:14px;">Color</label>
-        <div class="exp-colors" id="expColorPicker">
-            <div class="exp-color selected" data-color="#fbbf24" style="background:#fbbf24;"></div>
-            <div class="exp-color" data-color="#0ea5e9" style="background:#0ea5e9;"></div>
-            <div class="exp-color" data-color="#10b981" style="background:#10b981;"></div>
-            <div class="exp-color" data-color="#a855f7" style="background:#a855f7;"></div>
-            <div class="exp-color" data-color="#ef4444" style="background:#ef4444;"></div>
-            <div class="exp-color" data-color="#64748b" style="background:#64748b;"></div>
-        </div>
-        <div class="exp-modal-actions">
-            <button type="button" class="exp-btn ghost" id="expFolderCancel">Cancel</button>
-            <button type="button" class="exp-btn" id="expFolderCreate"><i class="fas fa-check"></i> Create</button>
-        </div>
-    </div>
-</div>
-@endif
 
 {{-- Hidden CSRF + delete form --}}
 <form id="expDeleteForm" method="POST" style="display:none;">
@@ -902,64 +815,6 @@
         });
     });
 
-    // --------- NEW FOLDER MODAL ---------
-    const modal = document.getElementById('expNewFolderModal');
-    const openBtn = document.getElementById('expNewFolderBtn');
-    const cancelBtn = document.getElementById('expFolderCancel');
-    const createBtn = document.getElementById('expFolderCreate');
-    const nameInput = document.getElementById('expFolderName');
-    const colorPicker = document.getElementById('expColorPicker');
-    let selectedColor = '#fbbf24';
-
-    if (openBtn && modal) {
-        openBtn.addEventListener('click', () => {
-            modal.classList.add('open');
-            nameInput.value = '';
-            setTimeout(() => nameInput.focus(), 50);
-        });
-        cancelBtn.addEventListener('click', () => modal.classList.remove('open'));
-        modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
-        colorPicker.querySelectorAll('.exp-color').forEach(c => {
-            c.addEventListener('click', () => {
-                colorPicker.querySelectorAll('.exp-color').forEach(x => x.classList.remove('selected'));
-                c.classList.add('selected');
-                selectedColor = c.getAttribute('data-color');
-            });
-        });
-        createBtn.addEventListener('click', async () => {
-            const name = (nameInput.value || '').trim();
-            if (!name) { nameInput.focus(); return; }
-            createBtn.disabled = true;
-            try {
-                const res = await fetch('{{ route('dashboard.folders.quick-create') }}', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': CSRF,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ name, color: selectedColor }),
-                });
-                const data = await res.json().catch(() => ({}));
-                if (res.ok && data.ok) {
-                    notify('Folder created', 'ok');
-                    modal.classList.remove('open');
-                    // Reload to render the new folder cleanly
-                    setTimeout(() => window.location.reload(), 600);
-                } else {
-                    notify((data.message || 'Could not create folder'), 'err');
-                }
-            } catch (err) {
-                notify('Network error while creating folder', 'err');
-            } finally {
-                createBtn.disabled = false;
-            }
-        });
-        nameInput?.addEventListener('keydown', e => {
-            if (e.key === 'Enter') createBtn.click();
-        });
-    }
 })();
 </script>
 @endpush

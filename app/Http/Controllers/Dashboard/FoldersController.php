@@ -289,33 +289,6 @@ class FoldersController extends Controller
         return response()->json(['ok' => true, 'message' => 'Exam moved into folder.']);
     }
 
-    /**
-     * Quick-create folder from the explorer view (AJAX). Returns JSON.
-     */
-    public function quickStore(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-        ]);
-
-        $folder = Folder::create([
-            'name' => $validated['name'],
-            'color' => $validated['color'] ?? '#0ea5e9',
-            'user_id' => Auth::id(),
-        ]);
-
-        return response()->json([
-            'ok' => true,
-            'folder' => [
-                'id' => $folder->id,
-                'name' => $folder->name,
-                'color' => $folder->color,
-                'show_url' => route('dashboard.folders.show', $folder),
-            ],
-        ]);
-    }
-
     public function unlockForm(Folder $folder)
     {
         if ($folder->user_id !== Auth::id()) {

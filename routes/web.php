@@ -141,7 +141,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/folders/{folder}/add-exams', [FoldersController::class, 'addExams'])->name('dashboard.folders.add-exams');
     Route::delete('/dashboard/folders/{folder}/exams/{exam}', [FoldersController::class, 'removeExam'])->name('dashboard.folders.remove-exam');
     Route::post('/dashboard/folders/{folder}/move-item', [FoldersController::class, 'moveItem'])->name('dashboard.folders.move-item');
-    Route::post('/dashboard/folders/quick-create', [FoldersController::class, 'quickStore'])->name('dashboard.folders.quick-create');
 
     // Folder sharing (members)
     Route::get('/dashboard/folders/users/search', [FoldersController::class, 'searchUsers'])->name('dashboard.folders.users.search');
