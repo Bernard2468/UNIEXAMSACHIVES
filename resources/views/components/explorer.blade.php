@@ -301,6 +301,86 @@
     border: 2px solid #fff;
 }
 
+/* ===== Shared-with-me: modern owner avatar badge ===== */
+.ico.folder .owner-badge {
+    position: absolute;
+    right: -4px; bottom: -2px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 0 0 2.5px #fff, 0 2px 6px rgba(15,23,42,0.18);
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+.ico.folder .owner-badge img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.ico.folder .owner-badge .owner-initials {
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+}
+.exp-tile-shared:hover .ico.folder .owner-badge {
+    transform: scale(1.12) translateY(-1px);
+    box-shadow: 0 0 0 2.5px #fff, 0 4px 12px rgba(14,165,233,0.32);
+}
+
+/* Subtle "shared" accent on the tile so the user can spot shared content at a glance */
+.exp-tile-shared {
+    position: relative;
+    isolation: isolate;
+}
+.exp-tile-shared::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(99,102,241,0) 55%, rgba(99,102,241,0.045) 100%);
+    pointer-events: none;
+    z-index: -1;
+    transition: opacity .18s ease;
+    opacity: 1;
+}
+.exp-tile-shared:hover::before {
+    background: linear-gradient(135deg, rgba(99,102,241,0) 45%, rgba(99,102,241,0.085) 100%);
+}
+
+/* Subtitle layout for shared tiles: items count + role chip on the same line */
+.exp-tile-shared .sub {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+/* ===== Role chip (Viewer / Editor) — small, integrated, color-coded ===== */
+.role-chip {
+    display: inline-flex; align-items: center;
+    padding: 1px 7px;
+    border-radius: 100px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.5;
+    border: 1px solid transparent;
+}
+.role-chip.role-viewer {
+    background: #eff6ff;
+    color: #1e40af;
+    border-color: #dbeafe;
+}
+.role-chip.role-editor {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    color: #047857;
+    border-color: #a7f3d0;
+}
+
 /* Tile context (right-click) menu indicator on hover */
 .exp-tile .kebab {
     position:absolute; top:6px; right:6px;
@@ -830,15 +910,22 @@
                             $folderCount = ($folder->files_count ?? 0) + ($folder->exams_count ?? 0);
                             $folderColor = $folder->color ?: '#0ea5e9';
                             $owner = $folder->user;
-                            $ownerName = $owner
-                                ? (trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? '')) ?: ($owner->name ?: $owner->email))
-                                : 'Someone';
+                            $ownerFirst = $owner->first_name ?? '';
+                            $ownerLast  = $owner->last_name ?? '';
+                            $ownerName  = trim($ownerFirst . ' ' . $ownerLast) ?: ($owner->email ?? 'Someone');
+                            $ownerInitials = strtoupper(
+                                substr($ownerFirst !== '' ? $ownerFirst : ($owner->email ?? 'U'), 0, 1)
+                                . substr($ownerLast !== '' ? $ownerLast : '', 0, 1)
+                            );
+                            $ownerAvatar = ($owner && $owner->profile_picture)
+                                ? asset('profile_pictures/' . $owner->profile_picture)
+                                : null;
                             $perm = $folder->pivot->permission ?? 'viewer';
                             $folderShowUrl = route('dashboard.folders.show', $folder)
                                 . '?from=' . urlencode(url()->full());
                         @endphp
                         <a href="{{ $folderShowUrl }}"
-                            class="exp-tile"
+                            class="exp-tile exp-tile-shared"
                             data-search="{{ strtolower($folder->name . ' ' . $ownerName) }}"
                             title="{{ $folder->name }} — shared by {{ $ownerName }} ({{ ucfirst($perm) }})">
                             <div class="ico folder">
@@ -848,10 +935,19 @@
                                     <path d="M2 14 Q2 8 8 8 L60 8 Q64 8 62 14 L57 44 Q56 48 50 48 L8 48 Q2 48 2 42 Z"
                                           fill="{{ $folderColor }}" opacity="0.7"/>
                                 </svg>
-                                <span class="lock-badge" style="background:#0ea5e9; color:#fff; font-size:8px;" title="Shared with you"><i class="fas fa-user-group"></i></span>
+                                <span class="owner-badge" aria-label="Shared by {{ $ownerName }}">
+                                    @if($ownerAvatar)
+                                        <img src="{{ $ownerAvatar }}" alt="" loading="lazy">
+                                    @else
+                                        <span class="owner-initials">{{ $ownerInitials }}</span>
+                                    @endif
+                                </span>
                             </div>
                             <div class="name">{{ $folder->name }}</div>
-                            <div class="sub">{{ $folderCount }} {{ Str::plural('item', $folderCount) }} · {{ $ownerName }}</div>
+                            <div class="sub">
+                                <span>{{ $folderCount }} {{ Str::plural('item', $folderCount) }}</span>
+                                <span class="role-chip role-{{ $perm }}">{{ ucfirst($perm) }}</span>
+                            </div>
                         </a>
                     @endforeach
                 </div>
