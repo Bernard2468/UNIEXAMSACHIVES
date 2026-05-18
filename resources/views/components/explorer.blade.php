@@ -21,6 +21,20 @@
     $itemsSectionLabel = $itemsSectionLabel ?? ($itemKind === 'exam' ? 'Exam Documents' : 'Files');
     $emptyStateText = $emptyStateText ?? 'Documents you upload will appear here.';
     $sharedFolders = $sharedFolders ?? collect();
+
+    // Shareable users for the "Share with people" section of the New Folder modal.
+    // Mirrors compose-memo's selected-user picker: full list rendered server-side,
+    // filtered client-side. Excludes the current user; only approved accounts.
+    $shareableUsers = collect();
+    if ($allowNewFolder && \Illuminate\Support\Facades\Auth::check()) {
+        $shareableUsers = \App\Models\User::query()
+            ->where('is_approve', true)
+            ->where('id', '!=', \Illuminate\Support\Facades\Auth::id())
+            ->with(['position:id,name', 'department:id,name'])
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'name', 'email', 'profile_picture', 'position_id', 'department_id']);
+    }
 @endphp
 
 @push('styles')
@@ -481,79 +495,185 @@
 .nf-password-block.show { display: block; }
 .nf-password-block .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-/* Share section */
-.nf-share-search-wrap { position: relative; }
-.nf-share-results {
-    position: absolute; top: 100%; left: 0; right: 0;
-    z-index: 60;
-    background:#fff;
-    border:1px solid #e2e8f0;
+/* ===== Share with people picker (compose-memo style) ===== */
+.nf-share-picker {
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
-    max-height: 280px; overflow-y: auto;
-    margin-top: 6px;
-    box-shadow: 0 10px 30px rgba(15,23,42,0.12);
-    display: none;
+    background: #fff;
+    overflow: hidden;
 }
-.nf-share-results.show { display:block; }
-.nf-share-row {
-    display:flex; align-items:center; gap:12px;
-    padding: 11px 14px;
-    cursor:pointer; transition: background .12s;
-    border-bottom: 1px solid #f8fafc;
+.nf-share-toolbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    flex-wrap: wrap;
 }
-.nf-share-row:last-child { border-bottom: none; }
-.nf-share-row:hover { background:#f1f5fa; }
-.nf-share-row .av { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; background:#f1f5f9; object-fit: cover; }
-.nf-share-row .info { flex: 1; min-width: 0; }
-.nf-share-row .info .nm { font-size: 14px; font-weight: 600; color:#0f172a; letter-spacing: -0.005em; }
-.nf-share-row .info .meta {
-    display:flex; align-items:center; gap:6px;
-    font-size: 11.5px; color:#64748b; margin-top: 2px;
-    white-space: nowrap; overflow:hidden; text-overflow:ellipsis;
+.nf-share-search-box {
+    position: relative; flex: 1; min-width: 200px;
+    display: flex; align-items: center;
 }
-.nf-share-row .info .meta .pos-badge {
-    display:inline-flex; align-items:center; gap:4px;
-    background:#eff6ff; color:#1e40af;
-    padding: 1px 7px; border-radius: 100px;
-    font-size: 10.5px; font-weight: 600;
-    letter-spacing: 0.01em;
+.nf-share-search-box i {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: #94a3b8; font-size: 13px;
+    pointer-events: none;
 }
-.nf-share-row .info .meta .dot { color:#cbd5e1; }
-.nf-share-row .add-btn {
-    background: #0ea5e9; color:#fff;
-    border: none; padding: 6px 12px;
+.nf-share-search-box input {
+    width: 100%;
+    padding: 9px 12px 9px 34px;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    font-size: 12px; font-weight: 600;
-    cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+    background: #fff;
+    font-size: 13px; color: #0f172a;
+    outline: none; transition: border-color .15s, box-shadow .15s;
     font-family: inherit;
 }
-.nf-share-row .add-btn:hover { background:#0284c7; }
-.nf-share-empty { padding: 18px; text-align:center; color:#94a3b8; font-size: 13px; }
-
-.nf-chips { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.nf-chip {
-    display:flex; align-items:center; gap:8px;
-    background:#eff6ff;
-    border: 1px solid #dbeafe;
-    padding: 5px 6px 5px 5px;
-    border-radius: 100px;
-    font-size: 13px;
+.nf-share-search-box input:focus {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14,165,233,0.15);
 }
-.nf-chip .av { width: 26px; height: 26px; border-radius: 50%; }
-.nf-chip .nm { font-weight: 600; color:#1e3a8a; }
-.nf-chip select {
-    border: 1px solid #bfdbfe; border-radius: 6px;
-    background:#fff; color: #1e40af;
-    padding: 2px 6px;
+.nf-share-stats {
+    font-size: 12px; color: #475569; font-weight: 600;
+    white-space: nowrap;
+}
+.nf-share-stats #nfShareSelectedCount {
+    color: #0ea5e9; font-weight: 700;
+}
+
+.nf-share-list {
+    max-height: 320px; overflow-y: auto;
+    background: #fff;
+}
+.nf-share-list::-webkit-scrollbar { width: 8px; }
+.nf-share-list::-webkit-scrollbar-track { background: #f1f5f9; }
+.nf-share-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.nf-share-list::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.nf-share-user {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background .12s;
+}
+.nf-share-user:last-of-type { border-bottom: none; }
+.nf-share-user:hover { background: #f8fafc; }
+.nf-share-user.selected { background: #eff6ff; }
+.nf-share-user.selected:hover { background: #dbeafe; }
+
+.nf-share-av {
+    width: 40px; height: 40px; border-radius: 50%;
+    flex-shrink: 0; overflow: hidden;
+    background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center;
+}
+.nf-share-av img { width: 100%; height: 100%; object-fit: cover; }
+.nf-share-av-fallback {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0ea5e9, #6366f1);
+    color: #fff; font-weight: 700; font-size: 13px;
+    letter-spacing: 0.02em;
+}
+
+.nf-share-info { flex: 1; min-width: 0; }
+.nf-share-name {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13.5px; font-weight: 600; color: #0f172a;
+    line-height: 1.3;
+}
+.nf-share-name > span:first-child {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nf-share-pos {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #eff6ff; color: #1e40af;
+    padding: 1px 8px; border-radius: 100px;
+    font-size: 10.5px; font-weight: 600;
+    white-space: nowrap;
+}
+.nf-share-pos i { font-size: 9px; }
+.nf-share-meta {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: #64748b; margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nf-share-dot { color: #cbd5e1; }
+
+.nf-share-perm {
+    border: 1px solid #e2e8f0; border-radius: 6px;
+    background: #fff; color: #475569;
+    padding: 4px 8px;
     font-size: 11.5px; font-weight: 600;
     font-family: inherit; cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity .15s, border-color .15s, color .15s;
+    opacity: 0.5;
 }
-.nf-chip .x {
-    border: none; background:transparent;
-    color:#1e40af; cursor:pointer; padding: 0 4px;
-    font-size: 14px; line-height: 1;
+.nf-share-user.selected .nf-share-perm {
+    opacity: 1; border-color: #bfdbfe; color: #1e40af;
 }
-.nf-chip .x:hover { color:#dc2626; }
+.nf-share-perm:focus { outline: none; border-color: #0ea5e9; }
+
+.nf-share-check {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; cursor: pointer;
+    width: 22px; height: 22px;
+}
+.nf-share-checkbox {
+    position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;
+}
+.nf-share-checkmark {
+    width: 20px; height: 20px;
+    border: 2px solid #cbd5e1;
+    border-radius: 5px;
+    background: #fff;
+    transition: all .15s;
+    position: relative;
+}
+.nf-share-user:hover .nf-share-checkmark { border-color: #94a3b8; }
+.nf-share-checkbox:checked + .nf-share-checkmark {
+    background: #0ea5e9; border-color: #0ea5e9;
+}
+.nf-share-checkbox:checked + .nf-share-checkmark::after {
+    content: '';
+    position: absolute;
+    left: 5px; top: 1px;
+    width: 6px; height: 11px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.nf-share-empty,
+.nf-share-no-results {
+    padding: 28px 18px; text-align: center;
+    color: #94a3b8; font-size: 13px;
+}
+
+.nf-share-actions {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+.nf-share-action-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #475569;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+}
+.nf-share-action-btn:hover {
+    background: #eff6ff; color: #1e40af; border-color: #bfdbfe;
+}
+.nf-share-action-btn i { font-size: 11px; }
 
 .nf-foot {
     padding: 16px 26px;
@@ -887,12 +1007,80 @@
                 <label class="nf-label">
                     Share with people <span class="opt">Optional</span>
                 </label>
-                <p class="nf-hint">Search teammates by name, email, position, or department. They'll get an in-app notification.</p>
-                <div class="nf-share-search-wrap">
-                    <input type="text" id="nfShareSearch" class="nf-input" placeholder="Search registered users..." autocomplete="off">
-                    <div class="nf-share-results" id="nfShareResults"></div>
+                <p class="nf-hint">Select teammates to share this folder with. They'll get an in-app notification.</p>
+
+                <div class="nf-share-picker">
+                    <div class="nf-share-toolbar">
+                        <div class="nf-share-search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="nfShareSearch" placeholder="Search by name, email, position, or department..." autocomplete="off">
+                        </div>
+                        <div class="nf-share-stats">
+                            <span id="nfShareSelectedCount">0</span> of <span id="nfShareTotalCount">{{ $shareableUsers->count() }}</span> selected
+                        </div>
+                    </div>
+
+                    <div class="nf-share-list" id="nfShareList">
+                        @forelse($shareableUsers as $u)
+                            @php
+                                $firstName = $u->first_name ?: ($u->name ?: '');
+                                $lastName = $u->last_name ?: '';
+                                $fullName = trim($firstName . ' ' . $lastName);
+                                if ($fullName === '') { $fullName = $u->name ?: $u->email; }
+                                $initials = strtoupper(substr($firstName !== '' ? $firstName : 'U', 0, 1) . substr($lastName !== '' ? $lastName : '', 0, 1));
+                                if ($initials === '') { $initials = strtoupper(substr($u->email, 0, 1)); }
+                                $positionName = optional($u->position)->name;
+                                $departmentName = optional($u->department)->name;
+                                $searchTerms = strtolower(trim($fullName . ' ' . $u->email . ' ' . ($positionName ?? '') . ' ' . ($departmentName ?? '')));
+                                $avatarUrl = $u->profile_picture
+                                    ? asset('profile_pictures/' . $u->profile_picture)
+                                    : null;
+                            @endphp
+                            <div class="nf-share-user" data-user-id="{{ $u->id }}" data-search="{{ $searchTerms }}">
+                                <div class="nf-share-av">
+                                    @if($avatarUrl)
+                                        <img src="{{ $avatarUrl }}" alt="">
+                                    @else
+                                        <div class="nf-share-av-fallback">{{ $initials }}</div>
+                                    @endif
+                                </div>
+                                <div class="nf-share-info">
+                                    <div class="nf-share-name">
+                                        <span>{{ $fullName }}</span>
+                                        @if($positionName)
+                                            <span class="nf-share-pos"><i class="fas fa-briefcase"></i> {{ $positionName }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="nf-share-meta">
+                                        <span class="nf-share-email">{{ $u->email }}</span>
+                                        @if($departmentName)
+                                            <span class="nf-share-dot">·</span>
+                                            <span class="nf-share-dept">{{ $departmentName }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <select class="nf-share-perm" data-user-id="{{ $u->id }}" disabled>
+                                    <option value="viewer" selected>Viewer</option>
+                                    <option value="editor">Editor</option>
+                                </select>
+                                <label class="nf-share-check">
+                                    <input type="checkbox" class="nf-share-checkbox" value="{{ $u->id }}">
+                                    <span class="nf-share-checkmark"></span>
+                                </label>
+                            </div>
+                        @empty
+                            <div class="nf-share-empty">No other users available to share with.</div>
+                        @endforelse
+                        <div class="nf-share-no-results" id="nfShareNoResults" style="display:none;">No users match your search.</div>
+                    </div>
+
+                    @if($shareableUsers->count() > 0)
+                        <div class="nf-share-actions">
+                            <button type="button" class="nf-share-action-btn" id="nfShareSelectAll"><i class="fas fa-check-circle"></i> Select All</button>
+                            <button type="button" class="nf-share-action-btn" id="nfShareClearAll"><i class="fas fa-times-circle"></i> Clear All</button>
+                        </div>
+                    @endif
                 </div>
-                <div class="nf-chips" id="nfShareChips"></div>
             </div>
         </div>
 
@@ -1131,17 +1319,18 @@
     const nfPassword = document.getElementById('nfPassword');
     const nfPasswordConfirm = document.getElementById('nfPasswordConfirm');
     const nfShareSearch = document.getElementById('nfShareSearch');
-    const nfShareResults = document.getElementById('nfShareResults');
-    const nfShareChips = document.getElementById('nfShareChips');
+    const nfShareList = document.getElementById('nfShareList');
+    const nfShareNoResults = document.getElementById('nfShareNoResults');
+    const nfShareSelectedCount = document.getElementById('nfShareSelectedCount');
+    const nfShareTotalCount = document.getElementById('nfShareTotalCount');
+    const nfShareSelectAll = document.getElementById('nfShareSelectAll');
+    const nfShareClearAll = document.getElementById('nfShareClearAll');
     const nfSubmit = document.getElementById('nfSubmit');
     const nfError = document.getElementById('nfError');
 
     if (nfBtn && nfBackdrop) {
-        const selectedShares = new Map(); // user_id -> { name, email, avatar, position, department, permission }
-
-        function escapeHtml(s) {
-            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        }
+        // Map<string user_id, 'viewer' | 'editor'> for users selected to share with.
+        const selectedShares = new Map();
 
         function openModal() {
             nfBackdrop.classList.add('open');
@@ -1178,101 +1367,91 @@
             if (!on) { nfPassword.value = ''; nfPasswordConfirm.value = ''; }
         });
 
-        // ---- Share search (debounced AJAX) ----
-        function renderChips() {
-            nfShareChips.innerHTML = '';
-            selectedShares.forEach((u, id) => {
-                const chip = document.createElement('div');
-                chip.className = 'nf-chip';
-                chip.innerHTML = `
-                    <img class="av" src="${escapeHtml(u.avatar)}" alt="">
-                    <span class="nm">${escapeHtml(u.name)}</span>
-                    <select data-id="${id}">
-                        <option value="viewer" ${u.permission === 'viewer' ? 'selected' : ''}>Viewer</option>
-                        <option value="editor" ${u.permission === 'editor' ? 'selected' : ''}>Editor</option>
-                    </select>
-                    <button type="button" class="x" data-id="${id}" aria-label="Remove">&times;</button>
-                `;
-                nfShareChips.appendChild(chip);
-            });
-            nfShareChips.querySelectorAll('select').forEach(s => {
-                s.addEventListener('change', () => {
-                    const u = selectedShares.get(s.getAttribute('data-id'));
-                    if (u) u.permission = s.value;
-                });
-            });
-            nfShareChips.querySelectorAll('.x').forEach(b => {
-                b.addEventListener('click', () => {
-                    selectedShares.delete(b.getAttribute('data-id'));
-                    renderChips();
-                });
-            });
+        // ---- Share picker (compose-memo style: full list + client-side filter) ----
+        const shareUserRows = nfShareList ? Array.from(nfShareList.querySelectorAll('.nf-share-user')) : [];
+
+        function updateSelectedCount() {
+            if (nfShareSelectedCount) nfShareSelectedCount.textContent = String(selectedShares.size);
         }
 
-        let nfSearchT;
-        nfShareSearch?.addEventListener('input', () => {
-            clearTimeout(nfSearchT);
-            const q = nfShareSearch.value.trim();
-            if (q.length < 2) { nfShareResults.classList.remove('show'); nfShareResults.innerHTML = ''; return; }
-            nfSearchT = setTimeout(async () => {
-                try {
-                    const url = '{{ route("dashboard.folders.users.search") }}?q=' + encodeURIComponent(q);
-                    const res = await fetch(url, {
-                        credentials: 'same-origin',
-                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    });
-                    const data = await res.json();
-                    if (!data.ok) return;
-                    const filtered = data.users.filter(u => !selectedShares.has(String(u.id)));
-                    if (filtered.length === 0) {
-                        nfShareResults.innerHTML = '<div class="nf-share-empty">No matching users found</div>';
-                    } else {
-                        nfShareResults.innerHTML = filtered.map(u => {
-                            const metaParts = [];
-                            if (u.position) metaParts.push(`<span class="pos-badge"><i class="fas fa-briefcase" style="font-size:9px;"></i> ${escapeHtml(u.position)}</span>`);
-                            if (u.department) metaParts.push(`<span>${escapeHtml(u.department)}</span>`);
-                            metaParts.push(`<span>${escapeHtml(u.email)}</span>`);
-                            return `
-                                <div class="nf-share-row" data-payload='${escapeHtml(JSON.stringify(u))}'>
-                                    <img class="av" src="${escapeHtml(u.avatar)}" alt="">
-                                    <div class="info">
-                                        <div class="nm">${escapeHtml(u.name)}</div>
-                                        <div class="meta">${metaParts.join('<span class="dot">·</span>')}</div>
-                                    </div>
-                                    <button type="button" class="add-btn"><i class="fas fa-plus"></i> Add</button>
-                                </div>
-                            `;
-                        }).join('');
-                        nfShareResults.querySelectorAll('.nf-share-row').forEach(row => {
-                            row.addEventListener('click', () => {
-                                try {
-                                    const payload = JSON.parse(row.getAttribute('data-payload').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'"));
-                                    selectedShares.set(String(payload.id), {
-                                        name: payload.name,
-                                        email: payload.email,
-                                        avatar: payload.avatar,
-                                        position: payload.position,
-                                        department: payload.department,
-                                        permission: 'viewer',
-                                    });
-                                    nfShareSearch.value = '';
-                                    nfShareResults.classList.remove('show');
-                                    nfShareResults.innerHTML = '';
-                                    renderChips();
-                                } catch (e) { console.error('[nf] add user failed:', e); }
-                            });
-                        });
-                    }
-                    nfShareResults.classList.add('show');
-                } catch (e) {
-                    console.error('[nf] user search failed:', e);
+        function setRowSelected(row, isSelected, permission) {
+            const checkbox = row.querySelector('.nf-share-checkbox');
+            const permSelect = row.querySelector('.nf-share-perm');
+            const userId = row.getAttribute('data-user-id');
+            if (!userId) return;
+
+            if (isSelected) {
+                row.classList.add('selected');
+                if (checkbox) checkbox.checked = true;
+                if (permSelect) {
+                    permSelect.disabled = false;
+                    if (permission) permSelect.value = permission;
                 }
-            }, 250);
-        });
-        document.addEventListener('click', e => {
-            if (!nfShareResults.contains(e.target) && e.target !== nfShareSearch) {
-                nfShareResults.classList.remove('show');
+                selectedShares.set(String(userId), permission || (permSelect ? permSelect.value : 'viewer') || 'viewer');
+            } else {
+                row.classList.remove('selected');
+                if (checkbox) checkbox.checked = false;
+                if (permSelect) {
+                    permSelect.disabled = true;
+                    permSelect.value = 'viewer';
+                }
+                selectedShares.delete(String(userId));
             }
+            updateSelectedCount();
+        }
+
+        function applyShareFilter() {
+            const q = (nfShareSearch?.value || '').toLowerCase().trim();
+            let visibleCount = 0;
+            shareUserRows.forEach(row => {
+                const terms = row.getAttribute('data-search') || '';
+                const match = q === '' || terms.includes(q);
+                row.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+            if (nfShareNoResults) {
+                nfShareNoResults.style.display = (shareUserRows.length > 0 && visibleCount === 0) ? '' : 'none';
+            }
+        }
+
+        // Row click toggles selection (but ignore clicks on the permission select itself).
+        shareUserRows.forEach(row => {
+            row.addEventListener('click', e => {
+                if (e.target.closest('.nf-share-perm')) return;
+                const checkbox = row.querySelector('.nf-share-checkbox');
+                if (!checkbox) return;
+                if (e.target !== checkbox) {
+                    // Clicking anywhere else on the row flips state.
+                    setRowSelected(row, !checkbox.checked);
+                }
+            });
+
+            const checkbox = row.querySelector('.nf-share-checkbox');
+            if (checkbox) {
+                checkbox.addEventListener('change', () => setRowSelected(row, checkbox.checked));
+            }
+
+            const permSelect = row.querySelector('.nf-share-perm');
+            if (permSelect) {
+                permSelect.addEventListener('click', e => e.stopPropagation());
+                permSelect.addEventListener('change', () => {
+                    const userId = row.getAttribute('data-user-id');
+                    if (userId && selectedShares.has(String(userId))) {
+                        selectedShares.set(String(userId), permSelect.value);
+                    }
+                });
+            }
+        });
+
+        nfShareSearch?.addEventListener('input', applyShareFilter);
+
+        nfShareSelectAll?.addEventListener('click', () => {
+            shareUserRows.forEach(row => {
+                if (row.style.display !== 'none') setRowSelected(row, true);
+            });
+        });
+        nfShareClearAll?.addEventListener('click', () => {
+            shareUserRows.forEach(row => setRowSelected(row, false));
         });
 
         // ---- Submit: append hidden inputs for share members, then submit ----
@@ -1300,7 +1479,7 @@
             // Clear any prior hidden inputs and add fresh ones for selected members
             nfForm.querySelectorAll('input[name^="share_members"]').forEach(el => el.remove());
             let i = 0;
-            selectedShares.forEach((u, id) => {
+            selectedShares.forEach((permission, id) => {
                 const idIn = document.createElement('input');
                 idIn.type = 'hidden';
                 idIn.name = `share_members[${i}][user_id]`;
@@ -1309,7 +1488,7 @@
                 const permIn = document.createElement('input');
                 permIn.type = 'hidden';
                 permIn.name = `share_members[${i}][permission]`;
-                permIn.value = u.permission || 'viewer';
+                permIn.value = permission || 'viewer';
                 nfForm.appendChild(permIn);
                 i++;
             });

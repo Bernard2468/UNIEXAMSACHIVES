@@ -67,7 +67,8 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\" -Directory)",
       "Bash(Select-Object -First 20)",
       "Bash(composer require *)",
-      "PowerShell(php artisan migrate --force)"
+      "PowerShell(php artisan migrate --force)",
+      "PowerShell($d = \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES/storage/framework/views\"; if \\(Test-Path $d\\) { \\(Get-ChildItem $d -File | Measure-Object\\).Count } else { \"directory missing\" })"
     ],
     "deny": []
   }
