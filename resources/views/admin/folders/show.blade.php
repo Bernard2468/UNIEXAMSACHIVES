@@ -345,7 +345,6 @@
     }
     // Preserve the from= value when navigating to edit/security so back chains keep working.
     $forwardFrom = $from ? '?from=' . urlencode($from) : '';
-@endphp
 
     $folderItems = collect()
         ->merge($folderFiles->map(function($file) use ($folder) {
