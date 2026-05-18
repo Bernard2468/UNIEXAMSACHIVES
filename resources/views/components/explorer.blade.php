@@ -29,10 +29,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 /* ============ EXPLORER ROOT ============ */
-.exp-root, .exp-root * {
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
 .exp-root {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     min-height: 100vh;
     padding: 32px 0 88px;
@@ -40,6 +38,36 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+/* Make form controls inherit Outfit (browsers default them to system UI font) */
+.exp-root input,
+.exp-root button,
+.exp-root select,
+.exp-root textarea,
+.exp-root h1,
+.exp-root h2,
+.exp-root h3,
+.exp-root h4,
+.exp-root p,
+.exp-root a,
+.exp-root span,
+.exp-root label,
+.exp-root div {
+    font-family: inherit;
+}
+/* …but DO NOT override Font Awesome icons. They need their own font-family
+   to render glyphs from the icon font's private-use code points. */
+.exp-root .fas,
+.exp-root .far,
+.exp-root .fal,
+.exp-root .fab,
+.exp-root .fa-solid,
+.exp-root .fa-regular,
+.exp-root .fa-light,
+.exp-root .fa-brands,
+.exp-root [class^="fa-"],
+.exp-root [class*=" fa-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
 }
 .exp-shell {
     max-width: 1280px;

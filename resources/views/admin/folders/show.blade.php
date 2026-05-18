@@ -9,10 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-    .folder-page-root, .folder-page-root * {
-        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
     .folder-page-root {
+        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
         min-height: 100vh;
         padding: 32px 0 88px;
@@ -20,6 +18,34 @@
         line-height: 1.5;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+    }
+    .folder-page-root input,
+    .folder-page-root button,
+    .folder-page-root select,
+    .folder-page-root textarea,
+    .folder-page-root h1,
+    .folder-page-root h2,
+    .folder-page-root h3,
+    .folder-page-root h4,
+    .folder-page-root p,
+    .folder-page-root a,
+    .folder-page-root span,
+    .folder-page-root label,
+    .folder-page-root div {
+        font-family: inherit;
+    }
+    /* Preserve Font Awesome's icon font on <i> tags */
+    .folder-page-root .fas,
+    .folder-page-root .far,
+    .folder-page-root .fal,
+    .folder-page-root .fab,
+    .folder-page-root .fa-solid,
+    .folder-page-root .fa-regular,
+    .folder-page-root .fa-light,
+    .folder-page-root .fa-brands,
+    .folder-page-root [class^="fa-"],
+    .folder-page-root [class*=" fa-"] {
+        font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
     }
     .folder-shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
 
