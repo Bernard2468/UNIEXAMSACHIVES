@@ -13,13 +13,15 @@ class FilesController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'depositor_name' => 'required|string',
-            'email' => 'required|string|email',
             'file_title' => 'required|string',
-            'year_created' => 'required|date',
+            'year_created' => 'required|date|before_or_equal:today',
             'document_file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx',
-            'unit' => 'required|string',
         ]);
+
+        $user = Auth::user();
+        $validatedData['depositor_name'] = trim($user->first_name . ' ' . $user->last_name);
+        $validatedData['email'] = $user->email;
+        $validatedData['unit'] = optional($user->department)->name ?? 'Unassigned';
 
         if ($request->hasFile('document_file')) {
             $uploadedFile = $request->file('document_file');
@@ -29,7 +31,7 @@ class FilesController extends Controller
             $validatedData['file_format'] = $this->detectFileFormat($uploadedFile->getClientOriginalExtension());
         }
         $validatedData['year_deposit'] = now()->toDateString();
-        $validatedData['user_id'] = Auth::user()->id;
+        $validatedData['user_id'] = $user->id;
         $validatedData['document_id'] = random_int(1000000000, 9999999999);
         $validatedData['is_approve'] = true;
         File::create($validatedData);
@@ -59,15 +61,17 @@ class FilesController extends Controller
     public function update(Request $request, $id)
     {
         $validatedData = $request->validate([
-            'depositor_name' => 'required|string',
-            'email' => 'required|string|email',
             'file_title' => 'required|string',
-            'year_created' => 'required|date',
+            'year_created' => 'required|date|before_or_equal:today',
             'document_file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,csv,ppt,pptx',
-            'unit' => 'required|string',
         ]);
 
         $file = File::findOrFail($id);
+
+        $user = Auth::user();
+        $validatedData['depositor_name'] = trim($user->first_name . ' ' . $user->last_name);
+        $validatedData['email'] = $user->email;
+        $validatedData['unit'] = optional($user->department)->name ?? $file->unit;
 
         if ($request->hasFile('document_file')) {
             if ($file->document_file && file_exists(public_path($file->document_file))) {

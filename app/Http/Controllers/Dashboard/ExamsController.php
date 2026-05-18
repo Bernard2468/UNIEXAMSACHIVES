@@ -22,22 +22,24 @@ class ExamsController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'instructor_name' => 'required|string',
             'student_id' => 'required',
             'course_code' => 'required|string',
-            'email' => 'required|string',
             'course_title' => 'required|string',
-            'faculty' => 'required|string',
             'semester' => 'required|string',
             'academic_year' => 'required|string',
             'exams_type' => 'required|string',
-            'exam_date' => 'required|date',
+            'exam_date' => 'required|date|before_or_equal:today',
             'exam_format' => 'required',
             'duration' => 'required|string',
             'exam_document' => 'required|file|mimes:pdf,docx',
             'answer_key' => 'file|mimes:pdf,docx',
             'special_instruction' => 'string|nullable',
         ]);
+
+        $user = Auth::user();
+        $validatedData['instructor_name'] = trim($user->first_name . ' ' . $user->last_name);
+        $validatedData['email'] = $user->email;
+        $validatedData['faculty'] = optional($user->department)->name ?? 'Unassigned';
 
         // Store exam document in new public storage
         $examFile = $request->file('exam_document');
@@ -72,21 +74,23 @@ class ExamsController extends Controller
     public function update(Request $request, Exam $exam)
     {
         $validatedData = $request->validate([
-            'instructor_name' => 'required|string',
             'student_id' => 'required',
             'course_code' => 'required|string',
-            'email' => 'required|string',
             'course_title' => 'required|string',
-            'faculty' => 'required|string',
             'semester' => 'required|string',
             'academic_year' => 'required|string',
             'exams_type' => 'required|string',
-            'exam_date' => 'required|date',
+            'exam_date' => 'required|date|before_or_equal:today',
             'exam_format' => 'required',
             'duration' => 'required|string',
             'exam_document' => 'nullable|file',
             'answer_key' => 'nullable|file',
         ]);
+
+        $user = Auth::user();
+        $validatedData['instructor_name'] = trim($user->first_name . ' ' . $user->last_name);
+        $validatedData['email'] = $user->email;
+        $validatedData['faculty'] = optional($user->department)->name ?? $exam->faculty;
 
         // Handle exam document update
         if ($request->hasFile('exam_document')) {

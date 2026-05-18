@@ -588,11 +588,16 @@
                                 </div>
                             </div>
                             <div class="form-card-body">
+                                @php($userFaculty = optional(auth()->user()->department)->name)
+                                <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:14px 18px; display:flex; align-items:flex-start; gap:10px; margin-bottom:22px;">
+                                    <i class="fas fa-lock" style="color:#0ea5e9; font-size:16px; flex-shrink:0; margin-top:1px;"></i>
+                                    <p style="font-size:13px; color:#0c4a6e; margin:0; line-height:1.5;">Your name, email, and department are linked to your profile and cannot be changed here. Update your profile to change them.</p>
+                                </div>
                                 <div class="field-group">
                                     <label>Full Name <span class="required-dot"></span></label>
                                     <div class="input-icon-wrap">
                                         <i class="fas fa-user"></i>
-                                        <input type="text" placeholder="Enter your full name" name="instructor_name" value="{{ old('instructor_name', $exam->instructor_name ?? trim(auth()->user()->first_name . ' ' . auth()->user()->last_name)) }}" required>
+                                        <input type="text" name="instructor_name" value="{{ trim(auth()->user()->first_name . ' ' . auth()->user()->last_name) }}" readonly style="background:#f1f5f9; color:#475569; cursor:not-allowed;">
                                     </div>
                                 </div>
                                 <div class="row">
@@ -610,24 +615,22 @@
                                             <label>Department / Faculty <span class="required-dot"></span></label>
                                             <div class="input-icon-wrap">
                                                 <i class="fas fa-building"></i>
-                                                <select name="faculty" required>
-                                                    @if (count($departments) > 0)
-                                                        @foreach ($departments as $department)
-                                                            <option value="{{$department->name}}" {{ old('faculty', $exam->faculty ?? '') == $department->name ? 'selected' : '' }}>{{$department->name}}</option>
-                                                        @endforeach
-                                                    @else
-                                                        <option value="" disabled>No Department Added</option>
-                                                    @endif
-                                                </select>
+                                                <input type="text" name="faculty" value="{{ $userFaculty ?? '' }}" readonly style="background:#f1f5f9; color:#475569; cursor:not-allowed;" placeholder="No department assigned to your profile">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                @if(!$userFaculty)
+                                    <div class="alert-error" style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:12px 18px; margin-bottom:16px; font-size:13px; color:#991b1b; display:flex; align-items:center; gap:10px;">
+                                        <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
+                                        Your profile has no department assigned. Please update your profile before depositing exam documents.
+                                    </div>
+                                @endif
                                 <div class="field-group">
                                     <label>Email Address <span class="required-dot"></span></label>
                                     <div class="input-icon-wrap">
                                         <i class="fas fa-envelope"></i>
-                                        <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $exam->email ?? auth()->user()->email) }}" required>
+                                        <input type="email" name="email" value="{{ auth()->user()->email }}" readonly style="background:#f1f5f9; color:#475569; cursor:not-allowed;">
                                     </div>
                                 </div>
                             </div>
@@ -736,7 +739,7 @@
                                             <label>Exam Date <span class="required-dot"></span></label>
                                             <div class="input-icon-wrap">
                                                 <i class="fas fa-calendar-day"></i>
-                                                <input type="date" name="exam_date" value="{{ old('exam_date', $exam->exam_date ?? '') }}" required>
+                                                <input type="date" name="exam_date" value="{{ old('exam_date', $exam->exam_date ?? '') }}" max="{{ now()->toDateString() }}" required>
                                             </div>
                                         </div>
                                     </div>

@@ -604,18 +604,22 @@
                                 </div>
                             </div>
                             <div class="file-form-card-body">
+                                <div class="info-callout">
+                                    <i class="fas fa-lock"></i>
+                                    <p>Your name and email are linked to your profile and cannot be changed here. Update your profile to change them.</p>
+                                </div>
                                 <div class="ff-group">
                                     <label>Depositor's Name <span class="req"></span></label>
                                     <div class="icon-wrap">
                                         <i class="fas fa-user"></i>
-                                        <input type="text" placeholder="Enter your full name" name="depositor_name" value="{{ old('depositor_name', $file->depositor_name ?? trim(auth()->user()->first_name . ' ' . auth()->user()->last_name)) }}" required>
+                                        <input type="text" name="depositor_name" value="{{ trim(auth()->user()->first_name . ' ' . auth()->user()->last_name) }}" readonly style="background:#f1f5f9; color:#475569; cursor:not-allowed;">
                                     </div>
                                 </div>
                                 <div class="ff-group">
                                     <label>Email Address <span class="req"></span></label>
                                     <div class="icon-wrap">
                                         <i class="fas fa-envelope"></i>
-                                        <input type="email" placeholder="email@university.edu" name="email" value="{{ old('email', $file->email ?? auth()->user()->email) }}" required>
+                                        <input type="email" name="email" value="{{ auth()->user()->email }}" readonly style="background:#f1f5f9; color:#475569; cursor:not-allowed;">
                                     </div>
                                 </div>
                             </div>
@@ -654,7 +658,7 @@
                                             <label>Document Date <span class="req"></span></label>
                                             <div class="icon-wrap">
                                                 <i class="fas fa-calendar-day"></i>
-                                                <input type="date" name="year_created" value="{{ old('year_created', isset($file) ? \Carbon\Carbon::parse($file->year_created)->format('Y-m-d') : '') }}" required>
+                                                <input type="date" name="year_created" value="{{ old('year_created', isset($file) ? \Carbon\Carbon::parse($file->year_created)->format('Y-m-d') : '') }}" max="{{ now()->toDateString() }}" required>
                                             </div>
                                         </div>
                                     </div>
@@ -696,35 +700,28 @@
                                 </div>
                             </div>
                             <div class="file-form-card-body">
+                                @php($userUnit = optional(auth()->user()->department)->name)
                                 <div class="info-callout">
                                     <i class="fas fa-info-circle"></i>
-                                    <p>Select the organizational unit where this file should be archived. This helps maintain proper records across all university departments.</p>
+                                    <p>Your organizational unit is taken from your profile and cannot be changed here. If this is incorrect, please update your department on your profile.</p>
                                 </div>
 
                                 <div class="ff-group">
                                     <label>Organizational Unit <span class="req"></span></label>
                                     <div class="icon-wrap">
                                         <i class="fas fa-building-columns"></i>
-                                        <select name="unit" required>
-                                            <option value="Registry" {{ old('unit', $file->unit ?? '') == 'Registry' ? 'selected' : '' }}>Registry</option>
-                                            <option value="School of Nursing and Midwifery" {{ old('unit', $file->unit ?? '') == 'School of Nursing and Midwifery' ? 'selected' : '' }}>School of Nursing and Midwifery</option>
-                                            <option value="Assurance Directorate" {{ old('unit', $file->unit ?? '') == 'Assurance Directorate' ? 'selected' : '' }}>Assurance Directorate</option>
-                                            <option value="Directorate" {{ old('unit', $file->unit ?? '') == 'Directorate' ? 'selected' : '' }}>Directorate</option>
-                                            <option value="Finance Directorate" {{ old('unit', $file->unit ?? '') == 'Finance Directorate' ? 'selected' : '' }}>Finance Directorate</option>
-                                            <option value="Works and Physical Development Office" {{ old('unit', $file->unit ?? '') == 'Works and Physical Development Office' ? 'selected' : '' }}>Works and Physical Development Office</option>
-                                            <option value="Audit" {{ old('unit', $file->unit ?? '') == 'Audit' ? 'selected' : '' }}>Audit</option>
-                                            <option value="Guidance and Counselling Unit" {{ old('unit', $file->unit ?? '') == 'Guidance and Counselling Unit' ? 'selected' : '' }}>Guidance and Counselling Unit</option>
-                                            <option value="The University Library" {{ old('unit', $file->unit ?? '') == 'The University Library' ? 'selected' : '' }}>The University Library</option>
-                                            <option value="Human Resource Unit" {{ old('unit', $file->unit ?? '') == 'Human Resource Unit' ? 'selected' : '' }}>Human Resource Unit</option>
-                                            <option value="Hostels" {{ old('unit', $file->unit ?? '') == 'Hostels' ? 'selected' : '' }}>Hostels</option>
-                                            <option value="Faculty of Economics and Business Administration" {{ old('unit', $file->unit ?? '') == 'Faculty of Economics and Business Administration' ? 'selected' : '' }}>Faculty of Economics and Business Administration</option>
-                                            <option value="Faculty of Education" {{ old('unit', $file->unit ?? '') == 'Faculty of Education' ? 'selected' : '' }}>Faculty of Education</option>
-                                            <option value="School of Public Health and Allied Science" {{ old('unit', $file->unit ?? '') == 'School of Public Health and Allied Science' ? 'selected' : '' }}>School of Public Health and Allied Science</option>
-                                            <option value="Faculty of Religious and Social Sciences" {{ old('unit', $file->unit ?? '') == 'Faculty of Religious and Social Sciences' ? 'selected' : '' }}>Faculty of Religious and Social Sciences</option>
-                                            <option value="Faculty of Computing, Engineering and Mathematical Sciences" {{ old('unit', $file->unit ?? '') == 'Faculty of Computing, Engineering and Mathematical Sciences' ? 'selected' : '' }}>Faculty of Computing, Engineering and Mathematical Sciences</option>
-                                        </select>
+                                        <input type="text" value="{{ $userUnit ?? 'No department assigned to your profile' }}" readonly style="background:#f1f5f9; color:#475569; cursor:not-allowed;">
                                     </div>
                                 </div>
+
+                                @if(!$userUnit)
+                                    <div class="file-alert-danger" style="margin-top:16px;">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <ul>
+                                            <li>Your profile has no department assigned. Please update your profile before depositing files.</li>
+                                        </ul>
+                                    </div>
+                                @endif
 
                                 <div class="file-declaration">
                                     <input type="checkbox" id="fileConsent" required>
