@@ -622,6 +622,51 @@
 }
 .member-row .remove-btn:hover { background:#fef2f2; color:#dc2626; }
 
+/* ===== Members modal tabs ===== */
+.mb-tabs {
+    display: flex; gap: 4px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+}
+.mb-tab {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: transparent; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600;
+    color: #64748b;
+    font-family: inherit;
+    letter-spacing: -0.005em;
+    transition: background .15s, color .15s, box-shadow .15s;
+}
+.mb-tab:hover { color: #334155; }
+.mb-tab.active {
+    background: #fff; color: #0f172a;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.08);
+}
+.mb-tab i { font-size: 12px; }
+.mb-tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 20px;
+    padding: 0 7px;
+    border-radius: 100px;
+    background: #e2e8f0; color: #475569;
+    font-size: 11px; font-weight: 700;
+    line-height: 1;
+}
+.mb-tab.active .mb-tab-badge { background: #e0f2fe; color: #0369a1; }
+
+.mb-panel { display: none; }
+.mb-panel.active { display: block; }
+.mb-panel-hint {
+    font-size: 12.5px; color: #64748b;
+    margin: 0 0 10px;
+    line-height: 1.45;
+}
+
 /* ===== Member picker (matches the create-folder Share-with-people UI) ===== */
 .mp-picker {
     border: 1px solid #e2e8f0;
@@ -800,83 +845,111 @@
             </div>
         @endif
 
-        <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">Invite members</label>
+        @php
+            $initialMemberCount = $folder->members->count();
+            $invitableCount = $invitableUsers->count();
+            // Default tab: jump straight to "Add people" if there's nobody to manage yet.
+            $defaultTab = $initialMemberCount > 0 ? 'members' : 'add';
+        @endphp
 
-        <div class="mp-picker">
-            <div class="mp-toolbar">
-                <div class="mp-search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="memberPickerSearch" placeholder="Search by name, email, position, or department..." autocomplete="off">
-                </div>
-                <div class="mp-stats">
-                    <span id="mpSelectedCount">0</span> of <span id="mpTotalCount">{{ $invitableUsers->count() }}</span> selected
-                </div>
-            </div>
-
-            <div class="mp-list" id="mpList">
-                @forelse($invitableUsers as $u)
-                    @php
-                        $firstName = $u->first_name ?: '';
-                        $lastName = $u->last_name ?: '';
-                        $fullName = trim($firstName . ' ' . $lastName);
-                        if ($fullName === '') { $fullName = $u->email; }
-                        $initials = strtoupper(substr($firstName !== '' ? $firstName : 'U', 0, 1) . substr($lastName !== '' ? $lastName : '', 0, 1));
-                        if ($initials === '') { $initials = strtoupper(substr($u->email, 0, 1)); }
-                        $positionName = optional($u->position)->name;
-                        $departmentName = optional($u->department)->name;
-                        $searchTerms = strtolower(trim($fullName . ' ' . $u->email . ' ' . ($positionName ?? '') . ' ' . ($departmentName ?? '')));
-                        $avatarUrl = $u->profile_picture ? asset('profile_pictures/' . $u->profile_picture) : null;
-                    @endphp
-                    <div class="mp-user" data-user-id="{{ $u->id }}" data-search="{{ $searchTerms }}">
-                        <div class="mp-av">
-                            @if($avatarUrl)
-                                <img src="{{ $avatarUrl }}" alt="">
-                            @else
-                                <div class="mp-av-fallback">{{ $initials }}</div>
-                            @endif
-                        </div>
-                        <div class="mp-info">
-                            <div class="mp-name">
-                                <span>{{ $fullName }}</span>
-                                @if($positionName)
-                                    <span class="mp-pos"><i class="fas fa-briefcase"></i> {{ $positionName }}</span>
-                                @endif
-                            </div>
-                            <div class="mp-meta">
-                                <span class="mp-email">{{ $u->email }}</span>
-                                @if($departmentName)
-                                    <span class="mp-dot">·</span>
-                                    <span class="mp-dept">{{ $departmentName }}</span>
-                                @endif
-                            </div>
-                        </div>
-                        <select class="mp-perm" data-user-id="{{ $u->id }}">
-                            <option value="viewer" selected>Viewer</option>
-                            <option value="editor">Editor</option>
-                        </select>
-                        <label class="mp-check">
-                            <input type="checkbox" class="mp-checkbox" value="{{ $u->id }}">
-                            <span class="mp-checkmark"></span>
-                        </label>
-                    </div>
-                @empty
-                    <div class="mp-empty">Everyone in the system is already a member of this folder.</div>
-                @endforelse
-                <div class="mp-no-results" id="mpNoResults" style="display:none;">No users match your search.</div>
-            </div>
-
-            @if($invitableUsers->count() > 0)
-                <div class="mp-actions">
-                    <button type="button" class="mp-action-btn" id="mpSelectAll"><i class="fas fa-check-circle"></i> Select All</button>
-                    <button type="button" class="mp-action-btn" id="mpClearAll"><i class="fas fa-times-circle"></i> Clear All</button>
-                    <button type="button" class="mp-action-btn primary" id="mpInviteBtn" disabled><i class="fas fa-user-plus"></i> Invite <span id="mpInviteCount">0</span></button>
-                </div>
-            @endif
+        <div class="mb-tabs" role="tablist">
+            <button type="button" class="mb-tab {{ $defaultTab === 'members' ? 'active' : '' }}" data-mb-tab="members" role="tab">
+                <i class="fas fa-user-check"></i> Current members
+                <span class="mb-tab-badge" id="mbBadgeMembers">{{ $initialMemberCount }}</span>
+            </button>
+            <button type="button" class="mb-tab {{ $defaultTab === 'add' ? 'active' : '' }}" data-mb-tab="add" role="tab">
+                <i class="fas fa-user-plus"></i> Add people
+                <span class="mb-tab-badge" id="mbBadgeAdd">{{ $invitableCount }}</span>
+            </button>
         </div>
 
-        <label style="font-size:13px; font-weight:600; color:#334155; display:block; margin: 16px 0 6px;">Current members</label>
-        <div class="members-list" id="membersList">
-            <div class="empty-box" style="padding: 24px 8px;"><div class="ico-c" style="width:60px; height:60px; font-size:22px;"><i class="fas fa-user-plus"></i></div><h4>No members yet</h4><p>Tick users above and click <strong>Invite</strong> to add collaborators.</p></div>
+        {{-- ============ TAB: CURRENT MEMBERS ============ --}}
+        <div class="mb-panel {{ $defaultTab === 'members' ? 'active' : '' }}" id="mbPanelMembers" role="tabpanel">
+            <p class="mb-panel-hint">People with access to this folder. Change their permission or revoke access here.</p>
+            <div class="members-list" id="membersList">
+                <div class="empty-box" style="padding: 24px 8px;">
+                    <div class="ico-c" style="width:60px; height:60px; font-size:22px;"><i class="fas fa-user-plus"></i></div>
+                    <h4>No members yet</h4>
+                    <p>Switch to <strong>Add people</strong> to invite collaborators.</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- ============ TAB: ADD PEOPLE ============ --}}
+        <div class="mb-panel {{ $defaultTab === 'add' ? 'active' : '' }}" id="mbPanelAdd" role="tabpanel">
+            <p class="mb-panel-hint">Tick the people you want to invite and pick their role. They'll get an in-app notification.</p>
+
+            <div class="mp-picker">
+                <div class="mp-toolbar">
+                    <div class="mp-search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="memberPickerSearch" placeholder="Search by name, email, position, or department..." autocomplete="off">
+                    </div>
+                    <div class="mp-stats">
+                        <span id="mpSelectedCount">0</span> of <span id="mpTotalCount">{{ $invitableCount }}</span> selected
+                    </div>
+                </div>
+
+                <div class="mp-list" id="mpList">
+                    @forelse($invitableUsers as $u)
+                        @php
+                            $firstName = $u->first_name ?: '';
+                            $lastName = $u->last_name ?: '';
+                            $fullName = trim($firstName . ' ' . $lastName);
+                            if ($fullName === '') { $fullName = $u->email; }
+                            $initials = strtoupper(substr($firstName !== '' ? $firstName : 'U', 0, 1) . substr($lastName !== '' ? $lastName : '', 0, 1));
+                            if ($initials === '') { $initials = strtoupper(substr($u->email, 0, 1)); }
+                            $positionName = optional($u->position)->name;
+                            $departmentName = optional($u->department)->name;
+                            $searchTerms = strtolower(trim($fullName . ' ' . $u->email . ' ' . ($positionName ?? '') . ' ' . ($departmentName ?? '')));
+                            $avatarUrl = $u->profile_picture ? asset('profile_pictures/' . $u->profile_picture) : null;
+                        @endphp
+                        <div class="mp-user" data-user-id="{{ $u->id }}" data-search="{{ $searchTerms }}">
+                            <div class="mp-av">
+                                @if($avatarUrl)
+                                    <img src="{{ $avatarUrl }}" alt="">
+                                @else
+                                    <div class="mp-av-fallback">{{ $initials }}</div>
+                                @endif
+                            </div>
+                            <div class="mp-info">
+                                <div class="mp-name">
+                                    <span>{{ $fullName }}</span>
+                                    @if($positionName)
+                                        <span class="mp-pos"><i class="fas fa-briefcase"></i> {{ $positionName }}</span>
+                                    @endif
+                                </div>
+                                <div class="mp-meta">
+                                    <span class="mp-email">{{ $u->email }}</span>
+                                    @if($departmentName)
+                                        <span class="mp-dot">·</span>
+                                        <span class="mp-dept">{{ $departmentName }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <select class="mp-perm" data-user-id="{{ $u->id }}">
+                                <option value="viewer" selected>Viewer</option>
+                                <option value="editor">Editor</option>
+                            </select>
+                            <label class="mp-check">
+                                <input type="checkbox" class="mp-checkbox" value="{{ $u->id }}">
+                                <span class="mp-checkmark"></span>
+                            </label>
+                        </div>
+                    @empty
+                        <div class="mp-empty">Everyone in the system is already a member of this folder.</div>
+                    @endforelse
+                    <div class="mp-no-results" id="mpNoResults" style="display:none;">No users match your search.</div>
+                </div>
+
+                @if($invitableCount > 0)
+                    <div class="mp-actions">
+                        <button type="button" class="mp-action-btn" id="mpSelectAll"><i class="fas fa-check-circle"></i> Select All</button>
+                        <button type="button" class="mp-action-btn" id="mpClearAll"><i class="fas fa-times-circle"></i> Clear All</button>
+                        <button type="button" class="mp-action-btn primary" id="mpInviteBtn" disabled><i class="fas fa-user-plus"></i> Invite <span id="mpInviteCount">0</span></button>
+                    </div>
+                @endif
+            </div>
         </div>
 
         <div class="add-actions">
@@ -1049,6 +1122,32 @@
     const membersList = document.getElementById('membersList');
     const FOLDER_ID = {{ $folder->id }};
 
+    // ---- Tabs: "Current members" vs "Add people" ----
+    const mbTabs = membersModal ? membersModal.querySelectorAll('.mb-tab') : [];
+    const mbPanels = {
+        members: document.getElementById('mbPanelMembers'),
+        add: document.getElementById('mbPanelAdd'),
+    };
+    const mbBadgeMembers = document.getElementById('mbBadgeMembers');
+    const mbBadgeAdd = document.getElementById('mbBadgeAdd');
+
+    function switchMembersTab(name) {
+        if (!mbPanels[name]) return;
+        mbTabs.forEach(t => {
+            t.classList.toggle('active', t.getAttribute('data-mb-tab') === name);
+        });
+        Object.keys(mbPanels).forEach(key => {
+            mbPanels[key]?.classList.toggle('active', key === name);
+        });
+    }
+    mbTabs.forEach(t => {
+        t.addEventListener('click', () => switchMembersTab(t.getAttribute('data-mb-tab')));
+    });
+
+    function setBadge(el, n) {
+        if (el) el.textContent = String(Math.max(0, n));
+    }
+
     // ---- Invite picker (compose-memo style: full list + filter + batch invite) ----
     const mpSearch = document.getElementById('memberPickerSearch');
     const mpList = document.getElementById('mpList');
@@ -1155,8 +1254,10 @@
         }
     }
     function renderMembers(members) {
-        if (!members || members.length === 0) {
-            membersList.innerHTML = '<div class="empty-box" style="padding:24px 8px;"><div class="ico-c" style="width:60px;height:60px;font-size:22px;"><i class="fas fa-user-plus"></i></div><h4>No members yet</h4><p>Search above to invite collaborators.</p></div>';
+        const count = members ? members.length : 0;
+        setBadge(mbBadgeMembers, count);
+        if (count === 0) {
+            membersList.innerHTML = '<div class="empty-box" style="padding:24px 8px;"><div class="ico-c" style="width:60px;height:60px;font-size:22px;"><i class="fas fa-user-plus"></i></div><h4>No members yet</h4><p>Switch to <strong>Add people</strong> to invite collaborators.</p></div>';
             return;
         }
         membersList.innerHTML = members.map(m => `
@@ -1222,7 +1323,10 @@
             if (res.ok && data.ok) {
                 row.remove();
                 notify('Member removed', 'ok');
-                if (membersList.children.length === 0) renderMembers([]);
+                // Update the "Current members" badge.
+                const remaining = membersList.querySelectorAll('.member-row').length;
+                setBadge(mbBadgeMembers, remaining);
+                if (remaining === 0) renderMembers([]);
             } else {
                 row.style.opacity = '1';
                 notify(data.message || 'Could not remove member', 'err');
@@ -1276,8 +1380,11 @@
                 updatePickerCount();
                 const mpTotal = document.getElementById('mpTotalCount');
                 if (mpTotal) mpTotal.textContent = String(mpRows.length);
+                setBadge(mbBadgeAdd, mpRows.length);
                 notify(addedIds.length + ' member(s) invited', 'ok');
                 loadMembers();
+                // Auto-switch back to "Current members" so the owner sees the result.
+                switchMembersTab('members');
             } else {
                 notify(data.message || 'Could not add members', 'err');
             }
@@ -1295,7 +1402,10 @@
         membersBtn.addEventListener('click', () => {
             membersModal.classList.add('open');
             loadMembers();
-            setTimeout(() => mpSearch?.focus(), 60);
+            // Only focus the picker search if the user is landing on the Add tab.
+            setTimeout(() => {
+                if (mbPanels.add?.classList.contains('active')) mpSearch?.focus();
+            }, 60);
         });
         membersModal.addEventListener('click', e => {
             if (e.target === membersModal) membersModal.classList.remove('open');
