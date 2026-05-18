@@ -415,7 +415,7 @@
                     @if(!$isOwner)
                         @php
                             $ownerName = $folder->user
-                                ? (trim(($folder->user->first_name ?? '') . ' ' . ($folder->user->last_name ?? '')) ?: ($folder->user->name ?: $folder->user->email))
+                                ? (trim(($folder->user->first_name ?? '') . ' ' . ($folder->user->last_name ?? '')) ?: $folder->user->email)
                                 : 'Someone';
                             $myPerm = optional($folder->members->firstWhere('id', auth()->id()))->pivot->permission ?? 'viewer';
                         @endphp

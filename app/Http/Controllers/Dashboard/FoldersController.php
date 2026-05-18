@@ -438,12 +438,12 @@ class FoldersController extends Controller
         $users = $query
             ->with(['position:id,name', 'department:id,name'])
             ->limit(10)
-            ->get(['id', 'first_name', 'last_name', 'name', 'email', 'profile_picture', 'position_id', 'department_id']);
+            ->get(['id', 'first_name', 'last_name', 'email', 'profile_picture', 'position_id', 'department_id']);
 
         return response()->json([
             'ok' => true,
             'users' => $users->map(function ($u) {
-                $full = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) ?: ($u->name ?: $u->email);
+                $full = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) ?: $u->email;
                 return [
                     'id' => $u->id,
                     'name' => $full,
@@ -581,12 +581,12 @@ class FoldersController extends Controller
         $members = $folder->members()
             ->with(['position:id,name', 'department:id,name'])
             ->orderBy('folder_shares.created_at', 'desc')
-            ->get(['users.id', 'first_name', 'last_name', 'name', 'email', 'profile_picture', 'position_id', 'department_id']);
+            ->get(['users.id', 'first_name', 'last_name', 'email', 'profile_picture', 'position_id', 'department_id']);
 
         return response()->json([
             'ok' => true,
             'members' => $members->map(function ($u) {
-                $full = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) ?: ($u->name ?: $u->email);
+                $full = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) ?: $u->email;
                 return [
                     'id' => $u->id,
                     'name' => $full,
