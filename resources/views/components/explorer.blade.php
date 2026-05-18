@@ -33,7 +33,7 @@
             ->with(['position:id,name', 'department:id,name'])
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'name', 'email', 'profile_picture', 'position_id', 'department_id']);
+            ->get(['id', 'first_name', 'last_name', 'email', 'profile_picture', 'position_id', 'department_id']);
     }
 @endphp
 
@@ -1023,10 +1023,10 @@
                     <div class="nf-share-list" id="nfShareList">
                         @forelse($shareableUsers as $u)
                             @php
-                                $firstName = $u->first_name ?: ($u->name ?: '');
+                                $firstName = $u->first_name ?: '';
                                 $lastName = $u->last_name ?: '';
                                 $fullName = trim($firstName . ' ' . $lastName);
-                                if ($fullName === '') { $fullName = $u->name ?: $u->email; }
+                                if ($fullName === '') { $fullName = $u->email; }
                                 $initials = strtoupper(substr($firstName !== '' ? $firstName : 'U', 0, 1) . substr($lastName !== '' ? $lastName : '', 0, 1));
                                 if ($initials === '') { $initials = strtoupper(substr($u->email, 0, 1)); }
                                 $positionName = optional($u->position)->name;
