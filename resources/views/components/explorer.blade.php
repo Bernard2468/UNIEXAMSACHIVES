@@ -502,7 +502,11 @@
                             $folderColor = $folder->color ?: '#fbbf24';
                             $isLocked = !empty($folder->password_hash);
                         @endphp
-                        <a href="{{ route('dashboard.folders.show', $folder) }}"
+                        @php
+                            $folderShowUrl = route('dashboard.folders.show', $folder)
+                                . '?from=' . urlencode(url()->full());
+                        @endphp
+                        <a href="{{ $folderShowUrl }}"
                             class="exp-tile exp-folder-tile"
                             data-folder-id="{{ $folder->id }}"
                             data-folder-name="{{ $folder->name }}"
@@ -743,6 +747,10 @@
     });
 
     // --------- DRAG & DROP (items -> folders) ---------
+    // NOTE: `dragend` fires AFTER `drop` and resets the global tracker, so we
+    // must capture the tile reference into a local variable inside the drop
+    // handler before awaiting the fetch — otherwise the post-fetch DOM update
+    // throws on a null reference and is misreported as a network error.
     let draggedTile = null;
     document.querySelectorAll('.exp-item-tile').forEach(tile => {
         tile.addEventListener('dragstart', e => {
@@ -758,6 +766,29 @@
         });
     });
 
+    function bumpFolderCount(folderEl, delta) {
+        const sub = folderEl.querySelector('.sub');
+        if (!sub) return;
+        const m = sub.textContent.match(/^(\d+)/);
+        if (!m) return;
+        const n = Math.max(0, parseInt(m[1], 10) + delta);
+        sub.textContent = n + ' ' + (n === 1 ? 'item' : 'items');
+    }
+
+    function fadeOutTile(tile) {
+        tile.style.transition = 'opacity .25s, transform .25s';
+        tile.style.opacity = '0';
+        tile.style.transform = 'scale(0.85)';
+        setTimeout(() => { if (tile.parentNode) tile.parentNode.removeChild(tile); }, 250);
+    }
+
+    function restoreTile(tile) {
+        tile.style.transition = 'opacity .2s, transform .2s';
+        tile.style.opacity = '1';
+        tile.style.transform = 'scale(1)';
+        tile.classList.remove('selected');
+    }
+
     document.querySelectorAll('.exp-folder-tile').forEach(folder => {
         folder.addEventListener('dragover', e => {
             if (!draggedTile) return;
@@ -769,11 +800,15 @@
         folder.addEventListener('drop', async e => {
             e.preventDefault();
             folder.classList.remove('drag-over');
-            if (!draggedTile) return;
+
+            // Capture into a local before the async work: `dragend` will set
+            // the shared `draggedTile` to null synchronously after this.
+            const tile = draggedTile;
+            if (!tile) return;
 
             const folderId = folder.getAttribute('data-folder-id');
-            const itemId = draggedTile.getAttribute('data-id');
-            const kind = draggedTile.getAttribute('data-kind');
+            const itemId = tile.getAttribute('data-id');
+            const kind = tile.getAttribute('data-kind');
             const isLocked = folder.getAttribute('data-folder-locked') === '1';
 
             if (isLocked) {
@@ -781,38 +816,47 @@
                 return;
             }
 
+            // Optimistic UI: hide the tile and bump the folder count
+            // immediately. Roll back if the server rejects the move.
+            fadeOutTile(tile);
+            bumpFolderCount(folder, +1);
+
+            let res, raw = '', data = {};
             try {
-                const res = await fetch('/dashboard/folders/' + folderId + '/move-item', {
+                res = await fetch('/dashboard/folders/' + folderId + '/move-item', {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': CSRF,
                         'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                     },
                     body: JSON.stringify({ type: kind, item_id: itemId }),
                 });
-                const data = await res.json().catch(() => ({}));
-                if (res.ok && data.ok) {
-                    notify(data.message || 'Moved to folder', 'ok');
-                    draggedTile.style.transition = 'opacity .25s, transform .25s';
-                    draggedTile.style.opacity = '0';
-                    draggedTile.style.transform = 'scale(0.85)';
-                    setTimeout(() => draggedTile.remove(), 250);
-                    // Bump folder count
-                    const sub = folder.querySelector('.sub');
-                    if (sub) {
-                        const m = sub.textContent.match(/^(\d+)/);
-                        if (m) {
-                            const n = parseInt(m[1], 10) + 1;
-                            sub.textContent = n + ' ' + (n === 1 ? 'item' : 'items');
-                        }
-                    }
-                } else {
-                    notify(data.message || 'Could not move item', 'err');
-                }
+                raw = await res.text();
+                try { data = raw ? JSON.parse(raw) : {}; } catch (_) { data = {}; }
             } catch (err) {
-                notify('Network error while moving item', 'err');
+                console.error('[explorer] move-item fetch failed:', err);
+                restoreTile(tile);
+                bumpFolderCount(folder, -1);
+                notify('Could not reach the server. Check your connection.', 'err');
+                return;
+            }
+
+            if (res.ok && data.ok) {
+                notify(data.message || 'Moved to folder', 'ok');
+            } else {
+                // Roll the optimistic update back.
+                console.error('[explorer] move-item server rejected:', res.status, raw);
+                restoreTile(tile);
+                bumpFolderCount(folder, -1);
+                const msg = data.message
+                    || (res.status === 419 ? 'Session expired — please refresh and try again.' : null)
+                    || (res.status === 423 ? 'Folder is locked.' : null)
+                    || (res.status === 403 ? 'You do not have access to that folder.' : null)
+                    || ('Could not move item (status ' + (res.status || '?') + ')');
+                notify(msg, 'err');
             }
         });
     });

@@ -144,13 +144,20 @@ class FoldersController extends Controller
             ->with('success', count($files) . ' file(s) added to folder successfully.');
     }
 
-    public function removeFile(Folder $folder, File $file)
+    public function removeFile(Request $request, Folder $folder, File $file)
     {
         if ($folder->user_id !== Auth::id()) {
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Unauthorized folder.'], 403);
+            }
             abort(403, 'Unauthorized access to folder.');
         }
 
         $folder->files()->detach($file->id);
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'File removed from folder.']);
+        }
 
         return redirect()->route('dashboard.folders.show', $folder)
             ->with('success', 'File removed from folder successfully.');
@@ -177,13 +184,20 @@ class FoldersController extends Controller
             ->with('success', count($exams) . ' exam(s) added to folder successfully.');
     }
 
-    public function removeExam(Folder $folder, Exam $exam)
+    public function removeExam(Request $request, Folder $folder, Exam $exam)
     {
         if ($folder->user_id !== Auth::id()) {
+            if ($request->wantsJson()) {
+                return response()->json(['ok' => false, 'message' => 'Unauthorized folder.'], 403);
+            }
             abort(403, 'Unauthorized access to folder.');
         }
 
         $folder->exams()->detach($exam->id);
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'message' => 'Exam removed from folder.']);
+        }
 
         return redirect()->route('dashboard.folders.show', $folder)
             ->with('success', 'Exam removed from folder successfully.');

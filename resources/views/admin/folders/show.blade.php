@@ -321,6 +321,32 @@
     $folderExams = $folder->exams;
     $totalCount = $folderFiles->count() + $folderExams->count();
 
+    // Smart "Back" target: prefer the page the user came from, but only if it's
+    // on this app (prevents open-redirect via tampered ?from= values).
+    $backUrl = route('dashboard.folders.index');
+    $backLabel = 'All Folders';
+    $from = request('from');
+    if ($from) {
+        $parsed = parse_url($from);
+        $appHost = parse_url(url('/'), PHP_URL_HOST);
+        $sameOrigin = !isset($parsed['host']) || $parsed['host'] === $appHost;
+        if ($sameOrigin) {
+            $backUrl = $from;
+            // Friendly label based on the originating path
+            $path = $parsed['path'] ?? '';
+            $backLabel = match(true) {
+                str_contains($path, '/exams-documents') => 'All Documents',
+                str_contains($path, '/all-files') || str_contains($path, '/all-upload-files') => 'All Files',
+                str_contains($path, '/all-upload-exams') || str_contains($path, '/all-exams') || str_contains($path, '/upload-exams') => 'All Exams',
+                str_contains($path, '/folders') => 'All Folders',
+                default => 'Back',
+            };
+        }
+    }
+    // Preserve the from= value when navigating to edit/security so back chains keep working.
+    $forwardFrom = $from ? '?from=' . urlencode($from) : '';
+@endphp
+
     $folderItems = collect()
         ->merge($folderFiles->map(function($file) use ($folder) {
             $ext = strtolower(pathinfo($file->document_file ?? '', PATHINFO_EXTENSION) ?: 'pdf');
@@ -387,10 +413,10 @@
                 </div>
             </div>
             <div class="actions">
-                <a href="{{ route('dashboard.folders.index') }}" class="fbtn"><i class="fas fa-arrow-left"></i> Back</a>
+                <a href="{{ $backUrl }}" class="fbtn"><i class="fas fa-arrow-left"></i> Back to {{ $backLabel }}</a>
                 <button type="button" class="fbtn primary" id="openAddModal"><i class="fas fa-plus"></i> Add items</button>
-                <a href="{{ route('dashboard.folders.edit', $folder) }}" class="fbtn"><i class="fas fa-pen"></i> Edit</a>
-                <a href="{{ route('dashboard.folders.security', $folder) }}" class="fbtn"><i class="fas fa-shield-halved"></i> Security</a>
+                <a href="{{ route('dashboard.folders.edit', $folder) }}{{ $forwardFrom }}" class="fbtn"><i class="fas fa-pen"></i> Edit</a>
+                <a href="{{ route('dashboard.folders.security', $folder) }}{{ $forwardFrom }}" class="fbtn"><i class="fas fa-shield-halved"></i> Security</a>
                 <form action="{{ route('dashboard.folders.destroy', $folder) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this folder? Its items will be detached but not deleted.');">
                     @csrf @method('DELETE')
                     <button type="submit" class="fbtn danger"><i class="fas fa-trash"></i> Delete folder</button>
@@ -471,8 +497,6 @@
     <button type="button" data-action="remove" style="display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; background:transparent; border:none; text-align:left; font-size:13.5px; font-weight:500; color:#dc2626; border-radius:7px; cursor:pointer; font-family:inherit;"><i class="fas fa-folder-minus" style="width:14px;"></i> Remove from folder</button>
 </div>
 
-{{-- Hidden remove form (DELETE) --}}
-<form id="folderRemoveForm" method="POST" style="display:none;">@csrf @method('DELETE')</form>
 
 {{-- ===== ADD ITEMS MODAL ===== --}}
 <div class="add-backdrop" id="addModal">
@@ -531,6 +555,11 @@
 @push('scripts')
 <script>
 (function() {
+    'use strict';
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        || document.querySelector('input[name="_token"]')?.value
+        || '{{ csrf_token() }}';
+
     const openBtn = document.getElementById('openAddModal');
     const modal = document.getElementById('addModal');
     const tabs = document.querySelectorAll('.add-tab');
@@ -552,7 +581,39 @@
         });
     });
 
-    // Context menu
+    // --- Toast helper ---
+    const toast = document.getElementById('folderToast');
+    const toastMsg = toast?.querySelector('span');
+    function notify(msg, type) {
+        if (!toast) return;
+        toast.style.background = type === 'err' ? '#7f1d1d' : '#0f172a';
+        const icon = toast.querySelector('i');
+        if (icon) icon.className = type === 'err' ? 'fas fa-triangle-exclamation' : 'fas fa-circle-check';
+        if (toastMsg) toastMsg.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(window._folderToastT);
+        window._folderToastT = setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+
+    // --- Live count helpers (banner + section heading) ---
+    const sectionCount = document.querySelector('.folder-section-head h3 .count');
+    const metaFiles = document.querySelector('.folder-banner .meta span:nth-child(1)');
+    const metaExams = document.querySelector('.folder-banner .meta span:nth-child(2)');
+    function adjustCount(el, delta) {
+        if (!el) return;
+        const text = el.textContent;
+        const m = text.match(/(\d+)/);
+        if (!m) return;
+        const next = Math.max(0, parseInt(m[1], 10) + delta);
+        el.textContent = text.replace(/(\d+)/, next);
+    }
+    function adjustTotals(kind, delta) {
+        adjustCount(sectionCount, delta);
+        if (kind === 'file') adjustCount(metaFiles, delta);
+        if (kind === 'exam') adjustCount(metaExams, delta);
+    }
+
+    // --- Context menu ---
     const ctx = document.getElementById('folderCtx');
     let active = null;
     function openCtx(x, y, tile) {
@@ -562,6 +623,7 @@
         ctx.style.display = 'block';
     }
     function closeCtx() { ctx.style.display = 'none'; active = null; }
+
     document.querySelectorAll('.folder-item').forEach(tile => {
         tile.addEventListener('contextmenu', e => { e.preventDefault(); openCtx(e.clientX, e.clientY, tile); });
         tile.addEventListener('dblclick', () => { const u = tile.getAttribute('data-view-url'); if (u) window.open(u, '_blank'); });
@@ -575,21 +637,70 @@
     document.addEventListener('click', e => { if (!ctx.contains(e.target)) closeCtx(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCtx(); });
 
+    function fadeOut(tile) {
+        tile.style.transition = 'opacity .2s, transform .2s';
+        tile.style.opacity = '0';
+        tile.style.transform = 'scale(0.85)';
+        setTimeout(() => { if (tile.parentNode) tile.parentNode.removeChild(tile); }, 200);
+    }
+    function restore(tile) {
+        tile.style.transition = 'opacity .2s, transform .2s';
+        tile.style.opacity = '1';
+        tile.style.transform = 'scale(1)';
+    }
+
+    async function removeFromFolder(tile) {
+        const url = tile.getAttribute('data-remove-url');
+        const kind = tile.querySelector('.sub')?.textContent?.toLowerCase().includes('exam') ? 'exam' : 'file';
+
+        // Optimistic UI
+        fadeOut(tile);
+        adjustTotals(kind, -1);
+
+        let res, raw = '', data = {};
+        try {
+            res = await fetch(url, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRF-TOKEN': CSRF,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            raw = await res.text();
+            try { data = raw ? JSON.parse(raw) : {}; } catch (_) { data = {}; }
+        } catch (err) {
+            console.error('[folder] remove fetch failed:', err);
+            restore(tile);
+            adjustTotals(kind, +1);
+            notify('Could not reach the server.', 'err');
+            return;
+        }
+        if (res.ok && (data.ok ?? true)) {
+            notify(data.message || 'Removed from folder', 'ok');
+        } else {
+            console.error('[folder] remove rejected:', res.status, raw);
+            restore(tile);
+            adjustTotals(kind, +1);
+            notify(data.message || ('Could not remove (status ' + res.status + ')'), 'err');
+        }
+    }
+
     ctx.querySelectorAll('[data-action]').forEach(b => {
         b.addEventListener('click', e => {
             e.preventDefault();
             if (!active) return;
             const a = b.getAttribute('data-action');
-            if (a === 'view') window.open(active.getAttribute('data-view-url'), '_blank');
-            else if (a === 'download') window.location.href = active.getAttribute('data-download-url');
-            else if (a === 'edit') window.location.href = active.getAttribute('data-edit-url');
-            else if (a === 'remove') {
-                if (!confirm('Remove "' + (active.getAttribute('data-name') || 'this item') + '" from this folder?\nThe item itself will not be deleted.')) return;
-                const f = document.getElementById('folderRemoveForm');
-                f.action = active.getAttribute('data-remove-url');
-                f.submit();
-            }
+            const tile = active;
             closeCtx();
+            if (a === 'view') window.open(tile.getAttribute('data-view-url'), '_blank');
+            else if (a === 'download') window.location.href = tile.getAttribute('data-download-url');
+            else if (a === 'edit') window.location.href = tile.getAttribute('data-edit-url');
+            else if (a === 'remove') {
+                if (!confirm('Remove "' + (tile.getAttribute('data-name') || 'this item') + '" from this folder?\nThe item itself will not be deleted.')) return;
+                removeFromFolder(tile);
+            }
         });
     });
 })();
