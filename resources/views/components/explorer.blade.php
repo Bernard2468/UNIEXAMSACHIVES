@@ -25,15 +25,21 @@
 @push('styles')
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 /* ============ EXPLORER ROOT ============ */
+.exp-root, .exp-root * {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 .exp-root {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     min-height: 100vh;
-    padding: 28px 0 80px;
+    padding: 32px 0 88px;
+    color: #0f172a;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 .exp-shell {
     max-width: 1280px;
@@ -46,7 +52,7 @@
     background: #fff;
     border-radius: 14px;
     border: 1px solid #e2e8f0;
-    padding: 18px 22px;
+    padding: 22px 24px;
     margin-bottom: 18px;
     box-shadow: 0 1px 2px rgba(15,23,42,0.04);
 }
@@ -54,19 +60,32 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    gap: 18px;
     flex-wrap: wrap;
 }
-.exp-title { display:flex; align-items:center; gap:12px; min-width: 0; }
+.exp-title { display:flex; align-items:center; gap:14px; min-width: 0; }
 .exp-title .icon-bubble {
-    width: 44px; height: 44px; border-radius: 12px;
+    width: 46px; height: 46px; border-radius: 12px;
     background: linear-gradient(135deg, #0ea5e9, #0284c7);
     display:flex; align-items:center; justify-content:center;
     color:#fff; font-size:18px; flex-shrink: 0;
     box-shadow: 0 4px 14px rgba(14,165,233,0.28);
 }
-.exp-title h1 { font-size: 19px; font-weight: 700; color: #0f172a; margin: 0; }
-.exp-title p { font-size: 12.5px; color: #64748b; margin: 2px 0 0; }
+.exp-title h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+}
+.exp-title p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 4px 0 0;
+    font-weight: 400;
+    line-height: 1.45;
+}
 
 .exp-toolbar { display:flex; align-items:center; gap:10px; flex-wrap: wrap; }
 .exp-search {
@@ -77,23 +96,26 @@
 }
 .exp-search input {
     width: 100%;
-    padding: 10px 14px 10px 38px;
+    padding: 10px 14px 10px 40px;
     border: 1.5px solid #e2e8f0;
     border-radius: 10px;
-    font-size: 13.5px;
+    font-size: 14px;
+    font-weight: 400;
     background: #f8fafc;
     color: #0f172a;
     outline: none;
     transition: all .2s;
 }
+.exp-search input::placeholder { color:#94a3b8; font-weight: 400; }
 .exp-search input:focus { border-color:#0ea5e9; background:#fff; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
-.exp-search i { position:absolute; top:50%; left:14px; transform:translateY(-50%); color:#94a3b8; font-size:13px; }
+.exp-search i { position:absolute; top:50%; left:14px; transform:translateY(-50%); color:#94a3b8; font-size:14px; }
 
 .exp-btn {
-    display:inline-flex; align-items:center; gap:7px;
+    display:inline-flex; align-items:center; gap:8px;
     background:#0ea5e9; color:#fff; border:none;
-    padding:9px 16px; border-radius:10px;
-    font-size:13px; font-weight:600;
+    padding:10px 18px; border-radius:10px;
+    font-size:13.5px; font-weight:600;
+    letter-spacing: -0.005em;
     cursor:pointer; transition: all .2s;
     text-decoration:none;
 }
@@ -103,9 +125,10 @@
 
 /* ============ BREADCRUMB ============ */
 .exp-crumbs {
-    display:flex; align-items:center; gap:7px;
-    font-size: 12.5px; color:#64748b;
-    margin-top: 14px;
+    display:flex; align-items:center; gap:8px;
+    font-size: 13px; color:#64748b;
+    margin-top: 16px;
+    font-weight: 400;
 }
 .exp-crumbs a { color:#475569; text-decoration:none; transition: color .15s; }
 .exp-crumbs a:hover { color:#0ea5e9; }
@@ -116,22 +139,29 @@
     background:#fff;
     border:1px solid #e2e8f0;
     border-radius: 14px;
-    padding: 18px 22px 22px;
+    padding: 20px 24px 24px;
     margin-bottom: 16px;
 }
 .exp-section-head {
     display:flex; align-items:center; justify-content:space-between;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap; gap: 8px;
 }
 .exp-section-head h3 {
-    font-size: 13px; font-weight: 700; color:#0f172a;
-    text-transform: uppercase; letter-spacing: 0.6px; margin:0;
-    display:flex; align-items:center; gap:8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color:#0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0;
+    display:flex; align-items:center; gap:10px;
 }
 .exp-section-head h3 .count {
     background:#f1f5f9; color:#475569;
-    font-size: 11px; padding:2px 8px; border-radius:100px;
-    font-weight:600; letter-spacing:0;
+    font-size: 11.5px; padding: 3px 9px; border-radius:100px;
+    font-weight:600;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 /* ============ GRID ============ */
@@ -178,7 +208,7 @@
 }
 .exp-tile .ico i { font-size: 48px; line-height: 1; }
 .exp-tile .name {
-    font-size: 12.5px;
+    font-size: 13.5px;
     font-weight: 500;
     color: #1e293b;
     text-align: center;
@@ -189,12 +219,15 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     max-width: 100%;
+    letter-spacing: -0.005em;
 }
 .exp-tile .sub {
-    font-size: 10.5px;
+    font-size: 11.5px;
     color: #94a3b8;
-    margin-top: 2px;
+    margin-top: 4px;
     text-align:center;
+    font-weight: 400;
+    letter-spacing: 0.01em;
 }
 
 /* File-type icon colors */
@@ -258,11 +291,12 @@
 .exp-menu button, .exp-menu a {
     display: flex; align-items:center; gap:10px;
     width: 100%;
-    padding: 9px 12px;
+    padding: 10px 12px;
     background: transparent;
     border: none;
     text-align: left;
-    font-size: 13px;
+    font-size: 13.5px;
+    font-weight: 500;
     color: #1e293b;
     border-radius: 7px;
     cursor: pointer;
@@ -279,19 +313,30 @@
 
 /* ============ EMPTY STATE ============ */
 .exp-empty {
-    text-align: center; padding: 48px 20px;
+    text-align: center; padding: 56px 20px;
     color: #94a3b8;
 }
 .exp-empty .ico-circle {
-    width: 80px; height: 80px;
+    width: 84px; height: 84px;
     border-radius: 24px;
     background:#f1f5f9; color:#94a3b8;
     display:flex; align-items:center; justify-content:center;
-    font-size: 32px;
-    margin: 0 auto 16px;
+    font-size: 34px;
+    margin: 0 auto 18px;
 }
-.exp-empty h4 { color:#475569; font-size: 15px; font-weight: 600; margin: 0 0 6px; }
-.exp-empty p { font-size: 13px; margin: 0; }
+.exp-empty h4 {
+    color:#1e293b;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    letter-spacing: -0.005em;
+}
+.exp-empty p {
+    font-size: 14px;
+    margin: 0;
+    color: #64748b;
+    line-height: 1.5;
+}
 
 /* ============ NEW FOLDER MODAL ============ */
 .exp-modal-backdrop {
@@ -312,20 +357,32 @@
     box-shadow: 0 20px 60px rgba(15,23,42,0.25);
 }
 .exp-modal h3 {
-    font-size: 17px; font-weight: 700; color:#0f172a;
-    margin: 0 0 14px; display:flex; align-items:center; gap:10px;
+    font-size: 18px;
+    font-weight: 700;
+    color:#0f172a;
+    margin: 0 0 18px;
+    display:flex; align-items:center; gap:10px;
+    letter-spacing: -0.01em;
 }
 .exp-modal h3 i { color:#0ea5e9; }
 .exp-modal label {
-    font-size: 12.5px; font-weight: 600; color:#334155;
-    display:block; margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color:#334155;
+    display:block;
+    margin-bottom: 8px;
+    letter-spacing: 0.005em;
 }
 .exp-modal input[type="text"] {
-    width: 100%; padding: 11px 14px;
+    width: 100%; padding: 12px 14px;
     border: 1.5px solid #e2e8f0; border-radius: 10px;
-    font-size: 13.5px; color:#0f172a; outline: none;
+    font-size: 14px;
+    font-weight: 400;
+    color:#0f172a; outline: none;
     transition: all .2s;
+    font-family: inherit;
 }
+.exp-modal input[type="text"]::placeholder { color:#94a3b8; }
 .exp-modal input[type="text"]:focus { border-color:#0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
 .exp-colors {
     display:flex; gap:8px; margin-top: 6px; flex-wrap: wrap;
@@ -349,9 +406,10 @@
     position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: #0f172a; color:#f8fafc;
-    padding: 12px 18px;
+    padding: 13px 20px;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 13.5px;
+    font-weight: 500;
     box-shadow: 0 10px 30px rgba(15,23,42,0.25);
     opacity: 0; pointer-events: none;
     transition: all .25s ease;
@@ -399,7 +457,7 @@
             <div class="exp-crumbs">
                 <a href="{{ route('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a>
                 <span class="sep"><i class="fas fa-chevron-right"></i></span>
-                <span style="color:#1e293b; font-weight:600;">{{ $pageTitle }}</span>
+                <span style="color:#1e293b; font-weight:600; letter-spacing:-0.005em;">{{ $pageTitle }}</span>
             </div>
         </div>
 
@@ -451,7 +509,7 @@
                     <span class="count">{{ $items->count() }}</span>
                 </h3>
                 @if($folders->count() > 0 && $items->count() > 0)
-                <div style="font-size:11.5px; color:#94a3b8;">
+                <div style="font-size:12.5px; color:#94a3b8; font-weight:400;">
                     <i class="fas fa-info-circle"></i> Drag items onto a folder to organize them
                 </div>
                 @endif

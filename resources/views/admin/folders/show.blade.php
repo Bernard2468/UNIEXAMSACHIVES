@@ -5,14 +5,21 @@
 
 @push('styles')
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .folder-page-root, .folder-page-root * {
+        font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
     .folder-page-root {
         background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
         min-height: 100vh;
-        padding: 28px 0 80px;
+        padding: 32px 0 88px;
+        color: #0f172a;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
     .folder-shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
 
@@ -43,22 +50,40 @@
         font-size: 11px;
         border: 3px solid #fff;
     }
-    .folder-banner h1 { font-size: 22px; font-weight: 700; color:#0f172a; margin: 0 0 4px; }
-    .folder-banner .desc { font-size: 13.5px; color:#64748b; margin: 0; }
-    .folder-banner .meta {
-        display:flex; gap:18px; margin-top: 10px;
-        font-size: 12.5px; color:#475569;
+    .folder-banner h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color:#0f172a;
+        margin: 0 0 6px;
+        letter-spacing: -0.015em;
+        line-height: 1.25;
     }
-    .folder-banner .meta span i { color: #94a3b8; margin-right: 4px; }
+    .folder-banner .desc {
+        font-size: 14px;
+        color:#64748b;
+        margin: 0;
+        line-height: 1.5;
+        font-weight: 400;
+    }
+    .folder-banner .meta {
+        display:flex; gap:20px; margin-top: 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color:#475569;
+        flex-wrap: wrap;
+    }
+    .folder-banner .meta span i { color: #94a3b8; margin-right: 5px; }
     .folder-banner .actions {
         margin-left: auto;
         display:flex; gap:8px; flex-wrap: wrap;
     }
     .fbtn {
-        display:inline-flex; align-items:center; gap:7px;
-        padding: 9px 14px;
+        display:inline-flex; align-items:center; gap:8px;
+        padding: 10px 16px;
         border-radius: 10px;
-        font-size: 12.5px; font-weight: 600;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
         border: 1.5px solid #e2e8f0;
         background:#fff; color:#475569;
         text-decoration:none;
@@ -74,8 +99,10 @@
 
     .alert-pill {
         background:#f0fdf4; border:1px solid #bbf7d0;
-        color:#166534; font-size: 13px;
-        padding:10px 14px; border-radius:10px;
+        color:#166534;
+        font-size: 13.5px;
+        font-weight: 500;
+        padding:12px 16px; border-radius:10px;
         margin-bottom: 14px;
         display:flex; align-items:center; gap:10px;
     }
@@ -85,22 +112,28 @@
         background:#fff;
         border:1px solid #e2e8f0;
         border-radius: 14px;
-        padding: 18px 22px 22px;
+        padding: 20px 24px 24px;
         margin-bottom: 16px;
     }
     .folder-section-head {
         display:flex; align-items:center; justify-content:space-between;
-        margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+        margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
     }
     .folder-section-head h3 {
-        font-size: 13px; font-weight: 700; color:#0f172a;
-        text-transform: uppercase; letter-spacing: 0.6px; margin:0;
-        display:flex; align-items:center; gap:8px;
+        font-size: 12.5px;
+        font-weight: 700;
+        color:#0f172a;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin:0;
+        display:flex; align-items:center; gap:10px;
     }
     .folder-section-head h3 .count {
         background:#f1f5f9; color:#475569;
-        font-size: 11px; padding:2px 8px; border-radius:100px;
-        font-weight:600; letter-spacing:0;
+        font-size: 11.5px; padding:3px 9px; border-radius:100px;
+        font-weight:600;
+        letter-spacing:0;
+        text-transform: none;
     }
     .folder-grid {
         display:grid;
@@ -129,11 +162,23 @@
     .ftile .ico.csv i { color:#0d9488; }
     .ftile .ico.unk i { color:#64748b; }
     .ftile .name {
-        font-size: 12.5px; font-weight: 500; color:#1e293b;
-        text-align:center; line-height: 1.35; word-break: break-word;
+        font-size: 13.5px;
+        font-weight: 500;
+        color:#1e293b;
+        text-align:center;
+        line-height: 1.35;
+        word-break: break-word;
+        letter-spacing: -0.005em;
         display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
     }
-    .ftile .sub { font-size: 10.5px; color:#94a3b8; margin-top: 2px; text-align:center; }
+    .ftile .sub {
+        font-size: 11.5px;
+        color:#94a3b8;
+        margin-top: 4px;
+        text-align:center;
+        font-weight: 400;
+        letter-spacing: 0.01em;
+    }
     .ftile .kebab {
         position:absolute; top:6px; right:6px;
         width:22px; height:22px; border-radius:6px;
@@ -145,17 +190,28 @@
     .ftile .kebab:hover { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
 
     .empty-box {
-        text-align:center; padding: 36px 20px;
+        text-align:center; padding: 48px 20px;
         color:#94a3b8;
     }
     .empty-box .ico-c {
-        width:72px; height:72px; border-radius: 20px;
+        width:80px; height:80px; border-radius: 22px;
         background:#f1f5f9; color:#94a3b8;
         display:flex; align-items:center; justify-content:center;
-        font-size: 28px; margin: 0 auto 12px;
+        font-size: 32px; margin: 0 auto 16px;
     }
-    .empty-box h4 { font-size:15px; font-weight:600; color:#475569; margin: 0 0 4px; }
-    .empty-box p { font-size: 13px; margin: 0; }
+    .empty-box h4 {
+        font-size: 17px;
+        font-weight: 600;
+        color:#1e293b;
+        margin: 0 0 6px;
+        letter-spacing: -0.005em;
+    }
+    .empty-box p {
+        font-size: 14px;
+        margin: 0;
+        color:#64748b;
+        line-height: 1.5;
+    }
 
     /* Add-items modal */
     .add-backdrop {
@@ -171,34 +227,59 @@
         box-shadow: 0 20px 60px rgba(15,23,42,0.25);
         max-height: 86vh; display:flex; flex-direction:column;
     }
-    .add-modal h3 { font-size: 17px; font-weight:700; color:#0f172a; margin: 0 0 14px; display:flex; align-items:center; gap:10px;}
+    .add-modal h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color:#0f172a;
+        margin: 0 0 18px;
+        display:flex; align-items:center; gap:10px;
+        letter-spacing: -0.01em;
+    }
     .add-modal h3 i { color:#0ea5e9; }
-    .add-tabs { display:flex; gap:4px; background:#f1f5f9; padding:4px; border-radius:10px; margin-bottom: 14px;}
+    .add-tabs { display:flex; gap:4px; background:#f1f5f9; padding:4px; border-radius:10px; margin-bottom: 16px;}
     .add-tab {
-        flex:1; padding: 9px 12px; border-radius:8px;
+        flex:1; padding: 10px 12px; border-radius:8px;
         background:transparent; border:none; cursor:pointer;
-        font-size: 12.5px; font-weight: 600; color:#64748b;
+        font-size: 13px;
+        font-weight: 600;
+        color:#64748b;
         font-family:inherit;
+        letter-spacing: -0.005em;
     }
     .add-tab.active { background:#fff; color:#0f172a; box-shadow: 0 1px 3px rgba(15,23,42,0.08); }
     .add-list { overflow-y:auto; flex:1; }
     .add-row {
-        display:flex; align-items:center; gap:10px;
-        padding: 10px 12px; border-radius: 8px;
+        display:flex; align-items:center; gap:12px;
+        padding: 11px 12px; border-radius: 8px;
         cursor:pointer;
     }
     .add-row:hover { background:#f8fafc; }
     .add-row input[type="checkbox"] { width: 16px; height: 16px; cursor:pointer; }
-    .add-row .name { flex:1; font-size: 13px; color:#1e293b; }
-    .add-row .ext { font-size: 11px; color:#94a3b8; background:#f1f5f9; padding: 2px 8px; border-radius: 4px; }
-    .add-actions { display:flex; justify-content:flex-end; gap:10px; margin-top: 16px;}
+    .add-row .name {
+        flex:1;
+        font-size: 13.5px;
+        font-weight: 500;
+        color:#1e293b;
+        letter-spacing: -0.005em;
+    }
+    .add-row .ext {
+        font-size: 11px;
+        font-weight: 600;
+        color:#475569;
+        background:#f1f5f9;
+        padding: 3px 9px;
+        border-radius: 5px;
+        letter-spacing: 0.04em;
+    }
+    .add-actions { display:flex; justify-content:flex-end; gap:10px; margin-top: 18px;}
 
     .toast-mini {
         position: fixed; bottom: 24px; left: 50%;
         transform: translateX(-50%) translateY(20px);
         background:#0f172a; color:#f8fafc;
-        padding: 12px 18px; border-radius:10px;
-        font-size: 13px;
+        padding: 13px 20px; border-radius:10px;
+        font-size: 13.5px;
+        font-weight: 500;
         opacity:0; pointer-events:none;
         transition: all .25s; z-index: 10000;
         display:flex; align-items:center; gap:10px;
@@ -306,7 +387,7 @@
             <div class="folder-section-head">
                 <h3><i class="fas fa-folder-open" style="color:{{ $folderColor }};"></i> Folder contents <span class="count">{{ $totalCount }}</span></h3>
                 @if($totalCount > 0)
-                    <div style="font-size:11.5px; color:#94a3b8;"><i class="fas fa-info-circle"></i> Right-click any item for actions</div>
+                    <div style="font-size:12.5px; color:#94a3b8; font-weight:400;"><i class="fas fa-info-circle"></i> Right-click any item for actions</div>
                 @endif
             </div>
 
@@ -357,11 +438,11 @@
 
 {{-- ===== Context menu ===== --}}
 <div id="folderCtx" style="position:fixed; z-index:9999; min-width:200px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 10px 30px rgba(15,23,42,0.18); padding:6px; display:none;">
-    <a href="#" data-action="view" style="display:flex; align-items:center; gap:10px; padding:9px 12px; font-size:13px; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-eye" style="width:14px; color:#64748b;"></i> Open / View</a>
-    <a href="#" data-action="download" style="display:flex; align-items:center; gap:10px; padding:9px 12px; font-size:13px; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-download" style="width:14px; color:#64748b;"></i> Download</a>
-    <a href="#" data-action="edit" style="display:flex; align-items:center; gap:10px; padding:9px 12px; font-size:13px; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-pen" style="width:14px; color:#64748b;"></i> Edit details</a>
+    <a href="#" data-action="view" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-eye" style="width:14px; color:#64748b;"></i> Open / View</a>
+    <a href="#" data-action="download" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-download" style="width:14px; color:#64748b;"></i> Download</a>
+    <a href="#" data-action="edit" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-pen" style="width:14px; color:#64748b;"></i> Edit details</a>
     <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
-    <button type="button" data-action="remove" style="display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; background:transparent; border:none; text-align:left; font-size:13px; color:#dc2626; border-radius:7px; cursor:pointer; font-family:inherit;"><i class="fas fa-folder-minus" style="width:14px;"></i> Remove from folder</button>
+    <button type="button" data-action="remove" style="display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; background:transparent; border:none; text-align:left; font-size:13.5px; font-weight:500; color:#dc2626; border-radius:7px; cursor:pointer; font-family:inherit;"><i class="fas fa-folder-minus" style="width:14px;"></i> Remove from folder</button>
 </div>
 
 {{-- Hidden remove form (DELETE) --}}
