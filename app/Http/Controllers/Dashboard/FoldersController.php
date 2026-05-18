@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Exam;
 use App\Models\File;
 use App\Models\Folder;
 use Illuminate\Http\Request;
@@ -14,10 +15,10 @@ class FoldersController extends Controller
     public function index()
     {
         $folders = Folder::where('user_id', Auth::id())
-            ->withCount('files')
+            ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
-            
+
         return view('admin.folders.index', compact('folders'));
     }
 
@@ -68,15 +69,19 @@ class FoldersController extends Controller
             $this->markFolderUnlockedNow($folder);
         }
 
-        $folder->load('files');
+        $folder->load(['files', 'exams']);
         $availableFiles = File::where('user_id', Auth::id())
-            ->where('is_approve', 1)
+            ->whereDoesntHave('folders', function ($query) use ($folder) {
+                $query->where('folder_id', $folder->id);
+            })
+            ->get();
+        $availableExams = Exam::where('user_id', Auth::id())
             ->whereDoesntHave('folders', function ($query) use ($folder) {
                 $query->where('folder_id', $folder->id);
             })
             ->get();
 
-        return view('admin.folders.show', compact('folder', 'availableFiles'));
+        return view('admin.folders.show', compact('folder', 'availableFiles', 'availableExams'));
     }
 
     public function edit(Folder $folder)
@@ -131,10 +136,9 @@ class FoldersController extends Controller
 
         $files = File::whereIn('id', $validatedData['file_ids'])
             ->where('user_id', Auth::id())
-            ->where('is_approve', 1)
             ->get();
 
-        $folder->files()->attach($files->pluck('id'));
+        $folder->files()->syncWithoutDetaching($files->pluck('id'));
 
         return redirect()->route('dashboard.folders.show', $folder)
             ->with('success', count($files) . ' file(s) added to folder successfully.');
@@ -150,6 +154,102 @@ class FoldersController extends Controller
 
         return redirect()->route('dashboard.folders.show', $folder)
             ->with('success', 'File removed from folder successfully.');
+    }
+
+    public function addExams(Request $request, Folder $folder)
+    {
+        if ($folder->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to folder.');
+        }
+
+        $validatedData = $request->validate([
+            'exam_ids' => 'required|array',
+            'exam_ids.*' => 'exists:exams,id',
+        ]);
+
+        $exams = Exam::whereIn('id', $validatedData['exam_ids'])
+            ->where('user_id', Auth::id())
+            ->get();
+
+        $folder->exams()->syncWithoutDetaching($exams->pluck('id'));
+
+        return redirect()->route('dashboard.folders.show', $folder)
+            ->with('success', count($exams) . ' exam(s) added to folder successfully.');
+    }
+
+    public function removeExam(Folder $folder, Exam $exam)
+    {
+        if ($folder->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized access to folder.');
+        }
+
+        $folder->exams()->detach($exam->id);
+
+        return redirect()->route('dashboard.folders.show', $folder)
+            ->with('success', 'Exam removed from folder successfully.');
+    }
+
+    /**
+     * Unified drag-drop endpoint. Accepts JSON body:
+     *   { type: 'file'|'exam', item_id: <id> }
+     * Validates ownership of folder + item, then attaches.
+     */
+    public function moveItem(Request $request, Folder $folder)
+    {
+        if ($folder->user_id !== Auth::id()) {
+            return response()->json(['ok' => false, 'message' => 'Unauthorized folder.'], 403);
+        }
+        if (!empty($folder->password_hash) && !$this->isFolderRecentlyUnlocked($folder)) {
+            return response()->json(['ok' => false, 'message' => 'Folder is locked. Unlock it first.', 'locked' => true], 423);
+        }
+
+        $data = $request->validate([
+            'type' => 'required|in:file,exam',
+            'item_id' => 'required|integer',
+        ]);
+
+        if ($data['type'] === 'file') {
+            $file = File::where('id', $data['item_id'])->where('user_id', Auth::id())->first();
+            if (!$file) {
+                return response()->json(['ok' => false, 'message' => 'File not found.'], 404);
+            }
+            $folder->files()->syncWithoutDetaching([$file->id]);
+            return response()->json(['ok' => true, 'message' => 'File moved into folder.']);
+        }
+
+        $exam = Exam::where('id', $data['item_id'])->where('user_id', Auth::id())->first();
+        if (!$exam) {
+            return response()->json(['ok' => false, 'message' => 'Exam not found.'], 404);
+        }
+        $folder->exams()->syncWithoutDetaching([$exam->id]);
+        return response()->json(['ok' => true, 'message' => 'Exam moved into folder.']);
+    }
+
+    /**
+     * Quick-create folder from the explorer view (AJAX). Returns JSON.
+     */
+    public function quickStore(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+        ]);
+
+        $folder = Folder::create([
+            'name' => $validated['name'],
+            'color' => $validated['color'] ?? '#0ea5e9',
+            'user_id' => Auth::id(),
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'folder' => [
+                'id' => $folder->id,
+                'name' => $folder->name,
+                'color' => $folder->color,
+                'show_url' => route('dashboard.folders.show', $folder),
+            ],
+        ]);
     }
 
     public function unlockForm(Folder $folder)
@@ -185,7 +285,7 @@ class FoldersController extends Controller
         return back()->withErrors(['password' => 'Incorrect password.']);
     }
 
-    private function isFolderRecentlyUnlocked(Folder $folder): bool
+    public function isFolderRecentlyUnlocked(Folder $folder): bool
     {
         $key = $this->getFolderSessionKey($folder);
         $timestamp = session($key);

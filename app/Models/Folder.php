@@ -25,4 +25,9 @@ class Folder extends Model
     {
         return $this->belongsToMany(File::class, 'file_folder')->where('is_approve', 1);
     }
+
+    public function exams()
+    {
+        return $this->belongsToMany(Exam::class, 'exam_folder');
+    }
 }

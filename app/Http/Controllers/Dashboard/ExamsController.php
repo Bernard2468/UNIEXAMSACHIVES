@@ -43,14 +43,14 @@ class ExamsController extends Controller
 
         // Store exam document in new public storage
         $examFile = $request->file('exam_document');
-        $examFileName = time() . '_' . $examFile->getClientOriginalName();
+        $examFileName = $this->buildStoredFilename($examFile);
         $examFile->move(public_path('exams/documents'), $examFileName);
         $validatedData['exam_document'] = 'exams/documents/' . $examFileName;
         $validatedData['document_id'] = random_int(1000000000, 9999999999);
 
         if ($request->hasFile('answer_key')) {
             $answerFile = $request->file('answer_key');
-            $answerFileName = time() . '_' . $answerFile->getClientOriginalName();
+            $answerFileName = $this->buildStoredFilename($answerFile);
             $answerFile->move(public_path('exams/answer_keys'), $answerFileName);
             $validatedData['answer_key'] = 'exams/answer_keys/' . $answerFileName;
         }
@@ -101,7 +101,7 @@ class ExamsController extends Controller
             
             // Store new exam document
             $examFile = $request->file('exam_document');
-            $examFileName = time() . '_' . $examFile->getClientOriginalName();
+            $examFileName = $this->buildStoredFilename($examFile);
             $examFile->move(public_path('exams/documents'), $examFileName);
             $validatedData['exam_document'] = 'exams/documents/' . $examFileName;
         } else {
@@ -118,7 +118,7 @@ class ExamsController extends Controller
             
             // Store new answer key
             $answerFile = $request->file('answer_key');
-            $answerFileName = time() . '_' . $answerFile->getClientOriginalName();
+            $answerFileName = $this->buildStoredFilename($answerFile);
             $answerFile->move(public_path('exams/answer_keys'), $answerFileName);
             $validatedData['answer_key'] = 'exams/answer_keys/' . $answerFileName;
         } else {
@@ -129,6 +129,17 @@ class ExamsController extends Controller
         $exam->update($validatedData);
 
         return redirect()->route('dashboard')->with('success', 'Exam Document updated successfully.');
+    }
+
+    private function buildStoredFilename($uploadedFile): string
+    {
+        $original = $uploadedFile->getClientOriginalName();
+        $ext = $uploadedFile->getClientOriginalExtension();
+        $base = pathinfo($original, PATHINFO_FILENAME);
+        $cleanBase = preg_replace('/[^A-Za-z0-9._-]+/', '_', $base);
+        $cleanBase = trim($cleanBase, '_') ?: 'file';
+        $dateSlug = now()->format('Y-m-d');
+        return time() . '_' . $cleanBase . '_' . $dateSlug . '.' . $ext;
     }
 
     public function downloadExam(Exam $exam)
@@ -147,8 +158,9 @@ class ExamsController extends Controller
         // Get file info
         $extension = pathinfo($exam->exam_document, PATHINFO_EXTENSION);
         
-        // Create a proper filename for download
-        $downloadName = $exam->course_title . '_' . $exam->course_code . '.' . $extension;
+        // Create a proper filename for download (include upload date)
+        $dateSlug = $exam->created_at ? $exam->created_at->format('Y-m-d') : now()->format('Y-m-d');
+        $downloadName = $exam->course_title . '_' . $exam->course_code . '_' . $dateSlug . '.' . $extension;
         $downloadName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $downloadName); // Sanitize filename
 
         // Return the file as a download response
@@ -175,8 +187,9 @@ class ExamsController extends Controller
         // Get file info
         $extension = pathinfo($exam->answer_key, PATHINFO_EXTENSION);
         
-        // Create a proper filename for download
-        $downloadName = $exam->course_title . '_' . $exam->course_code . '_AnswerKey.' . $extension;
+        // Create a proper filename for download (include upload date)
+        $dateSlug = $exam->created_at ? $exam->created_at->format('Y-m-d') : now()->format('Y-m-d');
+        $downloadName = $exam->course_title . '_' . $exam->course_code . '_AnswerKey_' . $dateSlug . '.' . $extension;
         $downloadName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $downloadName); // Sanitize filename
 
         // Return the file as a download response

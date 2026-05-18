@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\File;
+use App\Models\Folder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -25,7 +26,7 @@ class FilesController extends Controller
 
         if ($request->hasFile('document_file')) {
             $uploadedFile = $request->file('document_file');
-            $fileName = time() . '_' . $uploadedFile->getClientOriginalName();
+            $fileName = $this->buildStoredFilename($uploadedFile);
             $uploadedFile->move(public_path('exams/files'), $fileName);
             $validatedData['document_file'] = 'exams/files/' . $fileName;
             $validatedData['file_format'] = $this->detectFileFormat($uploadedFile->getClientOriginalExtension());
@@ -36,6 +37,17 @@ class FilesController extends Controller
         $validatedData['is_approve'] = true;
         File::create($validatedData);
         return redirect()->route('dashboard')->with('success', 'File has been deposited successfully.');
+    }
+
+    private function buildStoredFilename($uploadedFile): string
+    {
+        $original = $uploadedFile->getClientOriginalName();
+        $ext = $uploadedFile->getClientOriginalExtension();
+        $base = pathinfo($original, PATHINFO_FILENAME);
+        $cleanBase = preg_replace('/[^A-Za-z0-9._-]+/', '_', $base);
+        $cleanBase = trim($cleanBase, '_') ?: 'file';
+        $dateSlug = now()->format('Y-m-d');
+        return time() . '_' . $cleanBase . '_' . $dateSlug . '.' . $ext;
     }
 
     private function detectFileFormat(string $extension): string
@@ -78,7 +90,7 @@ class FilesController extends Controller
                 unlink(public_path($file->document_file));
             }
             $newFile = $request->file('document_file');
-            $fileName = time() . '_' . $newFile->getClientOriginalName();
+            $fileName = $this->buildStoredFilename($newFile);
             $newFile->move(public_path('exams/files'), $fileName);
             $validatedData['document_file'] = 'exams/files/' . $fileName;
             $validatedData['file_format'] = $this->detectFileFormat($newFile->getClientOriginalExtension());
@@ -99,9 +111,15 @@ class FilesController extends Controller
     }
     public function allUploadedFile(){
         // Only show user's own files (no approval system means users manage their own content)
-        return view('admin.all_files',[
-            'files' => File::where('user_id', Auth::id())->get(),
-        ]);
+        $files = File::where('user_id', Auth::id())
+            ->whereDoesntHave('folders')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $folders = Folder::where('user_id', Auth::id())
+            ->withCount(['files', 'exams'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('admin.all_files', compact('files', 'folders'));
     }
 
     // Unified Files view (no more pending/approved separation)
@@ -112,8 +130,15 @@ class FilesController extends Controller
 
     public function allFiles(){
         // Only show user's own files (no approval system means users manage their own content)
-        $files = File::where('user_id', Auth::user()->id)->get();
-        return view('admin.all_files_list',compact('files'));
+        $files = File::where('user_id', Auth::id())
+            ->whereDoesntHave('folders')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $folders = Folder::where('user_id', Auth::id())
+            ->withCount(['files', 'exams'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('admin.all_files_list', compact('files', 'folders'));
     }
 
     public function destroy(File $file)
@@ -144,8 +169,9 @@ class FilesController extends Controller
         // Get file info
         $extension = pathinfo($file->document_file, PATHINFO_EXTENSION);
         
-        // Create a proper filename for download
-        $downloadName = $file->file_title . '.' . $extension;
+        // Create a proper filename for download (include upload date)
+        $dateSlug = $file->year_deposit ? \Carbon\Carbon::parse($file->year_deposit)->format('Y-m-d') : now()->format('Y-m-d');
+        $downloadName = $file->file_title . '_' . $dateSlug . '.' . $extension;
         $downloadName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $downloadName); // Sanitize filename
 
         // Return the file as a download response

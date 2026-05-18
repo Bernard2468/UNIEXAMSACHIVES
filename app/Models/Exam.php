@@ -18,4 +18,9 @@ class Exam extends Model
     {
         return $this->hasMany(File::class);
     }
+
+    public function folders()
+    {
+        return $this->belongsToMany(Folder::class, 'exam_folder');
+    }
 }

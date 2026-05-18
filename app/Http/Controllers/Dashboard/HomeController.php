@@ -7,6 +7,7 @@ use App\Mail\Approval;
 use App\Models\Academic;
 use App\Models\Department;
 use App\Models\File;
+use App\Models\Folder;
 use App\Models\Position;
 use App\Models\Message;
 use App\Models\EmailCampaignRecipient;
@@ -96,14 +97,28 @@ class HomeController extends Controller
     }
 
     public function uploadedDocument(){
-        $exams = Exam::where('user_id', Auth::user()->id)->get();
-        return view('admin.uploaded_documents',compact('exams'));
+        $exams = Exam::where('user_id', Auth::user()->id)
+            ->whereDoesntHave('folders')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $folders = Folder::where('user_id', Auth::user()->id)
+            ->withCount(['files', 'exams'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('admin.uploaded_documents', compact('exams', 'folders'));
     }
 
     public function allUploadedDocument(){
         // Only show user's own exams (no approval system means users manage their own content)
-        $exams = Exam::where('user_id', Auth::user()->id)->get();
-        return view('admin.all_uploaded_documents',compact('exams'));
+        $exams = Exam::where('user_id', Auth::user()->id)
+            ->whereDoesntHave('folders')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $folders = Folder::where('user_id', Auth::user()->id)
+            ->withCount(['files', 'exams'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('admin.all_uploaded_documents', compact('exams', 'folders'));
     }
 
     // Unified Exams view (no more pending/approved separation)
@@ -114,8 +129,15 @@ class HomeController extends Controller
 
     public function allExams(){
         // Only show user's own exams (no approval system means users manage their own content)
-        $exams = Exam::where('user_id', Auth::user()->id)->get();
-        return view('admin.all_exams',compact('exams'));
+        $exams = Exam::where('user_id', Auth::user()->id)
+            ->whereDoesntHave('folders')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        $folders = Folder::where('user_id', Auth::user()->id)
+            ->withCount(['files', 'exams'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('admin.all_exams', compact('exams', 'folders'));
     }
 
 

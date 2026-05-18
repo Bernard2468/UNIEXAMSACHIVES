@@ -138,6 +138,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/dashboard/folders/{folder}', [FoldersController::class, 'destroy'])->name('dashboard.folders.destroy');
     Route::post('/dashboard/folders/{folder}/add-files', [FoldersController::class, 'addFiles'])->name('dashboard.folders.add-files');
     Route::delete('/dashboard/folders/{folder}/files/{file}', [FoldersController::class, 'removeFile'])->name('dashboard.folders.remove-file');
+    Route::post('/dashboard/folders/{folder}/add-exams', [FoldersController::class, 'addExams'])->name('dashboard.folders.add-exams');
+    Route::delete('/dashboard/folders/{folder}/exams/{exam}', [FoldersController::class, 'removeExam'])->name('dashboard.folders.remove-exam');
+    Route::post('/dashboard/folders/{folder}/move-item', [FoldersController::class, 'moveItem'])->name('dashboard.folders.move-item');
+    Route::post('/dashboard/folders/quick-create', [FoldersController::class, 'quickStore'])->name('dashboard.folders.quick-create');
 
     #memos (replaces legacy broadcast message)
     Route::get('/dashboard/message',[HomeController::class, 'message'])->name('dashboard.message');
