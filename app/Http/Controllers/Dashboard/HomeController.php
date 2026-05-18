@@ -65,35 +65,25 @@ class HomeController extends Controller
     }
 
     public function document(){
-        //super admin
-        $allExams = Exam::all();
-        $files = File::all();
-        $exams = Exam::all();
+        // Each user (including admins) only sees their own uploads on this page.
+        $userId = Auth::user()->id;
 
-        if (Auth::user()->is_admin == 1) {
-            $allExams = Exam::where('user_id', Auth::user()->id)->get();
-            $files = File::where('user_id', Auth::user()->id)->get();
-            $exams = Exam::where('user_id', Auth::user()->id)->get();
+        $exams = Exam::where('user_id', $userId)
+            ->whereDoesntHave('folders')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        }
+        $files = File::where('user_id', $userId)
+            ->whereDoesntHave('folders')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        $results = [
-            'exams' => $allExams,
-            'files' => $files,
-        ];
+        $folders = Folder::where('user_id', $userId)
+            ->withCount(['files', 'exams'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        $uniqueFaculties = $exams->pluck('faculty')->unique()->values()->all();
-        $uniqueTags = $exams->pluck('tags')->unique()->values()->all();
-        $uniqueSemesters = $exams->pluck('semester')->unique()->values()->all();
-
-        return view('admin.documents',[
-            'exams' => $results,
-            'faculties' => $uniqueFaculties,
-            'tags' => $uniqueTags,
-            'semesters' => $uniqueSemesters,
-            'years' => Exam::select(DB::raw('YEAR(created_at) as year'))->distinct()->pluck('year'),
-
-        ]);
+        return view('admin.documents', compact('exams', 'files', 'folders'));
     }
 
     public function uploadedDocument(){
