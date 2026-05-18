@@ -30,11 +30,6 @@ class FoldersController extends Controller
         return view('admin.folders.index', compact('folders', 'sharedFolders'));
     }
 
-    public function create()
-    {
-        return view('admin.folders.create');
-    }
-
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -440,7 +435,10 @@ class FoldersController extends Controller
             }
         }
 
-        $users = $query->limit(8)->get(['id', 'first_name', 'last_name', 'name', 'email', 'profile_picture']);
+        $users = $query
+            ->with(['position:id,name', 'department:id,name'])
+            ->limit(10)
+            ->get(['id', 'first_name', 'last_name', 'name', 'email', 'profile_picture', 'position_id', 'department_id']);
 
         return response()->json([
             'ok' => true,
@@ -453,6 +451,8 @@ class FoldersController extends Controller
                     'avatar' => $u->profile_picture
                         ? asset('profile_pictures/' . $u->profile_picture)
                         : asset('profile_pictures/default-profile.png'),
+                    'position' => optional($u->position)->name,
+                    'department' => optional($u->department)->name,
                 ];
             }),
         ]);
@@ -579,8 +579,9 @@ class FoldersController extends Controller
         }
 
         $members = $folder->members()
+            ->with(['position:id,name', 'department:id,name'])
             ->orderBy('folder_shares.created_at', 'desc')
-            ->get(['users.id', 'first_name', 'last_name', 'name', 'email', 'profile_picture']);
+            ->get(['users.id', 'first_name', 'last_name', 'name', 'email', 'profile_picture', 'position_id', 'department_id']);
 
         return response()->json([
             'ok' => true,
@@ -593,6 +594,8 @@ class FoldersController extends Controller
                     'avatar' => $u->profile_picture
                         ? asset('profile_pictures/' . $u->profile_picture)
                         : asset('profile_pictures/default-profile.png'),
+                    'position' => optional($u->position)->name,
+                    'department' => optional($u->department)->name,
                     'permission' => $u->pivot->permission,
                     'shared_at' => optional($u->pivot->created_at)->diffForHumans(),
                 ];

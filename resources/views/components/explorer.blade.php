@@ -367,6 +367,230 @@
     line-height: 1.5;
 }
 
+/* ============ NEW FOLDER MODAL ============ */
+.nf-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,0.6);
+    z-index: 9998;
+    display:none; align-items:center; justify-content:center;
+    backdrop-filter: blur(3px);
+    padding: 20px;
+}
+.nf-backdrop.open { display:flex; }
+.nf-modal {
+    background:#fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 640px;
+    max-height: 88vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 24px 60px rgba(15,23,42,0.3);
+    overflow: hidden;
+    animation: nfPop .2s ease-out;
+}
+@keyframes nfPop { from { opacity:0; transform: translateY(8px) scale(0.98);} to {opacity:1; transform: translateY(0) scale(1);} }
+.nf-head {
+    padding: 22px 26px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    display:flex; align-items:center; justify-content:space-between;
+}
+.nf-head h3 {
+    font-size: 19px; font-weight: 700; color:#0f172a; margin:0;
+    display:flex; align-items:center; gap:10px;
+    letter-spacing: -0.01em;
+}
+.nf-head h3 i { color:#0ea5e9; }
+.nf-close {
+    border:none; background:transparent;
+    width:32px; height:32px; border-radius:8px;
+    color:#94a3b8; cursor:pointer; font-size: 16px;
+    display:flex; align-items:center; justify-content:center;
+    transition: all .15s;
+}
+.nf-close:hover { background:#f1f5f9; color:#0f172a; }
+
+.nf-body {
+    padding: 22px 26px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+.nf-section { margin-bottom: 22px; }
+.nf-section:last-child { margin-bottom: 0; }
+.nf-label {
+    display:block;
+    font-size: 13px; font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+}
+.nf-label .opt {
+    font-size: 11.5px; font-weight: 500; color:#94a3b8; margin-left: 6px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+}
+.nf-hint {
+    font-size: 12.5px; color:#64748b; margin: -4px 0 8px;
+    line-height: 1.45;
+}
+.nf-input, .nf-textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px; font-weight: 400;
+    color:#0f172a; outline: none;
+    transition: all .2s;
+    font-family: inherit;
+    background:#fff;
+}
+.nf-textarea { resize: vertical; min-height: 70px; max-height: 140px; }
+.nf-input::placeholder, .nf-textarea::placeholder { color:#94a3b8; }
+.nf-input:focus, .nf-textarea:focus { border-color:#0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.10); }
+
+/* Color swatches */
+.nf-colors { display:flex; gap:10px; flex-wrap: wrap; }
+.nf-color {
+    width: 34px; height: 34px;
+    border-radius: 10px; cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform .12s, border-color .12s;
+    position: relative;
+}
+.nf-color:hover { transform: scale(1.08); }
+.nf-color.selected { border-color:#0f172a; }
+.nf-color.selected::after {
+    content: '\f00c'; font-family: "Font Awesome 6 Free"; font-weight: 900;
+    position:absolute; top:50%; left:50%;
+    transform: translate(-50%, -50%);
+    color: #fff; font-size: 13px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Password collapsible */
+.nf-toggle-row {
+    display:flex; align-items:center; gap:10px;
+    padding: 12px 14px;
+    background:#f8fafc; border:1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer; user-select: none;
+    transition: background .15s;
+}
+.nf-toggle-row:hover { background:#f1f5f9; }
+.nf-toggle-row input[type="checkbox"] { width: 16px; height: 16px; cursor:pointer; }
+.nf-toggle-row .lbl { font-size: 13.5px; font-weight: 600; color:#334155; flex: 1; }
+.nf-toggle-row .desc { font-size: 12px; color:#94a3b8; font-weight: 400; }
+.nf-password-block { display: none; margin-top: 10px; }
+.nf-password-block.show { display: block; }
+.nf-password-block .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Share section */
+.nf-share-search-wrap { position: relative; }
+.nf-share-results {
+    position: absolute; top: 100%; left: 0; right: 0;
+    z-index: 60;
+    background:#fff;
+    border:1px solid #e2e8f0;
+    border-radius: 12px;
+    max-height: 280px; overflow-y: auto;
+    margin-top: 6px;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.12);
+    display: none;
+}
+.nf-share-results.show { display:block; }
+.nf-share-row {
+    display:flex; align-items:center; gap:12px;
+    padding: 11px 14px;
+    cursor:pointer; transition: background .12s;
+    border-bottom: 1px solid #f8fafc;
+}
+.nf-share-row:last-child { border-bottom: none; }
+.nf-share-row:hover { background:#f1f5fa; }
+.nf-share-row .av { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; background:#f1f5f9; object-fit: cover; }
+.nf-share-row .info { flex: 1; min-width: 0; }
+.nf-share-row .info .nm { font-size: 14px; font-weight: 600; color:#0f172a; letter-spacing: -0.005em; }
+.nf-share-row .info .meta {
+    display:flex; align-items:center; gap:6px;
+    font-size: 11.5px; color:#64748b; margin-top: 2px;
+    white-space: nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.nf-share-row .info .meta .pos-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    background:#eff6ff; color:#1e40af;
+    padding: 1px 7px; border-radius: 100px;
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.01em;
+}
+.nf-share-row .info .meta .dot { color:#cbd5e1; }
+.nf-share-row .add-btn {
+    background: #0ea5e9; color:#fff;
+    border: none; padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+    font-family: inherit;
+}
+.nf-share-row .add-btn:hover { background:#0284c7; }
+.nf-share-empty { padding: 18px; text-align:center; color:#94a3b8; font-size: 13px; }
+
+.nf-chips { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.nf-chip {
+    display:flex; align-items:center; gap:8px;
+    background:#eff6ff;
+    border: 1px solid #dbeafe;
+    padding: 5px 6px 5px 5px;
+    border-radius: 100px;
+    font-size: 13px;
+}
+.nf-chip .av { width: 26px; height: 26px; border-radius: 50%; }
+.nf-chip .nm { font-weight: 600; color:#1e3a8a; }
+.nf-chip select {
+    border: 1px solid #bfdbfe; border-radius: 6px;
+    background:#fff; color: #1e40af;
+    padding: 2px 6px;
+    font-size: 11.5px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+}
+.nf-chip .x {
+    border: none; background:transparent;
+    color:#1e40af; cursor:pointer; padding: 0 4px;
+    font-size: 14px; line-height: 1;
+}
+.nf-chip .x:hover { color:#dc2626; }
+
+.nf-foot {
+    padding: 16px 26px;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+    display: flex; justify-content: flex-end; gap: 10px;
+}
+.nf-btn {
+    display:inline-flex; align-items:center; gap:8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 13.5px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+    font-family: inherit;
+    border: 1.5px solid transparent;
+}
+.nf-btn.ghost { background:#fff; color:#475569; border-color:#e2e8f0; }
+.nf-btn.ghost:hover { background:#f1f5f9; color:#0f172a; }
+.nf-btn.primary { background:#0ea5e9; color:#fff; }
+.nf-btn.primary:hover { background:#0284c7; box-shadow: 0 6px 16px rgba(14,165,233,0.28); }
+.nf-btn.primary:disabled { background:#cbd5e1; cursor: not-allowed; box-shadow: none; }
+
+.nf-error {
+    background:#fef2f2; border:1px solid #fecaca;
+    color:#991b1b;
+    padding: 10px 14px; border-radius:10px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    display: none;
+}
+.nf-error.show { display: block; }
+
+@media (max-width: 540px) {
+    .nf-modal { max-height: 95vh; }
+    .nf-password-block .row { grid-template-columns: 1fr; }
+}
+
 /* ============ TOAST ============ */
 .exp-toast {
     position: fixed; bottom: 24px; left: 50%;
@@ -415,7 +639,7 @@
                         <input type="text" id="expSearchInput" placeholder="Search items by name...">
                     </div>
                     @if($allowNewFolder)
-                        <a href="{{ route('dashboard.folders.create') }}" class="exp-btn"><i class="fas fa-folder-plus"></i> New Folder</a>
+                        <button type="button" class="exp-btn" id="expNewFolderBtn"><i class="fas fa-folder-plus"></i> New Folder</button>
                     @endif
                     <a href="{{ route('dashboard.folders.index') }}" class="exp-btn ghost"><i class="fas fa-folder"></i> All Folders</a>
                 </div>
@@ -603,6 +827,82 @@
     @csrf
     @method('DELETE')
 </form>
+
+{{-- ============ NEW FOLDER MODAL ============ --}}
+@if($allowNewFolder)
+<div class="nf-backdrop" id="nfBackdrop">
+    <form class="nf-modal" id="nfForm" action="{{ route('dashboard.folders.store') }}" method="POST" autocomplete="off">
+        @csrf
+
+        <div class="nf-head">
+            <h3><i class="fas fa-folder-plus"></i> Create new folder</h3>
+            <button type="button" class="nf-close" id="nfClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        </div>
+
+        <div class="nf-body">
+            <div class="nf-error" id="nfError"></div>
+
+            <div class="nf-section">
+                <label class="nf-label" for="nfName">Folder name</label>
+                <input type="text" id="nfName" name="name" class="nf-input" maxlength="120" placeholder="e.g. Year 1 Exam Papers" required>
+            </div>
+
+            <div class="nf-section">
+                <label class="nf-label" for="nfDescription">Description <span class="opt">Optional</span></label>
+                <textarea id="nfDescription" name="description" class="nf-textarea" maxlength="1000" placeholder="What goes in this folder?"></textarea>
+            </div>
+
+            <div class="nf-section">
+                <label class="nf-label">Color</label>
+                <div class="nf-colors" id="nfColors">
+                    <div class="nf-color selected" data-color="#fbbf24" style="background:#fbbf24;" title="Amber"></div>
+                    <div class="nf-color" data-color="#0ea5e9" style="background:#0ea5e9;" title="Sky"></div>
+                    <div class="nf-color" data-color="#10b981" style="background:#10b981;" title="Emerald"></div>
+                    <div class="nf-color" data-color="#a855f7" style="background:#a855f7;" title="Purple"></div>
+                    <div class="nf-color" data-color="#ef4444" style="background:#ef4444;" title="Red"></div>
+                    <div class="nf-color" data-color="#3b82f6" style="background:#3b82f6;" title="Blue"></div>
+                    <div class="nf-color" data-color="#14b8a6" style="background:#14b8a6;" title="Teal"></div>
+                    <div class="nf-color" data-color="#64748b" style="background:#64748b;" title="Slate"></div>
+                </div>
+                <input type="hidden" name="color" id="nfColorInput" value="#fbbf24">
+            </div>
+
+            <div class="nf-section">
+                <label class="nf-toggle-row" for="nfPasswordToggle">
+                    <input type="checkbox" id="nfPasswordToggle">
+                    <div>
+                        <div class="lbl">Protect with a password</div>
+                        <div class="desc">Anyone you share with bypasses this — it's for un-trusted visitors only.</div>
+                    </div>
+                </label>
+                <div class="nf-password-block" id="nfPasswordBlock">
+                    <div class="row">
+                        <input type="password" id="nfPassword" name="password" class="nf-input" minlength="6" placeholder="Password (min 6 chars)" disabled>
+                        <input type="password" id="nfPasswordConfirm" name="password_confirmation" class="nf-input" minlength="6" placeholder="Confirm password" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nf-section">
+                <label class="nf-label">
+                    Share with people <span class="opt">Optional</span>
+                </label>
+                <p class="nf-hint">Search teammates by name, email, position, or department. They'll get an in-app notification.</p>
+                <div class="nf-share-search-wrap">
+                    <input type="text" id="nfShareSearch" class="nf-input" placeholder="Search registered users..." autocomplete="off">
+                    <div class="nf-share-results" id="nfShareResults"></div>
+                </div>
+                <div class="nf-chips" id="nfShareChips"></div>
+            </div>
+        </div>
+
+        <div class="nf-foot">
+            <button type="button" class="nf-btn ghost" id="nfCancel">Cancel</button>
+            <button type="submit" class="nf-btn primary" id="nfSubmit"><i class="fas fa-check"></i> Create folder</button>
+        </div>
+    </form>
+</div>
+@endif
 
 <div class="exp-toast" id="expToast"><i class="fas fa-circle-check"></i> <span></span></div>
 
@@ -815,6 +1115,209 @@
         });
     });
 
+    // ===================================================================
+    //  NEW FOLDER MODAL — full creator (name, desc, color, password, share)
+    // ===================================================================
+    const nfBtn = document.getElementById('expNewFolderBtn');
+    const nfBackdrop = document.getElementById('nfBackdrop');
+    const nfForm = document.getElementById('nfForm');
+    const nfClose = document.getElementById('nfClose');
+    const nfCancel = document.getElementById('nfCancel');
+    const nfName = document.getElementById('nfName');
+    const nfColors = document.getElementById('nfColors');
+    const nfColorInput = document.getElementById('nfColorInput');
+    const nfPasswordToggle = document.getElementById('nfPasswordToggle');
+    const nfPasswordBlock = document.getElementById('nfPasswordBlock');
+    const nfPassword = document.getElementById('nfPassword');
+    const nfPasswordConfirm = document.getElementById('nfPasswordConfirm');
+    const nfShareSearch = document.getElementById('nfShareSearch');
+    const nfShareResults = document.getElementById('nfShareResults');
+    const nfShareChips = document.getElementById('nfShareChips');
+    const nfSubmit = document.getElementById('nfSubmit');
+    const nfError = document.getElementById('nfError');
+
+    if (nfBtn && nfBackdrop) {
+        const selectedShares = new Map(); // user_id -> { name, email, avatar, position, department, permission }
+
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function openModal() {
+            nfBackdrop.classList.add('open');
+            nfError.classList.remove('show');
+            setTimeout(() => nfName?.focus(), 60);
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal() {
+            nfBackdrop.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        nfBtn.addEventListener('click', openModal);
+        nfClose?.addEventListener('click', closeModal);
+        nfCancel?.addEventListener('click', closeModal);
+        nfBackdrop.addEventListener('click', e => { if (e.target === nfBackdrop) closeModal(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && nfBackdrop.classList.contains('open')) closeModal(); });
+
+        // ---- Color swatches ----
+        nfColors?.querySelectorAll('.nf-color').forEach(sw => {
+            sw.addEventListener('click', () => {
+                nfColors.querySelectorAll('.nf-color').forEach(x => x.classList.remove('selected'));
+                sw.classList.add('selected');
+                nfColorInput.value = sw.getAttribute('data-color');
+            });
+        });
+
+        // ---- Password collapsible ----
+        nfPasswordToggle?.addEventListener('change', () => {
+            const on = nfPasswordToggle.checked;
+            nfPasswordBlock.classList.toggle('show', on);
+            nfPassword.disabled = !on;
+            nfPasswordConfirm.disabled = !on;
+            if (!on) { nfPassword.value = ''; nfPasswordConfirm.value = ''; }
+        });
+
+        // ---- Share search (debounced AJAX) ----
+        function renderChips() {
+            nfShareChips.innerHTML = '';
+            selectedShares.forEach((u, id) => {
+                const chip = document.createElement('div');
+                chip.className = 'nf-chip';
+                chip.innerHTML = `
+                    <img class="av" src="${escapeHtml(u.avatar)}" alt="">
+                    <span class="nm">${escapeHtml(u.name)}</span>
+                    <select data-id="${id}">
+                        <option value="viewer" ${u.permission === 'viewer' ? 'selected' : ''}>Viewer</option>
+                        <option value="editor" ${u.permission === 'editor' ? 'selected' : ''}>Editor</option>
+                    </select>
+                    <button type="button" class="x" data-id="${id}" aria-label="Remove">&times;</button>
+                `;
+                nfShareChips.appendChild(chip);
+            });
+            nfShareChips.querySelectorAll('select').forEach(s => {
+                s.addEventListener('change', () => {
+                    const u = selectedShares.get(s.getAttribute('data-id'));
+                    if (u) u.permission = s.value;
+                });
+            });
+            nfShareChips.querySelectorAll('.x').forEach(b => {
+                b.addEventListener('click', () => {
+                    selectedShares.delete(b.getAttribute('data-id'));
+                    renderChips();
+                });
+            });
+        }
+
+        let nfSearchT;
+        nfShareSearch?.addEventListener('input', () => {
+            clearTimeout(nfSearchT);
+            const q = nfShareSearch.value.trim();
+            if (q.length < 2) { nfShareResults.classList.remove('show'); nfShareResults.innerHTML = ''; return; }
+            nfSearchT = setTimeout(async () => {
+                try {
+                    const url = '{{ route("dashboard.folders.users.search") }}?q=' + encodeURIComponent(q);
+                    const res = await fetch(url, {
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    });
+                    const data = await res.json();
+                    if (!data.ok) return;
+                    const filtered = data.users.filter(u => !selectedShares.has(String(u.id)));
+                    if (filtered.length === 0) {
+                        nfShareResults.innerHTML = '<div class="nf-share-empty">No matching users found</div>';
+                    } else {
+                        nfShareResults.innerHTML = filtered.map(u => {
+                            const metaParts = [];
+                            if (u.position) metaParts.push(`<span class="pos-badge"><i class="fas fa-briefcase" style="font-size:9px;"></i> ${escapeHtml(u.position)}</span>`);
+                            if (u.department) metaParts.push(`<span>${escapeHtml(u.department)}</span>`);
+                            metaParts.push(`<span>${escapeHtml(u.email)}</span>`);
+                            return `
+                                <div class="nf-share-row" data-payload='${escapeHtml(JSON.stringify(u))}'>
+                                    <img class="av" src="${escapeHtml(u.avatar)}" alt="">
+                                    <div class="info">
+                                        <div class="nm">${escapeHtml(u.name)}</div>
+                                        <div class="meta">${metaParts.join('<span class="dot">·</span>')}</div>
+                                    </div>
+                                    <button type="button" class="add-btn"><i class="fas fa-plus"></i> Add</button>
+                                </div>
+                            `;
+                        }).join('');
+                        nfShareResults.querySelectorAll('.nf-share-row').forEach(row => {
+                            row.addEventListener('click', () => {
+                                try {
+                                    const payload = JSON.parse(row.getAttribute('data-payload').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'"));
+                                    selectedShares.set(String(payload.id), {
+                                        name: payload.name,
+                                        email: payload.email,
+                                        avatar: payload.avatar,
+                                        position: payload.position,
+                                        department: payload.department,
+                                        permission: 'viewer',
+                                    });
+                                    nfShareSearch.value = '';
+                                    nfShareResults.classList.remove('show');
+                                    nfShareResults.innerHTML = '';
+                                    renderChips();
+                                } catch (e) { console.error('[nf] add user failed:', e); }
+                            });
+                        });
+                    }
+                    nfShareResults.classList.add('show');
+                } catch (e) {
+                    console.error('[nf] user search failed:', e);
+                }
+            }, 250);
+        });
+        document.addEventListener('click', e => {
+            if (!nfShareResults.contains(e.target) && e.target !== nfShareSearch) {
+                nfShareResults.classList.remove('show');
+            }
+        });
+
+        // ---- Submit: append hidden inputs for share members, then submit ----
+        nfForm?.addEventListener('submit', e => {
+            nfError.classList.remove('show');
+
+            // Client-side: password confirmation match
+            if (nfPasswordToggle.checked) {
+                if (!nfPassword.value || nfPassword.value.length < 6) {
+                    e.preventDefault();
+                    nfError.textContent = 'Password must be at least 6 characters.';
+                    nfError.classList.add('show');
+                    nfPassword.focus();
+                    return;
+                }
+                if (nfPassword.value !== nfPasswordConfirm.value) {
+                    e.preventDefault();
+                    nfError.textContent = 'Passwords do not match.';
+                    nfError.classList.add('show');
+                    nfPasswordConfirm.focus();
+                    return;
+                }
+            }
+
+            // Clear any prior hidden inputs and add fresh ones for selected members
+            nfForm.querySelectorAll('input[name^="share_members"]').forEach(el => el.remove());
+            let i = 0;
+            selectedShares.forEach((u, id) => {
+                const idIn = document.createElement('input');
+                idIn.type = 'hidden';
+                idIn.name = `share_members[${i}][user_id]`;
+                idIn.value = id;
+                nfForm.appendChild(idIn);
+                const permIn = document.createElement('input');
+                permIn.type = 'hidden';
+                permIn.name = `share_members[${i}][permission]`;
+                permIn.value = u.permission || 'viewer';
+                nfForm.appendChild(permIn);
+                i++;
+            });
+
+            nfSubmit.disabled = true;
+            nfSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        });
+    }
 })();
 </script>
 @endpush

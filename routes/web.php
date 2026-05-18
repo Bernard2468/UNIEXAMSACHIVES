@@ -126,7 +126,6 @@ Route::middleware(['auth'])->group(function () {
 
     #Folders
     Route::get('/dashboard/folders', [FoldersController::class, 'index'])->name('dashboard.folders.index');
-    Route::get('/dashboard/folders/create', [FoldersController::class, 'create'])->name('dashboard.folders.create');
     Route::post('/dashboard/folders', [FoldersController::class, 'store'])->name('dashboard.folders.store');
     Route::get('/dashboard/folders/{folder}', [FoldersController::class, 'show'])->name('dashboard.folders.show');
     Route::get('/dashboard/folders/{folder}/unlock', [FoldersController::class, 'unlockForm'])->name('dashboard.folders.unlock.form');
