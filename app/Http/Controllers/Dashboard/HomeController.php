@@ -86,7 +86,7 @@ class HomeController extends Controller
 
         $sharedFolders = $user->sharedFolders()
             ->withCount(['files', 'exams'])
-            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->with('user:id,first_name,last_name,email,profile_picture')
             ->orderBy('folder_shares.created_at', 'desc')
             ->get();
 
@@ -105,7 +105,7 @@ class HomeController extends Controller
             ->get();
         $sharedFolders = $user->sharedFolders()
             ->withCount(['files', 'exams'])
-            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->with('user:id,first_name,last_name,email,profile_picture')
             ->orderBy('folder_shares.created_at', 'desc')
             ->get();
         return view('admin.uploaded_documents', compact('exams', 'folders', 'sharedFolders'));
@@ -124,7 +124,7 @@ class HomeController extends Controller
             ->get();
         $sharedFolders = $user->sharedFolders()
             ->withCount(['files', 'exams'])
-            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->with('user:id,first_name,last_name,email,profile_picture')
             ->orderBy('folder_shares.created_at', 'desc')
             ->get();
         return view('admin.all_uploaded_documents', compact('exams', 'folders', 'sharedFolders'));
@@ -149,7 +149,7 @@ class HomeController extends Controller
             ->get();
         $sharedFolders = $user->sharedFolders()
             ->withCount(['files', 'exams'])
-            ->with('user:id,first_name,last_name,name,email,profile_picture')
+            ->with('user:id,first_name,last_name,email,profile_picture')
             ->orderBy('folder_shares.created_at', 'desc')
             ->get();
         return view('admin.all_exams', compact('exams', 'folders', 'sharedFolders'));
