@@ -417,6 +417,13 @@
                                 Positions</a>
                         </li>
                         <li>
+                            <a class="{{ request()->routeIs('offices.*') ? 'active' : '' }}" href="{{route('offices.index')}}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+                                    <path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"></path>
+                                </svg>
+                                Offices</a>
+                        </li>
+                        <li>
                             <a class="{{ request()->routeIs('dashboard.system-letterheads.*') ? 'active' : '' }}" href="{{route('dashboard.system-letterheads.index')}}">
                                 <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1778686904/letterhead_d4ebcs.png" alt="System Letterheads" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
                                 System Letterheads</a>

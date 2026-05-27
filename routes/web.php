@@ -261,6 +261,16 @@ Route::middleware(['auth'])->group(function () {
     #positions
     Route::resource('positions', PositionController::class);
 
+    #offices (institutional offices that the Forms workflow routes through)
+    Route::get('/offices',                            [\App\Http\Controllers\Dashboard\OfficeController::class, 'index'])->name('offices.index');
+    Route::post('/offices',                           [\App\Http\Controllers\Dashboard\OfficeController::class, 'store'])->name('offices.store');
+    Route::get('/offices/{office}',                   [\App\Http\Controllers\Dashboard\OfficeController::class, 'show'])->name('offices.show');
+    Route::put('/offices/{office}',                   [\App\Http\Controllers\Dashboard\OfficeController::class, 'update'])->name('offices.update');
+    Route::delete('/offices/{office}',                [\App\Http\Controllers\Dashboard\OfficeController::class, 'destroy'])->name('offices.destroy');
+    Route::post('/offices/{office}/members',          [\App\Http\Controllers\Dashboard\OfficeController::class, 'addMember'])->name('offices.members.add');
+    Route::put('/offices/{office}/members/{user}',    [\App\Http\Controllers\Dashboard\OfficeController::class, 'updateMember'])->name('offices.members.update');
+    Route::delete('/offices/{office}/members/{user}', [\App\Http\Controllers\Dashboard\OfficeController::class, 'removeMember'])->name('offices.members.remove');
+
     #system letterheads (admin-managed letterheads for memo composer)
     Route::get('/dashboard/system-letterheads', [\App\Http\Controllers\Dashboard\SystemLetterheadController::class, 'index'])->name('dashboard.system-letterheads.index');
     Route::post('/dashboard/system-letterheads', [\App\Http\Controllers\Dashboard\SystemLetterheadController::class, 'store'])->name('dashboard.system-letterheads.store');
@@ -425,15 +435,6 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin'])-
     Route::post('/maintenance/{id}/approve', [\App\Http\Controllers\SuperAdmin\MaintenanceController::class, 'approve'])->name('maintenance.approve');
     Route::post('/maintenance/{id}/notify', [\App\Http\Controllers\SuperAdmin\MaintenanceController::class, 'notifyUsers'])->name('maintenance.notify');
     
-    // Offices Management (routing destinations for the Forms workflow)
-    Route::get('/offices',                                  [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'index'])->name('offices.index');
-    Route::post('/offices',                                 [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'store'])->name('offices.store');
-    Route::get('/offices/{office}',                         [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'show'])->name('offices.show');
-    Route::put('/offices/{office}',                         [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'update'])->name('offices.update');
-    Route::post('/offices/{office}/members',                [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'addMember'])->name('offices.members.add');
-    Route::put('/offices/{office}/members/{user}',          [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'updateMember'])->name('offices.members.update');
-    Route::delete('/offices/{office}/members/{user}',       [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'removeMember'])->name('offices.members.remove');
-
     // License Management
     Route::get('/system-licences', [\App\Http\Controllers\SuperAdmin\LicenseController::class, 'index'])->name('system-licences');
     Route::post('/licenses', [\App\Http\Controllers\SuperAdmin\LicenseController::class, 'store'])->name('licenses.store');

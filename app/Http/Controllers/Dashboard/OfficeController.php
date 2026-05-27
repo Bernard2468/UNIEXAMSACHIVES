@@ -1,41 +1,66 @@
 <?php
 
-namespace App\Http\Controllers\SuperAdmin;
+namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Office;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 /**
  * Manage offices (Finance Office, Internal Audit, Registrar, VC, etc.) and
- * the users that belong to them. The Forms workflow routes through these
- * offices, so this CRUD is restricted to Super Admins.
+ * the users that belong to them. Forms route through these offices, so
+ * this CRUD is restricted to institutional administrators (UI "Admin"
+ * tier = is_admin = false) and Super Admins.
+ *
+ * Access control note: positions / departments live under the same UI tier
+ * (institutional admin) and are not gated server-side today — only via
+ * sidebar visibility. Offices ARE gated here because misconfiguring them
+ * can misroute signed forms, which is a security-sensitive operation.
  */
 class OfficeController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+            if (!$user) {
+                abort(401);
+            }
+            // Super Admin may always manage offices. Institutional admins
+            // (database role 'user' / UI "Admin" / is_admin = false) may
+            // manage offices. Everyone else is denied.
+            $isSuperAdmin = method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
+            $isInstitutionalAdmin = !(bool) $user->is_admin;
+            if (!$isSuperAdmin && !$isInstitutionalAdmin) {
+                abort(403, 'Only institutional administrators may manage offices.');
+            }
+            return $next($request);
+        });
+    }
+
     public function index()
     {
         $offices = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
             ->orderBy('name')
-            ->get();
+            ->paginate(15);
 
-        return view('super-admin.offices.index', compact('offices'));
+        return view('admin.offices.index', compact('offices'));
     }
 
     public function show(Office $office)
     {
         $office->load(['users']);
 
-        // Eligible users to add = anyone not already an active member.
         $existingIds = $office->users()->wherePivot('is_active', true)->pluck('users.id');
         $candidates  = User::query()
             ->whereNotIn('id', $existingIds)
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name', 'email']);
 
-        return view('super-admin.offices.show', compact('office', 'candidates'));
+        return view('admin.offices.show', compact('office', 'candidates'));
     }
 
     public function store(Request $request)
@@ -52,7 +77,7 @@ class OfficeController extends Controller
 
         Office::create($data);
 
-        return redirect()->route('super-admin.offices.index')
+        return redirect()->route('offices.index')
             ->with('success', 'Office created.');
     }
 
@@ -69,8 +94,23 @@ class OfficeController extends Controller
 
         $office->update($data);
 
-        return redirect()->route('super-admin.offices.show', $office->id)
+        return redirect()->route('offices.show', $office->id)
             ->with('success', 'Office updated.');
+    }
+
+    public function destroy(Office $office)
+    {
+        // Safety check: refuse to delete an office that has active form submissions
+        // currently routed to it. Reassign or close those forms first.
+        $hasActive = $office->pendingSubmissions()->exists();
+        if ($hasActive) {
+            return back()->with('error', "Cannot delete this office — there are forms currently awaiting action here. Reassign or complete them first.");
+        }
+
+        $office->delete();
+
+        return redirect()->route('offices.index')
+            ->with('success', 'Office deleted.');
     }
 
     public function addMember(Request $request, Office $office)
