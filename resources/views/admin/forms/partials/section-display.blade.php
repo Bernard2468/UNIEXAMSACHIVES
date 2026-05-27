@@ -59,12 +59,32 @@
             @endforeach
         </dl>
 
-        @if(isset($signature) && $signature && $signature->image_url)
+        @if(isset($signature) && $signature)
+            @php $check = $signature->verifyChain(); @endphp
             <div class="locked-signature">
-                <div class="locked-signature__label">Signature</div>
-                <img src="{{ $signature->image_url }}" alt="Signature" class="locked-signature__img">
+                <div class="locked-signature__label">
+                    Signature
+                    @if($check['valid'])
+                        <span class="locked-signature__badge locked-signature__badge--ok" title="Hash chain reconstructs from stored data.">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Verified
+                        </span>
+                    @else
+                        <span class="locked-signature__badge locked-signature__badge--bad" title="{{ $check['reason'] }}">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/><circle cx="12" cy="12" r="10"/></svg>
+                            Chain mismatch
+                        </span>
+                    @endif
+                </div>
+                @if($signature->image_url)
+                    <img src="{{ $signature->image_url }}" alt="Signature" class="locked-signature__img"
+                         onerror="this.outerHTML='<div class=&quot;locked-signature__broken&quot;>Signature image unavailable. Run <code>php artisan storage:link</code> on the server.</div>';">
+                @else
+                    <div class="locked-signature__broken">No signature image was captured for this stage.</div>
+                @endif
                 <div class="locked-signature__meta">
                     SHA-256: <code>{{ substr($signature->chain_hash, 0, 12) }}…</code>
+                    · {{ $signature->provider ?? 'in_app' }}
                     @if($signature->ip_address) · IP {{ $signature->ip_address }} @endif
                 </div>
             </div>

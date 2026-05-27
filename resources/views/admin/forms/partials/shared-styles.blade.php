@@ -137,10 +137,18 @@
 .locked-fields__row dt { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: #b0b5c0; margin-bottom: 4px; font-weight: 600; }
 .locked-fields__row dd { margin: 0; color: #111827; font-size: 0.88rem; font-weight: 500; line-height: 1.4; }
 .locked-signature { margin-top: 18px; padding-top: 16px; border-top: 1.5px solid #f5f5f5; }
-.locked-signature__label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: #b0b5c0; margin-bottom: 8px; font-weight: 600; }
-.locked-signature__img { max-height: 90px; max-width: 280px; background: #fff; border: 1.5px solid #ebebeb; padding: 6px; border-radius: 8px; }
+.locked-signature__label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: #b0b5c0; margin-bottom: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+.locked-signature__img { max-height: 90px; max-width: 280px; background: #fff; border: 1.5px solid #ebebeb; padding: 6px; border-radius: 8px; display: block; }
+.locked-signature__broken { display: inline-block; padding: 12px 14px; background: #fef3c7; color: #92400e; border: 1.5px dashed #fde68a; border-radius: 8px; font-size: 0.78rem; font-weight: 500; max-width: 420px; line-height: 1.5; }
+.locked-signature__broken code { background: rgba(146, 64, 14, .1); padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace !important; font-size: 0.72rem; }
 .locked-signature__meta { font-size: 0.72rem; color: #b0b5c0; margin-top: 6px; }
 .locked-signature__meta code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace !important; font-size: 0.7rem; }
+.locked-signature__badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.locked-signature__badge--ok  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.locked-signature__badge--bad { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.is_dark .locked-signature__broken { background: #422006; color: #fde68a; border-color: #78350f; }
+.is_dark .locked-signature__badge--ok  { background: #052e16; color: #86efac; border-color: #14532d; }
+.is_dark .locked-signature__badge--bad { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
 
 /* Action buttons */
 .form-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 4px; flex-wrap: wrap; }

@@ -68,7 +68,8 @@
       "Bash(Select-Object -First 20)",
       "Bash(composer require *)",
       "PowerShell(php artisan migrate --force)",
-      "PowerShell($d = \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES/storage/framework/views\"; if \\(Test-Path $d\\) { \\(Get-ChildItem $d -File | Measure-Object\\).Count } else { \"directory missing\" })"
+      "PowerShell($d = \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES/storage/framework/views\"; if \\(Test-Path $d\\) { \\(Get-ChildItem $d -File | Measure-Object\\).Count } else { \"directory missing\" })",
+      "PowerShell(if \\(Test-Path \"c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\public\\\\storage\"\\) { Write-Output \"public/storage EXISTS\"; \\(Get-Item \"c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\public\\\\storage\"\\).LinkType } else { Write-Output \"public/storage MISSING - storage:link has not been run\" })"
     ],
     "deny": []
   }

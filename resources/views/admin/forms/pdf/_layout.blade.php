@@ -38,6 +38,9 @@
         .signature-block img { max-height: 50px; max-width: 220px; }
         .signature-block__meta { font-size: 9px; color: #6b7280; margin-top: 4px; }
         .signature-block__hash { font-family: 'Courier New', monospace; }
+        .signature-block__badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 8px; font-weight: bold; margin-left: 4px; }
+        .signature-block__badge--ok  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .signature-block__badge--bad { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
         .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #d1d5db; font-size: 9px; color: #6b7280; }
         .audit-chain { font-family: 'Courier New', monospace; font-size: 8.5px; word-break: break-all; }
@@ -122,6 +125,7 @@
                     </table>
 
                     @if($signedSig)
+                        @php $sigCheck = $signedSig->verifyChain(); @endphp
                         <div class="signature-block">
                             @if($signedSig->signature_image_path && file_exists(public_path('storage/' . $signedSig->signature_image_path)))
                                 <img src="{{ public_path('storage/' . $signedSig->signature_image_path) }}" alt="Signature">
@@ -130,6 +134,11 @@
                                 Signed by <strong>{{ trim((optional($signedSig->user)->first_name ?? '') . ' ' . (optional($signedSig->user)->last_name ?? '')) }}</strong>
                                 on {{ $signedSig->signed_at?->format('d M Y, H:i') }}
                                 @if($signedSig->ip_address) · IP {{ $signedSig->ip_address }} @endif
+                                @if($sigCheck['valid'])
+                                    <span class="signature-block__badge signature-block__badge--ok">VERIFIED</span>
+                                @else
+                                    <span class="signature-block__badge signature-block__badge--bad">CHAIN MISMATCH ({{ $sigCheck['reason'] }})</span>
+                                @endif
                                 <br>
                                 <span class="signature-block__hash">Chain hash: {{ $signedSig->chain_hash }}</span>
                             </div>
