@@ -124,6 +124,31 @@ class FormSubmission extends Model
         $this->workflow_history = $history;
     }
 
+    /**
+     * Number of whole days since this submission last moved.
+     * Only meaningful for in_progress forms; returns null otherwise.
+     */
+    public function getStaleDaysAttribute(): ?int
+    {
+        if ($this->status !== self::STATUS_IN_PROGRESS || !$this->updated_at) {
+            return null;
+        }
+        return (int) $this->updated_at->diffInDays(now());
+    }
+
+    /**
+     * Severity bucket for the stale-days pill: null (fresh / not in_progress),
+     * 'warn' (2–6 days), or 'danger' (7+ days). Drives portal & show colors.
+     */
+    public function getStaleSeverityAttribute(): ?string
+    {
+        $days = $this->stale_days;
+        if ($days === null) return null;
+        if ($days >= 7) return 'danger';
+        if ($days >= 2) return 'warn';
+        return null;
+    }
+
     public function scopeAwaitingUser(Builder $query, int $userId): Builder
     {
         return $query->where('status', self::STATUS_IN_PROGRESS)

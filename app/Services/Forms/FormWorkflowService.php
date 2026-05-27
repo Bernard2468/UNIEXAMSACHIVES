@@ -337,6 +337,89 @@ class FormWorkflowService
         return $submission->fresh();
     }
 
+    /**
+     * Reroute the currently-held stage to a different member of the same
+     * office. Use case: the current assignee is on leave / unavailable and
+     * the office head needs to keep the form moving.
+     *
+     * Constraints (re-asserted here even though the policy enforces them —
+     * this method is the single-mutator and must be safe in isolation):
+     *   - Status must be in_progress.
+     *   - The form must currently sit on an office (current_office_id not null).
+     *   - The new assignee must be an active member of that office.
+     *   - The new assignee must NOT be the current assignee (no-op refused).
+     *
+     * Writes an audit entry, posts a public comment so the chain of custody is
+     * visible, and notifies the new assignee.
+     */
+    public function reassign(
+        FormSubmission $submission,
+        User $newAssignee,
+        User $by,
+        string $reason
+    ): FormSubmission {
+        if ($submission->status !== FormSubmission::STATUS_IN_PROGRESS) {
+            abort(422, 'Only in-progress forms can be reassigned.');
+        }
+        if (!$submission->current_office_id) {
+            abort(422, 'This stage is not held by an office and cannot be reassigned this way.');
+        }
+        if ((int) $newAssignee->id === (int) $submission->current_assignee_id) {
+            abort(422, 'That person already holds this form.');
+        }
+
+        $office = Office::find($submission->current_office_id);
+        if (!$office) {
+            abort(422, 'Current office could not be loaded.');
+        }
+
+        $isMember = $office->activeUsers()->where('users.id', $newAssignee->id)->exists();
+        if (!$isMember) {
+            abort(422, 'The selected recipient is not an active member of this office.');
+        }
+
+        $reason = trim($reason);
+        if ($reason === '') {
+            abort(422, 'A reason for the reassignment is required.');
+        }
+
+        return DB::transaction(function () use ($submission, $newAssignee, $by, $reason) {
+            $previousAssigneeId = $submission->current_assignee_id;
+
+            $submission->current_assignee_id = $newAssignee->id;
+            $submission->appendHistory('reassigned', $by->id, [
+                'from_user' => $previousAssigneeId,
+                'to_user'   => $newAssignee->id,
+                'stage'     => $submission->current_stage,
+                'reason'    => $reason,
+            ]);
+            $submission->save();
+
+            FormComment::create([
+                'form_submission_id' => $submission->id,
+                'user_id'            => $by->id,
+                'message'            => "Reassigned to {$newAssignee->first_name} {$newAssignee->last_name}: {$reason}",
+                'is_internal'        => true,
+            ]);
+
+            Notification::create([
+                'user_id' => $newAssignee->id,
+                'type'    => 'form_assigned',
+                'title'   => "Form reassigned to you ({$submission->reference})",
+                'message' => "{$by->first_name} {$by->last_name} reassigned this {$submission->form_code} form to you.",
+                'url'     => route('admin.forms.show', $submission->id),
+                'data'    => [
+                    'submission_id' => $submission->id,
+                    'reason'        => $reason,
+                ],
+            ]);
+
+            $this->sendEmail($newAssignee, new FormStageAssigned($submission, $newAssignee, $by));
+
+            return $submission->fresh();
+        });
+    }
+
     public function cancel(FormSubmission $submission, User $user): FormSubmission
     {
         $submission->status              = FormSubmission::STATUS_CANCELLED;

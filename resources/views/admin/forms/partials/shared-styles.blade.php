@@ -146,6 +146,12 @@
 .locked-signature__badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 99px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 .locked-signature__badge--ok  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
 .locked-signature__badge--bad { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+.stale-pill { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 99px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }
+.stale-pill--warn   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.stale-pill--danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.is_dark .stale-pill--warn   { background: #422006; color: #fde68a; border-color: #78350f; }
+.is_dark .stale-pill--danger { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
 .is_dark .locked-signature__broken { background: #422006; color: #fde68a; border-color: #78350f; }
 .is_dark .locked-signature__badge--ok  { background: #052e16; color: #86efac; border-color: #14532d; }
 .is_dark .locked-signature__badge--bad { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }

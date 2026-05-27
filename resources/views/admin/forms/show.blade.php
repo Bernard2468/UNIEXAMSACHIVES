@@ -72,6 +72,11 @@
                                     <span class="form-meta-strip__value">
                                         {{ trim(($submission->currentAssignee->first_name ?? '') . ' ' . ($submission->currentAssignee->last_name ?? '')) }}
                                         @if($submission->currentOffice) <small style="color:#9ca3af; font-weight: 500;">— {{ $submission->currentOffice->name }}</small>@endif
+                                        @if($submission->stale_severity)
+                                            <span class="stale-pill stale-pill--{{ $submission->stale_severity }}" title="No movement in {{ $submission->stale_days }} day{{ $submission->stale_days === 1 ? '' : 's' }}">
+                                                stuck {{ $submission->stale_days }}d
+                                            </span>
+                                        @endif
                                     </span>
                                 </div>
                             @endif
@@ -276,13 +281,77 @@
                             'canViewInternal' => $canViewInternal,
                         ])
 
-                        @if($canCancel)
+                        @if($canCancel || $canReassign)
                             <div class="form-actions" style="margin-top: 16px;">
-                                <form method="POST" action="{{ route('admin.forms.cancel', $submission->id) }}"
-                                      onsubmit="return confirm('Cancel this form? This cannot be undone.');">
-                                    @csrf
-                                    <button type="submit" class="btn-action btn-action--danger">Cancel Form</button>
-                                </form>
+                                @if($canReassign)
+                                    <button type="button" class="btn-action btn-action--ghost" id="reassignBtn">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                                        Reassign
+                                    </button>
+                                @endif
+                                @if($canCancel)
+                                    <form method="POST" action="{{ route('admin.forms.cancel', $submission->id) }}"
+                                          onsubmit="return confirm('Cancel this form? This cannot be undone.');" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn-action btn-action--danger">Cancel Form</button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if($canReassign)
+                            {{-- Reassign modal --}}
+                            <div id="reassignModal" class="reject-modal" style="display:none;">
+                                <div class="reject-modal__backdrop"></div>
+                                <div class="reject-modal__panel" style="max-width: 560px;">
+                                    <h5 style="margin-top:0;">Reassign to another office member</h5>
+                                    <p style="color:#6b7280;">
+                                        Use this when <strong>{{ trim(($submission->currentAssignee->first_name ?? '') . ' ' . ($submission->currentAssignee->last_name ?? '')) }}</strong>
+                                        is on leave or otherwise unavailable. The form moves to another active member of
+                                        <strong>{{ $submission->currentOffice->name ?? 'this office' }}</strong>.
+                                        The action is logged on the audit trail and visible to the requisitioner via an internal note.
+                                    </p>
+
+                                    @if($reassignCandidates->isEmpty())
+                                        <div class="alert alert-warning">
+                                            No other active members in this office. Add another person to the office first.
+                                        </div>
+                                    @else
+                                        <form method="POST" action="{{ route('admin.forms.reassign', $submission->id) }}">
+                                            @csrf
+                                            <div style="margin-bottom: 14px;">
+                                                <label class="form-field__label" style="display:block; margin-bottom: 8px;">Reassign to</label>
+                                                <div class="rs-candidates">
+                                                    @foreach($reassignCandidates as $cand)
+                                                        @php
+                                                            $fn = trim(($cand->first_name ?? '') . ' ' . ($cand->last_name ?? ''));
+                                                            $initials = strtoupper(substr($cand->first_name ?? '', 0, 1) . substr($cand->last_name ?? '', 0, 1));
+                                                        @endphp
+                                                        <label class="rs-card">
+                                                            <input type="radio" name="new_assignee_id" value="{{ $cand->id }}" required {{ $loop->first ? 'checked' : '' }}>
+                                                            <div class="rs-card__avatar">{{ $initials ?: '?' }}</div>
+                                                            <div class="rs-card__meta">
+                                                                <div class="rs-card__name">{{ $fn }}</div>
+                                                                <div class="rs-card__email">{{ $cand->email }}</div>
+                                                            </div>
+                                                            <div class="rs-card__check">
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                            </div>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                            <div style="margin-bottom: 4px;">
+                                                <label class="form-field__label" style="display:block; margin-bottom: 6px;">Reason (will appear on the audit trail)</label>
+                                                <textarea name="reason" rows="3" class="form-control" placeholder="e.g. Cashier is on annual leave until 12 Jun." required maxlength="2000"></textarea>
+                                            </div>
+                                            <div class="form-actions" style="margin-top: 14px;">
+                                                <button type="button" class="btn-action btn-action--ghost" id="reassignCancelBtn">Cancel</button>
+                                                <button type="submit" class="btn-action btn-action--primary">Reassign now</button>
+                                            </div>
+                                        </form>
+                                    @endif
+                                </div>
                             </div>
                         @endif
                     </div>
@@ -301,6 +370,25 @@
 .reject-modal__panel p { font-size: 0.85rem; color: #6b7280; margin: 0 0 14px; }
 .is_dark .reject-modal__panel { background: #111827; border-color: #1e2330; }
 .is_dark .reject-modal__panel h5 { color: #f3f4f6; }
+
+/* Reassign candidate picker (compact, inside modal) */
+.rs-candidates { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; padding: 4px; background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 10px; }
+.rs-candidates::-webkit-scrollbar { width: 6px; }
+.rs-candidates::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 3px; }
+.rs-card { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #fff; border: 1.5px solid #ebebeb; border-radius: 9px; cursor: pointer; transition: all .12s; margin: 0; }
+.rs-card:hover { border-color: #0c0c0c; }
+.rs-card.is-selected { background: #f9fafb; border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
+.rs-card input { display: none; }
+.rs-card__avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #0c0c0c, #374151); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 600; flex-shrink: 0; }
+.rs-card__meta { flex: 1; min-width: 0; }
+.rs-card__name { font-size: 0.84rem; font-weight: 600; color: #111827; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rs-card__email { font-size: 0.72rem; color: #9ca3af; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rs-card__check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #e5e7eb; display: inline-flex; align-items: center; justify-content: center; color: transparent; transition: all .12s; flex-shrink: 0; }
+.rs-card.is-selected .rs-card__check { background: #0c0c0c; border-color: #0c0c0c; color: #fff; }
+.is_dark .rs-candidates { background: #0f172a; border-color: #1e2330; }
+.is_dark .rs-card { background: #111827; border-color: #2d3748; }
+.is_dark .rs-card.is-selected { background: #0f172a; border-color: #f3f4f6; }
+.is_dark .rs-card__name { color: #f3f4f6; }
 </style>
 
 <script>
@@ -345,6 +433,28 @@ document.addEventListener('DOMContentLoaded', function () {
         rejectBtn.addEventListener('click', () => { rejectModal.style.display = 'flex'; });
         rejectCancelBtn.addEventListener('click', () => { rejectModal.style.display = 'none'; });
         rejectModal.querySelector('.reject-modal__backdrop').addEventListener('click', () => { rejectModal.style.display = 'none'; });
+    }
+
+    // Reassign modal
+    const reassignBtn       = document.getElementById('reassignBtn');
+    const reassignModal     = document.getElementById('reassignModal');
+    const reassignCancelBtn = document.getElementById('reassignCancelBtn');
+    if (reassignBtn && reassignModal) {
+        reassignBtn.addEventListener('click', () => { reassignModal.style.display = 'flex'; });
+        if (reassignCancelBtn) reassignCancelBtn.addEventListener('click', () => { reassignModal.style.display = 'none'; });
+        reassignModal.querySelector('.reject-modal__backdrop').addEventListener('click', () => { reassignModal.style.display = 'none'; });
+
+        // Toggle selected state on the candidate cards.
+        const cards = reassignModal.querySelectorAll('.rs-card');
+        cards.forEach(card => {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio && radio.checked) card.classList.add('is-selected');
+            card.addEventListener('click', () => {
+                cards.forEach(c => c.classList.remove('is-selected'));
+                card.classList.add('is-selected');
+                if (radio) radio.checked = true;
+            });
+        });
     }
 
     // Sign & Forward client-side guard

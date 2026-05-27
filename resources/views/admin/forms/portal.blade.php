@@ -97,7 +97,14 @@
                                                         —
                                                     @endif
                                                 </td>
-                                                <td><small>{{ $s->updated_at->diffForHumans() }}</small></td>
+                                                <td>
+                                                    <small>{{ $s->updated_at->diffForHumans() }}</small>
+                                                    @if($s->stale_severity)
+                                                        <span class="stale-pill stale-pill--{{ $s->stale_severity }}" title="No movement in {{ $s->stale_days }} day{{ $s->stale_days === 1 ? '' : 's' }}">
+                                                            {{ $s->stale_days }}d
+                                                        </span>
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     <a href="{{ route('admin.forms.show', $s->id) }}" class="btn-action btn-action--ghost" style="padding: 6px 12px; font-size: 12.5px;">Open</a>
                                                 </td>
@@ -137,6 +144,12 @@
 .form-list__table tbody tr:hover { background: #f9fafb; }
 .form-list__table code { background: #f3f4f6; padding: 2px 8px; border-radius: 4px; font-size: 12px; color: #1d4ed8; font-weight: 600; }
 .form-list__code { display: inline-block; padding: 3px 8px; background: #eff6ff; color: #1d4ed8; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+
+.stale-pill { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }
+.stale-pill--warn   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.stale-pill--danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.is_dark .stale-pill--warn   { background: #422006; color: #fde68a; border-color: #78350f; }
+.is_dark .stale-pill--danger { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
 </style>
 
 @include('admin.forms.partials.shared-styles')

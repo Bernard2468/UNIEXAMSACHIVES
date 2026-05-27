@@ -103,6 +103,14 @@
         <canvas id="sigtypedCanvas" width="640" height="200" hidden></canvas>
     </div>
 
+    {{-- Optional: save what I just signed/typed as my reusable signature --}}
+    <label class="sigpad-save-toggle">
+        <input type="checkbox" name="save_as_my_signature" value="1" id="save_as_my_signature_checkbox">
+        <span>
+            {{ $savedSignature && $savedSignature->image_url ? 'Replace my saved signature with this one' : 'Save this as my signature for next time' }}
+        </span>
+    </label>
+
     <input type="hidden" name="signature_data" id="signature_data_input" value="">
     <input type="hidden" name="reuse_saved_signature" id="reuse_saved_signature_input" value="">
 </div>
@@ -152,6 +160,12 @@
 .sigtyped-card.is-selected .sigtyped-card__check { background: #0c0c0c; color: #fff; border-color: #0c0c0c; }
 
 .sigtyped-disclaimer { margin: 12px 0 0; font-size: 0.72rem; color: #9ca3af; line-height: 1.5; }
+
+.sigpad-save-toggle { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 8px 12px; background: #fff; border: 1.5px solid #ebebeb; border-radius: 9px; font-size: 0.8rem; font-weight: 500; color: #374151; cursor: pointer; transition: all .15s; }
+.sigpad-save-toggle:hover { border-color: #0c0c0c; color: #0c0c0c; }
+.sigpad-save-toggle input { accent-color: #0c0c0c; }
+.is_dark .sigpad-save-toggle { background: #111827; border-color: #2d3748; color: #d1d5db; }
+.is_dark .sigpad-save-toggle:hover { border-color: #f3f4f6; color: #f3f4f6; }
 
 /* Dark mode */
 .is_dark .sigpad-wrapper { background: #0f172a; border-color: #1e2330; }

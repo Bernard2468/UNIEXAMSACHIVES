@@ -6,6 +6,8 @@ use App\Forms\Contracts\SignatureProvider;
 use App\Models\FormSignature;
 use App\Models\FormSubmission;
 use App\Models\User;
+use App\Models\UserSignature;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -48,6 +50,15 @@ class InAppSignatureProvider implements SignatureProvider
         $chainHash   = SignatureService::chainHash($priorHash, $payloadHash, $signer->id, $signedAtIso);
 
         $signatureImagePath = $this->persistSignatureImage($submission, $stageSlug, $signer, $context);
+
+        // Optionally save this signature as the user's reusable signature.
+        // We only do this when the user supplied a NEW signature (drawn or
+        // typed) — there's nothing to save if they ticked "reuse saved".
+        if (!empty($context['save_as_my_signature'])
+            && empty($context['reuse_saved'])
+            && !empty($context['signature_data'])) {
+            $this->persistAsUserSignature($signer, $context['signature_data']);
+        }
 
         return FormSignature::create([
             'form_submission_id'   => $submission->id,
@@ -105,5 +116,53 @@ class InAppSignatureProvider implements SignatureProvider
         Storage::disk('public')->put($path, $binary);
 
         return $path;
+    }
+
+    /**
+     * Copy the freshly-captured signature into the user's reusable saved
+     * signature slot. The file is written to a SEPARATE path under
+     * user-signatures/ so the saved copy is independent of form-signature
+     * file lifecycle — deleting the form will never break the saved sig.
+     *
+     * Tolerates failure: signing must not be aborted if the save fails.
+     */
+    protected function persistAsUserSignature(User $signer, string $signatureData): void
+    {
+        try {
+            $raw = $signatureData;
+            if (str_starts_with($raw, 'data:')) {
+                $commaPos = strpos($raw, ',');
+                $raw = $commaPos !== false ? substr($raw, $commaPos + 1) : '';
+            }
+
+            $binary = base64_decode($raw, true);
+            if ($binary === false || $binary === '') {
+                return;
+            }
+
+            $disk = Storage::disk('public');
+
+            // Replace any existing saved-signature file so we don't accumulate
+            // orphan PNGs in user-signatures/ every time someone re-saves.
+            $existing = $signer->savedSignature;
+            if ($existing && $existing->signature_image_path && $disk->exists($existing->signature_image_path)) {
+                $disk->delete($existing->signature_image_path);
+            }
+
+            $path = 'user-signatures/' . $signer->id . '-' . Str::random(8) . '.png';
+            $disk->put($path, $binary);
+
+            UserSignature::updateOrCreate(
+                ['user_id' => $signer->id],
+                ['signature_image_path' => $path],
+            );
+        } catch (\Throwable $e) {
+            // Saving the reusable signature is a nice-to-have. The signing
+            // itself has already succeeded — log and move on.
+            Log::warning('Failed to persist user signature during form sign', [
+                'user_id' => $signer->id,
+                'error'   => $e->getMessage(),
+            ]);
+        }
     }
 }

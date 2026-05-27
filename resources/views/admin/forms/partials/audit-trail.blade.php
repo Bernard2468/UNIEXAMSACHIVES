@@ -27,6 +27,7 @@
             'created'      => 'Form created',
             'stage_saved'  => 'Stage saved (draft)',
             'stage_signed' => 'Stage signed & forwarded',
+            'reassigned'   => 'Reassigned to another office member',
             'rejected'     => 'Sent back to requisitioner',
             'completed'    => 'Form completed',
             'cancelled'    => 'Form cancelled',
@@ -50,6 +51,12 @@
             }
         } elseif ($action === 'stage_saved') {
             $sub = $stageLabel($details['stage'] ?? null);
+        } elseif ($action === 'reassigned') {
+            $from = $userMap[$details['from_user'] ?? null] ?? null;
+            $to   = $userMap[$details['to_user']   ?? null] ?? null;
+            $fromName = $from ? trim(($from->first_name ?? '') . ' ' . ($from->last_name ?? '')) : '—';
+            $toName   = $to   ? trim(($to->first_name   ?? '') . ' ' . ($to->last_name   ?? '')) : '—';
+            $sub      = "{$fromName} → {$toName}  ·  " . trim((string) ($details['reason'] ?? '—'));
         } elseif ($action === 'rejected') {
             $sub = 'Reason: ' . trim((string) ($details['reason'] ?? '—'));
         } elseif ($action === 'created') {

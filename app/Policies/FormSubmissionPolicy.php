@@ -110,6 +110,41 @@ class FormSubmissionPolicy
         return (int) $submission->created_by !== (int) $user->id;
     }
 
+    /**
+     * Whether the user may re-route the current stage to a different
+     * recipient (typically because the current assignee is on leave).
+     *
+     * Allowed for:
+     *   - The head of the office currently holding the form (office-pool stages).
+     *   - Super admin (handled by before()).
+     *
+     * Not allowed for:
+     *   - Leadership-pool stages where current_office_id is null — the
+     *     requisitioner picked the specific person, only super admin can
+     *     change that decision.
+     *   - The current assignee themselves — they should reject the form back
+     *     with a reason instead.
+     */
+    public function reassign(User $user, FormSubmission $submission): bool
+    {
+        if ($submission->status !== FormSubmission::STATUS_IN_PROGRESS) {
+            return false;
+        }
+        if (!$submission->current_office_id) {
+            return false;
+        }
+        if ((int) $submission->current_assignee_id === (int) $user->id) {
+            return false;
+        }
+
+        $isHeadOfCurrentOffice = $user->activeOffices()
+            ->where('offices.id', $submission->current_office_id)
+            ->wherePivot('is_head', true)
+            ->exists();
+
+        return $isHeadOfCurrentOffice;
+    }
+
     public function cancel(User $user, FormSubmission $submission): bool
     {
         if ((int) $submission->created_by !== (int) $user->id) {

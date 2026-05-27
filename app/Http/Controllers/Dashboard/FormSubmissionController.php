@@ -159,6 +159,14 @@ class FormSubmissionController extends Controller
             'canFill'              => $canFill,
             'canComment'           => app(\App\Policies\FormSubmissionPolicy::class)->comment($user, $submission),
             'canCancel'            => app(\App\Policies\FormSubmissionPolicy::class)->cancel($user, $submission),
+            'canReassign'          => app(\App\Policies\FormSubmissionPolicy::class)->reassign($user, $submission),
+            'reassignCandidates'   => app(\App\Policies\FormSubmissionPolicy::class)->reassign($user, $submission)
+                                        ? Office::find($submission->current_office_id)
+                                              ?->activeUsers()
+                                              ->where('users.id', '!=', $submission->current_assignee_id)
+                                              ->orderBy('users.first_name')
+                                              ->get(['users.id', 'users.first_name', 'users.last_name', 'users.email'])
+                                        : collect(),
             'canViewInternal'      => $canViewInternal,
             'comments'             => $comments,
             'savedSignature'       => $user->savedSignature,
@@ -270,6 +278,34 @@ class FormSubmissionController extends Controller
 
         return redirect()->route('admin.forms.show', $submission->id)
             ->with('success', 'Form sent back to the requisitioner.');
+    }
+
+    /**
+     * Reroute the current stage to another active member of the same office.
+     * Used when the current assignee is on leave / unavailable and the office
+     * head needs to keep the form moving.
+     */
+    public function reassign(Request $request, FormSubmission $submission)
+    {
+        $this->authorize('reassign', $submission);
+
+        $data = $request->validate([
+            'new_assignee_id' => 'required|integer|exists:users,id',
+            'reason'          => 'required|string|max:2000',
+        ]);
+
+        $newAssignee = User::find($data['new_assignee_id']);
+        abort_unless($newAssignee, 404);
+
+        $this->workflow->reassign(
+            $submission,
+            $newAssignee,
+            Auth::user(),
+            $data['reason'],
+        );
+
+        return redirect()->route('admin.forms.show', $submission->id)
+            ->with('success', "Form reassigned to {$newAssignee->first_name} {$newAssignee->last_name}.");
     }
 
     public function cancel(FormSubmission $submission)
@@ -464,10 +500,11 @@ class FormSubmissionController extends Controller
     protected function signatureContext(Request $request): array
     {
         return [
-            'signature_data' => $request->input('signature_data'),
-            'reuse_saved'    => (bool) $request->input('reuse_saved_signature'),
-            'ip'             => $request->ip(),
-            'user_agent'     => substr((string) $request->userAgent(), 0, 2000),
+            'signature_data'       => $request->input('signature_data'),
+            'reuse_saved'          => (bool) $request->input('reuse_saved_signature'),
+            'save_as_my_signature' => (bool) $request->input('save_as_my_signature'),
+            'ip'                   => $request->ip(),
+            'user_agent'           => substr((string) $request->userAgent(), 0, 2000),
         ];
     }
 }

@@ -366,6 +366,9 @@ Route::middleware(['auth'])->group(function () {
             ->middleware('throttle:30,1')
             ->name('reject');
         Route::post('/submissions/{submission}/cancel',  [FormSubmissionController::class, 'cancel'])->name('cancel');
+        Route::post('/submissions/{submission}/reassign',[FormSubmissionController::class, 'reassign'])
+            ->middleware('throttle:30,1')
+            ->name('reassign');
         Route::post('/submissions/{submission}/comments',[FormSubmissionController::class, 'addComment'])
             ->middleware('throttle:120,1')
             ->name('comment');
