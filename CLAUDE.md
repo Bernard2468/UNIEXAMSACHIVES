@@ -63,12 +63,15 @@ Request flow for authenticated routes: `Auth` → `SubscriptionActiveMiddleware`
 
 ### Key Models
 
-- `User` — roles: `super_admin`, `admin` (UI: "User"), `user` (UI: "Admin")
+- `User` — roles: `super_admin`, `admin` (UI: "User"), `user` (UI: "Admin"). Belongs to many `Office` rows via `office_user` (pivot has `is_head`, `is_active`); `activeOffices()` is what form routing consults.
 - `Exam`, `File`, `Folder` — document archive and organization
 - `EmailCampaign`, `EmailCampaignRecipient` — bulk email campaigns (async via `SendCampaignEmail` job)
 - `SystemSubscription`, `PaymentTransaction` — licensing and Paystack payment records
-- `Committee`, `Department`, `Position` — organizational structure
+- `Committee`, `Department`, `Position` — organizational structure. `Position::CATEGORIES` (`hod`, `dean`, `director`) drives leadership-pool routing in the Forms system.
+- `Office` — institutional offices (Finance, Internal Audit, Registrar, VC, Procurement Committee, Director of Finance) that Forms route through. Separate from `Department` because routing must be deterministic.
+- `FormSubmission`, `FormSignature`, `FormAttachment`, `FormComment`, `UserSignature` — Forms workflow system (see below).
 - `MemoReply` — chat-style memo system (UIMMS)
+- `Notification` — in-app notifications written alongside many actions (memo replies, form assignments, etc.)
 
 ### Services
 
@@ -76,10 +79,12 @@ Located in [app/Services/](app/Services/):
 - `PaystackService` — payment processing and webhook handling
 - `ResendMailService` — primary email delivery (SMTP: smtp.resend.com)
 - Mailjet is configured as a fallback mail provider
+- `Services/Forms/FormWorkflowService` — single mutator for all form state transitions (see Forms section)
+- `Services/Signing/SignatureService` + `InAppSignatureProvider` — pluggable e-signature backend; bind a different `SignatureProvider` in `AppServiceProvider` to swap in DocuSign / PandaDoc / SignNow without controller changes.
 
 ### Email / Queue
 
-Bulk campaign emails are sent asynchronously via the `SendCampaignEmail` job — requires `php artisan queue:work` to be running. Email templates live in [resources/views/mails/](resources/views/mails/).
+Bulk campaign emails are sent asynchronously via the `SendCampaignEmail` job — requires `php artisan queue:work` to be running. Email templates live in [resources/views/mails/](resources/views/mails/). Form notification emails (`FormStageAssigned`, `FormSubmissionRejected`, `FormSubmissionCompleted`) are sent synchronously inside the workflow service but wrapped in try/catch so SMTP failures never abort the workflow.
 
 ### Frontend Assets
 
@@ -87,4 +92,30 @@ Vite config at [vite.config.js](vite.config.js). Blade views are organized under
 
 ### PDF Generation
 
-Uses `barryvdh/laravel-dompdf` for invoice and document PDF export.
+Uses `barryvdh/laravel-dompdf` for invoice/document export and for the Forms PDF pipeline (each form declares its own `pdfView()`; the shared layout at [resources/views/admin/forms/pdf/_layout.blade.php](resources/views/admin/forms/pdf/_layout.blade.php) renders any form definition).
+
+## Forms Workflow System
+
+A form-agnostic workflow + e-signing engine at `admin/forms/*` ([routes/web.php](routes/web.php) under the `admin.forms.*` name prefix). Two forms ship today — Payment Requisition (`PR`) and Purchase/Works Authorization (`PWA`) — both registered in `AppServiceProvider::register()`.
+
+### Adding a new form
+1. Create a class in [app/Forms/Definitions/](app/Forms/Definitions/) extending `BaseFormDefinition`. Declare `slug`, `code`, `title`, `description`, `stages()`, `templateView()`, `pdfView()`, and optionally `amountFieldName()` / `vcReferralFieldName()`.
+2. Register it: `$registry->register(new YourForm())` in [AppServiceProvider::register()](app/Providers/AppServiceProvider.php).
+
+No new routes, controllers, migrations, or DB columns are needed. The gallery, portal, compose/show pages, signing, PDF, attachments, comments, audit trail, notifications, and policies all pick it up automatically.
+
+### Stage routing
+A `FormStage` resolves recipients from one of two pools:
+- `POOL_OFFICE` — pick an active member of the named `Office` (slug). The form will refuse to forward if the office has no active members or the picked user is not a member of that office.
+- `POOL_LEADERSHIP` — for HOD / Dean / Director stages. The user picks a category, then a person whose `Position.category` matches. There is no "single head" because every department/faculty has its own.
+
+Stages can declare `branches: ['vc']` + a corresponding `vcReferralFieldName` checkbox — when ticked, the workflow service routes to the optional `vc` stage instead of the natural next stage.
+
+### Single mutator + tamper-evident chain
+**All state transitions go through [FormWorkflowService](app/Services/Forms/FormWorkflowService.php) inside a DB transaction.** Controllers never mutate `FormSubmission` directly — this is a security boundary. Each signature stores `payload_hash = sha256(canonical_json(section_data))` and `chain_hash = sha256(prior_hash || payload_hash || user_id || signed_at_iso)`, so tampering with any prior signed stage breaks the chain on subsequent stages.
+
+### Authorization
+[FormSubmissionPolicy](app/Policies/FormSubmissionPolicy.php) is the single source of truth. Visibility = creator OR current assignee OR has signed any stage OR active member of the current office. Edit/sign requires `status == in_progress` AND user == `current_assignee_id`. Super admin auto-passes via the `before` hook. Office CRUD ([app/Http/Controllers/Dashboard/OfficeController.php](app/Http/Controllers/Dashboard/OfficeController.php)) is gated by the `institutional_admin` middleware.
+
+### Sidebar badge
+The "Forms Portal" sidebar badge (`$awaitingFormsCount`) is computed globally in the `View::composer('*')` block in [AppServiceProvider::boot()](app/Providers/AppServiceProvider.php) — alongside other sidebar counters like `unreadMemosCount`. Add new global view-data there, not in individual controllers.

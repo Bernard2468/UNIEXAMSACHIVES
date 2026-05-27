@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\FormSubmission;
 use App\Models\Office;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -82,17 +86,59 @@ class OfficeController extends Controller
 
     public function destroy(Office $office)
     {
-        // Safety check: refuse to delete an office that has active form submissions
-        // currently routed to it. Reassign or close those forms first.
-        $hasActive = $office->pendingSubmissions()->exists();
-        if ($hasActive) {
-            return back()->with('error', "Cannot delete this office — there are forms currently awaiting action here. Reassign or complete them first.");
+        $officeId   = $office->id;
+        $officeName = $office->name;
+
+        try {
+            $cancelledCount = DB::transaction(function () use ($office) {
+                // Any in-progress submissions still routed here are orphaned
+                // (e.g. legacy "HOD / Dean / Director" offices whose stages were
+                // replaced by the leadership pool). Cancel them with a clear
+                // audit-trail entry so we never leave a form pointing into the void.
+                $pending = FormSubmission::where('current_office_id', $office->id)
+                    ->where('status', FormSubmission::STATUS_IN_PROGRESS)
+                    ->get();
+
+                foreach ($pending as $submission) {
+                    $submission->status              = FormSubmission::STATUS_CANCELLED;
+                    $submission->current_assignee_id = null;
+                    $submission->current_office_id  = null;
+                    $submission->appendHistory('cancelled', Auth::id(), [
+                        'reason' => "Routed office '{$office->name}' was removed.",
+                    ]);
+                    $submission->save();
+                }
+
+                // Explicitly clear the pivot before deleting the office. The FK
+                // already cascades, but doing this here means SQLite installs
+                // where PRAGMA foreign_keys is off (rare but possible) still
+                // produce a clean delete.
+                $office->users()->detach();
+
+                $office->delete();
+
+                return $pending->count();
+            });
+        } catch (\Throwable $e) {
+            Log::error('Office delete failed', [
+                'office_id'   => $officeId,
+                'office_name' => $officeName,
+                'user_id'     => Auth::id(),
+                'error'       => $e->getMessage(),
+                'trace'       => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error',
+                "Could not delete '{$officeName}': {$e->getMessage()}");
         }
 
-        $office->delete();
+        $msg = "Office '{$officeName}' deleted.";
+        if ($cancelledCount > 0) {
+            $msg .= " {$cancelledCount} in-progress form" . ($cancelledCount === 1 ? '' : 's') .
+                    " routed here " . ($cancelledCount === 1 ? 'was' : 'were') . " cancelled.";
+        }
 
-        return redirect()->route('offices.index')
-            ->with('success', 'Office deleted.');
+        return redirect()->route('offices.index')->with('success', $msg);
     }
 
     public function addMember(Request $request, Office $office)

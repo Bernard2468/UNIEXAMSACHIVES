@@ -36,8 +36,14 @@
                                     @endif
                                 </div>
                             </div>
+                            @php
+                                $pendingCount = $office->pendingSubmissions()->count();
+                                $confirmMsg = $pendingCount > 0
+                                    ? "Delete this office?\\n\\n{$pendingCount} in-progress form" . ($pendingCount === 1 ? '' : 's') . " currently routed here will be CANCELLED.\\n\\nThis cannot be undone."
+                                    : 'Delete this office? This cannot be undone.';
+                            @endphp
                             <form method="POST" action="{{ route('offices.destroy', $office->id) }}"
-                                  onsubmit="return confirm('Delete this office? This cannot be undone.');"
+                                  onsubmit="return confirm('{{ $confirmMsg }}');"
                                   style="margin-top: 14px;">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="ps-action ps-action--del" style="padding: 8px 16px; font-size: 0.82rem;">
