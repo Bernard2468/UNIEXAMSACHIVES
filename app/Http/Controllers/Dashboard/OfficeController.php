@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Office;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 /**
@@ -15,32 +14,15 @@ use Illuminate\Support\Str;
  * this CRUD is restricted to institutional administrators (UI "Admin"
  * tier = is_admin = false) and Super Admins.
  *
- * Access control note: positions / departments live under the same UI tier
- * (institutional admin) and are not gated server-side today — only via
- * sidebar visibility. Offices ARE gated here because misconfiguring them
- * can misroute signed forms, which is a security-sensitive operation.
+ * Access control is enforced by the `institutional_admin` middleware
+ * applied on the route group in routes/web.php — see
+ * App\Http\Middleware\InstitutionalAdminMiddleware. (Laravel 11's base
+ * Controller no longer extends Illuminate\Routing\Controller, so the
+ * legacy $this->middleware() pattern is not available; we gate at the
+ * route layer instead.)
  */
 class OfficeController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(function ($request, $next) {
-            $user = Auth::user();
-            if (!$user) {
-                abort(401);
-            }
-            // Super Admin may always manage offices. Institutional admins
-            // (database role 'user' / UI "Admin" / is_admin = false) may
-            // manage offices. Everyone else is denied.
-            $isSuperAdmin = method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
-            $isInstitutionalAdmin = !(bool) $user->is_admin;
-            if (!$isSuperAdmin && !$isInstitutionalAdmin) {
-                abort(403, 'Only institutional administrators may manage offices.');
-            }
-            return $next($request);
-        });
-    }
-
     public function index()
     {
         $offices = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
