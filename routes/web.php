@@ -211,16 +211,32 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/download/answer-key/{exam}', [App\Http\Controllers\Dashboard\ExamsController::class, 'downloadAnswerKey'])->name('download.answer.key');
     Route::get('/download/file/{file}', [App\Http\Controllers\Dashboard\FilesController::class, 'downloadFile'])->name('download.file');
     
-    # Legacy Storage URL Redirects (for old files)
-    Route::get('/storage/{path}', function($path) {
-        // Try to find the file in the new storage system
-        $newPath = 'exams/documents/' . basename($path);
-        if (file_exists(public_path($newPath))) {
-            return redirect(asset($newPath));
+    # /storage/* file server.
+    #
+    # On hosts that allow `php artisan storage:link` to create the symlink,
+    # Apache serves these requests directly from public/storage and never
+    # reaches this handler. On shared hosts where the symlink() PHP function
+    # is disabled (Hostinger, many cPanel providers), the request falls
+    # through to here and we serve the file via PHP instead. Same URL,
+    # same auth posture — just two ways to satisfy it.
+    Route::get('/storage/{path}', function (string $path) {
+        // Guard against path traversal — refuse anything that escapes the
+        // public storage directory after canonicalisation.
+        $baseDir   = realpath(storage_path('app/public'));
+        $fullPath  = realpath(storage_path('app/public/' . $path));
+        if ($fullPath && $baseDir && str_starts_with($fullPath, $baseDir) && is_file($fullPath)) {
+            return response()->file($fullPath, [
+                'Cache-Control' => 'private, max-age=86400',
+            ]);
         }
-        
-        // If not found, show a helpful error message
-        abort(404, 'File not found. This file may have been moved to the new storage system.');
+
+        // Legacy fallback: old exam URLs that lived under public/exams/documents/
+        $legacy = public_path('exams/documents/' . basename($path));
+        if (is_file($legacy)) {
+            return redirect(asset('exams/documents/' . basename($path)));
+        }
+
+        abort(404, 'File not found.');
     })->where('path', '.*');
 
     #settings

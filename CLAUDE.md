@@ -92,7 +92,14 @@ Vite config at [vite.config.js](vite.config.js). Blade views are organized under
 
 ### PDF Generation
 
-Uses `barryvdh/laravel-dompdf` for invoice/document export and for the Forms PDF pipeline (each form declares its own `pdfView()`; the shared layout at [resources/views/admin/forms/pdf/_layout.blade.php](resources/views/admin/forms/pdf/_layout.blade.php) renders any form definition).
+Uses `barryvdh/laravel-dompdf` for invoice/document export and for the Forms PDF pipeline (each form declares its own `pdfView()`; the shared layout at [resources/views/admin/forms/pdf/_layout.blade.php](resources/views/admin/forms/pdf/_layout.blade.php) renders any form definition). PDFs read user-uploaded images directly via `storage_path('app/public/...')` rather than `public_path('storage/...')` so the symlink is not required for PDF rendering.
+
+### Storage on shared hosting (Hostinger / cPanel)
+
+Production runs on shared hosting where the PHP `symlink()` function is disabled, so `php artisan storage:link` fails. As a workaround:
+- A `/storage/{path}` route in [routes/web.php](routes/web.php) serves files directly from `storage/app/public/` via PHP when the symlink is absent (with path-traversal guard).
+- Anywhere a feature needs to read a stored file server-side (PDF rendering, mail attachments), prefer `storage_path('app/public/...')` over `public_path('storage/...')`.
+- The `/storage/*` route lives inside the `auth` middleware group, which is appropriate for the current usage (form signatures, internal docs). If you ever need to serve public assets through it (e.g. unauthenticated landing-page images), move them to `public/` directly rather than to `storage/app/public/`.
 
 ## Forms Workflow System
 

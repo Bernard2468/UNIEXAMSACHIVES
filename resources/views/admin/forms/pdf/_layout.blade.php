@@ -125,10 +125,17 @@
                     </table>
 
                     @if($signedSig)
-                        @php $sigCheck = $signedSig->verifyChain(); @endphp
+                        @php
+                            $sigCheck = $signedSig->verifyChain();
+                            // Read directly from storage/app/public so the PDF works on
+                            // shared hosts where the public/storage symlink can't be created.
+                            $sigFsPath = $signedSig->signature_image_path
+                                ? storage_path('app/public/' . ltrim($signedSig->signature_image_path, '/'))
+                                : null;
+                        @endphp
                         <div class="signature-block">
-                            @if($signedSig->signature_image_path && file_exists(public_path('storage/' . $signedSig->signature_image_path)))
-                                <img src="{{ public_path('storage/' . $signedSig->signature_image_path) }}" alt="Signature">
+                            @if($sigFsPath && file_exists($sigFsPath))
+                                <img src="{{ $sigFsPath }}" alt="Signature">
                             @endif
                             <div class="signature-block__meta">
                                 Signed by <strong>{{ trim((optional($signedSig->user)->first_name ?? '') . ' ' . (optional($signedSig->user)->last_name ?? '')) }}</strong>
