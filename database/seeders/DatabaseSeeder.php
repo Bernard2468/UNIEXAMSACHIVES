@@ -15,9 +15,10 @@ class DatabaseSeeder extends Seeder
     {
         User::factory(1)->create();
 
-        // Seed licenses
+        // Seed licenses + the offices used by the Forms workflow
         $this->call([
             LicenseSeeder::class,
+            OfficeSeeder::class,
         ]);
 
         // User::factory()->create([

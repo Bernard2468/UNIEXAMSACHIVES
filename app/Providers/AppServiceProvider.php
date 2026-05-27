@@ -2,17 +2,23 @@
 
 namespace App\Providers;
 
+use App\Forms\Contracts\SignatureProvider;
+use App\Forms\Definitions\PaymentRequisitionForm;
+use App\Forms\Definitions\PurchaseWorksAuthorizationForm;
+use App\Forms\FormRegistry;
 use App\Models\Detail;
 use App\Models\Exam;
 use App\Models\File;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View;
 use App\Models\Message;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaign;
+use App\Services\Signing\InAppSignatureProvider;
+use App\Services\Signing\SignatureService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,7 +27,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // ===== Forms: signing backend =====
+        // To switch to DocuSign/PandaDoc/SignNow later, bind a different
+        // SignatureProvider implementation here. No other code changes needed.
+        $this->app->singleton(SignatureProvider::class, InAppSignatureProvider::class);
+        $this->app->singleton(SignatureService::class, function ($app) {
+            return new SignatureService($app->make(SignatureProvider::class));
+        });
+
+        // ===== Forms: registry of available form types =====
+        // Adding a new form = create a class extending BaseFormDefinition and
+        // register it here. The renderer, controllers, sidebar and PDF
+        // pipeline pick it up automatically.
+        $this->app->singleton(FormRegistry::class, function () {
+            $registry = new FormRegistry();
+            $registry->register(new PaymentRequisitionForm());
+            $registry->register(new PurchaseWorksAuthorizationForm());
+            return $registry;
+        });
     }
 
     /**

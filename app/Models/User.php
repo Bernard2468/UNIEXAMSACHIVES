@@ -362,6 +362,51 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    // ===== Forms / Offices =====
+
+    /**
+     * Offices this user is a member of (Finance Office, Internal Audit, etc.).
+     */
+    public function offices()
+    {
+        return $this->belongsToMany(Office::class, 'office_user')
+            ->withPivot(['is_head', 'is_active'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Active office memberships only — what form routing should consider.
+     */
+    public function activeOffices()
+    {
+        return $this->offices()->wherePivot('is_active', true);
+    }
+
+    /**
+     * Form submissions this user created.
+     */
+    public function formSubmissions()
+    {
+        return $this->hasMany(FormSubmission::class, 'created_by');
+    }
+
+    /**
+     * Form submissions currently waiting on this user's action.
+     */
+    public function awaitingFormSubmissions()
+    {
+        return $this->hasMany(FormSubmission::class, 'current_assignee_id')
+            ->where('status', FormSubmission::STATUS_IN_PROGRESS);
+    }
+
+    /**
+     * The user's saved signature, if any.
+     */
+    public function savedSignature()
+    {
+        return $this->hasOne(UserSignature::class);
+    }
+
     // ===== Email OTP Verification =====
 
     public function hasVerifiedEmail(): bool
