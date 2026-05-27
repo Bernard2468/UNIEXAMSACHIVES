@@ -18,9 +18,9 @@
         .wrap { width: 100%; background-color: #f5f4ed; padding: 28px 16px; }
         .container { max-width: 560px; margin: 0 auto; }
 
-        .brand { display: flex; align-items: center; gap: 10px; padding: 0 4px 22px; }
-        .brand-logo { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
-        .brand-name { font-size: 14px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.01em; }
+        .brand { text-align: center; padding: 4px 0 22px; }
+        .brand-logo { height: 46px; width: auto; max-width: 240px; display: inline-block; }
+        .brand-tagline { font-size: 12px; color: #8a8780; font-weight: 500; margin-top: 8px; letter-spacing: 0.01em; }
 
         .card { background: #ffffff; border-radius: 14px; padding: 26px 26px 24px; margin-bottom: 14px; }
 
@@ -64,12 +64,12 @@
     <div class="wrap">
         <div class="container">
 
-            <!-- Brand bar -->
+            <!-- Brand bar (centered logo + tagline) -->
             <div class="brand">
                 <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1761222538/cug_logo_new_e9d6v9.jpg"
                      alt="Catholic University of Ghana"
                      class="brand-logo">
-                <span class="brand-name">Catholic University of Ghana</span>
+                <div class="brand-tagline">Excellence in Academic Digital Archiving</div>
             </div>
 
             <!-- Primary card -->
