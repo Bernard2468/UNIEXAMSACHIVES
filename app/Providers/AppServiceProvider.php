@@ -9,13 +9,16 @@ use App\Forms\FormRegistry;
 use App\Models\Detail;
 use App\Models\Exam;
 use App\Models\File;
+use App\Models\FormSubmission;
 use App\Models\Message;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaign;
+use App\Policies\FormSubmissionPolicy;
 use App\Services\Signing\InAppSignatureProvider;
 use App\Services\Signing\SignatureService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -54,7 +57,11 @@ class AppServiceProvider extends ServiceProvider
     {
         // Configure authentication redirects
         $this->configureAuthenticationRedirects();
-        
+
+        // Forms authorisation: explicitly bind policy so it is discoverable
+        // regardless of Laravel's auto-discovery conventions.
+        Gate::policy(FormSubmission::class, FormSubmissionPolicy::class);
+
         View::composer('*', function ($view) {
             if(Auth::check()){
                 $userId = Auth::id();
@@ -86,7 +93,12 @@ class AppServiceProvider extends ServiceProvider
 
                 // Unread pending memos (portal Unread tab logic) for sidebar counter
                 $unreadMemosCount = EmailCampaign::countUnreadPendingForUser($userId);
-                
+
+                // Forms awaiting this user's action (sidebar badge for FORMS section)
+                $awaitingFormsCount = FormSubmission::where('status', FormSubmission::STATUS_IN_PROGRESS)
+                    ->where('current_assignee_id', $userId)
+                    ->count();
+
                 if (Auth::user()->is_admin) {
                     // Regular users (is_admin = 1) - see only their own exams/files
                     $myExams = Exam::where('user_id', Auth::user()->id)->count();
@@ -97,6 +109,7 @@ class AppServiceProvider extends ServiceProvider
                         'totalMemosCount' => $totalMemosCount,
                         'unreadMemosCount' => $unreadMemosCount,
                         'bookmarkedCount' => $bookmarkedCount,
+                        'awaitingFormsCount' => $awaitingFormsCount,
                         'myExamsCount' => $myExams,
                         'allExamsCount' => $myExams, // For regular users, "all" is just their own
                         'myFilesCount' => $myFiles,
@@ -114,6 +127,7 @@ class AppServiceProvider extends ServiceProvider
                         'totalMemosCount' => $totalMemosCount,
                         'unreadMemosCount' => $unreadMemosCount,
                         'bookmarkedCount' => $bookmarkedCount,
+                        'awaitingFormsCount' => $awaitingFormsCount,
                         'myExamsCount' => $myExams,
                         'allExamsCount' => $myExams, // Admins also only see their own
                         'myFilesCount' => $myFiles,

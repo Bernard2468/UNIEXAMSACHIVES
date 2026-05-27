@@ -139,7 +139,57 @@
                 </div>
             @endif
         @endauth
-        
+
+        {{-- ===== FORMS WORKFLOW (Purchase/Works Authorization, Payment Requisition, etc.) ===== --}}
+        @auth
+            <div class="sidebar-section-header">
+                <div class="section-header-content">
+                    <div class="section-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clipboard">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                        </svg>
+                    </div>
+                    <div class="section-text">
+                        <h6 class="section-title">FORMS</h6>
+                        <span class="section-subtitle">Workflow &amp; e-signing</span>
+                    </div>
+                    <div class="section-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down">
+                            <polyline points="6,9 12,15 18,9"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="dashboard__nav">
+                <ul>
+                    <li>
+                        <a class="{{ request()->routeIs('admin.forms.gallery') ? 'active' : '' }}" href="{{ route('admin.forms.gallery') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            All Forms
+                        </a>
+                    </li>
+                    <li>
+                        <a class="{{ request()->routeIs('admin.forms.portal') ? 'active' : '' }}" href="{{ route('admin.forms.portal') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            Forms Portal
+                        </a>
+                        @if(($awaitingFormsCount ?? 0) > 0)
+                            <span class="dashboard__label">{{ $awaitingFormsCount }}</span>
+                        @endif
+                    </li>
+                </ul>
+            </div>
+        @endauth
+
         {{-- Exams --}}
         <div class="sidebar-section-header">
             <div class="section-header-content">

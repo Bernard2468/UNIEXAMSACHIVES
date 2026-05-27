@@ -5,11 +5,14 @@ use App\Http\Controllers\Dashboard\AdvanceCommunicationController;
  
 use App\Http\Controllers\Dashboard\DepartmentController;
 use App\Http\Controllers\Dashboard\DetailsController;
+use App\Http\Controllers\Dashboard\FormPortalController;
+use App\Http\Controllers\Dashboard\FormSubmissionController;
 use App\Http\Controllers\Dashboard\PositionController;
 use App\Http\Controllers\Dashboard\ExamsController;
 use App\Http\Controllers\Dashboard\FilesController;
 use App\Http\Controllers\Dashboard\FoldersController;
 use App\Http\Controllers\Dashboard\HomeController;
+use App\Http\Controllers\Dashboard\UserSignatureController;
 use App\Http\Controllers\Frontend\EmailVerificationController;
 use App\Http\Controllers\Frontend\PagesController;
 use Illuminate\Support\Facades\Route;
@@ -315,6 +318,38 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{campaign}/replies', [AdvanceCommunicationController::class, 'adminViewReplies'])->name('replies');
     });
 
+    #Forms Workflow System (Purchase/Works Authorization, Payment Requisition, future forms)
+    Route::prefix('admin/forms')->name('admin.forms.')->group(function () {
+        Route::get('/',                                  [FormPortalController::class, 'index'])->name('portal');
+        Route::get('/all',                               [FormSubmissionController::class, 'gallery'])->name('gallery');
+        Route::get('/compose/{formSlug}',                [FormSubmissionController::class, 'compose'])->name('compose');
+        Route::post('/compose/{formSlug}',               [FormSubmissionController::class, 'store'])
+            ->middleware('throttle:30,1')
+            ->name('store');
+
+        Route::get('/submissions/{submission}',          [FormSubmissionController::class, 'show'])->name('show');
+        Route::post('/submissions/{submission}/draft',   [FormSubmissionController::class, 'saveDraft'])
+            ->middleware('throttle:60,1')
+            ->name('save-draft');
+        Route::post('/submissions/{submission}/sign',    [FormSubmissionController::class, 'sign'])
+            ->middleware('throttle:30,1')
+            ->name('sign');
+        Route::post('/submissions/{submission}/reject',  [FormSubmissionController::class, 'reject'])
+            ->middleware('throttle:30,1')
+            ->name('reject');
+        Route::post('/submissions/{submission}/cancel',  [FormSubmissionController::class, 'cancel'])->name('cancel');
+        Route::post('/submissions/{submission}/comments',[FormSubmissionController::class, 'addComment'])
+            ->middleware('throttle:120,1')
+            ->name('comment');
+        Route::get('/submissions/{submission}/pdf',      [FormSubmissionController::class, 'downloadPdf'])->name('pdf');
+        Route::get('/submissions/{submission}/attachments/{attachment}', [FormSubmissionController::class, 'downloadAttachment'])->name('attachment');
+
+        Route::get('/offices/{officeSlug}/members',      [FormSubmissionController::class, 'officeMembers'])->name('office-members');
+
+        Route::post('/my-signature',   [UserSignatureController::class, 'update'])->name('my-signature.update');
+        Route::delete('/my-signature', [UserSignatureController::class, 'destroy'])->name('my-signature.destroy');
+    });
+
     #logout
     Route::get('/logout',[HomeController::class, 'logout'])->name('logout');
 });
@@ -390,6 +425,15 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin'])-
     Route::post('/maintenance/{id}/approve', [\App\Http\Controllers\SuperAdmin\MaintenanceController::class, 'approve'])->name('maintenance.approve');
     Route::post('/maintenance/{id}/notify', [\App\Http\Controllers\SuperAdmin\MaintenanceController::class, 'notifyUsers'])->name('maintenance.notify');
     
+    // Offices Management (routing destinations for the Forms workflow)
+    Route::get('/offices',                                  [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'index'])->name('offices.index');
+    Route::post('/offices',                                 [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'store'])->name('offices.store');
+    Route::get('/offices/{office}',                         [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'show'])->name('offices.show');
+    Route::put('/offices/{office}',                         [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'update'])->name('offices.update');
+    Route::post('/offices/{office}/members',                [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'addMember'])->name('offices.members.add');
+    Route::put('/offices/{office}/members/{user}',          [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'updateMember'])->name('offices.members.update');
+    Route::delete('/offices/{office}/members/{user}',       [\App\Http\Controllers\SuperAdmin\OfficeController::class, 'removeMember'])->name('offices.members.remove');
+
     // License Management
     Route::get('/system-licences', [\App\Http\Controllers\SuperAdmin\LicenseController::class, 'index'])->name('system-licences');
     Route::post('/licenses', [\App\Http\Controllers\SuperAdmin\LicenseController::class, 'store'])->name('licenses.store');

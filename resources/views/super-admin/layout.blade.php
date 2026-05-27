@@ -366,6 +366,12 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('super-admin.offices.index') }}" class="{{ request()->routeIs('super-admin.offices.*') ? 'active' : '' }}">
+                    <i class="icofont-building-alt"></i>
+                    <span>Offices</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('super-admin.system-licences') }}" class="{{ request()->routeIs('super-admin.system-licences') ? 'active' : '' }}">
                     <i class="icofont-file-document"></i>
                     <span>System Licences</span>
