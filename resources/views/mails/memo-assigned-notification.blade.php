@@ -234,7 +234,7 @@
                 <div class="logo">
                     <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1761222538/cug_logo_new_e9d6v9.jpg" alt="University Digital Transformation Suite (UDTS)" class="logo-image" />
                 </div>
-                <div class="tagline">Excellence in Academic Digital Archiving</div>
+                <div class="tagline">Home of Academic, Technical &amp; Moral Excellence</div>
             </div>
         </div>
         

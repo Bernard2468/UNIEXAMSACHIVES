@@ -81,7 +81,7 @@
                 <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1761222538/cug_logo_new_e9d6v9.jpg"
                      alt="Catholic University of Ghana"
                      class="brand-logo">
-                <div class="brand-tagline">Excellence in Academic Digital Archiving</div>
+                <div class="brand-tagline">Home of Academic, Technical &amp; Moral Excellence</div>
             </div>
 
             <!-- Primary card -->
