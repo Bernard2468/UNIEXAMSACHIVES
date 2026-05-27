@@ -84,12 +84,13 @@ class PaymentRequisitionForm extends BaseFormDefinition
             new FormStage(
                 slug: 'hod_dean',
                 label: 'A. Director / Dean / HOD Co-Sign',
-                officeSlug: 'dean-hod',
-                description: 'Director, Dean or Head of Department endorses the requisitioner.',
+                officeSlug: null,
+                description: 'The Director, Dean or Head of Department endorses the requisitioner. Pick the specific person on the next step.',
                 fields: [
                     new FormField('hod_remarks', 'Remarks (optional)', FormField::TYPE_TEXTAREA, required: false, col: 12),
                 ],
                 signatureRequired: true,
+                recipientPool: FormStage::POOL_LEADERSHIP,
             ),
 
             new FormStage(

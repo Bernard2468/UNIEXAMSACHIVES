@@ -15,12 +15,13 @@ class OfficeSeeder extends Seeder
 {
     public function run(): void
     {
+        // NOTE: The legacy "dean-hod" office has been retired — Director / Dean / HOD
+        // forms now route through the leadership pool (positions tagged with a
+        // forms category in the Positions admin) instead of a single office.
+        // We intentionally do NOT delete any existing dean-hod office record so
+        // historical submissions keep their references intact.
+
         $offices = [
-            [
-                'slug' => 'dean-hod',
-                'name' => 'Director / Dean / HOD',
-                'description' => 'Director, Dean or Head of Department who co-signs the requisitioner section.',
-            ],
             [
                 'slug' => 'finance-office',
                 'name' => 'Finance Office',

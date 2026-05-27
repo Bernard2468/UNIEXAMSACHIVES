@@ -61,6 +61,7 @@
                                         <tr>
                                             <th class="ps-th ps-th--id">#</th>
                                             <th class="ps-th">Name</th>
+                                            <th class="ps-th ps-th--cat">Forms Category</th>
                                             <th class="ps-th ps-th--actions">Actions</th>
                                         </tr>
                                     </thead>
@@ -69,9 +70,19 @@
                                         <tr class="ps-tr">
                                             <td class="ps-td ps-td--id">{{ $pos->id }}</td>
                                             <td class="ps-td ps-td--name">{{ $pos->name }}</td>
+                                            <td class="ps-td">
+                                                @if($pos->category && isset(\App\Models\Position::CATEGORIES[$pos->category]))
+                                                    <span class="ps-cat-pill ps-cat-pill--{{ $pos->category }}">
+                                                        {{ \App\Models\Position::CATEGORIES[$pos->category] }}
+                                                    </span>
+                                                @else
+                                                    <span class="ps-cat-pill ps-cat-pill--none">—</span>
+                                                @endif
+                                            </td>
                                             <td class="ps-td ps-td--actions">
                                                 <button type="button" class="ps-action ps-action--edit ps-edit-btn"
                                                     data-name="{{ $pos->name }}"
+                                                    data-category="{{ $pos->category }}"
                                                     data-route="{{ route('positions.update', $pos->id) }}">
                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                                     Edit
@@ -188,6 +199,16 @@
                         <label class="ps-modal__label">Position name</label>
                         <input class="ps-modal__input" type="text" name="name" placeholder="e.g. Head of Department" required autofocus>
                     </div>
+                    <div class="ps-modal__field">
+                        <label class="ps-modal__label">Forms category <span class="ps-modal__hint">(optional)</span></label>
+                        <select class="ps-modal__input" name="category">
+                            <option value="">— Not a leadership role —</option>
+                            @foreach(\App\Models\Position::CATEGORIES as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <p class="ps-modal__help">Used by forms routing: positions tagged as HOD, Dean or Director will appear in the leadership recipient picker.</p>
+                    </div>
                     <div class="ps-modal__foot">
                         <button type="button" class="ps-modal__btn-cancel" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="ps-modal__btn-save">
@@ -221,6 +242,16 @@
                     <div class="ps-modal__field">
                         <label class="ps-modal__label">Position / Role name</label>
                         <input class="ps-modal__input" type="text" id="psEditName" name="name" placeholder="e.g. Head of Department" required autofocus>
+                    </div>
+                    <div class="ps-modal__field">
+                        <label class="ps-modal__label">Forms category <span class="ps-modal__hint">(optional)</span></label>
+                        <select class="ps-modal__input" id="psEditCategory" name="category">
+                            <option value="">— Not a leadership role —</option>
+                            @foreach(\App\Models\Position::CATEGORIES as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        <p class="ps-modal__help">Used by forms routing: positions tagged as HOD, Dean or Director will appear in the leadership recipient picker.</p>
                     </div>
                     <div class="ps-modal__foot">
                         <button type="button" class="ps-modal__btn-cancel" data-bs-dismiss="modal">Cancel</button>
@@ -293,6 +324,7 @@
     background: #fafafa; border-bottom: 1.5px solid #f0f0f0;
 }
 .ps-th--id { width: 60px; }
+.ps-th--cat { width: 180px; }
 .ps-th--actions { width: 170px; text-align: right; }
 .ps-tr { border-bottom: 1.5px solid #f5f5f5; transition: background .1s; }
 .ps-tr:last-child { border-bottom: none; }
@@ -350,6 +382,19 @@
 }
 .ps-modal__input:focus { border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.08); }
 .ps-modal__input::placeholder { color: #d4d7de; }
+.ps-modal__hint { font-weight: 400; font-size: 0.72rem; color: #b0b5c0; margin-left: 4px; }
+.ps-modal__help { font-size: 0.72rem; color: #9ca3af; margin: 6px 0 0; line-height: 1.4; }
+
+/* ── Category pill (leadership tag) ── */
+.ps-cat-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em; border: 1px solid transparent; }
+.ps-cat-pill--hod      { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+.ps-cat-pill--dean     { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.ps-cat-pill--director { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.ps-cat-pill--none     { background: #f9fafb; color: #c0c4cf; border-color: #ebebeb; font-weight: 500; }
+.is_dark .ps-cat-pill--hod      { background: #064e3b; color: #d1fae5; border-color: #065f46; }
+.is_dark .ps-cat-pill--dean     { background: #1e3a8a; color: #dbeafe; border-color: #1e40af; }
+.is_dark .ps-cat-pill--director { background: #78350f; color: #fef3c7; border-color: #92400e; }
+.is_dark .ps-cat-pill--none     { background: #0f172a; color: #6b7280; border-color: #1e2330; }
 .ps-modal__foot { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
 .ps-modal__btn-cancel {
     padding: 9px 18px; background: none; border: 1.5px solid #e5e7eb; border-radius: 10px;
@@ -466,10 +511,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var editForm  = document.getElementById('psEditForm');
     var editName  = document.getElementById('psEditName');
 
+    var editCategory = document.getElementById('psEditCategory');
+
     document.querySelectorAll('.ps-edit-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             editName.value  = btn.dataset.name;
             editForm.action = btn.dataset.route;
+            if (editCategory) {
+                editCategory.value = btn.dataset.category || '';
+            }
             new bootstrap.Modal(editModal).show();
         });
     });

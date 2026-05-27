@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Forms\FormRegistry;
+use App\Forms\FormStage;
 use App\Http\Controllers\Controller;
 use App\Models\FormAttachment;
 use App\Models\FormSubmission;
 use App\Models\Office;
+use App\Models\Position;
+use App\Models\User;
 use App\Services\Forms\FormWorkflowService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -53,23 +56,21 @@ class FormSubmissionController extends Controller
         $definition = $this->registry->findOrFail($formSlug);
         $stage      = $definition->firstStage();
 
-        // The next stage after the requisitioner determines the office we route to.
-        $nextStage = $definition->nextStageAfter($stage->slug);
-        $office    = $nextStage && $nextStage->officeSlug
-            ? Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
-                ->where('slug', $nextStage->officeSlug)->first()
-            : null;
+        // The next stage after the requisitioner determines who we route to.
+        $nextStage   = $definition->nextStageAfter($stage->slug);
+        $nextContext = $this->buildNextStageContext($nextStage);
 
         $user = Auth::user();
 
         return view('admin.forms.compose', [
-            'definition' => $definition,
-            'stage'      => $stage,
-            'nextStage'  => $nextStage,
-            'nextOffice' => $office,
-            'submission' => null,
-            'sectionData' => $this->prefillRequisitioner($user, $stage),
-            'savedSignature' => $user->savedSignature,
+            'definition'           => $definition,
+            'stage'                => $stage,
+            'nextStage'            => $nextStage,
+            'nextOffice'           => $nextContext['office'],
+            'leadershipCandidates' => $nextContext['leadership'],
+            'submission'           => null,
+            'sectionData'          => $this->prefillRequisitioner($user, $stage),
+            'savedSignature'       => $user->savedSignature,
         ]);
     }
 
@@ -84,7 +85,8 @@ class FormSubmissionController extends Controller
         $action = $request->input('action') === 'draft' ? 'draft' : 'send';
         $data   = $this->validateStageInput($request, $definition, $stage, requireSignature: $action === 'send');
 
-        $nextAssigneeId = $action === 'send' ? $this->validatedNextAssignee($request, $definition, $stage) : null;
+        $nextAssigneeId       = $action === 'send' ? $this->validatedNextAssignee($request, $definition, $stage) : null;
+        $leadershipCategory   = $action === 'send' ? $this->extractLeadershipCategory($request) : null;
 
         $submission = $this->workflow->createSubmission(
             definition: $definition,
@@ -94,6 +96,7 @@ class FormSubmissionController extends Controller
             action: $action,
             nextAssigneeId: $nextAssigneeId,
             signatureContext: $this->signatureContext($request),
+            leadershipCategory: $leadershipCategory,
         );
 
         return redirect()->route('admin.forms.show', $submission->id)
@@ -130,16 +133,15 @@ class FormSubmissionController extends Controller
             ? app(\App\Policies\FormSubmissionPolicy::class)->fillCurrentStage($user, $submission)
             : false;
 
+        $nextContext = ['office' => null, 'leadership' => null];
+        $vcOffice    = null;
+
         if ($canFill && $currentStage) {
             $nextStage = $definition->nextStageAfter($currentStage->slug);
+            $nextContext = $this->buildNextStageContext($nextStage);
+
             // For VC branch we also expose the VC office.
             $vcStage = in_array('vc', $currentStage->branches, true) ? $definition->stage('vc') : null;
-
-            $nextOffice = $nextStage && $nextStage->officeSlug
-                ? Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
-                    ->where('slug', $nextStage->officeSlug)->first()
-                : null;
-
             $vcOffice = $vcStage && $vcStage->officeSlug
                 ? Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
                     ->where('slug', $vcStage->officeSlug)->first()
@@ -147,19 +149,59 @@ class FormSubmissionController extends Controller
         }
 
         return view('admin.forms.show', [
-            'submission'      => $submission,
-            'definition'      => $definition,
-            'currentStage'    => $currentStage,
-            'nextStage'       => $nextStage ?? null,
-            'nextOffice'      => $nextOffice ?? null,
-            'vcOffice'        => $vcOffice ?? null,
-            'canFill'         => $canFill,
-            'canComment'      => app(\App\Policies\FormSubmissionPolicy::class)->comment($user, $submission),
-            'canCancel'       => app(\App\Policies\FormSubmissionPolicy::class)->cancel($user, $submission),
-            'canViewInternal' => $canViewInternal,
-            'comments'        => $comments,
-            'savedSignature'  => $user->savedSignature,
+            'submission'           => $submission,
+            'definition'           => $definition,
+            'currentStage'         => $currentStage,
+            'nextStage'            => $nextStage ?? null,
+            'nextOffice'           => $nextContext['office'],
+            'leadershipCandidates' => $nextContext['leadership'],
+            'vcOffice'             => $vcOffice,
+            'canFill'              => $canFill,
+            'canComment'           => app(\App\Policies\FormSubmissionPolicy::class)->comment($user, $submission),
+            'canCancel'            => app(\App\Policies\FormSubmissionPolicy::class)->cancel($user, $submission),
+            'canViewInternal'      => $canViewInternal,
+            'comments'             => $comments,
+            'savedSignature'       => $user->savedSignature,
         ]);
+    }
+
+    /**
+     * Build the data the recipient picker needs for the given next stage:
+     *  - office candidates when the stage routes to an Office
+     *  - or a category-keyed map of User collections for leadership pools
+     */
+    protected function buildNextStageContext(?FormStage $nextStage): array
+    {
+        $office     = null;
+        $leadership = null;
+
+        if (!$nextStage) {
+            return ['office' => null, 'leadership' => null];
+        }
+
+        if ($nextStage->isLeadershipPool()) {
+            $leadership = [];
+            foreach (Position::CATEGORIES as $key => $_label) {
+                $positionIds = Position::query()->where('category', $key)->pluck('id');
+                if ($positionIds->isEmpty()) {
+                    $leadership[$key] = collect();
+                    continue;
+                }
+                $leadership[$key] = User::query()
+                    ->whereIn('position_id', $positionIds)
+                    ->orderBy('first_name')
+                    ->get(['id', 'first_name', 'last_name', 'email', 'profile_picture', 'position_id', 'department_id']);
+            }
+        } elseif ($nextStage->officeSlug) {
+            $office = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
+                ->where('slug', $nextStage->officeSlug)
+                ->first();
+        }
+
+        return [
+            'office'     => $office,
+            'leadership' => $leadership,
+        ];
     }
 
     /**
@@ -200,7 +242,8 @@ class FormSubmissionController extends Controller
 
         $data = $this->validateStageInput($request, $definition, $stage, requireSignature: true);
 
-        $nextAssigneeId = $this->validatedNextAssignee($request, $definition, $stage, $data['fields']);
+        $nextAssigneeId     = $this->validatedNextAssignee($request, $definition, $stage, $data['fields']);
+        $leadershipCategory = $this->extractLeadershipCategory($request);
 
         $this->workflow->signAndForward(
             submission: $submission,
@@ -210,6 +253,7 @@ class FormSubmissionController extends Controller
             signatureContext: $this->signatureContext($request),
             nextAssigneeId: $nextAssigneeId,
             attachments: $request->file('attachments', []),
+            leadershipCategory: $leadershipCategory,
         );
 
         return redirect()->route('admin.forms.show', $submission->id)
@@ -351,7 +395,11 @@ class FormSubmissionController extends Controller
 
     /**
      * Determine + validate which next-stage assignee the request asked for.
-     * Returns null when no downstream office exists (form completion).
+     * Returns null when no downstream stage exists (form completion).
+     *
+     * For leadership-pool next stages we additionally require a category
+     * (hod / dean / director) and the workflow service will validate that
+     * the picked user truly carries a position tagged with that category.
      */
     protected function validatedNextAssignee($request, $definition, $stage, ?array $thisStageData = null): ?int
     {
@@ -374,6 +422,20 @@ class FormSubmissionController extends Controller
         }
 
         return (int) $assigneeId;
+    }
+
+    /**
+     * Optional leadership category (hod/dean/director) the requisitioner
+     * picked when the next stage is a leadership pool. Returned as null
+     * when not applicable.
+     */
+    protected function extractLeadershipCategory(Request $request): ?string
+    {
+        $value = $request->input('next_leadership_category');
+        if (!$value) {
+            return null;
+        }
+        return in_array($value, array_keys(Position::CATEGORIES), true) ? $value : null;
     }
 
     /**

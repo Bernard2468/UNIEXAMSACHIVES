@@ -194,15 +194,28 @@
                                             <div class="form-panel__head">
                                                 <div>
                                                     <h2 class="form-panel__title">Forward to {{ $nextStage->label ?? '—' }}<span class="form-panel__title-bar"></span></h2>
-                                                    <p class="form-panel__desc">Pick a specific person to receive this form next.</p>
+                                                    @if($nextStage && $nextStage->isLeadershipPool())
+                                                        <p class="form-panel__desc">Choose whether this form is going to a <strong>Dean</strong>, <strong>HOD</strong> or <strong>Director</strong>, then pick the specific person from the list.</p>
+                                                    @else
+                                                        <p class="form-panel__desc">Pick a specific person to receive this form next.</p>
+                                                    @endif
                                                 </div>
                                             </div>
                                             <div class="form-panel__body">
-                                                @include('admin.forms.partials.recipient-picker', [
-                                                    'office'    => $nextOffice,
-                                                    'fieldName' => 'next_assignee_id',
-                                                    'required'  => true,
-                                                ])
+                                                @if($nextStage && $nextStage->isLeadershipPool())
+                                                    @include('admin.forms.partials.leadership-picker', [
+                                                        'leadershipCandidates' => $leadershipCandidates ?? [],
+                                                        'fieldName'            => 'next_assignee_id',
+                                                        'categoryFieldName'    => 'next_leadership_category',
+                                                        'required'             => true,
+                                                    ])
+                                                @else
+                                                    @include('admin.forms.partials.recipient-picker', [
+                                                        'office'    => $nextOffice,
+                                                        'fieldName' => 'next_assignee_id',
+                                                        'required'  => true,
+                                                    ])
+                                                @endif
 
                                                 @if($vcOffice)
                                                     <p style="margin: 12px 0 0; font-size: 0.78rem; color: #9ca3af; line-height: 1.5;">
@@ -251,6 +264,10 @@
                                 @endif
                             @endif
                         @endif
+
+                        @include('admin.forms.partials.audit-trail', [
+                            'submission' => $submission,
+                        ])
 
                         @include('admin.forms.partials.comments', [
                             'submission'      => $submission,

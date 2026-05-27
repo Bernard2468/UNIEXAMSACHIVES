@@ -13,6 +13,7 @@ use App\Models\FormComment;
 use App\Models\FormSubmission;
 use App\Models\Notification;
 use App\Models\Office;
+use App\Models\Position;
 use App\Models\User;
 use App\Services\Signing\SignatureService;
 use Illuminate\Http\UploadedFile;
@@ -59,6 +60,7 @@ class FormWorkflowService
         ?string $action = 'send',
         ?int $nextAssigneeId = null,
         array $signatureContext = [],
+        ?string $leadershipCategory = null,
     ): FormSubmission {
         return DB::transaction(function () use (
             $definition,
@@ -67,7 +69,8 @@ class FormWorkflowService
             $attachments,
             $action,
             $nextAssigneeId,
-            $signatureContext
+            $signatureContext,
+            $leadershipCategory
         ) {
             $firstStage = $definition->firstStage();
 
@@ -105,12 +108,13 @@ class FormWorkflowService
 
             if ($action === 'send') {
                 $this->signAndForward(
-                    $submission,
-                    $firstStage->slug,
-                    $creator,
-                    $requisitionerData,
-                    $signatureContext,
-                    $nextAssigneeId,
+                    submission: $submission,
+                    stageSlug: $firstStage->slug,
+                    signer: $creator,
+                    data: $requisitionerData,
+                    signatureContext: $signatureContext,
+                    nextAssigneeId: $nextAssigneeId,
+                    leadershipCategory: $leadershipCategory,
                 );
             }
 
@@ -166,7 +170,8 @@ class FormWorkflowService
         array $data,
         array $signatureContext = [],
         ?int $nextAssigneeId = null,
-        array $attachments = []
+        array $attachments = [],
+        ?string $leadershipCategory = null,
     ): FormSubmission {
         $definition = $this->resolveDefinition($submission);
         $stage      = $this->resolveStage($definition, $stageSlug);
@@ -187,7 +192,8 @@ class FormWorkflowService
             $data,
             $signatureContext,
             $nextAssigneeId,
-            $attachments
+            $attachments,
+            $leadershipCategory
         ) {
             $submission->setSectionData($stage->slug, $data);
 
@@ -218,8 +224,11 @@ class FormWorkflowService
                 return $this->completeSubmission($submission, $signer);
             }
 
-            $assignee = $this->resolveNextAssignee($nextStage, $nextAssigneeId);
+            $assignee = $this->resolveNextAssignee($nextStage, $nextAssigneeId, $leadershipCategory);
             if (!$assignee) {
+                if ($nextStage->isLeadershipPool()) {
+                    abort(422, "No matching leadership user is available for this form. Ask an administrator to tag the appropriate positions as HOD / Dean / Director.");
+                }
                 abort(422, "No active member of the {$nextStage->label} office is available to receive this form. Ask your administrator to assign someone to that office.");
             }
 
@@ -235,11 +244,12 @@ class FormWorkflowService
             }
 
             $submission->appendHistory('stage_signed', $signer->id, [
-                'stage'     => $stage->slug,
-                'next'      => $nextStage->slug,
-                'assignee'  => $assignee->id,
-                'office'    => $office?->slug,
-                'vc_referral' => $shouldReferToVc,
+                'stage'             => $stage->slug,
+                'next'              => $nextStage->slug,
+                'assignee'          => $assignee->id,
+                'office'            => $office?->slug,
+                'leadership_category' => $nextStage->isLeadershipPool() ? $leadershipCategory : null,
+                'vc_referral'       => $shouldReferToVc,
             ]);
 
             $submission->save();
@@ -401,10 +411,32 @@ class FormWorkflowService
         return $definition->nextStageAfter($stage->slug, includeOptional: false);
     }
 
-    protected function resolveNextAssignee(FormStage $stage, ?int $nextAssigneeId): ?User
+    protected function resolveNextAssignee(FormStage $stage, ?int $nextAssigneeId, ?string $leadershipCategory = null): ?User
     {
+        // ── Leadership pool: HOD / Dean / Director picked dynamically ──
+        if ($stage->isLeadershipPool()) {
+            if (!$nextAssigneeId) {
+                abort(422, 'Please pick the specific Dean / HOD / Director who should receive this form.');
+            }
+            if (!$leadershipCategory || !in_array($leadershipCategory, array_keys(Position::CATEGORIES), true)) {
+                abort(422, 'Please choose whether this form is going to a Dean, HOD or Director.');
+            }
+
+            $user = User::query()
+                ->where('id', $nextAssigneeId)
+                ->whereHas('position', fn ($q) => $q->where('category', $leadershipCategory))
+                ->first();
+
+            if (!$user) {
+                abort(422, 'The selected recipient is not tagged as a ' . Position::CATEGORIES[$leadershipCategory] . '. Refresh the page and pick again.');
+            }
+
+            return $user;
+        }
+
+        // ── Office pool (default) ──
         if (!$stage->officeSlug) {
-            // No office on the next stage means it's the requisitioner —
+            // No office and not a leadership pool means it's the requisitioner —
             // caller is responsible for setting current_assignee_id.
             return $nextAssigneeId ? User::find($nextAssigneeId) : null;
         }

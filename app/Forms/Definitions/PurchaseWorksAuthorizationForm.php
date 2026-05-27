@@ -96,13 +96,14 @@ class PurchaseWorksAuthorizationForm extends BaseFormDefinition
 
             new FormStage(
                 slug: 'hod_dean',
-                label: 'A. Dean / HOD Co-Sign',
-                officeSlug: 'dean-hod',
-                description: 'Dean or Head of Department endorses the requisitioner.',
+                label: 'A. Dean / HOD / Director Co-Sign',
+                officeSlug: null,
+                description: 'The Dean, Head of Department or Director endorses the requisitioner. Pick the specific person on the next step.',
                 fields: [
                     new FormField('hod_remarks', 'Remarks (optional)', FormField::TYPE_TEXTAREA, required: false, col: 12),
                 ],
                 signatureRequired: true,
+                recipientPool: FormStage::POOL_LEADERSHIP,
             ),
 
             new FormStage(

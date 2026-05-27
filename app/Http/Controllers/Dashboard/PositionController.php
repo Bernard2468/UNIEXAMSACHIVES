@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Position;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PositionController extends Controller
 {
@@ -17,11 +18,8 @@ class PositionController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        Position::create($request->all());
+        $data = $this->validatePayload($request);
+        Position::create($data);
 
         return redirect()->route('positions.index')->with('success', 'Position created successfully.');
     }
@@ -33,11 +31,8 @@ class PositionController extends Controller
 
     public function update(Request $request, Position $position)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        $position->update($request->all());
+        $data = $this->validatePayload($request);
+        $position->update($data);
 
         return redirect()->route('positions.index')->with('success', 'Position updated successfully.');
     }
@@ -48,5 +43,20 @@ class PositionController extends Controller
         return redirect()->route('positions.index')->with('success', 'Position deleted successfully.');
     }
 
-}
+    /**
+     * Validate + normalise the request payload for create/update.
+     * The `category` field tags the position into one of the form
+     * routing pools (HOD / Dean / Director) — see Position::CATEGORIES.
+     */
+    protected function validatePayload(Request $request): array
+    {
+        $data = $request->validate([
+            'name'     => 'required|string|max:255',
+            'category' => ['nullable', Rule::in(array_keys(Position::CATEGORIES))],
+        ]);
 
+        $data['category'] = $data['category'] ?: null;
+
+        return $data;
+    }
+}
