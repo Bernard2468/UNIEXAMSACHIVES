@@ -16,11 +16,10 @@
                 <div class="col-xl-9 col-lg-9 col-md-12">
                     <div class="ps-wrap">
 
-                        {{-- Page header --}}
                         <div class="ps-page-header">
                             <div>
                                 <h1 class="ps-page-title">Offices<span class="ps-title-bar"></span></h1>
-                                <p class="ps-page-sub">Manage the institutional offices that forms route through (Finance Office, Internal Audit, Registrar, etc.) and assign their members.</p>
+                                <p class="ps-page-sub">Institutional offices that forms route through. Add their members and designate the head of each.</p>
                             </div>
                             <button class="ps-btn-primary" type="button" id="triggerOfficeModal">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -59,8 +58,15 @@
                             </div>
 
                             @if($offices->isEmpty())
-                                <div class="off-empty">
-                                    <p>No offices yet. Create one to start routing forms.</p>
+                                <div class="ps-empty">
+                                    <div class="ps-empty__icon">
+                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"/></svg>
+                                    </div>
+                                    <p class="ps-empty__text">No offices yet. Create one to start routing forms.</p>
+                                    <button class="ps-btn-primary" id="triggerOfficeModalEmpty">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        Create first office
+                                    </button>
                                 </div>
                             @else
                                 <div class="off-grid">
@@ -68,32 +74,31 @@
                                         @php
                                             $head = $office->users->where('pivot.is_head', true)->where('pivot.is_active', true)->first();
                                             $activeCount = $office->users->where('pivot.is_active', true)->count();
+                                            $headName = $head ? trim(($head->first_name ?? '') . ' ' . ($head->last_name ?? '')) : null;
                                         @endphp
                                         <a href="{{ route('offices.show', $office->id) }}" class="off-card">
                                             <div class="off-card__top">
                                                 <div class="off-card__icon">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"/></svg>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"/></svg>
                                                 </div>
                                                 @if($office->is_active)
-                                                    <span class="off-pill off-pill--ok">Active</span>
+                                                    <span class="off-pill off-pill--ok"><span class="off-pill-dot"></span>Active</span>
                                                 @else
-                                                    <span class="off-pill off-pill--warn">Inactive</span>
+                                                    <span class="off-pill off-pill--warn"><span class="off-pill-dot"></span>Inactive</span>
                                                 @endif
                                             </div>
                                             <h3 class="off-card__title">{{ $office->name }}</h3>
                                             <code class="off-card__slug">{{ $office->slug }}</code>
-                                            @if($office->description)
-                                                <p class="off-card__desc">{{ Str::limit($office->description, 110) }}</p>
-                                            @endif
+
                                             <div class="off-card__stats">
-                                                <div>
+                                                <div class="off-stat">
                                                     <div class="off-stat__label">Members</div>
-                                                    <div class="off-stat__value">{{ $activeCount }} active</div>
+                                                    <div class="off-stat__value">{{ $activeCount }}</div>
                                                 </div>
-                                                <div>
+                                                <div class="off-stat">
                                                     <div class="off-stat__label">Head</div>
                                                     <div class="off-stat__value {{ $head ? '' : 'off-stat__value--warn' }}">
-                                                        {{ $head ? trim(($head->first_name ?? '') . ' ' . ($head->last_name ?? '')) : 'Not set' }}
+                                                        {{ $headName ?: '—' }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -102,8 +107,33 @@
                                 </div>
 
                                 @if($offices->hasPages())
-                                    <div class="pagination-wrapper" style="padding: 14px 16px;">
-                                        {{ $offices->links() }}
+                                    <div class="pagination-wrapper">
+                                        <div class="pagination-info">
+                                            Showing <strong>{{ $offices->firstItem() }}</strong>–<strong>{{ $offices->lastItem() }}</strong> of <strong>{{ $offices->total() }}</strong>
+                                        </div>
+                                        <div class="pagination-controls">
+                                            <ul class="pagination">
+                                                @if($offices->onFirstPage())
+                                                    <li class="pagination-item"><span class="pagination-link icon disabled"><i class="icofont-arrow-left"></i></span></li>
+                                                @else
+                                                    <li class="pagination-item"><a href="{{ $offices->previousPageUrl() }}" class="pagination-link icon"><i class="icofont-arrow-left"></i></a></li>
+                                                @endif
+                                                @for ($i = max(1, $offices->currentPage()-2); $i <= min($offices->lastPage(), $offices->currentPage()+2); $i++)
+                                                    <li class="pagination-item">
+                                                        @if ($i == $offices->currentPage())
+                                                            <span class="pagination-link active">{{ $i }}</span>
+                                                        @else
+                                                            <a href="{{ $offices->url($i) }}" class="pagination-link">{{ $i }}</a>
+                                                        @endif
+                                                    </li>
+                                                @endfor
+                                                @if ($offices->hasMorePages())
+                                                    <li class="pagination-item"><a href="{{ $offices->nextPageUrl() }}" class="pagination-link icon"><i class="icofont-arrow-right"></i></a></li>
+                                                @else
+                                                    <li class="pagination-item"><span class="pagination-link icon disabled"><i class="icofont-arrow-right"></i></span></li>
+                                                @endif
+                                            </ul>
+                                        </div>
                                     </div>
                                 @endif
                             @endif
@@ -115,92 +145,167 @@
     </div>
 </div>
 
-{{-- New Office Modal --}}
-<div class="off-modal" id="officeModal" style="display:none;">
-    <div class="off-modal__backdrop"></div>
-    <div class="off-modal__panel">
-        <div class="off-modal__head">
-            <h3 style="margin:0;">New Office</h3>
-            <button type="button" class="off-modal__close" id="closeOfficeModal" aria-label="Close">&times;</button>
+{{-- New office modal --}}
+<div class="modal fade" id="officeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="ps-modal">
+            <div class="ps-modal__hd">
+                <div>
+                    <h5 class="ps-modal__title">New office</h5>
+                    <p class="ps-modal__sub">Add an office that forms can be routed to.</p>
+                </div>
+                <button type="button" class="ps-modal__close" data-bs-dismiss="modal">
+                    <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 3L3 11M3 3l8 8"/></svg>
+                </button>
+            </div>
+            <div class="ps-modal__body">
+                <form method="POST" action="{{ route('offices.store') }}">
+                    @csrf
+                    <div class="ps-modal__field">
+                        <label class="ps-modal__label">Office name</label>
+                        <input type="text" name="name" class="ps-modal__input" placeholder="e.g. Finance Office" required autofocus>
+                    </div>
+                    <div class="ps-modal__field">
+                        <label class="ps-modal__label">Slug <span class="off-optional">auto-generated from name if blank</span></label>
+                        <input type="text" name="slug" class="ps-modal__input" placeholder="e.g. finance-office">
+                    </div>
+                    <div class="ps-modal__field">
+                        <label class="ps-modal__label">Email <span class="off-optional">optional</span></label>
+                        <input type="email" name="email" class="ps-modal__input" placeholder="finance@cug.edu.gh">
+                    </div>
+                    <div class="ps-modal__field">
+                        <label class="ps-modal__label">Description <span class="off-optional">optional</span></label>
+                        <textarea name="description" class="ps-modal__input" rows="2" placeholder="What does this office do?"></textarea>
+                    </div>
+                    <div class="ps-modal__foot">
+                        <button type="button" class="ps-modal__btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="ps-modal__btn-save">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Save office
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-        <form method="POST" action="{{ route('offices.store') }}">
-            @csrf
-            <div class="off-form__group">
-                <label class="off-form__label">Office name</label>
-                <input type="text" name="name" class="off-form__input" placeholder="e.g. Finance Office" required>
-            </div>
-            <div class="off-form__group">
-                <label class="off-form__label">Slug (optional)</label>
-                <input type="text" name="slug" class="off-form__input" placeholder="auto-generated from name">
-                <p class="off-form__hint">Only letters, numbers, dashes and underscores. Used internally by the form routing system.</p>
-            </div>
-            <div class="off-form__group">
-                <label class="off-form__label">Email (optional)</label>
-                <input type="email" name="email" class="off-form__input" placeholder="finance@cug.edu.gh">
-            </div>
-            <div class="off-form__group">
-                <label class="off-form__label">Description</label>
-                <textarea name="description" class="off-form__input" rows="3" placeholder="What does this office do?"></textarea>
-            </div>
-            <div class="off-form__actions">
-                <button type="button" class="off-btn off-btn--ghost" id="cancelOfficeModal">Cancel</button>
-                <button type="submit" class="off-btn off-btn--primary">Create Office</button>
-            </div>
-        </form>
     </div>
 </div>
 
 <style>
-.off-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 16px; }
-.off-card { display: block; padding: 18px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; text-decoration: none; color: inherit; transition: all .15s; }
-.off-card:hover { border-color: #1d4ed8; transform: translateY(-2px); box-shadow: 0 6px 22px rgba(29,78,216,0.08); text-decoration: none; color: inherit; }
-.off-card__top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.off-card__icon { width: 42px; height: 42px; border-radius: 10px; background: #eff6ff; color: #1d4ed8; display: inline-flex; align-items: center; justify-content: center; }
-.off-pill { font-size: 10.5px; padding: 3px 10px; border-radius: 99px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
-.off-pill--ok { background: #ecfdf5; color: #065f46; }
-.off-pill--warn { background: #fef3c7; color: #92400e; }
-.off-card__title { font-size: 16px; font-weight: 600; color: #111827; margin: 0 0 6px; }
-.off-card__slug { font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; display: inline-block; }
-.off-card__desc { color: #6b7280; font-size: 13px; line-height: 1.5; margin: 12px 0 14px; }
-.off-card__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6; }
-.off-stat__label { font-size: 10.5px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-.off-stat__value { font-size: 13px; font-weight: 600; color: #111827; }
-.off-stat__value--warn { color: #dc2626; }
-.off-empty { padding: 60px 20px; text-align: center; color: #6b7280; }
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+.ps-wrap, .ps-wrap * { font-family: 'Outfit', sans-serif !important; box-sizing: border-box; }
+.ps-wrap { max-width: 1080px; padding: 4px 0 60px; }
 
-.off-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-.off-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.5); }
-.off-modal__panel { position: relative; background: #fff; padding: 24px; border-radius: 12px; width: 95%; max-width: 560px; box-shadow: 0 20px 50px rgba(0,0,0,.25); max-height: 90vh; overflow-y: auto; }
-.off-modal__head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid #f3f4f6; }
-.off-modal__close { background: none; border: none; font-size: 26px; line-height: 1; color: #6b7280; cursor: pointer; padding: 0 6px; }
-.off-form__group { margin-bottom: 14px; }
-.off-form__label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
-.off-form__input { width: 100%; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 14px; }
-.off-form__input:focus { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.1); }
-.off-form__hint { font-size: 11.5px; color: #6b7280; margin: 4px 0 0; }
-.off-form__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid #f3f4f6; }
-.off-btn { padding: 9px 18px; border-radius: 7px; font-weight: 600; font-size: 14px; border: 1px solid transparent; cursor: pointer; }
-.off-btn--primary { background: #1d4ed8; color: #fff; }
-.off-btn--primary:hover { background: #1e40af; }
-.off-btn--ghost { background: #fff; color: #4b5563; border-color: #d1d5db; }
-.off-btn--ghost:hover { border-color: #1d4ed8; color: #1d4ed8; }
+/* Page header */
+.ps-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1.5px solid #ebebeb; }
+.ps-page-title { font-size: 2rem; font-weight: 800; color: #0c0c0c; letter-spacing: -0.045em; line-height: 1.1; margin: 0; display: inline-flex; flex-direction: column; }
+.ps-title-bar { display: block; width: 2.4rem; height: 3.5px; background: #0c0c0c; border-radius: 3px; margin-top: 9px; }
+.ps-page-sub { margin: 12px 0 0; font-size: 0.88rem; color: #8a8fa0; font-weight: 400; max-width: 520px; line-height: 1.5; }
+
+.off-optional { font-weight: 400; font-size: 0.72rem; color: #b0b5c0; margin-left: 4px; }
+
+/* Primary button */
+.ps-btn-primary { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; background: #0c0c0c; color: #fff; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0; margin-top: 14px; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
+.ps-btn-primary:hover { background: #1f2937; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(12,12,12,.18); }
+
+/* Alerts */
+.ps-alert { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; font-size: 0.875rem; font-weight: 500; border: 1.5px solid transparent; }
+.ps-alert--ok  { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.ps-alert--err { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.ps-alert__x { margin-left: auto; background: none; border: none; cursor: pointer; opacity: .45; color: inherit; padding: 0; display: flex; }
+
+/* Card */
+.ps-card { background: #fff; border: 1.5px solid #ebebeb; border-radius: 16px; overflow: hidden; }
+.ps-card__hd { padding: 18px 24px 14px; border-bottom: 1.5px solid #f5f5f5; }
+.ps-card__title { font-size: 0.95rem; font-weight: 700; color: #0c0c0c; letter-spacing: -0.02em; margin: 0; display: inline-flex; flex-direction: column; }
+.ps-card__bar { display: block; width: 1.7rem; height: 2.5px; background: #0c0c0c; border-radius: 2px; margin-top: 6px; }
+.ps-card__count { margin: 8px 0 0; font-size: 0.78rem; color: #b0b5c0; }
+
+/* Office cards grid */
+.off-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; padding: 18px 18px 20px; }
+.off-card { display: flex; flex-direction: column; padding: 18px; background: #fff; border: 1.5px solid #ebebeb; border-radius: 14px; text-decoration: none !important; color: inherit; transition: all .18s; position: relative; }
+.off-card:hover { border-color: #0c0c0c; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(12,12,12,.08); color: inherit; }
+.off-card__top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.off-card__icon { width: 38px; height: 38px; border-radius: 10px; background: #0c0c0c; color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+.off-card__title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0 0 6px; letter-spacing: -0.02em; line-height: 1.2; }
+.off-card__slug { font-size: 0.7rem; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 99px; display: inline-block; font-family: 'JetBrains Mono', monospace !important; font-weight: 500; align-self: flex-start; }
+.off-card__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding-top: 16px; margin-top: 16px; border-top: 1.5px dashed #ebebeb; }
+.off-stat__label { font-size: 0.66rem; color: #b0b5c0; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 3px; }
+.off-stat__value { font-size: 0.84rem; font-weight: 600; color: #111827; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.off-stat__value--warn { color: #d97706; }
+
+.off-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.66rem; padding: 3px 9px; border-radius: 99px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; }
+.off-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.off-pill--ok { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.off-pill--warn { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+/* Empty */
+.ps-empty { padding: 60px 24px; text-align: center; }
+.ps-empty__icon { display: inline-flex; padding: 18px; background: #f9fafb; border: 1.5px solid #ebebeb; border-radius: 16px; color: #d1d5db; margin-bottom: 16px; }
+.ps-empty__text { font-size: 0.9rem; color: #9ca3af; margin-bottom: 20px; }
+
+/* Modal — reuses the positions modal styling */
+.ps-modal { background: #fff; border-radius: 18px; overflow: hidden; border: 1.5px solid #ebebeb; font-family: 'Outfit', sans-serif !important; }
+.ps-modal * { font-family: 'Outfit', sans-serif !important; box-sizing: border-box; }
+.ps-modal__hd { display: flex; align-items: flex-start; justify-content: space-between; padding: 22px 24px 16px; border-bottom: 1.5px solid #f5f5f5; }
+.ps-modal__title { font-size: 1rem; font-weight: 700; color: #0c0c0c; letter-spacing: -0.02em; margin: 0 0 4px; }
+.ps-modal__sub { font-size: 0.82rem; color: #9ca3af; margin: 0; }
+.ps-modal__close { background: none; border: none; cursor: pointer; padding: 6px; color: #9ca3af; border-radius: 7px; display: flex; transition: all .15s; flex-shrink: 0; }
+.ps-modal__close:hover { background: #f3f4f6; color: #0c0c0c; }
+.ps-modal__body { padding: 20px 24px 24px; }
+.ps-modal__field { margin-bottom: 16px; }
+.ps-modal__label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 7px; }
+.ps-modal__input { display: block; width: 100%; padding: 11px 14px; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.88rem; color: #111827; outline: none; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
+.ps-modal__input:focus { border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
+.ps-modal__input::placeholder { color: #d4d7de; }
+textarea.ps-modal__input { resize: vertical; min-height: 64px; }
+.ps-modal__foot { display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px; }
+.ps-modal__btn-cancel { padding: 10px 20px; background: none; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.85rem; font-weight: 600; color: #6b7280; cursor: pointer; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
+.ps-modal__btn-cancel:hover { border-color: #d1d5db; color: #374151; background: #f9fafb; }
+.ps-modal__btn-save { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; background: #0c0c0c; color: #fff; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
+.ps-modal__btn-save:hover { background: #1f2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(12,12,12,.18); }
+
+/* Pagination */
+.pagination-wrapper { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1.5px solid #f5f5f5; gap: 1rem; flex-wrap: wrap; }
+.pagination-info { font-size: 0.82rem; color: #6b7280; }
+.pagination-info strong { color: #111827; font-weight: 600; }
+.pagination { display: flex; list-style: none; margin: 0; padding: 0; gap: 0.25rem; }
+.pagination-link { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; padding: 0 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; font-size: 0.82rem; color: #374151; text-decoration: none; background: #fff; font-family: 'Outfit', sans-serif !important; }
+.pagination-link:hover:not(.disabled):not(.active) { background: #f3f4f6; }
+.pagination-link.active { background: #0c0c0c; color: #fff; border-color: #0c0c0c; font-weight: 600; }
+.pagination-link.disabled { color: #d4d7de; cursor: not-allowed; }
+
+/* Dark mode */
+.is_dark .ps-page-title  { color: #f3f4f6; }
+.is_dark .ps-title-bar   { background: #f3f4f6; }
+.is_dark .ps-page-sub    { color: #6b7280; }
+.is_dark .ps-page-header { border-color: #1e2330; }
+.is_dark .ps-btn-primary { background: #f3f4f6; color: #0c0c0c; }
+.is_dark .ps-card        { background: #111827; border-color: #1e2330; }
+.is_dark .ps-card__hd    { border-color: #1e2330; }
+.is_dark .ps-card__title { color: #f3f4f6; }
+.is_dark .ps-card__bar   { background: #f3f4f6; }
+.is_dark .off-card       { background: #111827; border-color: #1e2330; }
+.is_dark .off-card:hover { border-color: #f3f4f6; }
+.is_dark .off-card__icon { background: #f3f4f6; color: #0c0c0c; }
+.is_dark .off-card__title { color: #f3f4f6; }
+.is_dark .off-card__stats { border-color: #1e2330; }
+.is_dark .off-stat__value { color: #f3f4f6; }
+.is_dark .ps-modal { background: #111827; border-color: #1e2330; }
+.is_dark .ps-modal__hd { border-color: #1e2330; }
+.is_dark .ps-modal__title { color: #f3f4f6; }
+.is_dark .ps-modal__input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
+.is_dark .ps-modal__input:focus { border-color: #f3f4f6; }
+.is_dark .ps-modal__btn-save { background: #f3f4f6; color: #0c0c0c; }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const modal = document.getElementById('officeModal');
-    const open  = document.getElementById('triggerOfficeModal');
-    const close = document.getElementById('closeOfficeModal');
-    const cancel = document.getElementById('cancelOfficeModal');
-    const backdrop = modal.querySelector('.off-modal__backdrop');
-
-    function show() { modal.style.display = 'flex'; }
-    function hide() { modal.style.display = 'none'; }
-
-    open.addEventListener('click', show);
-    close.addEventListener('click', hide);
-    cancel.addEventListener('click', hide);
-    backdrop.addEventListener('click', hide);
+    var open = document.getElementById('triggerOfficeModal');
+    var openEmpty = document.getElementById('triggerOfficeModalEmpty');
+    var modalEl = document.getElementById('officeModal');
+    function show() { if (modalEl) new bootstrap.Modal(modalEl).show(); }
+    if (open) open.addEventListener('click', show);
+    if (openEmpty) openEmpty.addEventListener('click', show);
 });
 </script>
 @endsection

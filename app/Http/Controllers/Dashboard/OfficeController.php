@@ -40,7 +40,7 @@ class OfficeController extends Controller
         $candidates  = User::query()
             ->whereNotIn('id', $existingIds)
             ->orderBy('first_name')
-            ->get(['id', 'first_name', 'last_name', 'email']);
+            ->get(['id', 'first_name', 'last_name', 'email', 'profile_picture']);
 
         return view('admin.offices.show', compact('office', 'candidates'));
     }

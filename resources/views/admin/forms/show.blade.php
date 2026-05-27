@@ -25,18 +25,18 @@
                 @include('components.sidebar')
 
                 <div class="col-xl-9 col-lg-9 col-md-12">
-                    <div class="dashboard__content__wraper">
-                        <div class="dashboard__section__title">
-                            <h4>{{ $definition->title() }} <small style="color:#6b7280; font-weight: 400;">#{{ $submission->reference }}</small></h4>
-                            <div class="dashboard__section__actions">
-                                <a href="{{ route('admin.forms.portal') }}" class="responsive-btn back-btn">
-                                    <div class="svgWrapper">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="svgIcon">
-                                            <path stroke="#fff" stroke-width="2" d="M19 12H5m7-7-7 7 7 7"></path>
-                                        </svg>
-                                        <div class="text">Forms Portal</div>
-                                    </div>
-                                </a>
+                    <div class="form-shell">
+
+                        <a href="{{ route('admin.forms.portal') }}" class="form-back-link">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                            <span>Back to Forms portal</span>
+                        </a>
+
+                        <div class="form-page-header">
+                            <div>
+                                <span class="form-code-chip">{{ $submission->form_code }}</span>
+                                <h1 class="form-page-title">{{ $definition->title() }}<span class="form-title-bar"></span></h1>
+                                <p class="form-page-sub" style="font-family: 'JetBrains Mono', monospace !important; color:#6b7280;">#{{ $submission->reference }}</p>
                             </div>
                         </div>
 
@@ -138,15 +138,17 @@
 
                                 <div class="form-panel @if(!$canFill) form-panel--locked @endif">
                                     <div class="form-panel__head">
-                                        <div class="form-panel__code">{{ $submission->form_code }}</div>
-                                        <div>
-                                            <h5 class="form-panel__title">{{ $currentStage->label }} {{ $canFill ? '(awaiting your action)' : '' }}</h5>
-                                            @if($currentStage->description)
-                                                <p class="form-panel__desc">{{ $currentStage->description }}</p>
-                                            @endif
-                                            @if(!$canFill)
-                                                <p class="form-panel__desc"><em>This section is waiting on the assigned officer. You can view the form but not edit it.</em></p>
-                                            @endif
+                                        <div style="display: flex; align-items: flex-start; gap: 14px;">
+                                            <span class="form-panel__code">{{ $submission->form_code }}</span>
+                                            <div>
+                                                <h2 class="form-panel__title">{{ $currentStage->label }} {{ $canFill ? '— awaiting your action' : '' }}<span class="form-panel__title-bar"></span></h2>
+                                                @if($currentStage->description)
+                                                    <p class="form-panel__desc">{{ $currentStage->description }}</p>
+                                                @endif
+                                                @if(!$canFill)
+                                                    <p class="form-panel__desc"><em>This section is waiting on the assigned officer. You can view the form but not edit it.</em></p>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="form-panel__body">
@@ -162,8 +164,8 @@
                                     <div class="form-panel">
                                         <div class="form-panel__head">
                                             <div>
-                                                <h5 class="form-panel__title">Attachments (this stage)</h5>
-                                                <p class="form-panel__desc">Add files relevant to your section.</p>
+                                                <h2 class="form-panel__title">Attachments<span class="form-panel__title-bar"></span></h2>
+                                                <p class="form-panel__desc">Add files relevant to your section (optional).</p>
                                             </div>
                                         </div>
                                         <div class="form-panel__body">
@@ -175,7 +177,7 @@
                                         <div class="form-panel">
                                             <div class="form-panel__head">
                                                 <div>
-                                                    <h5 class="form-panel__title">Your signature</h5>
+                                                    <h2 class="form-panel__title">Your signature<span class="form-panel__title-bar"></span></h2>
                                                     <p class="form-panel__desc">Sign below or reuse your saved signature.</p>
                                                 </div>
                                             </div>
@@ -191,7 +193,7 @@
                                         <div class="form-panel">
                                             <div class="form-panel__head">
                                                 <div>
-                                                    <h5 class="form-panel__title">Forward to: {{ $nextStage->label ?? '—' }}</h5>
+                                                    <h2 class="form-panel__title">Forward to {{ $nextStage->label ?? '—' }}<span class="form-panel__title-bar"></span></h2>
                                                     <p class="form-panel__desc">Pick a specific person to receive this form next.</p>
                                                 </div>
                                             </div>
@@ -203,8 +205,8 @@
                                                 ])
 
                                                 @if($vcOffice)
-                                                    <p style="margin: 12px 0 0; font-size: 12.5px; color: #6b7280;">
-                                                        If you tick "Refer for VC's Approval" above, the form will instead be sent to the VC's Office. Otherwise it goes to the office shown here.
+                                                    <p style="margin: 12px 0 0; font-size: 0.78rem; color: #9ca3af; line-height: 1.5;">
+                                                        If you tick <strong>"Refer for VC's Approval"</strong> above, the form will be sent to the VC's Office instead. Otherwise it goes to the office shown here.
                                                     </p>
                                                 @endif
                                             </div>
@@ -274,9 +276,14 @@
 </div>
 
 <style>
-.reject-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-.reject-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
-.reject-modal__panel { position: relative; background: #fff; border-radius: 12px; padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
+.reject-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; font-family: 'Outfit', sans-serif !important; }
+.reject-modal *, .reject-modal { font-family: 'Outfit', sans-serif !important; box-sizing: border-box; }
+.reject-modal__backdrop { position: absolute; inset: 0; background: rgba(12,12,12,.55); backdrop-filter: blur(4px); }
+.reject-modal__panel { position: relative; background: #fff; border: 1.5px solid #ebebeb; border-radius: 18px; padding: 24px; width: 100%; max-width: 500px; box-shadow: 0 24px 60px rgba(0,0,0,.25); }
+.reject-modal__panel h5 { font-size: 1.02rem; font-weight: 700; color: #0c0c0c; letter-spacing: -0.02em; margin: 0 0 6px; }
+.reject-modal__panel p { font-size: 0.85rem; color: #6b7280; margin: 0 0 14px; }
+.is_dark .reject-modal__panel { background: #111827; border-color: #1e2330; }
+.is_dark .reject-modal__panel h5 { color: #f3f4f6; }
 </style>
 
 <script>

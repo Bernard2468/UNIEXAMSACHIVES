@@ -35,18 +35,25 @@
 </div>
 
 <style>
-.sigpad-wrapper { background: #f9fafb; padding: 16px; border-radius: 10px; border: 1px solid #e5e7eb; }
-.sigpad-saved { background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 12px; display: flex; gap: 16px; align-items: center; }
-.sigpad-saved__preview { width: 200px; height: 80px; background: #fff; border: 1px dashed #d1d5db; display: flex; align-items: center; justify-content: center; padding: 4px; }
+.sigpad-wrapper { background: #fafafa; padding: 16px; border-radius: 12px; border: 1.5px solid #ebebeb; font-family: 'Outfit', sans-serif !important; }
+.sigpad-saved { background: #fff; padding: 12px; border-radius: 10px; border: 1.5px solid #ebebeb; margin-bottom: 12px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.sigpad-saved__preview { width: 180px; height: 70px; background: #fff; border: 1.5px dashed #d4d7de; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 4px; flex-shrink: 0; }
 .sigpad-saved__preview img { max-width: 100%; max-height: 100%; }
-.sigpad-saved__toggle { display: inline-flex; gap: 8px; align-items: center; font-weight: 500; color: #374151; cursor: pointer; margin: 0; }
-.sigpad { background: #fff; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 8px; }
-.sigpad canvas { width: 100%; max-width: 100%; height: 200px; touch-action: none; cursor: crosshair; background: #fff; border-radius: 4px; }
+.sigpad-saved__toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 0.84rem; font-weight: 500; color: #374151; cursor: pointer; margin: 0; }
+.sigpad-saved__toggle input { accent-color: #0c0c0c; }
+.sigpad { background: #fff; border: 2px dashed #d4d7de; border-radius: 10px; padding: 8px; transition: border-color .15s; }
+.sigpad:focus-within { border-color: #0c0c0c; }
+.sigpad canvas { width: 100%; max-width: 100%; height: 180px; touch-action: none; cursor: crosshair; background: #fff; border-radius: 6px; }
 .sigpad-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding: 0 8px; }
-.btn-link { background: none; border: none; color: #1d4ed8; font-weight: 500; cursor: pointer; padding: 4px 8px; }
-.btn-link:hover { text-decoration: underline; }
-.sigpad-hint { color: #9ca3af; font-size: 12px; }
-.sigpad--disabled canvas { background: #f3f4f6; pointer-events: none; opacity: 0.5; }
+.btn-link { background: none; border: none; color: #0c0c0c; font-weight: 600; cursor: pointer; padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; transition: background .12s; font-family: 'Outfit', sans-serif !important; }
+.btn-link:hover { background: #f3f4f6; text-decoration: none; }
+.sigpad-hint { color: #b0b5c0; font-size: 0.74rem; font-style: italic; }
+.sigpad--disabled canvas { background: #f9fafb; pointer-events: none; opacity: 0.4; }
+.is_dark .sigpad-wrapper { background: #0f172a; border-color: #1e2330; }
+.is_dark .sigpad-saved { background: #111827; border-color: #2d3748; }
+.is_dark .sigpad { background: #111827; border-color: #2d3748; }
+.is_dark .sigpad canvas { background: #fff; }
+.is_dark .btn-link { color: #f3f4f6; }
 </style>
 
 <script>

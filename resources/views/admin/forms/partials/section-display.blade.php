@@ -12,22 +12,21 @@
 
 <div class="form-panel form-panel--locked">
     <div class="form-panel__head">
-        <div class="form-panel__lockicon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-        </div>
-        <div>
-            <h5 class="form-panel__title">{{ $stage->label }}</h5>
-            @if($signer)
-                <p class="form-panel__desc">
-                    Signed by <strong>{{ trim(($signer->first_name ?? '') . ' ' . ($signer->last_name ?? '')) }}</strong>
-                    @if(isset($signature) && $signature)
-                        on {{ optional($signature->signed_at)->format('d M Y, H:i') }}
-                    @endif
-                </p>
-            @endif
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <span class="form-panel__lockicon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <div>
+                <h2 class="form-panel__title">{{ $stage->label }}<span class="form-panel__title-bar"></span></h2>
+                @if($signer)
+                    <p class="form-panel__desc">
+                        Signed by <strong>{{ trim(($signer->first_name ?? '') . ' ' . ($signer->last_name ?? '')) }}</strong>
+                        @if(isset($signature) && $signature)
+                            on {{ optional($signature->signed_at)->format('d M Y, H:i') }}
+                        @endif
+                    </p>
+                @endif
+            </div>
         </div>
     </div>
 
