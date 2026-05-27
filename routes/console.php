@@ -51,3 +51,12 @@ Schedule::command('maintenance:process-scheduled')
     ->name('process-scheduled-maintenance')
     ->withoutOverlapping()
     ->runInBackground();
+
+// Forms workflow — email assignees about forms stuck in their queue.
+// Runs once daily; the command itself enforces a 48h per-form cooldown so
+// running it more often (e.g. hourly during testing) is safe.
+Schedule::command('forms:nudge-stale')
+    ->dailyAt('08:30')
+    ->name('forms-nudge-stale')
+    ->withoutOverlapping()
+    ->runInBackground();

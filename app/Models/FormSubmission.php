@@ -31,6 +31,7 @@ class FormSubmission extends Model
         'completed_at',
         'rejected_at',
         'archived_at',
+        'last_nudged_at',
     ];
 
     protected $casts = [
@@ -42,6 +43,7 @@ class FormSubmission extends Model
         'completed_at'       => 'datetime',
         'rejected_at'        => 'datetime',
         'archived_at'        => 'datetime',
+        'last_nudged_at'     => 'datetime',
     ];
 
     public const STATUS_DRAFT       = 'draft';

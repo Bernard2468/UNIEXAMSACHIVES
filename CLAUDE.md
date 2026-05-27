@@ -101,6 +101,21 @@ Production runs on shared hosting where the PHP `symlink()` function is disabled
 - Anywhere a feature needs to read a stored file server-side (PDF rendering, mail attachments), prefer `storage_path('app/public/...')` over `public_path('storage/...')`.
 - The `/storage/*` route lives inside the `auth` middleware group, which is appropriate for the current usage (form signatures, internal docs). If you ever need to serve public assets through it (e.g. unauthenticated landing-page images), move them to `public/` directly rather than to `storage/app/public/`.
 
+### Scheduler (cron) on Hostinger
+
+All scheduled jobs are defined in [routes/console.php](routes/console.php) via Laravel's `Schedule` facade (subscription checks, memo auto-archive, `forms:nudge-stale`, etc.). For any of them to actually fire in production, **a single system cron entry must invoke `php artisan schedule:run` every minute** — Laravel then dispatches whichever jobs are due at their declared times.
+
+Hostinger setup (cPanel → Advanced → Cron Jobs):
+```
+* * * * * cd /home/USERNAME/public_html && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+```
+Replace `USERNAME` and the path with whatever `pwd` reports inside the project root. Verify after install with:
+```
+php artisan schedule:list           # shows every scheduled job + next run time
+php artisan forms:nudge-stale --dry-run   # report what nudges WOULD fire, send nothing
+```
+The `--dry-run` flag is also useful for QA without flooding inboxes.
+
 ## Forms Workflow System
 
 A form-agnostic workflow + e-signing engine at `admin/forms/*` ([routes/web.php](routes/web.php) under the `admin.forms.*` name prefix). Two forms ship today — Payment Requisition (`PR`) and Purchase/Works Authorization (`PWA`) — both registered in `AppServiceProvider::register()`.
