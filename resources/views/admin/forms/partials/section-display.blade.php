@@ -23,20 +23,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </span>
             <div>
-                <h2 class="form-panel__title">
-                    <span class="stage-title-row">
-                        <span>{{ $stage->label }}</span>
-                        @if($stageAttachments->count() > 0)
-                            <span class="stage-clip-badge" title="{{ $stageAttachments->count() }} file{{ $stageAttachments->count() === 1 ? '' : 's' }} attached at this stage">
-                                <span class="stage-clip-badge__bubble">
-                                    <img src="https://img.icons8.com/officel/80/attach.png" alt="" class="stage-clip-badge__img" loading="lazy" decoding="async">
-                                </span>
-                                <span class="stage-clip-badge__count">{{ $stageAttachments->count() }}</span>
-                            </span>
-                        @endif
-                    </span>
-                    <span class="form-panel__title-bar"></span>
-                </h2>
+                <h2 class="form-panel__title">{{ $stage->label }}<span class="form-panel__title-bar"></span></h2>
                 @if($signer)
                     <p class="form-panel__desc">
                         Signed by <strong>{{ trim(($signer->first_name ?? '') . ' ' . ($signer->last_name ?? '')) }}</strong>
@@ -47,6 +34,15 @@
                 @endif
             </div>
         </div>
+
+        @if($stageAttachments->count() > 0)
+            <span class="stage-clip-badge" title="{{ $stageAttachments->count() }} file{{ $stageAttachments->count() === 1 ? '' : 's' }} attached at this stage">
+                <span class="stage-clip-badge__bubble">
+                    <img src="https://img.icons8.com/officel/80/attach.png" alt="" class="stage-clip-badge__img" loading="lazy" decoding="async">
+                </span>
+                <span class="stage-clip-badge__count">{{ $stageAttachments->count() }}</span>
+            </span>
+        @endif
     </div>
 
     <div class="form-panel__body">

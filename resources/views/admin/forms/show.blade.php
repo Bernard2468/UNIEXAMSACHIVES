@@ -140,20 +140,7 @@
                                         <div style="display: flex; align-items: flex-start; gap: 14px;">
                                             <span class="form-panel__code">{{ $submission->form_code }}</span>
                                             <div>
-                                                <h2 class="form-panel__title">
-                                                    <span class="stage-title-row">
-                                                        <span>{{ $currentStage->label }} {{ $canFill ? '— awaiting your action' : '' }}</span>
-                                                        @if($currentStageAttachments->count() > 0)
-                                                            <span class="stage-clip-badge" title="{{ $currentStageAttachments->count() }} file{{ $currentStageAttachments->count() === 1 ? '' : 's' }} attached at this stage">
-                                                                <span class="stage-clip-badge__bubble">
-                                                                    <img src="https://img.icons8.com/officel/80/attach.png" alt="" class="stage-clip-badge__img" loading="lazy" decoding="async">
-                                                                </span>
-                                                                <span class="stage-clip-badge__count">{{ $currentStageAttachments->count() }}</span>
-                                                            </span>
-                                                        @endif
-                                                    </span>
-                                                    <span class="form-panel__title-bar"></span>
-                                                </h2>
+                                                <h2 class="form-panel__title">{{ $currentStage->label }} {{ $canFill ? '— awaiting your action' : '' }}<span class="form-panel__title-bar"></span></h2>
                                                 @if($currentStage->description)
                                                     <p class="form-panel__desc">{{ $currentStage->description }}</p>
                                                 @endif
@@ -162,6 +149,15 @@
                                                 @endif
                                             </div>
                                         </div>
+
+                                        @if($currentStageAttachments->count() > 0)
+                                            <span class="stage-clip-badge" title="{{ $currentStageAttachments->count() }} file{{ $currentStageAttachments->count() === 1 ? '' : 's' }} attached at this stage">
+                                                <span class="stage-clip-badge__bubble">
+                                                    <img src="https://img.icons8.com/officel/80/attach.png" alt="" class="stage-clip-badge__img" loading="lazy" decoding="async">
+                                                </span>
+                                                <span class="stage-clip-badge__count">{{ $currentStageAttachments->count() }}</span>
+                                            </span>
+                                        @endif
                                     </div>
                                     <div class="form-panel__body">
                                         @include('admin.forms.partials.field-renderer', [

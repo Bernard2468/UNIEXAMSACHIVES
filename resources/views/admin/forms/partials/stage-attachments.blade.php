@@ -106,8 +106,9 @@
        sits beside the bubble. Subtle, premium, futuristic — not gaudy. */
     .stage-clip-badge {
         display: inline-flex; align-items: center; gap: 8px;
-        margin-left: 10px;
-        vertical-align: middle;
+        align-self: center;          /* vertically centered against the title block */
+        flex-shrink: 0;              /* never let the flex parent crush it */
+        margin-left: auto;           /* fallback push-right if parent isn't space-between */
         font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
         line-height: 1;
         text-transform: none;
