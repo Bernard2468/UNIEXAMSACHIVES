@@ -36,7 +36,7 @@ class GenerateVapidKeys extends Command
         $this->line('');
         $this->line('  VAPID_PUBLIC_KEY=' . $keys['publicKey']);
         $this->line('  VAPID_PRIVATE_KEY=' . $keys['privateKey']);
-        $this->line('  VAPID_SUBJECT="mailto:support@academicdigital.space"   # change to your email');
+        $this->line('  VAPID_SUBJECT="mailto:cug@academicdigital.space"   # change to your email');
         $this->line('');
         $this->warn('Keep VAPID_PRIVATE_KEY secret — do not commit it.');
         $this->line('After saving, run: php artisan config:cache  (production only)');

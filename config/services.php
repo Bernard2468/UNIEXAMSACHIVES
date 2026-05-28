@@ -75,7 +75,7 @@ return [
     | or backgrounded. Generate keys ONCE via: php artisan vapid:generate
     */
     'webpush' => [
-        'vapid_subject'     => env('VAPID_SUBJECT', 'mailto:support@academicdigital.space'),
+        'vapid_subject'     => env('VAPID_SUBJECT', 'mailto:cug@academicdigital.space'),
         'vapid_public_key'  => env('VAPID_PUBLIC_KEY'),
         'vapid_private_key' => env('VAPID_PRIVATE_KEY'),
     ],
