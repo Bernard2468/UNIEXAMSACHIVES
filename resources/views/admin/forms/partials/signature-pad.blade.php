@@ -20,11 +20,13 @@
         ?? trim((Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? ''));
 
     // Font keyed by the CSS font-family name we load from Google Fonts.
+    // Each entry: [label, slug used for the CSS hook]. The slug lets us
+    // attach a per-font !important rule that beats `.form-shell *` Outfit.
     $sigFonts = [
-        'Caveat'         => 'Casual',
-        'Dancing Script' => 'Flowing',
-        'Great Vibes'    => 'Elegant',
-        'Sacramento'     => 'Classic',
+        'Caveat'         => ['label' => 'Casual',  'slug' => 'caveat'],
+        'Dancing Script' => ['label' => 'Flowing', 'slug' => 'dancing-script'],
+        'Great Vibes'    => ['label' => 'Elegant', 'slug' => 'great-vibes'],
+        'Sacramento'     => ['label' => 'Classic', 'slug' => 'sacramento'],
     ];
 @endphp
 
@@ -78,15 +80,14 @@
         </div>
 
         <div class="sigtyped-fonts">
-            @foreach($sigFonts as $family => $label)
+            @foreach($sigFonts as $family => $meta)
                 <label class="sigtyped-card {{ $loop->first ? 'is-selected' : '' }}">
                     <input type="radio" name="_sigtyped_font" value="{{ $family }}"
                            {{ $loop->first ? 'checked' : '' }}>
-                    <div class="sigtyped-card__preview"
-                         style="font-family: '{{ $family }}', cursive;"
+                    <div class="sigtyped-card__preview sigtyped-card__preview--{{ $meta['slug'] }}"
                          data-sigtyped-preview>{{ $signerName ?: 'Your Name' }}</div>
                     <div class="sigtyped-card__meta">
-                        <span>{{ $label }}</span>
+                        <span>{{ $meta['label'] }}</span>
                         <span class="sigtyped-card__check">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </span>
@@ -148,13 +149,23 @@
 .sigtyped-name__input { width: 100%; padding: 11px 14px; background: #fff; border: 1.5px solid #ebebeb; border-radius: 10px; font-size: 0.9rem; color: #111827; outline: none; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
 .sigtyped-name__input:focus { border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
 
-.sigtyped-fonts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-@media (min-width: 720px) { .sigtyped-fonts { grid-template-columns: repeat(4, 1fr); } }
-.sigtyped-card { background: #fff; border: 1.5px solid #ebebeb; border-radius: 12px; padding: 14px 12px 10px; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; gap: 10px; margin: 0; position: relative; min-height: 110px; }
+/* minmax(0, 1fr) — without the 0 floor, each 1fr column inflates to fit the
+   nowrap preview text and pushes the right-hand cards off the panel. */
+.sigtyped-fonts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 720px) { .sigtyped-fonts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.sigtyped-card { background: #fff; border: 1.5px solid #ebebeb; border-radius: 12px; padding: 14px 10px 10px; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; gap: 10px; margin: 0; position: relative; min-height: 110px; min-width: 0; overflow: hidden; }
 .sigtyped-card:hover { border-color: #0c0c0c; }
 .sigtyped-card.is-selected { border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
 .sigtyped-card input { display: none; }
-.sigtyped-card__preview { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 1.55rem; color: #111827; line-height: 1.1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; min-height: 48px; }
+.sigtyped-card__preview { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #111827; line-height: 1.15; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; min-height: 48px; min-width: 0; max-width: 100%; }
+
+/* Per-font overrides — the form-shell wildcard rule forces Outfit with
+   !important on every descendant, so each cursive face needs its own
+   !important to win the cascade and actually render differently. */
+.sigtyped-card__preview--caveat         { font-family: 'Caveat', cursive !important; font-weight: 700; }
+.sigtyped-card__preview--dancing-script { font-family: 'Dancing Script', cursive !important; font-weight: 600; }
+.sigtyped-card__preview--great-vibes    { font-family: 'Great Vibes', cursive !important; font-size: 1.7rem; }
+.sigtyped-card__preview--sacramento     { font-family: 'Sacramento', cursive !important; font-size: 1.55rem; }
 .sigtyped-card__meta { display: flex; align-items: center; justify-content: space-between; font-size: 0.7rem; color: #9ca3af; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .sigtyped-card__check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #e5e7eb; display: inline-flex; align-items: center; justify-content: center; color: transparent; transition: all .15s; }
 .sigtyped-card.is-selected .sigtyped-card__check { background: #0c0c0c; color: #fff; border-color: #0c0c0c; }
