@@ -549,12 +549,14 @@ class HomeController extends Controller
             ($last  ? mb_substr($last,  0, 1) : '')
         ) ?: strtoupper(mb_substr($name, 0, 1));
 
+        // Profile pictures live at public/profile_pictures/<filename> in this app
+        // (see User::getProfilePictureUrlAttribute) — NOT under storage/. Building
+        // the URL via asset() matches the canonical accessor and lets the file be
+        // served directly by the web server (no Laravel route hop).
         $avatar = null;
         if (!empty($actor->profile_picture)) {
             $pic = ltrim((string) $actor->profile_picture, '/');
-            // Profile pictures are stored on the public disk; on Hostinger the
-            // /storage/* route serves them via PHP since the symlink is disabled.
-            $avatar = $pic ? url('storage/' . $pic) : null;
+            $avatar = $pic ? asset('profile_pictures/' . $pic) : null;
         }
 
         return [

@@ -59,7 +59,7 @@
                         </svg>
                     </button>
                     <button class="notification-view-toggle" onclick="toggleNotificationView()" title="Toggle view">
-                        <svg id="view-list-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                        <svg id="view-list-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="8" y1="6" x2="21" y2="6"></line>
                             <line x1="8" y1="12" x2="21" y2="12"></line>
                             <line x1="8" y1="18" x2="21" y2="18"></line>
@@ -67,7 +67,7 @@
                             <line x1="3" y1="12" x2="3.01" y2="12"></line>
                             <line x1="3" y1="18" x2="3.01" y2="18"></line>
                         </svg>
-                        <svg id="view-carousel-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg id="view-carousel-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
                             <rect x="14" y="14" width="7" height="7"></rect>
@@ -79,8 +79,8 @@
 
             <!-- Content area -->
             <div id="notification-tray-content" class="notification-tray-content">
-                <!-- Carousel view -->
-                <div id="notification-carousel-view" class="notification-carousel-view">
+                <!-- Carousel view (opt-in via the view toggle) -->
+                <div id="notification-carousel-view" class="notification-carousel-view" style="display: none;">
                     <div class="notification-carousel-container">
                         <button class="notification-carousel-btn notification-carousel-prev" onclick="notificationCarouselPrev()">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -100,8 +100,8 @@
                     </div>
                 </div>
 
-                <!-- List view -->
-                <div id="notification-list-view" class="notification-list-view" style="display: none;">
+                <!-- List view (default) -->
+                <div id="notification-list-view" class="notification-list-view">
                     <div id="notification-list-items" class="notification-list-items">
                         <!-- Content will be populated by JavaScript -->
                     </div>
@@ -870,10 +870,11 @@
     </style>
 
     <script>
-        // Notification tray state
+        // Notification tray state. List view is the default (industry standard:
+        // Slack, Linear, GitHub, Notion). Carousel is opt-in via the toggle.
         let notificationTrayState = {
             isOpen: false,
-            isCarousel: true,
+            isCarousel: false,
             currentIndex: 0,
             items: []
         };
