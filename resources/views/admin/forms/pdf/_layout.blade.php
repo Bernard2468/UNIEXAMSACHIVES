@@ -38,6 +38,7 @@
         .signature-block { margin-top: 8px; padding-top: 6px; border-top: 1px dashed #6b7280; }
         .signature-block img { max-height: 50px; max-width: 220px; }
         .signature-block__meta { font-size: 9px; color: #6b7280; margin-top: 4px; }
+        .signature-block__date { color: #111827; font-weight: 600; border-bottom: 1px dashed #6b7280; padding-bottom: 1px; }
         .signature-block__hash { font-family: 'Courier New', monospace; }
         .signature-block__badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 8px; font-weight: bold; margin-left: 4px; }
         .signature-block__badge--ok  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
@@ -146,8 +147,7 @@
                             @endif
                             <div class="signature-block__meta">
                                 Signed by <strong>{{ trim((optional($signedSig->user)->first_name ?? '') . ' ' . (optional($signedSig->user)->last_name ?? '')) }}</strong>
-                                on {{ $signedSig->signed_at?->format('d M Y, H:i') }}
-                                @if($signedSig->ip_address) · IP {{ $signedSig->ip_address }} @endif
+                                on <span class="signature-block__date">{{ $signedSig->signed_at?->format('d M Y, H:i') }}</span>
                                 @if($sigCheck['valid'])
                                     <span class="signature-block__badge signature-block__badge--ok">VERIFIED</span>
                                 @else

@@ -22,7 +22,7 @@
                     <p class="form-panel__desc">
                         Signed by <strong>{{ trim(($signer->first_name ?? '') . ' ' . ($signer->last_name ?? '')) }}</strong>
                         @if(isset($signature) && $signature)
-                            on {{ optional($signature->signed_at)->format('d M Y, H:i') }}
+                            on <span style="color:#111827;font-weight:600;border-bottom:1px dashed #94a3b8;padding-bottom:1px;">{{ optional($signature->signed_at)->format('d M Y, H:i') }}</span>
                         @endif
                     </p>
                 @endif
@@ -88,7 +88,6 @@
                 <div class="locked-signature__meta">
                     SHA-256: <code>{{ substr($signature->chain_hash, 0, 12) }}…</code>
                     · {{ $signature->provider ?? 'in_app' }}
-                    @if($signature->ip_address) · IP {{ $signature->ip_address }} @endif
                 </div>
             </div>
         @endif
