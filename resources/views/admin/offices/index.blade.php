@@ -146,42 +146,48 @@
 </div>
 
 {{-- New office modal --}}
-<div class="modal fade" id="officeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+<div class="modal fade" id="officeModal" tabindex="-1" aria-labelledby="officeModalTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 520px;">
         <div class="ps-modal">
             <div class="ps-modal__hd">
-                <div>
-                    <h5 class="ps-modal__title">New office</h5>
-                    <p class="ps-modal__sub">Add an office that forms can be routed to.</p>
+                <div class="ps-modal__hd-left">
+                    <div class="ps-modal__hd-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"/></svg>
+                    </div>
+                    <div>
+                        <h5 class="ps-modal__title" id="officeModalTitle">New office</h5>
+                        <p class="ps-modal__sub">An office that forms route through (e.g. Finance, Registrar).</p>
+                    </div>
                 </div>
-                <button type="button" class="ps-modal__close" data-bs-dismiss="modal">
+                <button type="button" class="ps-modal__close" data-bs-dismiss="modal" aria-label="Close">
                     <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 3L3 11M3 3l8 8"/></svg>
                 </button>
             </div>
             <div class="ps-modal__body">
-                <form method="POST" action="{{ route('offices.store') }}">
+                <form method="POST" action="{{ route('offices.store') }}" id="officeCreateForm">
                     @csrf
                     <div class="ps-modal__field">
-                        <label class="ps-modal__label">Office name</label>
-                        <input type="text" name="name" class="ps-modal__input" placeholder="e.g. Finance Office" required autofocus>
+                        <label class="ps-modal__label" for="officeName">Office name <span class="ps-modal__req">*</span></label>
+                        <input type="text" id="officeName" name="name" class="ps-modal__input" placeholder="e.g. Finance Office" required autocomplete="off" maxlength="255">
                     </div>
                     <div class="ps-modal__field">
-                        <label class="ps-modal__label">Slug <span class="off-optional">auto-generated from name if blank</span></label>
-                        <input type="text" name="slug" class="ps-modal__input" placeholder="e.g. finance-office">
+                        <label class="ps-modal__label" for="officeSlug">Slug <span class="off-optional">auto-generated if blank</span></label>
+                        <input type="text" id="officeSlug" name="slug" class="ps-modal__input" placeholder="e.g. finance-office" autocomplete="off" maxlength="120" pattern="[A-Za-z0-9_\-]*">
+                        <p class="ps-modal__help">URL-friendly identifier. Letters, numbers, dashes only.</p>
                     </div>
                     <div class="ps-modal__field">
-                        <label class="ps-modal__label">Email <span class="off-optional">optional</span></label>
-                        <input type="email" name="email" class="ps-modal__input" placeholder="finance@cug.edu.gh">
+                        <label class="ps-modal__label" for="officeEmail">Email <span class="off-optional">optional</span></label>
+                        <input type="email" id="officeEmail" name="email" class="ps-modal__input" placeholder="finance@cug.edu.gh" autocomplete="off" maxlength="255">
                     </div>
                     <div class="ps-modal__field">
-                        <label class="ps-modal__label">Description <span class="off-optional">optional</span></label>
-                        <textarea name="description" class="ps-modal__input" rows="2" placeholder="What does this office do?"></textarea>
+                        <label class="ps-modal__label" for="officeDescription">Description <span class="off-optional">optional</span></label>
+                        <textarea id="officeDescription" name="description" class="ps-modal__input" rows="2" placeholder="What does this office do?" maxlength="2000"></textarea>
                     </div>
                     <div class="ps-modal__foot">
                         <button type="button" class="ps-modal__btn-cancel" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="ps-modal__btn-save">
+                        <button type="submit" class="ps-modal__btn-save" id="officeCreateSubmit">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            Save office
+                            <span>Save office</span>
                         </button>
                     </div>
                 </form>
@@ -243,22 +249,33 @@
 .ps-empty__icon { display: inline-flex; padding: 18px; background: #f9fafb; border: 1.5px solid #ebebeb; border-radius: 16px; color: #d1d5db; margin-bottom: 16px; }
 .ps-empty__text { font-size: 0.9rem; color: #9ca3af; margin-bottom: 20px; }
 
-/* Modal — reuses the positions modal styling */
-.ps-modal { background: #fff; border-radius: 18px; overflow: hidden; border: 1.5px solid #ebebeb; font-family: 'Outfit', sans-serif !important; }
+/* Modal — reuses the positions modal styling.
+   pointer-events: auto is REQUIRED because we use .ps-modal instead of Bootstrap's
+   .modal-content. Bootstrap sets .modal-dialog{pointer-events:none} so clicks pass
+   through to the backdrop; .modal-content normally re-enables them. We must do the
+   same on .ps-modal or the modal is visible but completely uninteractive. */
+.ps-modal { background: #fff; border-radius: 18px; overflow: hidden; border: 1.5px solid #ebebeb; font-family: 'Outfit', sans-serif !important; pointer-events: auto; box-shadow: 0 24px 60px -12px rgba(12,12,12,0.22), 0 0 0 1px rgba(12,12,12,0.04); }
 .ps-modal * { font-family: 'Outfit', sans-serif !important; box-sizing: border-box; }
-.ps-modal__hd { display: flex; align-items: flex-start; justify-content: space-between; padding: 22px 24px 16px; border-bottom: 1.5px solid #f5f5f5; }
-.ps-modal__title { font-size: 1rem; font-weight: 700; color: #0c0c0c; letter-spacing: -0.02em; margin: 0 0 4px; }
-.ps-modal__sub { font-size: 0.82rem; color: #9ca3af; margin: 0; }
-.ps-modal__close { background: none; border: none; cursor: pointer; padding: 6px; color: #9ca3af; border-radius: 7px; display: flex; transition: all .15s; flex-shrink: 0; }
-.ps-modal__close:hover { background: #f3f4f6; color: #0c0c0c; }
-.ps-modal__body { padding: 20px 24px 24px; }
-.ps-modal__field { margin-bottom: 16px; }
+#officeModal .modal-dialog { pointer-events: auto; }
+.ps-modal__hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 22px 16px; border-bottom: 1.5px solid #f3f4f6; }
+.ps-modal__hd-left { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.ps-modal__hd-icon { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 10px; background: #0c0c0c; color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+.ps-modal__title { font-size: 1.02rem; font-weight: 700; color: #0c0c0c; letter-spacing: -0.02em; margin: 2px 0 4px; }
+.ps-modal__sub { font-size: 0.82rem; color: #9ca3af; margin: 0; line-height: 1.4; }
+.ps-modal__close { background: none; border: 1.5px solid transparent; cursor: pointer; padding: 6px; color: #9ca3af; border-radius: 8px; display: flex; transition: all .15s; flex-shrink: 0; }
+.ps-modal__close:hover { background: #f3f4f6; color: #0c0c0c; border-color: #e5e7eb; }
+.ps-modal__body { padding: 20px 22px 22px; }
+.ps-modal__field { margin-bottom: 14px; }
 .ps-modal__label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 7px; }
-.ps-modal__input { display: block; width: 100%; padding: 11px 14px; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.88rem; color: #111827; outline: none; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
-.ps-modal__input:focus { border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
+.ps-modal__req { color: #dc2626; margin-left: 2px; }
+.ps-modal__help { font-size: 0.72rem; color: #9ca3af; margin: 6px 0 0; line-height: 1.4; }
+.ps-modal__input { display: block; width: 100%; padding: 11px 14px; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.88rem; color: #111827; outline: none; transition: border-color .15s, box-shadow .15s; font-family: 'Outfit', sans-serif !important; pointer-events: auto; }
+.ps-modal__input:hover { border-color: #d1d5db; }
+.ps-modal__input:focus { border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.08); }
 .ps-modal__input::placeholder { color: #d4d7de; }
+.ps-modal__input:invalid:not(:placeholder-shown) { border-color: #fecaca; }
 textarea.ps-modal__input { resize: vertical; min-height: 64px; }
-.ps-modal__foot { display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px; }
+.ps-modal__foot { display: flex; justify-content: flex-end; gap: 10px; padding-top: 8px; margin-top: 4px; border-top: 1.5px solid #f3f4f6; padding-top: 16px; }
 .ps-modal__btn-cancel { padding: 10px 20px; background: none; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.85rem; font-weight: 600; color: #6b7280; cursor: pointer; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
 .ps-modal__btn-cancel:hover { border-color: #d1d5db; color: #374151; background: #f9fafb; }
 .ps-modal__btn-save { display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px; background: #0c0c0c; color: #fff; border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
@@ -296,6 +313,11 @@ textarea.ps-modal__input { resize: vertical; min-height: 64px; }
 .is_dark .ps-modal__input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
 .is_dark .ps-modal__input:focus { border-color: #f3f4f6; }
 .is_dark .ps-modal__btn-save { background: #f3f4f6; color: #0c0c0c; }
+.is_dark .ps-modal__hd-icon { background: #f3f4f6; color: #0c0c0c; }
+.is_dark .ps-modal__sub { color: #6b7280; }
+.is_dark .ps-modal__help { color: #6b7280; }
+.is_dark .ps-modal__foot { border-color: #1e2330; }
+.is_dark .ps-modal__hd { border-color: #1e2330; }
 </style>
 
 <script>

@@ -78,7 +78,9 @@
       "Bash(awk -F= '/^SESSION_/ { print $1 \"=\" \\($2 ? \"SET\" : \"empty\"\\) }' .env)",
       "PowerShell($env:PHP_PATH)",
       "Bash(git -C \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES\" status --short)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(php \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES/artisan\" view:clear)",
+      "PowerShell(php artisan view:clear)"
     ],
     "deny": []
   }
