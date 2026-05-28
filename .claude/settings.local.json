@@ -77,7 +77,8 @@
       "Bash(awk -F= '{print $1\"=\"\\(length\\($2\\)>0?\"SET\":\"empty\"\\)}')",
       "Bash(awk -F= '/^SESSION_/ { print $1 \"=\" \\($2 ? \"SET\" : \"empty\"\\) }' .env)",
       "PowerShell($env:PHP_PATH)",
-      "Bash(git -C \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES\" status --short)"
+      "Bash(git -C \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES\" status --short)",
+      "Bash(git mv *)"
     ],
     "deny": []
   }

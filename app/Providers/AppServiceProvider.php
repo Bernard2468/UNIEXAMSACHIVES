@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Forms\Contracts\SignatureProvider;
 use App\Forms\Definitions\AnnualLeaveApplicationForm;
+use App\Forms\Definitions\CasualLeaveApplicationForm;
 use App\Forms\Definitions\PaymentRequisitionForm;
 use App\Forms\Definitions\PurchaseWorksAuthorizationForm;
 use App\Forms\FormRegistry;
@@ -50,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
             $registry->register(new PaymentRequisitionForm());
             $registry->register(new PurchaseWorksAuthorizationForm());
             $registry->register(new AnnualLeaveApplicationForm());
+            $registry->register(new CasualLeaveApplicationForm());
             return $registry;
         });
     }
