@@ -49,6 +49,14 @@
 
 <style>
     /* ============================================================
+       FONTS — Outfit (display/title) + Inter (body).
+       Loaded with display=swap so the toast renders immediately with the
+       system fallback while the web fonts fetch in the background, then
+       smoothly upgrade. Preconnect speeds the handshake on first paint.
+       ============================================================ */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
+
+    /* ============================================================
        STACK — bottom-right, newest near the corner
        ============================================================ */
     .flash-toast-stack {
@@ -82,9 +90,16 @@
         max-width: 420px;
 
         color: #f1f5f9;
+        /* Inter for body — proven readability at small sizes. Outfit takes
+           over for the title (set on .flash-toast__title below). */
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
         font-size: 13.5px; line-height: 1.45;
         letter-spacing: -0.005em;
+        /* Modern type rendering — crisper glyphs on every OS/browser. */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: 'cv11', 'ss01', 'ss03', 'ss05'; /* Inter stylistic alternates */
 
         /* Layered dark glass + saturate boost so it stays vivid on any
            page background. */
@@ -171,20 +186,29 @@
     /* ============================================================
        TEXT
        ============================================================ */
-    .flash-toast__body { flex: 1; min-width: 0; }
+    .flash-toast__body { flex: 1; min-width: 0; padding-top: 1px; }
+    /* TITLE — Outfit display, tight letter-spacing for that "headline" feel. */
     .flash-toast__title {
+        font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         font-weight: 600;
-        font-size: 13px;
-        color: #f8fafc;
-        margin: 0 0 3px;
-        letter-spacing: -0.01em;
+        font-size: 14.5px;
+        color: #ffffff;
+        margin: 0 0 4px;
+        letter-spacing: -0.015em;
+        line-height: 1.25;
+        font-feature-settings: 'ss01', 'ss02'; /* Outfit stylistic alternates */
     }
+    /* MESSAGE — Inter body, optimized for reading at small sizes. */
     .flash-toast__msg {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+        font-weight: 400;
+        font-size: 13.25px;
+        color: #e2e8f0;
         margin: 0;
-        color: #cbd5e1;
-        font-size: 12.5px;
-        word-wrap: break-word;
         line-height: 1.5;
+        letter-spacing: -0.002em;
+        word-wrap: break-word;
+        font-feature-settings: 'cv11', 'ss01';
     }
 
     /* ============================================================
