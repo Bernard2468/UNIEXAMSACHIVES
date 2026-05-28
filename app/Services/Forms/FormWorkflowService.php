@@ -295,12 +295,18 @@ class FormWorkflowService
             ]);
 
             Notification::create([
-                'user_id' => $submission->created_by,
-                'type'    => 'form_rejected',
-                'title'   => "Your form was sent back ({$submission->reference})",
-                'message' => $reason,
-                'url'     => route('admin.forms.show', $submission->id),
-                'data'    => ['submission_id' => $submission->id],
+                'user_id'  => $submission->created_by,
+                'actor_id' => $user->id,
+                'type'     => 'form_rejected',
+                'category' => Notification::CATEGORY_FORM,
+                'title'    => "Your form was sent back ({$submission->reference})",
+                'message'  => $reason,
+                'url'      => route('admin.forms.show', $submission->id),
+                'data'     => [
+                    'submission_id' => $submission->id,
+                    'form_code'     => $submission->form_code,
+                    'reference'     => $submission->reference,
+                ],
             ]);
 
             $this->sendEmail($submission->creator, new FormSubmissionRejected($submission, $reason));
@@ -324,12 +330,18 @@ class FormWorkflowService
         $submission->save();
 
         Notification::create([
-            'user_id' => $submission->created_by,
-            'type'    => 'form_completed',
-            'title'   => "Your form is fully approved ({$submission->reference})",
-            'message' => 'All offices have signed your form.',
-            'url'     => route('admin.forms.show', $submission->id),
-            'data'    => ['submission_id' => $submission->id],
+            'user_id'  => $submission->created_by,
+            'actor_id' => $user->id,
+            'type'     => 'form_completed',
+            'category' => Notification::CATEGORY_FORM,
+            'title'    => "Your form is fully approved ({$submission->reference})",
+            'message'  => 'All offices have signed your form.',
+            'url'      => route('admin.forms.show', $submission->id),
+            'data'     => [
+                'submission_id' => $submission->id,
+                'form_code'     => $submission->form_code,
+                'reference'     => $submission->reference,
+            ],
         ]);
 
         $this->sendEmail($submission->creator, new FormSubmissionCompleted($submission));
@@ -403,13 +415,17 @@ class FormWorkflowService
             ]);
 
             Notification::create([
-                'user_id' => $newAssignee->id,
-                'type'    => 'form_assigned',
-                'title'   => "Form reassigned to you ({$submission->reference})",
-                'message' => "{$by->first_name} {$by->last_name} reassigned this {$submission->form_code} form to you.",
-                'url'     => route('admin.forms.show', $submission->id),
-                'data'    => [
+                'user_id'  => $newAssignee->id,
+                'actor_id' => $by->id,
+                'type'     => 'form_assigned',
+                'category' => Notification::CATEGORY_FORM,
+                'title'    => "Form reassigned to you ({$submission->reference})",
+                'message'  => "{$by->first_name} {$by->last_name} reassigned this {$submission->form_code} form to you.",
+                'url'      => route('admin.forms.show', $submission->id),
+                'data'     => [
                     'submission_id' => $submission->id,
+                    'form_code'     => $submission->form_code,
+                    'reference'     => $submission->reference,
                     'reason'        => $reason,
                 ],
             ]);
@@ -571,14 +587,17 @@ class FormWorkflowService
     protected function notifyAssignee(FormSubmission $submission, User $assignee, User $sender): void
     {
         Notification::create([
-            'user_id' => $assignee->id,
-            'type'    => 'form_assigned',
-            'title'   => "Form awaiting your action ({$submission->reference})",
-            'message' => "{$sender->first_name} {$sender->last_name} forwarded a {$submission->form_code} form to you.",
-            'url'     => route('admin.forms.show', $submission->id),
-            'data'    => [
+            'user_id'  => $assignee->id,
+            'actor_id' => $sender->id,
+            'type'     => 'form_assigned',
+            'category' => Notification::CATEGORY_FORM,
+            'title'    => "Form awaiting your action ({$submission->reference})",
+            'message'  => "{$sender->first_name} {$sender->last_name} forwarded a {$submission->form_code} form to you.",
+            'url'      => route('admin.forms.show', $submission->id),
+            'data'     => [
                 'submission_id' => $submission->id,
                 'form_code'     => $submission->form_code,
+                'reference'     => $submission->reference,
                 'stage'         => $submission->current_stage,
             ],
         ]);

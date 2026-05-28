@@ -52,6 +52,12 @@
 
     {{-- Global flash → toast renderer (success/error/warning/info + validation errors) --}}
     @include('components.flash-toast')
+
+    {{-- Favicon dot + page-title flash (top-app pattern: Gmail / Slack / GitHub) --}}
+    @include('components.notification-favicon')
+
+    {{-- Browser push subscriber (Web Push API) — registers /sw.js, exposes window.udtsPush --}}
+    @include('components.push-subscriber')
     
     {{-- confirmation modal --}}
     @include('components.confirmation-modal')

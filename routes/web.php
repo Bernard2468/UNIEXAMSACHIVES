@@ -203,6 +203,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/notifications/mark-all-unified', [HomeController::class, 'markAllUnifiedAsRead'])->name('dashboard.notifications.markAllUnified');
     Route::delete('/dashboard/notifications/clear-all', [HomeController::class, 'clearAllNotifications'])->name('dashboard.notifications.clearAll');
 
+    # Browser Push (Web Push API)
+    Route::get('/dashboard/push/config',         [\App\Http\Controllers\Dashboard\PushSubscriptionController::class, 'config'])->name('push.config');
+    Route::post('/dashboard/push/subscribe',     [\App\Http\Controllers\Dashboard\PushSubscriptionController::class, 'subscribe'])->name('push.subscribe');
+    Route::post('/dashboard/push/unsubscribe',   [\App\Http\Controllers\Dashboard\PushSubscriptionController::class, 'unsubscribe'])->name('push.unsubscribe');
+    Route::post('/dashboard/push/toggle',        [\App\Http\Controllers\Dashboard\PushSubscriptionController::class, 'togglePushEnabled'])->name('push.toggle');
+
     #profile
     Route::get('/dashboard/profile',[HomeController::class, 'profile'])->name('dashboard.profile');
     

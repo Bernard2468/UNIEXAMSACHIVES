@@ -41,6 +41,23 @@
                             <span>Mark all as read</span>
                         </button>
                     </form>
+                    <button class="notification-view-toggle nt-push-toggle"
+                            id="ntPushToggle"
+                            type="button"
+                            onclick="ntHandlePushToggle(event)"
+                            title="Enable browser notifications"
+                            style="display:none;">
+                        <svg id="ntPushOnIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            <circle cx="19" cy="5" r="3" fill="#16a34a" stroke="#16a34a"/>
+                        </svg>
+                        <svg id="ntPushOffIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            <line x1="2" y1="2" x2="22" y2="22" stroke-width="2.4"/>
+                        </svg>
+                    </button>
                     <button class="notification-view-toggle" onclick="toggleNotificationView()" title="Toggle view">
                         <svg id="view-list-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
                             <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -556,10 +573,205 @@
             font-size: 14px;
         }
 
-        /* Section headers for list view - removed to reduce clutter */
-        .notification-section-header {
-            display: none;
+        /* ==================== MODERN TRAY UPGRADES (nt-*) ====================
+           Scoped prefix to avoid colliding with existing tray classes. */
+
+        /* "X new since you were last here" pill — shown at top of tray when applicable */
+        .nt-new-pill {
+            margin: 10px 16px 4px;
+            padding: 6px 10px;
+            background: #eef2ff;
+            color: #4338ca;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #c7d2fe;
+            width: fit-content;
         }
+        .nt-new-pill .nt-new-pill__dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #4338ca;
+            animation: nt-pill-blink 1.4s ease-in-out infinite;
+        }
+        @keyframes nt-pill-blink {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.35; }
+        }
+        .is_dark .nt-new-pill {
+            background: rgba(67, 56, 202, 0.15);
+            color: #a5b4fc;
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+        .is_dark .nt-new-pill .nt-new-pill__dot { background: #a5b4fc; }
+
+        /* Bucket group header */
+        .nt-group-header {
+            padding: 10px 16px 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #9ca3af;
+            background: transparent;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+        .is_dark .nt-group-header {
+            color: #6b7280;
+            background: #1f2937;
+        }
+
+        /* Avatar (photo or initials) */
+        .nt-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            overflow: hidden;
+            box-shadow: 0 0 0 2px #fff;
+            position: relative;
+        }
+        .is_dark .nt-avatar { box-shadow: 0 0 0 2px #1f2937; }
+        .nt-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        /* Deterministic palette for initial-only avatars — H selected by initial */
+        .nt-avatar[data-hue="1"]  { background: linear-gradient(135deg, #ef4444, #f97316); }
+        .nt-avatar[data-hue="2"]  { background: linear-gradient(135deg, #f59e0b, #eab308); }
+        .nt-avatar[data-hue="3"]  { background: linear-gradient(135deg, #10b981, #14b8a6); }
+        .nt-avatar[data-hue="4"]  { background: linear-gradient(135deg, #0ea5e9, #6366f1); }
+        .nt-avatar[data-hue="5"]  { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+
+        /* Tiny category pip on the avatar (form/memo/system) */
+        .nt-avatar__pip {
+            position: absolute;
+            bottom: -2px; right: -2px;
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 1.5px #fff, 0 1px 2px rgba(0,0,0,0.15);
+        }
+        .is_dark .nt-avatar__pip { background: #1f2937; box-shadow: 0 0 0 1.5px #1f2937, 0 1px 2px rgba(0,0,0,0.4); }
+        .nt-avatar__pip svg { width: 9px; height: 9px; }
+        .nt-avatar__pip--form   { color: #2563eb; }
+        .nt-avatar__pip--memo   { color: #16a34a; }
+        .nt-avatar__pip--reply  { color: #d97706; }
+        .nt-avatar__pip--system { color: #6b7280; }
+
+        /* List item updates — keep the existing .notification-list-item shell intact */
+        .nt-list-item-with-avatar {
+            display: flex; gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            text-decoration: none; color: inherit;
+            transition: background-color 0.15s;
+            cursor: pointer;
+            position: relative;
+        }
+        .nt-list-item-with-avatar:hover { background: #f9fafb; }
+        .is_dark .nt-list-item-with-avatar { border-color: #374151; }
+        .is_dark .nt-list-item-with-avatar:hover { background: #1f2937; }
+        .nt-list-item-with-avatar.is-fresh::before {
+            content: '';
+            position: absolute;
+            left: 4px; top: 50%;
+            transform: translateY(-50%);
+            width: 3px; height: 28px;
+            background: #6366f1;
+            border-radius: 2px;
+        }
+        .nt-list-item__body { flex: 1; min-width: 0; }
+        .nt-list-item__header-row {
+            display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+            margin-bottom: 2px;
+        }
+        .nt-list-item__title {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.35;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .is_dark .nt-list-item__title { color: #f9fafb; }
+        .nt-list-item__time {
+            font-size: 11px; color: #9ca3af;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .nt-list-item__actor {
+            font-size: 11.5px; color: #6b7280;
+            margin-top: 2px;
+        }
+        .nt-list-item__actor strong { color: #374151; font-weight: 600; }
+        .is_dark .nt-list-item__actor strong { color: #d1d5db; }
+        .nt-list-item__msg {
+            font-size: 12px; color: #6b7280;
+            line-height: 1.4;
+            margin-top: 4px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .is_dark .nt-list-item__msg { color: #9ca3af; }
+
+        /* Inline action buttons */
+        .nt-actions {
+            display: flex; gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .nt-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            font-size: 11.5px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+        .nt-action-btn--primary {
+            background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;
+        }
+        .nt-action-btn--primary:hover { background: #dbeafe; color: #1e40af; }
+        .nt-action-btn--success {
+            background: #ecfdf5; color: #047857; border-color: #a7f3d0;
+        }
+        .nt-action-btn--success:hover { background: #d1fae5; color: #065f46; }
+        .is_dark .nt-action-btn--primary {
+            background: rgba(29, 78, 216, 0.18); color: #93c5fd; border-color: rgba(59, 130, 246, 0.4);
+        }
+        .is_dark .nt-action-btn--success {
+            background: rgba(4, 120, 87, 0.18); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        /* Carousel card upgrade — avatar + actions inside the card */
+        .nt-carousel-actor-row {
+            display: flex; align-items: center; gap: 10px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #e5e7eb;
+        }
+        .is_dark .nt-carousel-actor-row { border-color: #374151; }
 
         /* Dark mode support */
         .is_dark .notification-tray-popover {
@@ -653,6 +865,7 @@
             if (notificationTrayState.isOpen) {
                 popover.classList.add('show');
                 refreshNotificationTray();
+                if (typeof ntRefreshPushButton === 'function') ntRefreshPushButton();
             } else {
                 popover.classList.remove('show');
             }
@@ -762,53 +975,150 @@
             renderCarouselCard();
         }
 
-        // Get icon for notification type
-        function getNotificationIcon(type, title) {
-            // Determine icon based on type or title
-            if (type === 'memo' || title?.toLowerCase().includes('memo')) {
-                return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="notification-carousel-card-icon"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
-            } else if (type === 'reply' || title?.toLowerCase().includes('reply')) {
-                return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="notification-carousel-card-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+        // ====================== MODERN TRAY HELPERS ======================
+        const NT_ESC = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+        }[c]));
+
+        function ntHueFromInitials(initials) {
+            if (!initials) return 1;
+            const code = (initials.charCodeAt(0) || 65) - 65;
+            return (Math.abs(code) % 5) + 1;
+        }
+
+        function ntCategoryPip(category) {
+            // Tiny SVG corner badge on the avatar — visual category tag.
+            const cat = (category || 'system').toLowerCase();
+            const map = {
+                form:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+                memo:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>',
+                reply:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>',
+                system: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+            };
+            return `<span class="nt-avatar__pip nt-avatar__pip--${cat}" aria-hidden="true">${map[cat] || map.system}</span>`;
+        }
+
+        function ntRenderAvatar(actor, category) {
+            const initials = NT_ESC((actor && actor.initials) || '·');
+            const hue = ntHueFromInitials(initials);
+            const inner = actor && actor.avatar
+                ? `<img src="${NT_ESC(actor.avatar)}" alt="${NT_ESC(actor.name || '')}" onerror="this.outerHTML='${initials}';">`
+                : initials;
+            return `<span class="nt-avatar" data-hue="${hue}" aria-hidden="true">${inner}${ntCategoryPip(category)}</span>`;
+        }
+
+        function ntRenderActions(actions) {
+            if (!Array.isArray(actions) || actions.length === 0) return '';
+            const html = actions.map(a => `
+                <a href="${NT_ESC(a.url || '#')}"
+                   class="nt-action-btn nt-action-btn--${NT_ESC(a.style || 'primary')}"
+                   data-nt-action="1">${NT_ESC(a.label || 'Open')}</a>
+            `).join('');
+            return `<div class="nt-actions">${html}</div>`;
+        }
+
+        function ntBucketLabel(bucket) {
+            return { today: 'Today', yesterday: 'Yesterday', earlier: 'Earlier' }[bucket] || 'Earlier';
+        }
+
+        // ---------------- PUSH TOGGLE (browser notifications) ----------------
+        async function ntRefreshPushButton() {
+            const btn = document.getElementById('ntPushToggle');
+            if (!btn || !window.udtsPush) return;
+            if (!window.udtsPush.supported) { btn.style.display = 'none'; return; }
+
+            const state = await window.udtsPush.refresh();
+            const isOn  = state.subscribed && state.permission === 'granted' && state.push_enabled;
+
+            btn.style.display = 'inline-flex';
+            const on  = document.getElementById('ntPushOnIcon');
+            const off = document.getElementById('ntPushOffIcon');
+            if (on)  on.style.display  = isOn ? 'block' : 'none';
+            if (off) off.style.display = isOn ? 'none'  : 'block';
+
+            if (state.permission === 'denied') {
+                btn.title = 'Browser notifications blocked — enable them in site settings';
+            } else if (isOn) {
+                btn.title = 'Browser notifications ON · click to disable';
             } else {
-                return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="notification-carousel-card-icon"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+                btn.title = 'Enable browser notifications';
             }
         }
 
-        // Render carousel card
+        async function ntHandlePushToggle(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!window.udtsPush || !window.udtsPush.supported) return;
+
+            const state = window.udtsPush.state;
+            const isOn  = state.subscribed && state.permission === 'granted' && state.push_enabled;
+
+            if (state.permission === 'denied') {
+                alert("Browser notifications are blocked.\n\nTo turn them on:\n1. Click the lock icon in your address bar\n2. Set 'Notifications' to 'Allow'\n3. Reload the page");
+                return;
+            }
+
+            if (isOn) {
+                await window.udtsPush.unsubscribe();
+            } else {
+                const res = await window.udtsPush.subscribe();
+                if (!res.ok && res.reason === 'no_vapid_key') {
+                    alert('Browser push is not configured for this site yet.');
+                }
+            }
+            ntRefreshPushButton();
+        }
+
+        // Mark a single notification as read on click-through (top-app behavior).
+        async function ntMarkOneRead(id) {
+            try {
+                await fetch(`/dashboard/notifications/${id}/mark-read`, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'Accept': 'application/json',
+                    }
+                });
+            } catch (e) { /* non-fatal */ }
+        }
+
+        // Render carousel card (single-card view)
         function renderCarouselCard() {
             const card = document.getElementById('notification-carousel-card');
             if (!card || notificationTrayState.items.length === 0) return;
 
             const item = notificationTrayState.items[notificationTrayState.currentIndex];
-            const icon = getNotificationIcon(item.type, item.title);
             const url = item.url || '#';
+            const displayTitle = NT_ESC(item.title || 'Notification');
+            const showMessage = item.message && item.message.trim() !== '';
+            const actorLine = item.actor
+                ? `<span class="nt-list-item__actor"><strong>${NT_ESC(item.actor.name)}</strong></span>`
+                : '';
 
-            // Show title and message preview for memos
-            const displayTitle = item.title || 'Notification';
-            const showMessage = item.type === 'memo' && item.message && item.message.trim() !== '';
-            const messagePreview = showMessage ? item.message : '';
-            
             card.innerHTML = `
                 <div class="notification-carousel-card-header">
-                    <div class="notification-carousel-card-title-row">
-                        ${icon}
+                    <div class="notification-carousel-card-title-row" style="gap:12px;">
+                        ${ntRenderAvatar(item.actor, item.category)}
                         <h3 class="notification-carousel-card-title">${displayTitle}</h3>
                     </div>
-                    <span class="notification-carousel-card-time">${item.time || 'just now'}</span>
+                    <span class="notification-carousel-card-time">${NT_ESC(item.time || 'just now')}</span>
                 </div>
-                ${showMessage ? `<p class="notification-carousel-card-description">${messagePreview}</p>` : ''}
+                ${showMessage ? `<p class="notification-carousel-card-description">${NT_ESC(item.message)}</p>` : ''}
+                ${item.actor ? `<div class="nt-carousel-actor-row">${actorLine}</div>` : ''}
+                ${ntRenderActions(item.actions)}
             `;
 
-            // Make card clickable
-            card.style.cursor = 'pointer';
-            card.onclick = () => {
-                if (url !== '#') {
-                    window.location.href = url;
-                }
+            // Card-level click → open URL + mark read; inline action clicks should
+            // NOT bubble to the card click, hence the data-nt-action guard below.
+            card.onclick = (e) => {
+                if (e.target.closest('[data-nt-action]')) return;
+                if (item.id && item.type !== 'memo') ntMarkOneRead(item.id);
+                if (url !== '#') window.location.href = url;
             };
         }
 
-        // Render list view
+        // Render list view — grouped by date bucket with avatars and inline actions
         function renderListView() {
             const listContainer = document.getElementById('notification-list-items');
             if (!listContainer) return;
@@ -818,34 +1128,72 @@
                 return;
             }
 
-            let html = '';
+            // "X new since you were last here" pill — only when there ARE new items
+            const newCount = notificationTrayState.items.filter(i => i.is_new_since_seen).length;
+            const pillHtml = newCount > 0
+                ? `<div class="nt-new-pill" role="status">
+                       <span class="nt-new-pill__dot"></span>
+                       ${newCount} new since you were last here
+                   </div>`
+                : '';
 
+            // Group by bucket preserving server-side order (already newest-first)
+            const groups = { today: [], yesterday: [], earlier: [] };
             notificationTrayState.items.forEach(item => {
-                const icon = getNotificationIcon(item.type, item.title);
-                const url = item.url || '#';
-                const displayTitle = item.title || 'Notification';
-                const showMessage = item.type === 'memo' && item.message && item.message.trim() !== '';
-                const messagePreview = showMessage ? item.message : '';
-                const unreadDot = !item.is_read ? '<span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; flex-shrink: 0;"></span>' : '';
-
-                html += `
-                    <a href="${url}" class="notification-list-item">
-                        <div class="notification-list-item-top">
-                            <div class="notification-list-item-header">
-                                <div class="notification-list-item-title-row">
-                                    ${icon}
-                                    <span class="notification-list-item-title">${displayTitle}</span>
-                                    ${unreadDot}
-                                </div>
-                            </div>
-                            <span class="notification-list-item-time">${item.time || 'just now'}</span>
-                        </div>
-                        ${showMessage ? `<p class="notification-list-item-description">${messagePreview}</p>` : ''}
-                    </a>
-                `;
+                (groups[item.bucket] || groups.earlier).push(item);
             });
 
-            listContainer.innerHTML = html;
+            const renderGroup = (key, items) => {
+                if (!items.length) return '';
+                const rows = items.map(item => {
+                    const url = item.url || '#';
+                    const title = NT_ESC(item.title || 'Notification');
+                    const showMessage = item.message && item.message.trim() !== '';
+                    const actorLine = item.actor
+                        ? `<div class="nt-list-item__actor"><strong>${NT_ESC(item.actor.name)}</strong></div>`
+                        : '';
+                    return `
+                        <div class="nt-list-item-with-avatar ${item.is_new_since_seen ? 'is-fresh' : ''}"
+                             data-nt-id="${NT_ESC(item.id)}"
+                             data-nt-type="${NT_ESC(item.type)}"
+                             data-nt-url="${NT_ESC(url)}">
+                            ${ntRenderAvatar(item.actor, item.category)}
+                            <div class="nt-list-item__body">
+                                <div class="nt-list-item__header-row">
+                                    <div class="nt-list-item__title">${title}</div>
+                                    <span class="nt-list-item__time">${NT_ESC(item.time || 'just now')}</span>
+                                </div>
+                                ${actorLine}
+                                ${showMessage ? `<div class="nt-list-item__msg">${NT_ESC(item.message)}</div>` : ''}
+                                ${ntRenderActions(item.actions)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                return `<div class="nt-group-header">${ntBucketLabel(key)}</div>${rows}`;
+            };
+
+            listContainer.innerHTML = pillHtml +
+                renderGroup('today', groups.today) +
+                renderGroup('yesterday', groups.yesterday) +
+                renderGroup('earlier', groups.earlier);
+
+            // Delegate click → mark-one-read + navigate. Inline action buttons
+            // (which have their own data-nt-action attr) handle navigation themselves.
+            listContainer.querySelectorAll('.nt-list-item-with-avatar').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('[data-nt-action]')) return;
+                    const id   = row.getAttribute('data-nt-id');
+                    const type = row.getAttribute('data-nt-type');
+                    const url  = row.getAttribute('data-nt-url');
+                    // Memos are EmailCampaignRecipient rows, not notifications —
+                    // their /memos/show endpoint already marks them read server-side.
+                    if (id && type !== 'memo' && type !== 'memo_recipient') {
+                        ntMarkOneRead(id);
+                    }
+                    if (url && url !== '#') window.location.href = url;
+                });
+            });
         }
 
         // Refresh notification tray content (exposed globally for polling)
@@ -875,40 +1223,56 @@
                     // Combine and format items
                     const items = [];
                     
-                    // Add memos - include message preview (only unread)
+                    // Add memos (only unread). Memo rows have a fixed category.
                     if (memoData.memos && memoData.memos.length > 0) {
                         memoData.memos.forEach(memo => {
-                            // Only add unread memos
                             if (!memo.is_read) {
                                 items.push({
                                     id: memo.id,
-                                    type: 'memo',
+                                    type: 'memo_recipient',
+                                    category: 'memo',
                                     title: memo.subject,
-                                    message: memo.message || '', // Message preview for memos
+                                    message: memo.message || '',
                                     time: memo.created_at,
                                     is_read: memo.is_read,
+                                    is_new_since_seen: true, // memos always appear "fresh" while unread
+                                    bucket: memo.bucket || 'earlier',
+                                    actor: memo.actor || null,
+                                    actions: memo.actions || [],
                                     url: memo.url
                                 });
                             }
                         });
                     }
-                    
-                    // Add reply notifications - only unread (only store title, no duplicate description)
+
+                    // Add notifications (forms, replies, system) — only unread.
                     if (notificationData.notifications && notificationData.notifications.length > 0) {
-                        notificationData.notifications.forEach(notification => {
-                            // Only add unread notifications
-                            if (!notification.is_read) {
+                        notificationData.notifications.forEach(n => {
+                            if (!n.is_read) {
                                 items.push({
-                                    id: notification.id,
-                                    type: 'reply',
-                                    title: notification.title || notification.message,
-                                    time: notification.time_ago,
-                                    is_read: notification.is_read,
-                                    url: notification.url
+                                    id: n.id,
+                                    type: n.type,
+                                    category: n.category || 'system',
+                                    title: n.title || n.message,
+                                    message: n.message || '',
+                                    time: n.time_ago,
+                                    is_read: n.is_read,
+                                    is_new_since_seen: !!n.is_new_since_seen,
+                                    bucket: n.bucket || 'earlier',
+                                    actor: n.actor || null,
+                                    actions: n.actions || [],
+                                    url: n.url
                                 });
                             }
                         });
                     }
+
+                    // Sort merged items newest-first by created_at_iso when present.
+                    items.sort((a, b) => {
+                        const ta = a.created_at_iso ? Date.parse(a.created_at_iso) : 0;
+                        const tb = b.created_at_iso ? Date.parse(b.created_at_iso) : 0;
+                        return tb - ta;
+                    });
 
                     // Preserve current index if items haven't changed significantly
                     const previousItems = notificationTrayState.items;
@@ -947,19 +1311,23 @@
                 })
                 .catch(err => {
                     console.log('Error fetching notifications:', err);
-                    // Fallback to just memos (only unread)
+                    // Fallback to just memos (only unread) — same shape as the main path.
                     const items = [];
                     if (memoData.memos && memoData.memos.length > 0) {
                         memoData.memos.forEach(memo => {
-                            // Only add unread memos
                             if (!memo.is_read) {
                                 items.push({
                                     id: memo.id,
-                                    type: 'memo',
+                                    type: 'memo_recipient',
+                                    category: 'memo',
                                     title: memo.subject,
-                                    message: memo.message || '', // Message preview for memos
+                                    message: memo.message || '',
                                     time: memo.created_at,
                                     is_read: memo.is_read,
+                                    is_new_since_seen: true,
+                                    bucket: memo.bucket || 'earlier',
+                                    actor: memo.actor || null,
+                                    actions: memo.actions || [],
                                     url: memo.url
                                 });
                             }

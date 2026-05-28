@@ -13,6 +13,8 @@ use App\Models\FormSubmission;
 use App\Models\Message;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaign;
+use App\Models\Notification;
+use App\Observers\NotificationObserver;
 use App\Policies\FormSubmissionPolicy;
 use App\Services\Signing\InAppSignatureProvider;
 use App\Services\Signing\SignatureService;
@@ -61,6 +63,10 @@ class AppServiceProvider extends ServiceProvider
         // Forms authorisation: explicitly bind policy so it is discoverable
         // regardless of Laravel's auto-discovery conventions.
         Gate::policy(FormSubmission::class, FormSubmissionPolicy::class);
+
+        // Mirror every newly-created Notification to the user's browser push
+        // subscriptions (no-op when VAPID keys aren't configured).
+        Notification::observe(NotificationObserver::class);
 
         View::composer('*', function ($view) {
             if(Auth::check()){

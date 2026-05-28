@@ -226,25 +226,30 @@ class HomeController extends Controller
 
     public function recentMemos()
     {
-        $recentMemos = EmailCampaignRecipient::with('campaign')
+        $recentMemos = EmailCampaignRecipient::with(['campaign.creator'])
             ->where('user_id', Auth::id())
-            ->where('is_read', false) // Only show unread memos in notification tray
+            ->where('is_read', false)
             ->orderBy('created_at','desc')
-            ->limit(5)
+            ->limit(8)
             ->get();
 
-        $memos = $recentMemos->map(function($rm) {
-            // Strip HTML tags and get plain text preview
+        $memos = $recentMemos->map(function ($rm) {
             $messagePreview = strip_tags($rm->campaign->message ?? '');
             $messagePreview = \Str::limit($messagePreview, 100);
-            
+
             return [
-                'id' => $rm->id,
-                'subject' => \Str::limit($rm->campaign->subject, 40),
-                'message' => $messagePreview,
-                'created_at' => $rm->created_at->diffForHumans(),
-                'is_read' => $rm->is_read,
-                'url' => route('dashboard.memo.read', $rm->id)
+                'id'             => $rm->id,
+                'subject'        => \Str::limit($rm->campaign->subject ?? 'Memo', 40),
+                'message'        => $messagePreview,
+                'created_at'     => $rm->created_at->diffForHumans(),
+                'created_at_iso' => $rm->created_at->toIso8601String(),
+                'bucket'         => $this->dateBucket($rm->created_at),
+                'is_read'        => (bool) $rm->is_read,
+                'url'            => route('dashboard.memo.read', $rm->id),
+                'actor'          => $this->actorPayload($rm->campaign?->creator),
+                'actions'        => [
+                    ['label' => 'Open memo', 'url' => route('dashboard.memo.read', $rm->id), 'style' => 'primary'],
+                ],
             ];
         });
 
@@ -438,24 +443,111 @@ class HomeController extends Controller
 
     public function getNotifications()
     {
-        $notifications = Notification::forUser(Auth::id())
-            ->where('is_read', false) // Only show unread notifications in tray
-            ->orderBy('created_at', 'desc')
-            ->limit(20)
-            ->get()
-            ->map(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'type' => $notification->type,
-                    'title' => $notification->title,
-                    'message' => $notification->message,
-                    'url' => $notification->url,
-                    'is_read' => $notification->is_read,
-                    'time_ago' => $notification->time_ago,
-                ];
-            });
+        $user = Auth::user();
+        $lastSeen = $user->last_tray_seen_at; // Capture BEFORE we touch it.
 
-        return response()->json(['notifications' => $notifications]);
+        $notifications = Notification::forUser($user->id)
+            ->with('actor:id,first_name,last_name,profile_picture')
+            ->where('is_read', false)
+            ->orderBy('created_at', 'desc')
+            ->limit(30)
+            ->get()
+            ->map(fn ($n) => [
+                'id'              => $n->id,
+                'type'            => $n->type,
+                'category'        => $n->resolved_category,
+                'title'           => $n->title,
+                'message'         => $n->message,
+                'url'             => $n->url,
+                'is_read'         => (bool) $n->is_read,
+                'time_ago'        => $n->time_ago,
+                'created_at_iso'  => $n->created_at->toIso8601String(),
+                'bucket'          => $this->dateBucket($n->created_at),
+                'is_new_since_seen' => $lastSeen ? $n->created_at->gt($lastSeen) : true,
+                'actor'           => $this->actorPayload($n->actor),
+                'actions'         => $this->buildActions($n),
+            ]);
+
+        // Stamp the "last seen" cursor AFTER we read it, so the next call can
+        // diff against it. We only stamp on the JSON fetch (tray-open), not on
+        // the lightweight /check endpoint.
+        $user->forceFill(['last_tray_seen_at' => now()])->save();
+
+        return response()->json([
+            'notifications' => $notifications,
+            'last_seen_at'  => optional($lastSeen)->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Map a Notification to a small set of inline actions for the tray UI.
+     * Each row in the tray will show 1–2 buttons users can act on without
+     * leaving the tray (like Linear / GitHub).
+     */
+    protected function buildActions(Notification $n): array
+    {
+        $url = $n->url ?? '#';
+
+        return match ($n->type) {
+            'form_assigned' => [
+                ['label' => 'Open form', 'url' => $url, 'style' => 'primary'],
+                ['label' => 'Sign now',  'url' => $url . '#sign', 'style' => 'success'],
+            ],
+            'form_rejected' => [
+                ['label' => 'View feedback', 'url' => $url, 'style' => 'primary'],
+            ],
+            'form_completed' => [
+                ['label' => 'View form', 'url' => $url, 'style' => 'primary'],
+            ],
+            'reply' => [
+                ['label' => 'View reply', 'url' => $url, 'style' => 'primary'],
+            ],
+            default => $url !== '#'
+                ? [['label' => 'Open', 'url' => $url, 'style' => 'primary']]
+                : [],
+        };
+    }
+
+    /**
+     * Bucket a timestamp into "today" / "yesterday" / "earlier" for grouping
+     * in the tray. Matches the convention used by Slack, Linear, GitHub.
+     */
+    protected function dateBucket(\Carbon\Carbon|\Illuminate\Support\Carbon $when): string
+    {
+        if ($when->isToday())     return 'today';
+        if ($when->isYesterday()) return 'yesterday';
+        return 'earlier';
+    }
+
+    /**
+     * Build a small actor payload (name + initials + avatar URL) for the
+     * tray UI. Returns null when no actor is set (system notifications).
+     */
+    protected function actorPayload(?User $actor): ?array
+    {
+        if (!$actor) return null;
+
+        $first = trim((string) $actor->first_name);
+        $last  = trim((string) $actor->last_name);
+        $name  = trim($first . ' ' . $last) ?: 'Someone';
+        $initials = strtoupper(
+            ($first ? mb_substr($first, 0, 1) : '') .
+            ($last  ? mb_substr($last,  0, 1) : '')
+        ) ?: strtoupper(mb_substr($name, 0, 1));
+
+        $avatar = null;
+        if (!empty($actor->profile_picture)) {
+            $pic = ltrim((string) $actor->profile_picture, '/');
+            // Profile pictures are stored on the public disk; on Hostinger the
+            // /storage/* route serves them via PHP since the symlink is disabled.
+            $avatar = $pic ? url('storage/' . $pic) : null;
+        }
+
+        return [
+            'name'     => $name,
+            'initials' => $initials,
+            'avatar'   => $avatar,
+        ];
     }
 
     public function checkNewNotifications()

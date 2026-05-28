@@ -10,9 +10,16 @@ class Notification extends Model
 {
     use HasFactory;
 
+    public const CATEGORY_FORM   = 'form';
+    public const CATEGORY_MEMO   = 'memo';
+    public const CATEGORY_REPLY  = 'reply';
+    public const CATEGORY_SYSTEM = 'system';
+
     protected $fillable = [
         'user_id',
+        'actor_id',
         'type',
+        'category',
         'title',
         'message',
         'url',
@@ -27,33 +34,27 @@ class Notification extends Model
         'data' => 'array',
     ];
 
-    /**
-     * Get the user that owns the notification
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Scope to get unread notifications
-     */
+    /** The user whose action triggered this notification (for avatars). */
+    public function actor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'actor_id');
+    }
+
     public function scopeUnread($query)
     {
         return $query->where('is_read', false);
     }
 
-    /**
-     * Scope to get notifications for a specific user
-     */
     public function scopeForUser($query, $userId)
     {
         return $query->where('user_id', $userId);
     }
 
-    /**
-     * Mark notification as read
-     */
     public function markAsRead()
     {
         $this->update([
@@ -62,29 +63,42 @@ class Notification extends Model
         ]);
     }
 
-    /**
-     * Get time ago string
-     */
     public function getTimeAgoAttribute()
     {
         return $this->created_at->diffForHumans();
     }
 
     /**
-     * Create a notification for memo reply
+     * Derive a category from the type if the column wasn't populated
+     * (e.g. legacy rows created before the column existed).
      */
-    public static function createMemoReplyNotification($memoCreatorId, $replyAuthor, $memoSubject, $replyUrl)
+    public function getResolvedCategoryAttribute(): string
+    {
+        if ($this->category) {
+            return $this->category;
+        }
+        return match (true) {
+            str_starts_with((string) $this->type, 'form_') => self::CATEGORY_FORM,
+            $this->type === 'reply'                        => self::CATEGORY_REPLY,
+            $this->type === 'memo'                         => self::CATEGORY_MEMO,
+            default                                        => self::CATEGORY_SYSTEM,
+        };
+    }
+
+    public static function createMemoReplyNotification($memoCreatorId, $replyAuthor, $memoSubject, $replyUrl, ?int $actorId = null)
     {
         return self::create([
-            'user_id' => $memoCreatorId,
-            'type' => 'reply',
-            'title' => 'New Reply to Your Memo',
-            'message' => "{$replyAuthor} replied to your memo: \"{$memoSubject}\"",
-            'url' => $replyUrl,
-            'data' => [
+            'user_id'  => $memoCreatorId,
+            'actor_id' => $actorId,
+            'type'     => 'reply',
+            'category' => self::CATEGORY_REPLY,
+            'title'    => 'New Reply to Your Memo',
+            'message'  => "{$replyAuthor} replied to your memo: \"{$memoSubject}\"",
+            'url'      => $replyUrl,
+            'data'     => [
                 'reply_author' => $replyAuthor,
                 'memo_subject' => $memoSubject,
-            ]
+            ],
         ]);
     }
 }

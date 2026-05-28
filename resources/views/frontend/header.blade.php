@@ -430,6 +430,10 @@ function updateNotificationBadge(unreadCount, replyCount = 0) {
   }
 
   lastBadgeTotal = totalCount;
+
+  // Broadcast the new count so the favicon dot + page-title flash component
+  // (and any other listener) can react without polling the DOM.
+  window.dispatchEvent(new CustomEvent('notification:count', { detail: { total: totalCount } }));
 }
 
 function fetchJsonSafe(url, options = {}) {
