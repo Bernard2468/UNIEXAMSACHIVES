@@ -38,7 +38,11 @@ class InAppSignatureProvider implements SignatureProvider
         array $payload,
         array $context = []
     ): FormSignature {
-        $signedAt = now();
+        // Pin to whole-second precision. The chain hash is computed from this
+        // ISO string, and the `signed_at` column stores at precision 0 — if we
+        // hashed the microsecond-bearing now(), verifyChain() would reread a
+        // truncated timestamp and produce a different hash on every row.
+        $signedAt = now()->startOfSecond();
         $signedAtIso = $signedAt->toISOString();
 
         $priorHash = FormSignature::where('form_submission_id', $submission->id)

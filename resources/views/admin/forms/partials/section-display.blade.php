@@ -77,8 +77,11 @@
                     @endif
                 </div>
                 @if($signature->image_url)
+                    {{-- onerror message intentionally avoids the old "run storage:link" hint:
+                         production runs on Hostinger where symlink() is disabled and the
+                         /storage/{path} route in web.php serves the file via PHP instead. --}}
                     <img src="{{ $signature->image_url }}" alt="Signature" class="locked-signature__img"
-                         onerror="this.outerHTML='<div class=&quot;locked-signature__broken&quot;>Signature image unavailable. Run <code>php artisan storage:link</code> on the server.</div>';">
+                         onerror="this.outerHTML='<div class=&quot;locked-signature__broken&quot;>Signature image could not be loaded. Please refresh the page; if the problem persists, contact your administrator.</div>';">
                 @else
                     <div class="locked-signature__broken">No signature image was captured for this stage.</div>
                 @endif
