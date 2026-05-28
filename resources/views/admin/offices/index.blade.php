@@ -63,7 +63,7 @@
                                         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"/></svg>
                                     </div>
                                     <p class="ps-empty__text">No offices yet. Create one to start routing forms.</p>
-                                    <button class="ps-btn-primary" id="triggerOfficeModalEmpty">
+                                    <button type="button" class="ps-btn-primary" id="triggerOfficeModalEmpty">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         Create first office
                                     </button>
@@ -146,7 +146,7 @@
 </div>
 
 {{-- New office modal --}}
-<div class="modal fade" id="officeModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="officeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
         <div class="ps-modal">
             <div class="ps-modal__hd">
@@ -300,10 +300,39 @@ textarea.ps-modal__input { resize: vertical; min-height: 64px; }
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    var modalEl = document.getElementById('officeModal');
+    if (!modalEl) return;
+
+    // Reparent the modal to <body> so no ancestor's overflow/transform/z-index
+    // can clip it or break Bootstrap's fixed-position backdrop placement.
+    if (modalEl.parentNode !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+
+    var instance = null;
+    function show(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        try {
+            if (window.bootstrap && bootstrap.Modal) {
+                instance = instance || bootstrap.Modal.getOrCreateInstance(modalEl, {
+                    backdrop: 'static',
+                    keyboard: false,
+                });
+                instance.show();
+            } else if (window.jQuery) {
+                // Fallback: Bootstrap 4-style jQuery plugin if BS5 global missing
+                window.jQuery(modalEl).modal({ backdrop: 'static', keyboard: false });
+                window.jQuery(modalEl).modal('show');
+            } else {
+                console.error('[offices] Bootstrap not available to open modal.');
+            }
+        } catch (err) {
+            console.error('[offices] Failed to open office modal:', err);
+        }
+    }
+
     var open = document.getElementById('triggerOfficeModal');
     var openEmpty = document.getElementById('triggerOfficeModalEmpty');
-    var modalEl = document.getElementById('officeModal');
-    function show() { if (modalEl) new bootstrap.Modal(modalEl).show(); }
     if (open) open.addEventListener('click', show);
     if (openEmpty) openEmpty.addEventListener('click', show);
 });
