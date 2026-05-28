@@ -28,8 +28,10 @@
                         <span>{{ $stage->label }}</span>
                         @if($stageAttachments->count() > 0)
                             <span class="stage-clip-badge" title="{{ $stageAttachments->count() }} file{{ $stageAttachments->count() === 1 ? '' : 's' }} attached at this stage">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                                {{ $stageAttachments->count() }}
+                                <span class="stage-clip-badge__bubble">
+                                    <img src="https://img.icons8.com/officel/80/attach.png" alt="" class="stage-clip-badge__img" loading="lazy" decoding="async">
+                                </span>
+                                <span class="stage-clip-badge__count">{{ $stageAttachments->count() }}</span>
                             </span>
                         @endif
                     </span>

@@ -100,24 +100,81 @@
        in a horizontal inner row to keep them side-by-side. */
     .stage-title-row { display: inline-flex; align-items: center; gap: 0; flex-wrap: wrap; }
 
-    /* Clip badge next to section title — small + glanceable */
+    /* ============ CLIP BADGE — glowing-bubble indicator ============
+       Sits next to the section title. White bubble holds the paperclip icon,
+       indigo halo around it gently breathes to catch the eye. The number
+       sits beside the bubble. Subtle, premium, futuristic — not gaudy. */
     .stage-clip-badge {
-        display: inline-flex; align-items: center; gap: 4px;
-        margin-left: 8px;
-        padding: 2px 8px 2px 6px;
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-left: 10px;
+        vertical-align: middle;
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        line-height: 1;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+    .stage-clip-badge__bubble {
+        position: relative;
+        width: 30px; height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(140deg, #ffffff 0%, #f8fafc 100%);
+        border: 1.5px solid rgba(99, 102, 241, 0.4);
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        box-shadow:
+            0 0 0 3px rgba(99, 102, 241, 0.12),
+            0 0 14px rgba(99, 102, 241, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        animation: clipBadgeBreathe 2.6s ease-in-out infinite;
+    }
+    @keyframes clipBadgeBreathe {
+        0%, 100% {
+            box-shadow:
+                0 0 0 3px rgba(99, 102, 241, 0.12),
+                0 0 14px rgba(99, 102, 241, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        50% {
+            box-shadow:
+                0 0 0 5px rgba(99, 102, 241, 0.06),
+                0 0 24px rgba(99, 102, 241, 0.65),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+    }
+    .stage-clip-badge__img {
+        width: 20px; height: 20px;
+        display: block;
+        pointer-events: none;
+        /* slight drop shadow so the icon "sits" inside the bubble */
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.08));
+    }
+    .stage-clip-badge__count {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 18px; height: 18px;
+        padding: 0 6px;
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
         color: #fff;
         border-radius: 999px;
-        font-size: 10.5px; font-weight: 700;
-        vertical-align: 2px;
+        font-size: 10.5px; font-weight: 800;
+        font-variant-numeric: tabular-nums;
         box-shadow: 0 1px 3px rgba(99, 102, 241, 0.35);
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        letter-spacing: 0;
-        line-height: 1;
-        text-transform: none;
     }
-    .stage-clip-badge svg { display: block; }
-    .is_dark .stage-clip-badge { box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+    /* Dark mode — invert the bubble surface, keep the indigo halo */
+    .is_dark .stage-clip-badge__bubble {
+        background: linear-gradient(140deg, #1e293b 0%, #0f172a 100%);
+        border-color: rgba(165, 180, 252, 0.45);
+        box-shadow:
+            0 0 0 3px rgba(99, 102, 241, 0.18),
+            0 0 18px rgba(99, 102, 241, 0.55),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .is_dark .stage-clip-badge__img { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5)); }
+
+    /* Respect reduced-motion users — kill the pulse but keep the glow */
+    @media (prefers-reduced-motion: reduce) {
+        .stage-clip-badge__bubble { animation: none; }
+    }
 
     .stage-att {
         margin-top: 14px;
