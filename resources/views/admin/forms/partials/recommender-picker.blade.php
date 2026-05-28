@@ -357,7 +357,44 @@
 
         function clearAssigneeRadios() {
             picker.querySelectorAll('[data-rec-radio]').forEach(function (r) { r.checked = false; });
+            picker.querySelectorAll('[data-rec-office]').forEach(function (o) { o.checked = false; });
             cards.forEach(function (c) { c.classList.remove('is-selected'); });
+        }
+
+        function selectCard(card) {
+            if (!card || card.classList.contains('is-disabled')) return;
+            cards.forEach(function (c) { c.classList.remove('is-selected'); });
+            card.classList.add('is-selected');
+
+            if (card.dataset.mode === 'leadership') {
+                var r = card.querySelector('[data-rec-radio]');
+                if (r) {
+                    r.checked = true;
+                    hiddenAssignee.value = r.value;
+                }
+                picker.querySelectorAll('[data-rec-office]').forEach(function (o) { o.checked = false; });
+            } else if (card.dataset.mode === 'office') {
+                var officeRadio = card.querySelector('[data-rec-office]');
+                if (officeRadio) {
+                    officeRadio.checked = true;
+                    hiddenAssignee.value = officeRadio.dataset.headId || '';
+                }
+                picker.querySelectorAll('[data-rec-radio]').forEach(function (r) { r.checked = false; });
+            }
+        }
+
+        function autoPickFirstVisible() {
+            // Pick the first non-disabled card in whichever list is currently visible.
+            for (var i = 0; i < lists.length; i++) {
+                if (lists[i].style.display !== 'none') {
+                    var first = lists[i].querySelector('[data-rec-card]:not(.is-disabled)');
+                    if (first) { selectCard(first); return; }
+                }
+            }
+            // No usable card — make sure the hidden assignee is empty so the
+            // server returns a helpful 422 instead of silently misrouting.
+            clearAssigneeRadios();
+            hiddenAssignee.value = '';
         }
 
         function showMode(mode, category) {
@@ -373,6 +410,7 @@
             clearAssigneeRadios();
             hiddenAssignee.value = '';
             applySearch();
+            autoPickFirstVisible();
         }
 
         function applySearch() {
@@ -407,32 +445,33 @@
                     e.preventDefault();
                     return;
                 }
-                cards.forEach(function (c) { c.classList.remove('is-selected'); });
-                card.classList.add('is-selected');
-
-                if (card.dataset.mode === 'leadership') {
-                    var r = card.querySelector('[data-rec-radio]');
-                    if (r) {
-                        r.checked = true;
-                        hiddenAssignee.value = r.value;
-                    }
-                    // Clear any office selection
-                    picker.querySelectorAll('[data-rec-office]').forEach(function (o) { o.checked = false; });
-                } else if (card.dataset.mode === 'office') {
-                    var officeRadio = card.querySelector('[data-rec-office]');
-                    if (officeRadio) {
-                        officeRadio.checked = true;
-                        // Mirror the office's head_id into the assignee input so the
-                        // server resolves to that person.
-                        hiddenAssignee.value = officeRadio.dataset.headId || '';
-                    }
-                    // Clear leadership selection
-                    picker.querySelectorAll('[data-rec-radio]').forEach(function (r) { r.checked = false; });
-                }
+                selectCard(card);
             });
         });
 
         if (search) search.addEventListener('input', applySearch);
+
+        // Pre-pick the first available card in the currently visible list so
+        // the user can submit immediately after picking a chip. If the user
+        // wants someone else, clicking another card replaces the selection.
+        autoPickFirstVisible();
+
+        // Defensive submit guard — if for some reason no assignee is wired up
+        // by the time the form posts, surface a friendly message instead of
+        // letting the server return a generic 422 page.
+        var form = picker.closest('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                // Only guard "send" actions (skip "draft").
+                var actionInput = form.querySelector('input[name="action"]');
+                if (actionInput && actionInput.value === 'draft') return;
+
+                if (!hiddenAssignee.value) {
+                    e.preventDefault();
+                    alert('Please pick who should receive this form: a Dean / HOD / Director, or an Office whose head will recommend.');
+                }
+            });
+        }
     });
 })();
 </script>
