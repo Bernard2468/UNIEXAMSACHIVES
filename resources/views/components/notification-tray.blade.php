@@ -1,16 +1,23 @@
 @if (Auth::check())
+    @php
+        $totalNotifications = ($newMessagesCount ?? 0) + ($newReplyNotifications ?? 0);
+        $badgeDisplay = $totalNotifications > 99 ? '99+' : (string) $totalNotifications;
+        $hasUnread = $totalNotifications > 0;
+    @endphp
     <div class="notification-tray-wrapper">
-        <button class="notification-tray-trigger" onclick="toggleNotificationTray(event)">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="notification-bell-icon">
-                <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            @php
-                $totalNotifications = ($newMessagesCount ?? 0) + ($newReplyNotifications ?? 0);
-            @endphp
-            @if($totalNotifications > 0)
-                <span class="notification-badge">{{$totalNotifications}}</span>
-            @endif
+        <button class="notification-tray-trigger {{ $hasUnread ? 'has-unread' : '' }}"
+                onclick="toggleNotificationTray(event)"
+                aria-label="{{ $hasUnread ? $totalNotifications . ' unread notification' . ($totalNotifications === 1 ? '' : 's') : 'Notifications, no unread' }}">
+            <span class="notification-bell-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="notification-bell-icon">
+                    <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+            </span>
+            <span class="notification-badge {{ $totalNotifications >= 10 ? 'is-multi' : 'is-single' }}"
+                  style="{{ $hasUnread ? '' : 'display:none;' }}"
+                  aria-hidden="true">{{ $badgeDisplay }}</span>
+            <span class="notification-badge-ping" style="{{ $hasUnread ? '' : 'display:none;' }}" aria-hidden="true"></span>
         </button>
 
         <div id="notification-tray-popover" class="notification-tray-popover">
@@ -114,23 +121,103 @@
             background-color: rgba(0, 0, 0, 0.05);
         }
 
+        .notification-bell-wrap {
+            display: inline-flex;
+            transform-origin: 50% 4px; /* pivot at bell stem */
+        }
         .notification-bell-icon {
             color: currentColor;
+            display: block;
         }
 
+        /* Bell wobble — fires once on .ringing, then resets. Cubic-bezier gives a
+           tactile "tap" feel (top apps: Linear, Gmail) rather than a uniform sway. */
+        @keyframes nt-bell-ring {
+            0%   { transform: rotate(0); }
+            10%  { transform: rotate(14deg); }
+            20%  { transform: rotate(-12deg); }
+            30%  { transform: rotate(10deg); }
+            40%  { transform: rotate(-8deg); }
+            50%  { transform: rotate(6deg); }
+            60%  { transform: rotate(-4deg); }
+            70%  { transform: rotate(2deg); }
+            100% { transform: rotate(0); }
+        }
+        .notification-tray-trigger.ringing .notification-bell-wrap {
+            animation: nt-bell-ring 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        /* ===== BADGE (industry-standard pattern) =====
+           - White ring (2px) so it pops on ANY header background (light/dark/colored)
+           - Single-digit = perfect circle; multi-digit = pill
+           - Resting pulse-ring around badge while unread > 0 (subtle, infinite)
+           - Bounce-pop scale on count change */
         .notification-badge {
             position: absolute;
-            top: -2px;
-            right: -2px;
-            background: #ef4444;
+            top: -4px;
+            right: -4px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: #fff;
-            font-size: 11px;
-            line-height: 1;
-            padding: 3px 6px;
+            font-size: 10.5px;
+            line-height: 18px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
             border-radius: 999px;
             font-weight: 700;
-            min-width: 18px;
             text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-variant-numeric: tabular-nums;
+            box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(220, 38, 38, 0.35);
+            letter-spacing: -0.2px;
+            transform-origin: center;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 2;
+        }
+        .notification-badge.is-single {
+            width: 18px;
+            padding: 0;
+        }
+        .notification-badge.popping {
+            animation: nt-badge-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        @keyframes nt-badge-pop {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.45); }
+            70%  { transform: scale(0.92); }
+            100% { transform: scale(1); }
+        }
+
+        /* Resting pulse — telegraphs "you have unread" without being annoying.
+           Sized to match the badge; fades out so it doesn't draw the eye constantly. */
+        .notification-badge-ping {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: #ef4444;
+            opacity: 0.55;
+            z-index: 1;
+            pointer-events: none;
+            animation: nt-badge-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+        @keyframes nt-badge-ping {
+            0%   { transform: scale(0.95); opacity: 0.55; }
+            70%  { transform: scale(2.1);  opacity: 0; }
+            100% { transform: scale(2.1);  opacity: 0; }
+        }
+        /* Dark header support — replace the white ring with the dark surface so it still pops */
+        .is_dark .notification-badge {
+            box-shadow: 0 0 0 2px #0f172a, 0 1px 3px rgba(220, 38, 38, 0.5);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .notification-tray-trigger.ringing .notification-bell-wrap,
+            .notification-badge.popping,
+            .notification-badge-ping {
+                animation: none !important;
+            }
         }
 
         .notification-tray-popover {

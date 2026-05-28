@@ -386,17 +386,50 @@ let lastUnread = Number({{ $newMessagesCount ?? 0 }});
 let lastReplyNotifications = Number({{ $newReplyNotifications ?? 0 }});
 let unreadPollingEnabled = true;
 
+let lastBadgeTotal = Number({{ ($newMessagesCount ?? 0) + ($newReplyNotifications ?? 0) }});
+
 function updateNotificationBadge(unreadCount, replyCount = 0) {
-  const badge = document.querySelector('.notification-badge');
-  if (badge) {
-    const totalCount = unreadCount + replyCount;
-    if (totalCount > 0) {
-      badge.textContent = totalCount;
-      badge.style.display = 'inline-block';
-    } else {
-      badge.style.display = 'none';
+  const badge   = document.querySelector('.notification-badge');
+  const ping    = document.querySelector('.notification-badge-ping');
+  const trigger = document.querySelector('.notification-tray-trigger');
+  if (!badge || !trigger) return;
+
+  const totalCount = Number(unreadCount || 0) + Number(replyCount || 0);
+  const display    = totalCount > 99 ? '99+' : String(totalCount);
+
+  if (totalCount > 0) {
+    badge.textContent = display;
+    badge.style.display = 'inline-block';
+    badge.classList.toggle('is-single', totalCount < 10);
+    badge.classList.toggle('is-multi',  totalCount >= 10);
+    if (ping) ping.style.display = 'block';
+    trigger.classList.add('has-unread');
+    trigger.setAttribute(
+      'aria-label',
+      totalCount + ' unread notification' + (totalCount === 1 ? '' : 's')
+    );
+
+    // Count increased → ring the bell + pop the badge (matches the audio cue).
+    if (totalCount > lastBadgeTotal) {
+      trigger.classList.remove('ringing');
+      badge.classList.remove('popping');
+      // Force reflow so the animation can replay even if the class was just removed.
+      void trigger.offsetWidth;
+      trigger.classList.add('ringing');
+      badge.classList.add('popping');
+      setTimeout(() => {
+        trigger.classList.remove('ringing');
+        badge.classList.remove('popping');
+      }, 950);
     }
+  } else {
+    badge.style.display = 'none';
+    if (ping) ping.style.display = 'none';
+    trigger.classList.remove('has-unread');
+    trigger.setAttribute('aria-label', 'Notifications, no unread');
   }
+
+  lastBadgeTotal = totalCount;
 }
 
 function fetchJsonSafe(url, options = {}) {
