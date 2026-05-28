@@ -16,7 +16,7 @@
         .doc-header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
         .doc-header h2 { font-size: 13px; font-weight: 700; margin-top: 4px; text-decoration: underline; }
         .doc-header .form-code { float: right; font-style: italic; font-weight: 700; }
-        .doc-header__logo { display: block; margin: 6px auto 4px; height: 56px; width: auto; }
+        .doc-header__logo { display: block; margin: 8px auto 6px; height: 85px; width: auto; }
         .meta-strip { margin-bottom: 14px; padding: 8px 12px; background: #f3f4f6; border-radius: 4px; font-size: 10.5px; }
         .meta-strip span { margin-right: 18px; }
         .meta-strip strong { color: #111827; }
