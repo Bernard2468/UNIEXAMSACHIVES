@@ -101,12 +101,6 @@
                             </div>
                         @endif
 
-                        {{-- ====== ATTACHMENTS (visible to all authorized viewers) ====== --}}
-                        @include('admin.forms.partials.attachments-display', [
-                            'submission' => $submission,
-                            'definition' => $definition,
-                        ])
-
                         {{-- ====== PRIOR (SIGNED) STAGES ====== --}}
                         @foreach($definition->stages() as $stage)
                             @php
