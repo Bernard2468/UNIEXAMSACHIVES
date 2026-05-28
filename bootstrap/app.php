@@ -23,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\SubscriptionActiveMiddleware::class,
             \App\Http\Middleware\CheckMaintenanceMode::class,
+            // Keeps flash messages alive for the user's NEXT page navigation
+            // when an AJAX poll lands between the POST and the redirect target.
+            // Fixes "[Toast] 0 server-rendered toast(s)" after form actions.
+            \App\Http\Middleware\PreserveFlashOnAjax::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
