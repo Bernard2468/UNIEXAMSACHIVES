@@ -226,11 +226,17 @@ class HomeController extends Controller
 
     public function recentMemos()
     {
+        // Same modern pattern as getNotifications — keep recently-read memos
+        // visible so "Mark all as read" doesn't appear to wipe the tray.
         $recentMemos = EmailCampaignRecipient::with(['campaign.creator'])
             ->where('user_id', Auth::id())
-            ->where('is_read', false)
+            ->where(function ($q) {
+                $q->where('is_read', false)
+                  ->orWhere('read_at', '>=', now()->subDays(7));
+            })
+            ->orderBy('is_read', 'asc')
             ->orderBy('created_at','desc')
-            ->limit(8)
+            ->limit(15)
             ->get();
 
         $memos = $recentMemos->map(function ($rm) {
@@ -446,9 +452,17 @@ class HomeController extends Controller
         $user = Auth::user();
         $lastSeen = $user->last_tray_seen_at; // Capture BEFORE we touch it.
 
+        // Modern tray behavior (Slack / Linear / GitHub):
+        // - Show ALL unread, plus recently-read so "Mark as read" doesn't
+        //   wipe the tray. Read items lose the unread highlight but remain
+        //   visible until 7 days have passed or the user explicitly Clears.
         $notifications = Notification::forUser($user->id)
             ->with('actor:id,first_name,last_name,profile_picture')
-            ->where('is_read', false)
+            ->where(function ($q) {
+                $q->where('is_read', false)
+                  ->orWhere('read_at', '>=', now()->subDays(7));
+            })
+            ->orderBy('is_read', 'asc')          // unread first
             ->orderBy('created_at', 'desc')
             ->limit(30)
             ->get()

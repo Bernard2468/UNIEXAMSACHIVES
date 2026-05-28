@@ -30,7 +30,9 @@
     .flash-toast-stack {
         position: fixed; top: 24px; right: 24px;
         display: flex; flex-direction: column; gap: 10px;
-        z-index: 99999;
+        /* Higher than the white preloader (z-index 999999 in public/css/style.css)
+           so the toast is visible even while the preloader is still on screen. */
+        z-index: 2147483647;
         max-width: 380px;
         pointer-events: none;
     }
@@ -115,28 +117,42 @@
     var stack = document.getElementById('flashToastStack');
     if (!stack) return;
     var toasts = stack.querySelectorAll('.flash-toast');
-    toasts.forEach(function (toast, i) {
-        // Stagger the slide-in slightly so multiple toasts feel sequenced.
-        setTimeout(function () { toast.classList.add('flash-toast--show'); }, 60 + i * 80);
 
-        var dismiss = function () {
-            toast.classList.add('flash-toast--leave');
-            toast.classList.remove('flash-toast--show');
-            setTimeout(function () { toast.remove(); }, 260);
-        };
-        // Auto-dismiss after 4.5s for success/info, 6s for error/warning.
-        var lifespan = toast.classList.contains('flash-toast--error') || toast.classList.contains('flash-toast--warning')
-            ? 6000 : 4500;
-        var timer = setTimeout(dismiss, lifespan + i * 80);
+    // Don't start the auto-dismiss timer until the page has actually finished
+    // loading — the preloader (z-index 999999, white background) can otherwise
+    // cover the toast for 1–2s and eat half its visible lifespan.
+    var started = false;
+    var begin = function () {
+        if (started) return;
+        started = true;
+        toasts.forEach(function (toast, i) {
+            setTimeout(function () { toast.classList.add('flash-toast--show'); }, 60 + i * 80);
 
-        var closeBtn = toast.querySelector('.flash-toast__close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function () { clearTimeout(timer); dismiss(); });
-        }
-        // Pause auto-dismiss on hover.
-        toast.addEventListener('mouseenter', function () { clearTimeout(timer); });
-        toast.addEventListener('mouseleave', function () { timer = setTimeout(dismiss, 2500); });
-    });
+            var dismiss = function () {
+                toast.classList.add('flash-toast--leave');
+                toast.classList.remove('flash-toast--show');
+                setTimeout(function () { toast.remove(); }, 260);
+            };
+            var lifespan = toast.classList.contains('flash-toast--error') || toast.classList.contains('flash-toast--warning')
+                ? 6000 : 4500;
+            var timer = setTimeout(dismiss, lifespan + i * 80);
+
+            var closeBtn = toast.querySelector('.flash-toast__close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function () { clearTimeout(timer); dismiss(); });
+            }
+            toast.addEventListener('mouseenter', function () { clearTimeout(timer); });
+            toast.addEventListener('mouseleave', function () { timer = setTimeout(dismiss, 2500); });
+        });
+    };
+
+    if (document.readyState === 'complete') {
+        begin();
+    } else {
+        window.addEventListener('load', begin, { once: true });
+        // Safety net: if 'load' is delayed by a slow asset, still show after 1.5s.
+        setTimeout(begin, 1500);
+    }
 })();
 </script>
 @endif

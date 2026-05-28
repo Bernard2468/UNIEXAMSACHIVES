@@ -692,6 +692,29 @@
             background: #6366f1;
             border-radius: 2px;
         }
+        /* Subtle unread dot (top-right) for items that aren't "fresh" but
+           are still unread (read before tray was last opened, etc.). */
+        .nt-list-item-with-avatar.is-unread:not(.is-fresh)::after {
+            content: '';
+            position: absolute;
+            top: 14px; right: 14px;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #3b82f6;
+            box-shadow: 0 0 0 2px #fff;
+        }
+        .is_dark .nt-list-item-with-avatar.is-unread:not(.is-fresh)::after { box-shadow: 0 0 0 2px #1f2937; }
+
+        /* Read items — visually dimmer so unread items dominate the eye
+           (Slack / Linear / GitHub convention). Items still clickable,
+           still show avatar, just lose the "demands attention" weight. */
+        .nt-list-item-with-avatar.is-read { background: transparent; }
+        .nt-list-item-with-avatar.is-read .nt-list-item__title { font-weight: 500; color: #4b5563; }
+        .nt-list-item-with-avatar.is-read .nt-list-item__msg   { color: #9ca3af; }
+        .nt-list-item-with-avatar.is-read .nt-list-item__actor strong { color: #6b7280; }
+        .nt-list-item-with-avatar.is-read .nt-avatar { filter: saturate(0.55); opacity: 0.85; }
+        .is_dark .nt-list-item-with-avatar.is-read .nt-list-item__title { color: #9ca3af; }
+        .is_dark .nt-list-item-with-avatar.is-read .nt-list-item__msg   { color: #6b7280; }
         .nt-list-item__body { flex: 1; min-width: 0; }
         .nt-list-item__header-row {
             display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
@@ -1113,7 +1136,9 @@
             // NOT bubble to the card click, hence the data-nt-action guard below.
             card.onclick = (e) => {
                 if (e.target.closest('[data-nt-action]')) return;
-                if (item.id && item.type !== 'memo') ntMarkOneRead(item.id);
+                if (!item.is_read && item.id && item.type !== 'memo' && item.type !== 'memo_recipient') {
+                    ntMarkOneRead(item.id);
+                }
                 if (url !== '#') window.location.href = url;
             };
         }
@@ -1152,8 +1177,12 @@
                     const actorLine = item.actor
                         ? `<div class="nt-list-item__actor"><strong>${NT_ESC(item.actor.name)}</strong></div>`
                         : '';
+                    const classes = [
+                        item.is_new_since_seen ? 'is-fresh'   : '',
+                        item.is_read           ? 'is-read'    : 'is-unread',
+                    ].filter(Boolean).join(' ');
                     return `
-                        <div class="nt-list-item-with-avatar ${item.is_new_since_seen ? 'is-fresh' : ''}"
+                        <div class="nt-list-item-with-avatar ${classes}"
                              data-nt-id="${NT_ESC(item.id)}"
                              data-nt-type="${NT_ESC(item.type)}"
                              data-nt-url="${NT_ESC(url)}">
@@ -1183,12 +1212,14 @@
             listContainer.querySelectorAll('.nt-list-item-with-avatar').forEach(row => {
                 row.addEventListener('click', (e) => {
                     if (e.target.closest('[data-nt-action]')) return;
-                    const id   = row.getAttribute('data-nt-id');
-                    const type = row.getAttribute('data-nt-type');
-                    const url  = row.getAttribute('data-nt-url');
+                    const id      = row.getAttribute('data-nt-id');
+                    const type    = row.getAttribute('data-nt-type');
+                    const url     = row.getAttribute('data-nt-url');
+                    const isRead  = row.classList.contains('is-read');
                     // Memos are EmailCampaignRecipient rows, not notifications —
                     // their /memos/show endpoint already marks them read server-side.
-                    if (id && type !== 'memo' && type !== 'memo_recipient') {
+                    // Don't waste a roundtrip on already-read items either.
+                    if (!isRead && id && type !== 'memo' && type !== 'memo_recipient') {
                         ntMarkOneRead(id);
                     }
                     if (url && url !== '#') window.location.href = url;
@@ -1223,47 +1254,44 @@
                     // Combine and format items
                     const items = [];
                     
-                    // Add memos (only unread). Memo rows have a fixed category.
+                    // Memos — render BOTH unread and recently-read (read ones
+                    // are dimmed via CSS so Mark-as-read doesn't wipe the tray).
                     if (memoData.memos && memoData.memos.length > 0) {
                         memoData.memos.forEach(memo => {
-                            if (!memo.is_read) {
-                                items.push({
-                                    id: memo.id,
-                                    type: 'memo_recipient',
-                                    category: 'memo',
-                                    title: memo.subject,
-                                    message: memo.message || '',
-                                    time: memo.created_at,
-                                    is_read: memo.is_read,
-                                    is_new_since_seen: true, // memos always appear "fresh" while unread
-                                    bucket: memo.bucket || 'earlier',
-                                    actor: memo.actor || null,
-                                    actions: memo.actions || [],
-                                    url: memo.url
-                                });
-                            }
+                            items.push({
+                                id: memo.id,
+                                type: 'memo_recipient',
+                                category: 'memo',
+                                title: memo.subject,
+                                message: memo.message || '',
+                                time: memo.created_at,
+                                is_read: !!memo.is_read,
+                                is_new_since_seen: !memo.is_read,
+                                bucket: memo.bucket || 'earlier',
+                                actor: memo.actor || null,
+                                actions: memo.actions || [],
+                                url: memo.url
+                            });
                         });
                     }
 
-                    // Add notifications (forms, replies, system) — only unread.
+                    // Notifications (forms, replies, system) — same pattern.
                     if (notificationData.notifications && notificationData.notifications.length > 0) {
                         notificationData.notifications.forEach(n => {
-                            if (!n.is_read) {
-                                items.push({
-                                    id: n.id,
-                                    type: n.type,
-                                    category: n.category || 'system',
-                                    title: n.title || n.message,
-                                    message: n.message || '',
-                                    time: n.time_ago,
-                                    is_read: n.is_read,
-                                    is_new_since_seen: !!n.is_new_since_seen,
-                                    bucket: n.bucket || 'earlier',
-                                    actor: n.actor || null,
-                                    actions: n.actions || [],
-                                    url: n.url
-                                });
-                            }
+                            items.push({
+                                id: n.id,
+                                type: n.type,
+                                category: n.category || 'system',
+                                title: n.title || n.message,
+                                message: n.message || '',
+                                time: n.time_ago,
+                                is_read: !!n.is_read,
+                                is_new_since_seen: !!n.is_new_since_seen && !n.is_read,
+                                bucket: n.bucket || 'earlier',
+                                actor: n.actor || null,
+                                actions: n.actions || [],
+                                url: n.url
+                            });
                         });
                     }
 
@@ -1311,26 +1339,24 @@
                 })
                 .catch(err => {
                     console.log('Error fetching notifications:', err);
-                    // Fallback to just memos (only unread) — same shape as the main path.
+                    // Fallback to just memos (unread + recently-read).
                     const items = [];
                     if (memoData.memos && memoData.memos.length > 0) {
                         memoData.memos.forEach(memo => {
-                            if (!memo.is_read) {
-                                items.push({
-                                    id: memo.id,
-                                    type: 'memo_recipient',
-                                    category: 'memo',
-                                    title: memo.subject,
-                                    message: memo.message || '',
-                                    time: memo.created_at,
-                                    is_read: memo.is_read,
-                                    is_new_since_seen: true,
-                                    bucket: memo.bucket || 'earlier',
-                                    actor: memo.actor || null,
-                                    actions: memo.actions || [],
-                                    url: memo.url
-                                });
-                            }
+                            items.push({
+                                id: memo.id,
+                                type: 'memo_recipient',
+                                category: 'memo',
+                                title: memo.subject,
+                                message: memo.message || '',
+                                time: memo.created_at,
+                                is_read: !!memo.is_read,
+                                is_new_since_seen: !memo.is_read,
+                                bucket: memo.bucket || 'earlier',
+                                actor: memo.actor || null,
+                                actions: memo.actions || [],
+                                url: memo.url
+                            });
                         });
                     }
                     
