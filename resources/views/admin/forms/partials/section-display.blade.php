@@ -87,7 +87,6 @@
                 @endif
                 <div class="locked-signature__meta">
                     SHA-256: <code>{{ substr($signature->chain_hash, 0, 12) }}…</code>
-                    · {{ $signature->provider ?? 'in_app' }}
                 </div>
             </div>
         @endif

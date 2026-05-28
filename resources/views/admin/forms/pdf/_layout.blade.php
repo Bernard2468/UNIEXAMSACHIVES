@@ -153,8 +153,6 @@
                                 @else
                                     <span class="signature-block__badge signature-block__badge--bad">CHAIN MISMATCH ({{ $sigCheck['reason'] }})</span>
                                 @endif
-                                <br>
-                                <span class="signature-block__hash">Chain hash: {{ $signedSig->chain_hash }}</span>
                             </div>
                         </div>
                     @endif
