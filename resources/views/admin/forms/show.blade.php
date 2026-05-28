@@ -209,7 +209,9 @@
                                             <div class="form-panel__head">
                                                 <div>
                                                     <h2 class="form-panel__title">Forward to {{ $nextStage->label ?? '—' }}<span class="form-panel__title-bar"></span></h2>
-                                                    @if($nextStage && $nextStage->isLeadershipPool())
+                                                    @if($nextStage && $nextStage->isLeadershipOrOfficePool())
+                                                        <p class="form-panel__desc">Choose <strong>Dean</strong>, <strong>HOD</strong>, <strong>Director</strong>, or <strong>Office</strong> — then pick the specific person, or the office whose head will recommend.</p>
+                                                    @elseif($nextStage && $nextStage->isLeadershipPool())
                                                         <p class="form-panel__desc">Choose whether this form is going to a <strong>Dean</strong>, <strong>HOD</strong> or <strong>Director</strong>, then pick the specific person from the list.</p>
                                                     @else
                                                         <p class="form-panel__desc">Pick a specific person to receive this form next.</p>
@@ -217,7 +219,16 @@
                                                 </div>
                                             </div>
                                             <div class="form-panel__body">
-                                                @if($nextStage && $nextStage->isLeadershipPool())
+                                                @if($nextStage && $nextStage->isLeadershipOrOfficePool())
+                                                    @include('admin.forms.partials.recommender-picker', [
+                                                        'leadershipCandidates' => $leadershipCandidates ?? [],
+                                                        'allOffices'           => $allOffices ?? collect(),
+                                                        'fieldName'            => 'next_assignee_id',
+                                                        'categoryFieldName'    => 'next_leadership_category',
+                                                        'officeFieldName'      => 'next_office_id',
+                                                        'required'             => true,
+                                                    ])
+                                                @elseif($nextStage && $nextStage->isLeadershipPool())
                                                     @include('admin.forms.partials.leadership-picker', [
                                                         'leadershipCandidates' => $leadershipCandidates ?? [],
                                                         'fieldName'            => 'next_assignee_id',

@@ -68,6 +68,15 @@ abstract class BaseFormDefinition
     }
 
     /**
+     * Optional standing instruction printed at the bottom of the PDF —
+     * mirrors any "Instruction to ..." note on the paper form.
+     */
+    public function pdfFooterNote(): ?string
+    {
+        return null;
+    }
+
+    /**
      * Convenience lookup of a stage by slug.
      */
     public function stage(string $slug): ?FormStage

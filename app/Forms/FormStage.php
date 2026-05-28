@@ -29,9 +29,19 @@ class FormStage
      */
     public const POOL_LEADERSHIP = 'leadership';
 
+    /**
+     * Leadership-OR-office pool — the requisitioner picks one of four
+     * options: HOD, Dean, Director or "an Office". For HOD/Dean/Director
+     * the leadership-style picker is used. For "Office" the user picks
+     * any active Office from a searchable list and the form is routed
+     * to that office's head. Used by Annual Leave Application.
+     */
+    public const POOL_LEADERSHIP_OR_OFFICE = 'leadership_or_office';
+
     public const POOLS = [
         self::POOL_OFFICE,
         self::POOL_LEADERSHIP,
+        self::POOL_LEADERSHIP_OR_OFFICE,
     ];
 
     /**
@@ -66,6 +76,21 @@ class FormStage
     public function isLeadershipPool(): bool
     {
         return $this->recipientPool === self::POOL_LEADERSHIP;
+    }
+
+    public function isLeadershipOrOfficePool(): bool
+    {
+        return $this->recipientPool === self::POOL_LEADERSHIP_OR_OFFICE;
+    }
+
+    /**
+     * Stages where the requisitioner/forwarder picks the recipient at the
+     * point of forwarding (no fixed downstream office configured on the
+     * stage itself).
+     */
+    public function hasDynamicRecipient(): bool
+    {
+        return $this->isLeadershipPool() || $this->isLeadershipOrOfficePool();
     }
 
     /**

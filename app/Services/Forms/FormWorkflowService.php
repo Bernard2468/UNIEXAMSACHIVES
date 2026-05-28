@@ -61,6 +61,7 @@ class FormWorkflowService
         ?int $nextAssigneeId = null,
         array $signatureContext = [],
         ?string $leadershipCategory = null,
+        ?int $nextOfficeId = null,
     ): FormSubmission {
         return DB::transaction(function () use (
             $definition,
@@ -70,7 +71,8 @@ class FormWorkflowService
             $action,
             $nextAssigneeId,
             $signatureContext,
-            $leadershipCategory
+            $leadershipCategory,
+            $nextOfficeId
         ) {
             $firstStage = $definition->firstStage();
 
@@ -115,6 +117,7 @@ class FormWorkflowService
                     signatureContext: $signatureContext,
                     nextAssigneeId: $nextAssigneeId,
                     leadershipCategory: $leadershipCategory,
+                    nextOfficeId: $nextOfficeId,
                 );
             }
 
@@ -172,6 +175,7 @@ class FormWorkflowService
         ?int $nextAssigneeId = null,
         array $attachments = [],
         ?string $leadershipCategory = null,
+        ?int $nextOfficeId = null,
     ): FormSubmission {
         $definition = $this->resolveDefinition($submission);
         $stage      = $this->resolveStage($definition, $stageSlug);
@@ -193,7 +197,8 @@ class FormWorkflowService
             $signatureContext,
             $nextAssigneeId,
             $attachments,
-            $leadershipCategory
+            $leadershipCategory,
+            $nextOfficeId
         ) {
             $submission->setSectionData($stage->slug, $data);
 
@@ -224,15 +229,26 @@ class FormWorkflowService
                 return $this->completeSubmission($submission, $signer);
             }
 
-            $assignee = $this->resolveNextAssignee($nextStage, $nextAssigneeId, $leadershipCategory);
+            $assignee = $this->resolveNextAssignee($nextStage, $nextAssigneeId, $leadershipCategory, $nextOfficeId);
             if (!$assignee) {
                 if ($nextStage->isLeadershipPool()) {
                     abort(422, "No matching leadership user is available for this form. Ask an administrator to tag the appropriate positions as HOD / Dean / Director.");
                 }
+                if ($nextStage->isLeadershipOrOfficePool()) {
+                    abort(422, "No matching recipient is available. Pick a Dean / HOD / Director, or an office whose head is active.");
+                }
                 abort(422, "No active member of the {$nextStage->label} office is available to receive this form. Ask your administrator to assign someone to that office.");
             }
 
-            $office = $nextStage->officeSlug ? Office::where('slug', $nextStage->officeSlug)->first() : null;
+            // Resolve the office record this stage now lives under, if any.
+            // For LEADERSHIP_OR_OFFICE with category=office we use the picked office.
+            // For POOL_OFFICE we use the stage's hard-wired office slug.
+            $office = null;
+            if ($nextStage->isLeadershipOrOfficePool() && $leadershipCategory === 'office' && $nextOfficeId) {
+                $office = Office::find($nextOfficeId);
+            } elseif ($nextStage->officeSlug) {
+                $office = Office::where('slug', $nextStage->officeSlug)->first();
+            }
 
             $submission->status              = FormSubmission::STATUS_IN_PROGRESS;
             $submission->current_stage       = $nextStage->slug;
@@ -248,7 +264,7 @@ class FormWorkflowService
                 'next'              => $nextStage->slug,
                 'assignee'          => $assignee->id,
                 'office'            => $office?->slug,
-                'leadership_category' => $nextStage->isLeadershipPool() ? $leadershipCategory : null,
+                'leadership_category' => $nextStage->hasDynamicRecipient() ? $leadershipCategory : null,
                 'vc_referral'       => $shouldReferToVc,
             ]);
 
@@ -510,27 +526,52 @@ class FormWorkflowService
         return $definition->nextStageAfter($stage->slug, includeOptional: false);
     }
 
-    protected function resolveNextAssignee(FormStage $stage, ?int $nextAssigneeId, ?string $leadershipCategory = null): ?User
+    protected function resolveNextAssignee(
+        FormStage $stage,
+        ?int $nextAssigneeId,
+        ?string $leadershipCategory = null,
+        ?int $nextOfficeId = null,
+    ): ?User
     {
         // ── Leadership pool: HOD / Dean / Director picked dynamically ──
         if ($stage->isLeadershipPool()) {
-            if (!$nextAssigneeId) {
-                abort(422, 'Please pick the specific Dean / HOD / Director who should receive this form.');
-            }
-            if (!$leadershipCategory || !in_array($leadershipCategory, array_keys(Position::CATEGORIES), true)) {
-                abort(422, 'Please choose whether this form is going to a Dean, HOD or Director.');
-            }
+            return $this->resolveLeadershipAssignee($nextAssigneeId, $leadershipCategory);
+        }
 
-            $user = User::query()
-                ->where('id', $nextAssigneeId)
-                ->whereHas('position', fn ($q) => $q->where('category', $leadershipCategory))
-                ->first();
-
-            if (!$user) {
-                abort(422, 'The selected recipient is not tagged as a ' . Position::CATEGORIES[$leadershipCategory] . '. Refresh the page and pick again.');
+        // ── Leadership-OR-office pool (Annual Leave recommender stage) ──
+        if ($stage->isLeadershipOrOfficePool()) {
+            if (!$leadershipCategory) {
+                abort(422, 'Please choose Dean, HOD, Director or Office for the recommender.');
             }
-
-            return $user;
+            if ($leadershipCategory === 'office') {
+                if (!$nextOfficeId) {
+                    abort(422, 'Please pick the office whose head will recommend this application.');
+                }
+                $office = Office::find($nextOfficeId);
+                if (!$office || !$office->is_active) {
+                    abort(422, 'The selected office is not available. Refresh the page and pick again.');
+                }
+                $head = $office->head();
+                if (!$head) {
+                    abort(422, "{$office->name} has no active head. Pick another office or ask an administrator to designate a head.");
+                }
+                // Cross-check against the assignee id submitted by the form (which
+                // the client mirrors from the office's head). This prevents the
+                // form from silently routing to a stale user if the head changes
+                // between page load and submit.
+                if ($nextAssigneeId && (int) $nextAssigneeId !== (int) $head->id) {
+                    // Not a hard error — trust the server-resolved head over a
+                    // possibly-stale client-side hint. Just log it.
+                    Log::info('Form recommender office head differs from client hint', [
+                        'office_id'   => $office->id,
+                        'client_hint' => $nextAssigneeId,
+                        'server_head' => $head->id,
+                    ]);
+                }
+                return $head;
+            }
+            // Leadership branch within the flexible pool — same as POOL_LEADERSHIP.
+            return $this->resolveLeadershipAssignee($nextAssigneeId, $leadershipCategory);
         }
 
         // ── Office pool (default) ──
@@ -556,6 +597,31 @@ class FormWorkflowService
         }
 
         return $office->head() ?? $office->activeUsers()->first();
+    }
+
+    /**
+     * Resolve a user from the leadership pool (HOD/Dean/Director) by id
+     * and category, asserting the user actually holds that category.
+     */
+    protected function resolveLeadershipAssignee(?int $nextAssigneeId, ?string $leadershipCategory): User
+    {
+        if (!$nextAssigneeId) {
+            abort(422, 'Please pick the specific Dean / HOD / Director who should receive this form.');
+        }
+        if (!$leadershipCategory || !in_array($leadershipCategory, array_keys(Position::CATEGORIES), true)) {
+            abort(422, 'Please choose whether this form is going to a Dean, HOD or Director.');
+        }
+
+        $user = User::query()
+            ->where('id', $nextAssigneeId)
+            ->whereHas('position', fn ($q) => $q->where('category', $leadershipCategory))
+            ->first();
+
+        if (!$user) {
+            abort(422, 'The selected recipient is not tagged as a ' . Position::CATEGORIES[$leadershipCategory] . '. Refresh the page and pick again.');
+        }
+
+        return $user;
     }
 
     /**
@@ -640,6 +706,7 @@ class FormWorkflowService
     {
         $brief = $requisitionerData['brief_payment_request']
             ?? $requisitionerData['purchase_description']
+            ?? $requisitionerData['purpose']
             ?? null;
 
         if ($brief) {

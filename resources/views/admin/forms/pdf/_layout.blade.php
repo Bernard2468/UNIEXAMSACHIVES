@@ -45,6 +45,7 @@
         .signature-block__badge--bad { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
         .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #d1d5db; font-size: 9px; color: #6b7280; }
+        .doc-instruction { margin-top: 14px; padding: 10px 12px; background: #fff7ed; border: 1px solid #fdba74; border-radius: 4px; font-size: 10.5px; font-style: italic; color: #7c2d12; line-height: 1.45; }
         .audit-chain { font-family: 'Courier New', monospace; font-size: 8.5px; word-break: break-all; }
     </style>
 </head>
@@ -160,6 +161,10 @@
             </div>
         </div>
     @endforeach
+
+    @if($definition->pdfFooterNote())
+        <div class="doc-instruction">{{ $definition->pdfFooterNote() }}</div>
+    @endif
 
     <div class="doc-footer">
         Generated {{ now()->format('d M Y, H:i') }} · Reference {{ $submission->reference }}

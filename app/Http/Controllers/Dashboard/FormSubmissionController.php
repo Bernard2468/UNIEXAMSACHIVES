@@ -68,6 +68,7 @@ class FormSubmissionController extends Controller
             'nextStage'            => $nextStage,
             'nextOffice'           => $nextContext['office'],
             'leadershipCandidates' => $nextContext['leadership'],
+            'allOffices'           => $nextContext['all_offices'],
             'submission'           => null,
             'sectionData'          => $this->prefillRequisitioner($user, $stage),
             'savedSignature'       => $user->savedSignature,
@@ -87,6 +88,7 @@ class FormSubmissionController extends Controller
 
         $nextAssigneeId       = $action === 'send' ? $this->validatedNextAssignee($request, $definition, $stage) : null;
         $leadershipCategory   = $action === 'send' ? $this->extractLeadershipCategory($request) : null;
+        $nextOfficeId         = $action === 'send' ? $this->extractNextOfficeId($request) : null;
 
         $submission = $this->workflow->createSubmission(
             definition: $definition,
@@ -97,6 +99,7 @@ class FormSubmissionController extends Controller
             nextAssigneeId: $nextAssigneeId,
             signatureContext: $this->signatureContext($request),
             leadershipCategory: $leadershipCategory,
+            nextOfficeId: $nextOfficeId,
         );
 
         return redirect()->route('admin.forms.show', $submission->id)
@@ -155,6 +158,7 @@ class FormSubmissionController extends Controller
             'nextStage'            => $nextStage ?? null,
             'nextOffice'           => $nextContext['office'],
             'leadershipCandidates' => $nextContext['leadership'],
+            'allOffices'           => $nextContext['all_offices'],
             'vcOffice'             => $vcOffice,
             'canFill'              => $canFill,
             'canComment'           => app(\App\Policies\FormSubmissionPolicy::class)->comment($user, $submission),
@@ -176,18 +180,20 @@ class FormSubmissionController extends Controller
     /**
      * Build the data the recipient picker needs for the given next stage:
      *  - office candidates when the stage routes to an Office
-     *  - or a category-keyed map of User collections for leadership pools
+     *  - a category-keyed map of User collections for leadership pools
+     *  - the full list of active offices for leadership-or-office pools
      */
     protected function buildNextStageContext(?FormStage $nextStage): array
     {
         $office     = null;
         $leadership = null;
+        $allOffices = collect();
 
         if (!$nextStage) {
-            return ['office' => null, 'leadership' => null];
+            return ['office' => null, 'leadership' => null, 'all_offices' => $allOffices];
         }
 
-        if ($nextStage->isLeadershipPool()) {
+        if ($nextStage->isLeadershipPool() || $nextStage->isLeadershipOrOfficePool()) {
             $leadership = [];
             foreach (Position::CATEGORIES as $key => $_label) {
                 $positionIds = Position::query()->where('category', $key)->pluck('id');
@@ -200,6 +206,14 @@ class FormSubmissionController extends Controller
                     ->orderBy('first_name')
                     ->get(['id', 'first_name', 'last_name', 'email', 'profile_picture', 'position_id', 'department_id']);
             }
+        }
+
+        if ($nextStage->isLeadershipOrOfficePool()) {
+            $allOffices = Office::query()
+                ->active()
+                ->with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
+                ->orderBy('name')
+                ->get();
         } elseif ($nextStage->officeSlug) {
             $office = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
                 ->where('slug', $nextStage->officeSlug)
@@ -207,8 +221,9 @@ class FormSubmissionController extends Controller
         }
 
         return [
-            'office'     => $office,
-            'leadership' => $leadership,
+            'office'      => $office,
+            'leadership'  => $leadership,
+            'all_offices' => $allOffices,
         ];
     }
 
@@ -252,6 +267,7 @@ class FormSubmissionController extends Controller
 
         $nextAssigneeId     = $this->validatedNextAssignee($request, $definition, $stage, $data['fields']);
         $leadershipCategory = $this->extractLeadershipCategory($request);
+        $nextOfficeId       = $this->extractNextOfficeId($request);
 
         $this->workflow->signAndForward(
             submission: $submission,
@@ -262,6 +278,7 @@ class FormSubmissionController extends Controller
             nextAssigneeId: $nextAssigneeId,
             attachments: $request->file('attachments', []),
             leadershipCategory: $leadershipCategory,
+            nextOfficeId: $nextOfficeId,
         );
 
         return redirect()->route('admin.forms.show', $submission->id)
@@ -473,8 +490,11 @@ class FormSubmissionController extends Controller
 
     /**
      * Optional leadership category (hod/dean/director) the requisitioner
-     * picked when the next stage is a leadership pool. Returned as null
-     * when not applicable.
+     * picked when the next stage is a leadership pool. For the
+     * leadership-or-office pool the additional synthetic value 'office' is
+     * also accepted and signals to the workflow service that the form is
+     * being routed to the head of a specific Office (id passed separately).
+     * Returned as null when not applicable.
      */
     protected function extractLeadershipCategory(Request $request): ?string
     {
@@ -482,7 +502,19 @@ class FormSubmissionController extends Controller
         if (!$value) {
             return null;
         }
-        return in_array($value, array_keys(Position::CATEGORIES), true) ? $value : null;
+        $allowed = array_merge(array_keys(Position::CATEGORIES), ['office']);
+        return in_array($value, $allowed, true) ? $value : null;
+    }
+
+    /**
+     * Office id chosen on a leadership-or-office pool stage when the user
+     * picked the "Office" chip. The workflow service will resolve to that
+     * office's head as the next assignee.
+     */
+    protected function extractNextOfficeId(Request $request): ?int
+    {
+        $value = $request->input('next_office_id');
+        return $value ? (int) $value : null;
     }
 
     /**
@@ -491,11 +523,15 @@ class FormSubmissionController extends Controller
      */
     protected function prefillRequisitioner($user, $stage): array
     {
+        $positionName = optional($user->position)->name;
+
         $defaults = [
             'name'                => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
             'faculty_department'  => optional($user->department)->name,
-            'job_title'           => optional($user->position)->name,
+            'job_title'           => $positionName,
+            'rank'                => $positionName,
             'phone'               => null,
+            'email'               => $user->email,
         ];
 
         $prefill = [];
