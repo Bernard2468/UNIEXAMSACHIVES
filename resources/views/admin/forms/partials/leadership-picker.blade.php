@@ -149,13 +149,27 @@
 
 /* Category chips */
 .lead-picker__chips { display: flex; gap: 8px; padding: 14px 16px 10px; background: #fff; border-bottom: 1.5px solid #ebebeb; flex-wrap: wrap; }
-.lead-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px 7px 11px; border: 1.5px solid #ebebeb; border-radius: 99px; cursor: pointer; transition: all .15s; background: #fff; font-size: 0.82rem; font-weight: 500; color: #374151; margin: 0; user-select: none; }
-.lead-chip:hover:not(.is-disabled) { border-color: #0c0c0c; color: #0c0c0c; }
+.lead-chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px 7px 11px; border: 1.5px solid #ebebeb; border-radius: 99px; cursor: pointer; transition: background .18s, color .18s, border-color .18s, box-shadow .18s, transform .18s; background: #fff; font-size: 0.82rem; font-weight: 500; color: #374151; margin: 0; user-select: none; }
+.lead-chip:hover:not(.is-disabled) { border-color: #1f2937; color: #1f2937; }
 .lead-chip.is-disabled { opacity: 0.45; cursor: not-allowed; }
 .lead-chip input { display: none; }
 .lead-chip__icon { display: inline-flex; color: inherit; }
-.lead-chip__count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 6px; background: #f3f4f6; color: #6b7280; border-radius: 99px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.02em; }
-.lead-chip:has(input:checked) { background: #0c0c0c; color: #fff; border-color: #0c0c0c; }
+.lead-chip__count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 18px; padding: 0 6px; background: #f3f4f6; color: #6b7280; border-radius: 99px; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.02em; transition: background .18s, color .18s; }
+/* Active chip — softer charcoal than pure #0c0c0c so it reads as confident, not bottomless. */
+.lead-chip:has(input:checked) {
+    background: linear-gradient(135deg, #232a36 0%, #1a2230 100%);
+    color: #fff;
+    border-color: #1a2230;
+    box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 6px 16px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.06);
+}
+/* Active + hover — keep text white (this was the disappearing-label bug) and lift a touch. */
+.lead-chip:has(input:checked):hover:not(.is-disabled) {
+    background: linear-gradient(135deg, #2a3342 0%, #1f2937 100%);
+    color: #fff;
+    border-color: #1f2937;
+    box-shadow: 0 2px 4px rgba(15,23,42,.12), 0 10px 22px rgba(15,23,42,.20), inset 0 1px 0 rgba(255,255,255,.08);
+    transform: translateY(-1px);
+}
 .lead-chip:has(input:checked) .lead-chip__count { background: rgba(255,255,255,.18); color: #fff; }
 
 /* Search */
@@ -192,7 +206,19 @@
 .is_dark .lead-picker__chips { background: #111827; border-color: #1e2330; }
 .is_dark .lead-chip { background: #0f172a; border-color: #2d3748; color: #d1d5db; }
 .is_dark .lead-chip__count { background: rgba(255,255,255,.06); color: #9ca3af; }
-.is_dark .lead-chip:has(input:checked) { background: #f3f4f6; color: #0c0c0c; border-color: #f3f4f6; }
+.is_dark .lead-chip:has(input:checked) {
+    background: linear-gradient(135deg, #f3f4f6 0%, #d1d5db 100%);
+    color: #0c0c0c;
+    border-color: #e5e7eb;
+    box-shadow: 0 1px 2px rgba(0,0,0,.20), 0 6px 16px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.is_dark .lead-chip:has(input:checked):hover:not(.is-disabled) {
+    background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
+    color: #0c0c0c;
+    border-color: #f3f4f6;
+    box-shadow: 0 2px 4px rgba(0,0,0,.24), 0 10px 22px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.7);
+    transform: translateY(-1px);
+}
 .is_dark .lead-picker__search { background: #111827; }
 .is_dark .lead-picker__search-input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
 .is_dark .lead-picker__lists { background: #111827; }
