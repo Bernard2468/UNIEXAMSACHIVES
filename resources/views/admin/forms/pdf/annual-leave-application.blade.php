@@ -66,9 +66,10 @@
         .pf-meta strong { color: #111827; }
 
         /* ── Numbered items ── */
-        .pf-item { display: table; width: 100%; margin: 0 0 6px; padding: 0; table-layout: fixed; }
-        .pf-item__num { display: table-cell; width: 22px; padding-right: 4px; font-weight: 700; vertical-align: top; font-size: 11.5px; }
-        .pf-item__body { display: table-cell; vertical-align: top; }
+        /* Real HTML tables — dompdf renders these reliably, unlike display:table CSS. */
+        .pf-item { width: 100%; margin: 0 0 5px; border-collapse: collapse; }
+        .pf-item td { vertical-align: top; padding: 0; }
+        .pf-item__num { width: 22px; font-weight: 700; font-size: 11.5px; padding-right: 4px !important; }
         .pf-item__label { font-weight: 600; color: #1f2937; }
         .pf-item__value {
             display: inline-block;
@@ -78,22 +79,21 @@
             font-weight: 500;
             color: #0c0c0c;
         }
-        .pf-item__value--grow { display: block; margin-top: 2px; min-height: 28px; padding: 4px 6px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 3px; font-weight: 500; }
+        .pf-item__value--grow { display: block; margin-top: 3px; min-height: 28px; padding: 5px 7px; background: #fafafa; border: 1px solid #e5e7eb; border-radius: 3px; font-weight: 500; }
 
         /* Inline pair: "From: ___ To: ___" */
-        .pf-pair { margin-top: 1px; }
         .pf-pair__label { font-weight: 600; color: #1f2937; margin-right: 4px; }
-        .pf-pair__label--indent { margin-left: 28px; }
 
-        /* Sub-line under item 8 (From / To) — indented under the numbered item */
-        .pf-subline { margin: 2px 0 6px 26px; }
+        /* Sub-line under items 8 / 12 — indented under the numbered item body (22px) */
+        .pf-subline { margin: 3px 0 5px 22px; }
 
-        /* ── Signature ── */
-        .pf-sig-row { display: table; width: 100%; margin-top: 6px; }
-        .pf-sig-cell { display: table-cell; vertical-align: bottom; padding-right: 14px; }
-        .pf-sig-cell--right { padding-right: 0; }
+        /* ── Signatures — real two-column table ── */
+        .pf-sig { width: 100%; margin-top: 6px; border-collapse: collapse; }
+        .pf-sig td { vertical-align: bottom; padding: 0; }
+        .pf-sig__left  { width: 62%; padding-right: 14px !important; }
+        .pf-sig__right { width: 38%; }
         .pf-sig-img { max-height: 44px; max-width: 220px; display: block; }
-        .pf-sig-line { border-bottom: 1px solid #111827; min-height: 28px; padding-bottom: 1px; }
+        .pf-sig-line { border-bottom: 1px solid #111827; min-height: 24px; padding-bottom: 1px; }
         .pf-sig-caption { font-size: 9.5px; color: #6b7280; margin-top: 2px; }
         .pf-sig-caption strong { color: #111827; }
         .pf-sig-badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 8.5px; font-weight: bold; margin-left: 4px; }
@@ -134,136 +134,136 @@
     </div>
 
     {{-- ===== 1. Name of Officer ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">1.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">1.</td>
+        <td>
             <span class="pf-item__label">Name of Officer:</span>
-            <span class="pf-item__value" style="min-width: 70%;">{{ $officerData['name'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 78%;">{{ $officerData['name'] ?? '' }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 2. Rank ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">2.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">2.</td>
+        <td>
             <span class="pf-item__label">Rank:</span>
-            <span class="pf-item__value" style="min-width: 75%;">{{ $officerData['rank'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 86%;">{{ $officerData['rank'] ?? '' }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 3. Faculty/School/Department/Unit ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">3.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">3.</td>
+        <td>
             <span class="pf-item__label">Faculty/School/Department/Unit:</span>
-            <span class="pf-item__value" style="min-width: 55%;">{{ $officerData['faculty_department'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 60%;">{{ $officerData['faculty_department'] ?? '' }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 4. Date(s) of Last Leave: From ___ To ___ ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">4.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">4.</td>
+        <td>
             <span class="pf-item__label">Date(s) of Last Leave:</span>
-            <span class="pf-pair__label">From</span>
-            <span class="pf-item__value" style="min-width: 22%;">{{ $fmtDate($officerData['last_leave_from'] ?? null) }}</span>
+            <span class="pf-pair__label" style="margin-left: 4px;">From</span>
+            <span class="pf-item__value" style="width: 24%;">{{ $fmtDate($officerData['last_leave_from'] ?? null) }}</span>
             <span class="pf-pair__label" style="margin-left: 8px;">To:</span>
-            <span class="pf-item__value" style="min-width: 22%;">{{ $fmtDate($officerData['last_leave_to'] ?? null) }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 24%;">{{ $fmtDate($officerData['last_leave_to'] ?? null) }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 5. Current Academic Year's Leave Entitlement ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">5.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">5.</td>
+        <td>
             <span class="pf-item__label">Current Academic Year's Leave Entitlement:</span>
-            <span class="pf-item__value" style="min-width: 45%;">{{ $officerData['current_entitlement'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 48%;">{{ $officerData['current_entitlement'] ?? '' }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 6. Accrued/Outstanding Leave Days ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">6.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">6.</td>
+        <td>
             <span class="pf-item__label">Accrued/Outstanding Leave Days:</span>
-            <span class="pf-item__value" style="min-width: 55%;">{{ $officerData['accrued_days'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 58%;">{{ $officerData['accrued_days'] ?? '' }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 7. Total Leave Entitlement ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">7.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">7.</td>
+        <td>
             <span class="pf-item__label">Total Leave Entitlement:</span>
-            <span class="pf-item__value" style="min-width: 65%;">{{ $officerData['total_entitlement'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 70%;">{{ $officerData['total_entitlement'] ?? '' }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 8. Proposed Leave Days + sub-line From/To ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">8.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">8.</td>
+        <td>
             <span class="pf-item__label">Proposed Leave Days:</span>
-            <span class="pf-item__value" style="min-width: 65%;">{{ $officerData['proposed_days'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 72%;">{{ $officerData['proposed_days'] ?? '' }}</span>
+        </td>
+    </tr></table>
     <div class="pf-subline">
         <span class="pf-pair__label">From:</span>
-        <span class="pf-item__value" style="min-width: 30%;">{{ $fmtDate($officerData['proposed_from'] ?? null) }}</span>
-        <span class="pf-pair__label" style="margin-left: 14px;">To:</span>
-        <span class="pf-item__value" style="min-width: 30%;">{{ $fmtDate($officerData['proposed_to'] ?? null) }}</span>
+        <span class="pf-item__value" style="width: 32%;">{{ $fmtDate($officerData['proposed_from'] ?? null) }}</span>
+        <span class="pf-pair__label" style="margin-left: 16px;">To:</span>
+        <span class="pf-item__value" style="width: 32%;">{{ $fmtDate($officerData['proposed_to'] ?? null) }}</span>
     </div>
 
     {{-- ===== 9. Purpose of taking the Leave ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">9.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">9.</td>
+        <td>
             <span class="pf-item__label">Purpose of taking the Leave:</span>
             <div class="pf-item__value--grow">{{ $officerData['purpose'] ?? '' }}</div>
-        </div>
-    </div>
+        </td>
+    </tr></table>
 
     {{-- ===== 10. Date of Resumption of Duty ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">10.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">10.</td>
+        <td>
             <span class="pf-item__label">Date of Resumption of Duty:</span>
-            <span class="pf-item__value" style="min-width: 60%;">{{ $fmtDate($officerData['resumption_date'] ?? null) }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 63%;">{{ $fmtDate($officerData['resumption_date'] ?? null) }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 11. Total Deferred/Outstanding Days ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">11.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">11.</td>
+        <td>
             <span class="pf-item__label">Total Deferred/Outstanding Days:</span>
-            <span class="pf-item__value" style="min-width: 55%;">{{ $officerData['deferred_days'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 58%;">{{ $officerData['deferred_days'] ?? '' }}</span>
+        </td>
+    </tr></table>
 
     {{-- ===== 12. Address(es) / Phone / Email — three sub-lines ===== --}}
-    <div class="pf-item">
-        <div class="pf-item__num">12.</div>
-        <div class="pf-item__body">
+    <table class="pf-item"><tr>
+        <td class="pf-item__num">12.</td>
+        <td>
             <span class="pf-item__label">Address (es):</span>
-            <span class="pf-item__value" style="min-width: 70%;">{{ $officerData['address'] ?? '' }}</span>
-        </div>
-    </div>
+            <span class="pf-item__value" style="width: 78%;">{{ $officerData['address'] ?? '' }}</span>
+        </td>
+    </tr></table>
     <div class="pf-subline">
         <span class="pf-pair__label">Telephone Number:</span>
-        <span class="pf-item__value" style="min-width: 60%;">{{ $officerData['phone'] ?? '' }}</span>
+        <span class="pf-item__value" style="width: 65%;">{{ $officerData['phone'] ?? '' }}</span>
     </div>
     <div class="pf-subline">
         <span class="pf-pair__label">E-mail Address:</span>
-        <span class="pf-item__value" style="min-width: 60%;">{{ $officerData['email'] ?? '' }}</span>
+        <span class="pf-item__value" style="width: 68%;">{{ $officerData['email'] ?? '' }}</span>
     </div>
 
     {{-- ===== 13. Signature of Officer / Date ===== --}}
-    <div class="pf-item" style="margin-top: 10px;">
-        <div class="pf-item__num">13.</div>
-        <div class="pf-item__body">
-            <div class="pf-sig-row">
-                <div class="pf-sig-cell" style="width: 60%;">
+    <table class="pf-item" style="margin-top: 10px;"><tr>
+        <td class="pf-item__num">13.</td>
+        <td>
+            <table class="pf-sig"><tr>
+                <td class="pf-sig__left">
                     <span class="pf-item__label">Signature of Officer:</span>
                     @if($officerSig)
                         @php $img = $sigFsPath($officerSig); @endphp
@@ -282,34 +282,34 @@
                         <div class="pf-sig-line"></div>
                         <div class="pf-sig-pending">— awaiting officer signature —</div>
                     @endif
-                </div>
-                <div class="pf-sig-cell pf-sig-cell--right" style="width: 40%;">
+                </td>
+                <td class="pf-sig__right">
                     <span class="pf-item__label">Date:</span>
                     <div class="pf-sig-line" style="text-align: center; font-weight: 600;">
                         {{ $officerSig?->signed_at?->format('d M Y') }}
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                </td>
+            </tr></table>
+        </td>
+    </tr></table>
 
     {{-- ===== 14. Recommendation by Dean/HOD/Director or Office head ===== --}}
     <div class="pf-section">
-        <div class="pf-item">
-            <div class="pf-item__num">14.</div>
-            <div class="pf-item__body">
+        <table class="pf-item"><tr>
+            <td class="pf-item__num">14.</td>
+            <td>
                 <span class="pf-item__label">Recommendation/Comment(s) by Dean/Head of Dept./Unit:</span>
                 <div class="pf-item__value--grow" style="min-height: 46px;">{{ $recommenderData['recommendation'] ?? '' }}</div>
-            </div>
-        </div>
+            </td>
+        </tr></table>
 
-        <div style="margin-left: 26px; margin-top: 4px;">
+        <div style="margin-left: 22px; margin-top: 4px;">
             <div style="margin-bottom: 4px;">
                 <span class="pf-item__label">Name of Dean/Head of Dept./Unit:</span>
-                <span class="pf-item__value" style="min-width: 55%;">{{ $signerName($recommenderSig) }}</span>
+                <span class="pf-item__value" style="width: 56%;">{{ $signerName($recommenderSig) }}</span>
             </div>
-            <div class="pf-sig-row">
-                <div class="pf-sig-cell" style="width: 60%;">
+            <table class="pf-sig"><tr>
+                <td class="pf-sig__left">
                     <span class="pf-item__label">Signature:</span>
                     @if($recommenderSig)
                         @php $img = $sigFsPath($recommenderSig); @endphp
@@ -328,38 +328,38 @@
                         <div class="pf-sig-line"></div>
                         <div class="pf-sig-pending">— awaiting recommender signature —</div>
                     @endif
-                </div>
-                <div class="pf-sig-cell pf-sig-cell--right" style="width: 40%;">
+                </td>
+                <td class="pf-sig__right">
                     <span class="pf-item__label">Date:</span>
                     <div class="pf-sig-line" style="text-align: center; font-weight: 600;">
                         {{ $recommenderSig?->signed_at?->format('d M Y') }}
                     </div>
-                </div>
-            </div>
+                </td>
+            </tr></table>
         </div>
     </div>
 
     {{-- ===== 15. Approval by Registrar ===== --}}
     <div class="pf-section">
-        <div class="pf-item">
-            <div class="pf-item__num">15.</div>
-            <div class="pf-item__body">
+        <table class="pf-item"><tr>
+            <td class="pf-item__num">15.</td>
+            <td>
                 <span class="pf-item__label">Approved by Registrar:</span>
                 <span class="pf-pair__label" style="margin-left: 4px;">Name:</span>
-                <span class="pf-item__value" style="min-width: 55%;">{{ $signerName($registrarSig) }}</span>
-            </div>
-        </div>
+                <span class="pf-item__value" style="width: 58%;">{{ $signerName($registrarSig) }}</span>
+            </td>
+        </tr></table>
 
         @if(!empty($registrarData['registrar_comments']))
-            <div style="margin: 4px 0 6px 26px;">
+            <div style="margin: 4px 0 6px 22px;">
                 <span class="pf-item__label">Comments:</span>
                 <div class="pf-item__value--grow" style="min-height: 24px;">{{ $registrarData['registrar_comments'] }}</div>
             </div>
         @endif
 
-        <div style="margin-left: 26px;">
-            <div class="pf-sig-row">
-                <div class="pf-sig-cell" style="width: 60%;">
+        <div style="margin-left: 22px;">
+            <table class="pf-sig"><tr>
+                <td class="pf-sig__left">
                     <span class="pf-item__label">Signature:</span>
                     @if($registrarSig)
                         @php $img = $sigFsPath($registrarSig); @endphp
@@ -378,14 +378,14 @@
                         <div class="pf-sig-line"></div>
                         <div class="pf-sig-pending">— awaiting Registrar's signature —</div>
                     @endif
-                </div>
-                <div class="pf-sig-cell pf-sig-cell--right" style="width: 40%;">
+                </td>
+                <td class="pf-sig__right">
                     <span class="pf-item__label">Date:</span>
                     <div class="pf-sig-line" style="text-align: center; font-weight: 600;">
                         {{ $registrarSig?->signed_at?->format('d M Y') }}
                     </div>
-                </div>
-            </div>
+                </td>
+            </tr></table>
         </div>
     </div>
 
