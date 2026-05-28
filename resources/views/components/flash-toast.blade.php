@@ -3,9 +3,10 @@
     Reads session('success'|'error'|'warning'|'info') and the validation
     $errors bag, then renders animated, auto-dismissing toasts.
 
-    Included once in layout/app.blade.php, so any controller that returns
-    ->with('success', '…') or back()->with('error', '…') automatically
-    surfaces a toast without per-view wiring.
+    Visibility is driven by CSS animation (`animation-fill-mode: both`), NOT
+    by a JS class. So even if JavaScript fails to run, the toast is visible.
+    JS is only responsible for auto-dismiss and the close button — the
+    "always show" guarantee belongs to the CSS.
 --}}
 @php
     $toasts = [];
@@ -17,7 +18,6 @@
         }
     }
 
-    // Validation errors (only show on pages that opted into the $errors bag).
     if (isset($errors) && $errors->any()) {
         foreach ($errors->all() as $err) {
             $toasts[] = ['type' => 'error', 'message' => $err];
@@ -30,8 +30,8 @@
     .flash-toast-stack {
         position: fixed; top: 24px; right: 24px;
         display: flex; flex-direction: column; gap: 10px;
-        /* Higher than the white preloader (z-index 999999 in public/css/style.css)
-           so the toast is visible even while the preloader is still on screen. */
+        /* Max int — guaranteed above the preloader (z-index 999999) and
+           anything else on the page. */
         z-index: 2147483647;
         max-width: 380px;
         pointer-events: none;
@@ -48,18 +48,39 @@
         font-size: 13.5px; line-height: 1.45;
         color: #1f2937;
         position: relative;
+        /* CSS-driven slide-in. `animation-fill-mode: both` retains the final
+           state. If JS never runs, the toast still ends up visible. */
         opacity: 0; transform: translateX(20px);
-        transition: opacity .25s ease, transform .25s ease;
+        animation: flashToastIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation-delay: 0.08s;
     }
-    .flash-toast.flash-toast--show { opacity: 1; transform: translateX(0); }
-    .flash-toast.flash-toast--leave { opacity: 0; transform: translateX(20px); }
+    .flash-toast:nth-child(2) { animation-delay: 0.16s; }
+    .flash-toast:nth-child(3) { animation-delay: 0.24s; }
+    .flash-toast:nth-child(4) { animation-delay: 0.32s; }
+    .flash-toast:nth-child(n+5) { animation-delay: 0.40s; }
+
+    @keyframes flashToastIn {
+        from { opacity: 0; transform: translateX(20px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    /* JS-controlled leave animation. If JS never fires, this never applies
+       and the toast just stays visible — which is what we want as the
+       fail-safe. */
+    .flash-toast.flash-toast--leave {
+        animation: flashToastOut 0.24s ease-in both;
+    }
+    @keyframes flashToastOut {
+        from { opacity: 1; transform: translateX(0); }
+        to   { opacity: 0; transform: translateX(20px); }
+    }
+
     .flash-toast__icon {
         flex: 0 0 22px; width: 22px; height: 22px;
         display: inline-flex; align-items: center; justify-content: center;
         border-radius: 50%; color: #fff; font-weight: 700;
     }
     .flash-toast__body { flex: 1; min-width: 0; }
-    .flash-toast__title { font-weight: 600; margin: 0 0 2px; color: #0f172a; }
+    .flash-toast__title { font-weight: 600; margin: 0 0 2px; color: #0f172a; font-size: 13px; }
     .flash-toast__msg { margin: 0; word-wrap: break-word; }
     .flash-toast__close {
         position: absolute; top: 6px; right: 8px;
@@ -80,6 +101,10 @@
 
     @media (max-width: 540px) {
         .flash-toast-stack { left: 12px; right: 12px; top: 12px; max-width: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .flash-toast { animation: none; opacity: 1; transform: none; }
+        .flash-toast.flash-toast--leave { animation: none; opacity: 0; }
     }
 </style>
 
@@ -113,46 +138,34 @@
 </div>
 
 <script>
+/* CSS handles the appearance — JS is purely for ergonomics:
+   - Auto-dismiss after a lifespan (longer for errors/warnings)
+   - Pause auto-dismiss on hover
+   - Close button click
+   If this script never runs (JS error elsewhere, blocked, etc.), the toast
+   is STILL visible thanks to the CSS animation. It just won't auto-dismiss. */
 (function () {
     var stack = document.getElementById('flashToastStack');
     if (!stack) return;
     var toasts = stack.querySelectorAll('.flash-toast');
 
-    // Don't start the auto-dismiss timer until the page has actually finished
-    // loading — the preloader (z-index 999999, white background) can otherwise
-    // cover the toast for 1–2s and eat half its visible lifespan.
-    var started = false;
-    var begin = function () {
-        if (started) return;
-        started = true;
-        toasts.forEach(function (toast, i) {
-            setTimeout(function () { toast.classList.add('flash-toast--show'); }, 60 + i * 80);
+    toasts.forEach(function (toast, i) {
+        var dismiss = function () {
+            toast.classList.add('flash-toast--leave');
+            setTimeout(function () { toast.remove(); }, 260);
+        };
+        var lifespan = toast.classList.contains('flash-toast--error') || toast.classList.contains('flash-toast--warning')
+            ? 6500 : 5000;
+        // Add the per-toast stagger so visible-time feels consistent.
+        var timer = setTimeout(dismiss, lifespan + i * 120);
 
-            var dismiss = function () {
-                toast.classList.add('flash-toast--leave');
-                toast.classList.remove('flash-toast--show');
-                setTimeout(function () { toast.remove(); }, 260);
-            };
-            var lifespan = toast.classList.contains('flash-toast--error') || toast.classList.contains('flash-toast--warning')
-                ? 6000 : 4500;
-            var timer = setTimeout(dismiss, lifespan + i * 80);
-
-            var closeBtn = toast.querySelector('.flash-toast__close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', function () { clearTimeout(timer); dismiss(); });
-            }
-            toast.addEventListener('mouseenter', function () { clearTimeout(timer); });
-            toast.addEventListener('mouseleave', function () { timer = setTimeout(dismiss, 2500); });
-        });
-    };
-
-    if (document.readyState === 'complete') {
-        begin();
-    } else {
-        window.addEventListener('load', begin, { once: true });
-        // Safety net: if 'load' is delayed by a slow asset, still show after 1.5s.
-        setTimeout(begin, 1500);
-    }
+        var closeBtn = toast.querySelector('.flash-toast__close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function () { clearTimeout(timer); dismiss(); });
+        }
+        toast.addEventListener('mouseenter', function () { clearTimeout(timer); });
+        toast.addEventListener('mouseleave', function () { timer = setTimeout(dismiss, 2500); });
+    });
 })();
 </script>
 @endif

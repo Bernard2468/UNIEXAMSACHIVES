@@ -87,11 +87,16 @@
     @keyframes avf-fade { from { opacity: 0; } to { opacity: 1; } }
 
     /* ============ SHELL ============ */
+    /* IMPORTANT: use an EXPLICIT height (not max-height) so the flex children
+       have a real container to fill. Without this the shell collapses to the
+       header height because iframes have no intrinsic vertical size — that's
+       why the modal was rendering "flat". */
     .att-viewer__shell {
         position: relative;
         width: 100%;
-        max-width: 1180px;
-        max-height: 92vh;
+        max-width: 1200px;
+        height: 92vh;            /* real height — body's flex:1 now has space */
+        min-height: 560px;       /* sane floor on very short viewports */
         background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
         border: 1px solid rgba(255, 255, 255, 0.07);
         border-radius: 18px;
@@ -180,7 +185,8 @@
 
     /* ============ BODY ============ */
     .att-viewer__body {
-        flex: 1; min-height: 0;
+        flex: 1 1 auto;
+        min-height: 480px;       /* guarantee tall enough for a PDF page */
         position: relative;
         background:
             linear-gradient(45deg, rgba(255,255,255,0.02) 25%, transparent 25%),
@@ -193,7 +199,10 @@
         overflow: auto;
     }
     .att-viewer__body iframe {
-        width: 100%; height: 100%; border: 0; background: #fff;
+        width: 100%;
+        height: 100%;
+        min-height: 480px;       /* defensive — even if parent flex misbehaves */
+        border: 0; background: #fff;
         display: block;
     }
     .att-viewer__body img {
