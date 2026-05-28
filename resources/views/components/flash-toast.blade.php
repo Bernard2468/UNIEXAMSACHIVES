@@ -93,10 +93,14 @@
         font-size: 13.5px; line-height: 1.45;
         color: #1f2937;
         position: relative;
-        /* CSS-driven slide-in. animation-fill-mode: both retains the final
-           state, so even if JS NEVER runs the toast ends up visible. */
-        opacity: 0; transform: translateY(20px);
-        animation: flashToastIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+        /* DEFAULT STATE IS VISIBLE. Animation uses `backwards` fill mode to
+           apply the from-state ONLY during the animation, then snap back to
+           the default (visible) state. If the animation NEVER runs for any
+           reason (CSS conflict, animation namespace collision, browser bug)
+           the toast still appears instantly. This is the safety property. */
+        opacity: 1;
+        transform: translateY(0);
+        animation: flashToastIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) backwards;
         will-change: transform, opacity;
     }
     @keyframes flashToastIn {
@@ -319,6 +323,24 @@
     api.info    = function (m, o) { return api('info',    m, o); };
 
     window.toast = api;
+
+    // ----- Diagnostic log -----------------------------------------------
+    // Always logs to console so you can verify the server-side flash pipeline
+    // end-to-end. After a form action, open DevTools and look for "[Toast]".
+    //   "0 server-rendered toast(s)" + you expected one  → server didn't set
+    //       the flash (or a middleware ate it). Server-side problem.
+    //   "1 server-rendered toast(s)" + you can't see it → CSS/visibility
+    //       problem. Re-check this file or look for overriding rules.
+    var initialCount = @json(count($initialToasts));
+    var initialPayload = @json($initialToasts);
+    console.log('[Toast]', initialCount, 'server-rendered toast(s) on this page', initialPayload);
+    if (initialCount > 0) {
+        var verify = document.querySelectorAll('#' + STACK_ID + ' .flash-toast').length;
+        console.log('[Toast]', verify, 'toast element(s) in DOM after render');
+        if (verify !== initialCount) {
+            console.warn('[Toast] Mismatch — server said', initialCount, 'but DOM has', verify, '. Check Blade rendering.');
+        }
+    }
 
     // Attach behaviour to server-rendered toasts (they're already visible).
     function attachInitial() {

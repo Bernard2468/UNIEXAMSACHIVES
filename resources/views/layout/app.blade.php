@@ -47,10 +47,9 @@
     {{-- preloader --}}
     @include('components.preloader')
     
-    {{-- modern notifications --}}
-    @include('components.modern-notifications')
-
-    {{-- Global flash → toast renderer (success/error/warning/info + validation errors) --}}
+    {{-- Global flash → toast renderer (success/error/warning/info + validation errors).
+         Replaces the old `modern-notifications` partial — same session-flash source,
+         single canonical UI, bottom-right, with a public window.toast() API. --}}
     @include('components.flash-toast')
 
     {{-- Favicon dot + page-title flash (top-app pattern: Gmail / Slack / GitHub) --}}
