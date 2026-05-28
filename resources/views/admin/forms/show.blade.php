@@ -138,12 +138,26 @@
                                   class="form-composer">
                                 @csrf
 
+                                @php
+                                    $currentStageAttachments = $submission->attachments->where('stage_slug', $currentStage->slug);
+                                @endphp
                                 <div class="form-panel @if(!$canFill) form-panel--locked @endif">
                                     <div class="form-panel__head">
                                         <div style="display: flex; align-items: flex-start; gap: 14px;">
                                             <span class="form-panel__code">{{ $submission->form_code }}</span>
                                             <div>
-                                                <h2 class="form-panel__title">{{ $currentStage->label }} {{ $canFill ? '— awaiting your action' : '' }}<span class="form-panel__title-bar"></span></h2>
+                                                <h2 class="form-panel__title">
+                                                    <span class="stage-title-row">
+                                                        <span>{{ $currentStage->label }} {{ $canFill ? '— awaiting your action' : '' }}</span>
+                                                        @if($currentStageAttachments->count() > 0)
+                                                            <span class="stage-clip-badge" title="{{ $currentStageAttachments->count() }} file{{ $currentStageAttachments->count() === 1 ? '' : 's' }} attached at this stage">
+                                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                                                {{ $currentStageAttachments->count() }}
+                                                            </span>
+                                                        @endif
+                                                    </span>
+                                                    <span class="form-panel__title-bar"></span>
+                                                </h2>
                                                 @if($currentStage->description)
                                                     <p class="form-panel__desc">{{ $currentStage->description }}</p>
                                                 @endif
@@ -158,6 +172,13 @@
                                             'stage'       => $currentStage,
                                             'sectionData' => $submission->sectionData($currentStage->slug),
                                             'readonly'    => !$canFill,
+                                        ])
+
+                                        {{-- Existing attachments at this stage (e.g. inherited from a reassignment) --}}
+                                        @include('admin.forms.partials.stage-attachments', [
+                                            'submission'       => $submission,
+                                            'stageAttachments' => $currentStageAttachments,
+                                            'stage'            => $currentStage,
                                         ])
                                     </div>
                                 </div>

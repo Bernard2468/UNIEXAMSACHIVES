@@ -23,6 +23,20 @@
         $stageLabels[$st->slug] = $st->label;
     }
 
+    // Pre-encode ALL attachments for the modal so prev/next inside the modal
+    // can traverse the whole list. Encoded once on the wrapping div.
+    $allAttItems = $allAttachments->map(fn($att) => [
+        'id'    => $att->id,
+        'url'   => route('admin.forms.attachment', [$submission->id, $att->id]),
+        'name'  => $att->name,
+        'size'  => $att->human_size,
+        'mime'  => (string) $att->mime_type,
+        'stage' => $stageLabels[$att->stage_slug] ?? ucwords(str_replace('_', ' ', (string) $att->stage_slug)),
+    ])->values()->toArray();
+    // See note in stage-attachments.blade.php — JSON_HEX_* makes this safe to
+    // drop into an attribute; {{ }} runs htmlspecialchars once on output.
+    $allAttJson = json_encode($allAttItems, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP);
+
     // Best-effort file-type classification for the row icon.
     $iconFor = function (string $mime, string $name): string {
         if (str_starts_with($mime, 'image/')) return 'image';
@@ -38,7 +52,7 @@
     };
 @endphp
 
-<div class="form-panel form-attachments">
+<div class="form-panel form-attachments" data-att-items="{{ $allAttJson }}">
     <div class="form-panel__head">
         <div style="display: flex; align-items: flex-start; gap: 14px;">
             <span class="form-panel__step-num form-attachments__num">
@@ -46,8 +60,10 @@
             </span>
             <div>
                 <h2 class="form-panel__title">
-                    Attachments
-                    <span class="form-attachments__count">{{ $allAttachments->count() }}</span>
+                    <span class="stage-title-row">
+                        <span>Attachments</span>
+                        <span class="form-attachments__count">{{ $allAttachments->count() }}</span>
+                    </span>
                     <span class="form-panel__title-bar"></span>
                 </h2>
                 <p class="form-panel__desc">Supporting documents uploaded at any stage of this form.</p>
@@ -98,11 +114,18 @@
                         </div>
                     </div>
 
+                    <button type="button"
+                            class="attachment-item__action attachment-item__action--view"
+                            onclick="window.attachmentViewer && window.attachmentViewer.open(JSON.parse(this.closest('.form-attachments').dataset.attItems), {{ $loop->index }})"
+                            title="Preview {{ $att->name }}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span>View</span>
+                    </button>
                     <a href="{{ route('admin.forms.attachment', [$submission->id, $att->id]) }}"
-                       class="attachment-item__action"
-                       title="Download {{ $att->name }}">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        <span>Download</span>
+                       class="attachment-item__action attachment-item__action--download"
+                       title="Download {{ $att->name }}"
+                       download>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     </a>
                 </li>
             @endforeach
@@ -161,13 +184,27 @@
     .attachment-item__action {
         display: inline-flex; align-items: center; gap: 5px;
         padding: 6px 12px;
-        background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;
         border-radius: 8px; text-decoration: none;
         font-size: 12px; font-weight: 600;
         transition: all .15s;
         flex-shrink: 0;
+        cursor: pointer;
+        font-family: inherit;
+        border: 1px solid transparent;
+        background: transparent;
     }
-    .attachment-item__action:hover { background: #dbeafe; color: #1e40af; text-decoration: none; }
+    .attachment-item__action--view {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 1px 3px rgba(99, 102, 241, 0.3);
+    }
+    .attachment-item__action--view:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35); color: #fff; text-decoration: none; }
+    .attachment-item__action--download {
+        background: #f3f4f6; color: #4b5563; border-color: #e5e7eb;
+        padding: 6px 9px;
+    }
+    .attachment-item__action--download:hover { background: #e5e7eb; color: #111827; text-decoration: none; }
 
     /* Dark mode */
     .is_dark .attachment-item { background: #111827; border-color: #2d3748; }
@@ -177,9 +214,10 @@
     .is_dark .form-attachments__num, .is_dark .form-attachments__count, .is_dark .attachment-item__stage {
         background: rgba(67, 56, 202, 0.18) !important; color: #a5b4fc !important;
     }
-    .is_dark .attachment-item__action {
-        background: rgba(29, 78, 216, 0.18); color: #93c5fd; border-color: rgba(59, 130, 246, 0.4);
+    .is_dark .attachment-item__action--download {
+        background: rgba(75, 85, 99, 0.25); color: #d1d5db; border-color: rgba(255,255,255,0.08);
     }
+    .is_dark .attachment-item__action--download:hover { background: rgba(75, 85, 99, 0.45); color: #f3f4f6; }
     .is_dark .attachment-item__icon--pdf   { background: rgba(185, 28, 28, 0.18); color: #fca5a5; }
     .is_dark .attachment-item__icon--image { background: rgba(8, 145, 178, 0.18); color: #67e8f9; }
     .is_dark .attachment-item__icon--doc   { background: rgba(29, 78, 216, 0.18); color: #93c5fd; }

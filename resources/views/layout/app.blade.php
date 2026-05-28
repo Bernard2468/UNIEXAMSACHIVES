@@ -58,6 +58,9 @@
 
     {{-- Browser push subscriber (Web Push API) — registers /sw.js, exposes window.udtsPush --}}
     @include('components.push-subscriber')
+
+    {{-- Attachment viewer modal (exposes window.attachmentViewer) — used by forms & anywhere else --}}
+    @include('components.attachment-viewer-modal')
     
     {{-- confirmation modal --}}
     @include('components.confirmation-modal')

@@ -8,6 +8,12 @@
 @php
     use App\Forms\FormField;
     $sectionData = $sectionData ?? [];
+    // Attachments uploaded at THIS stage. Cheap because $submission->attachments
+    // is eager-loaded in FormSubmissionController::show — this is just an
+    // in-memory ->where() on the loaded Collection.
+    $stageAttachments = isset($submission)
+        ? $submission->attachments->where('stage_slug', $stage->slug)
+        : collect();
 @endphp
 
 <div class="form-panel form-panel--locked">
@@ -17,7 +23,18 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </span>
             <div>
-                <h2 class="form-panel__title">{{ $stage->label }}<span class="form-panel__title-bar"></span></h2>
+                <h2 class="form-panel__title">
+                    <span class="stage-title-row">
+                        <span>{{ $stage->label }}</span>
+                        @if($stageAttachments->count() > 0)
+                            <span class="stage-clip-badge" title="{{ $stageAttachments->count() }} file{{ $stageAttachments->count() === 1 ? '' : 's' }} attached at this stage">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                {{ $stageAttachments->count() }}
+                            </span>
+                        @endif
+                    </span>
+                    <span class="form-panel__title-bar"></span>
+                </h2>
                 @if($signer)
                     <p class="form-panel__desc">
                         Signed by <strong>{{ trim(($signer->first_name ?? '') . ' ' . ($signer->last_name ?? '')) }}</strong>
@@ -58,6 +75,13 @@
                 </div>
             @endforeach
         </dl>
+
+        {{-- Per-stage attachments display + viewer (uses global attachmentViewer modal) --}}
+        @include('admin.forms.partials.stage-attachments', [
+            'submission'       => $submission ?? null,
+            'stageAttachments' => $stageAttachments,
+            'stage'            => $stage,
+        ])
 
         @if(isset($signature) && $signature)
             @php $check = $signature->verifyChain(); @endphp

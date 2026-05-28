@@ -340,13 +340,24 @@ class FormSubmissionController extends Controller
     // DOWNLOADS
     // ===========================================================
 
-    public function downloadAttachment(FormSubmission $submission, FormAttachment $attachment)
+    public function downloadAttachment(Request $request, FormSubmission $submission, FormAttachment $attachment)
     {
         abort_unless($attachment->form_submission_id === $submission->id, 404);
         $this->authorize('downloadAttachment', $submission);
 
         $disk = Storage::disk('public');
         abort_unless($disk->exists($attachment->path), 404);
+
+        // ?inline=1 returns the file with Content-Disposition: inline so the
+        // attachment-viewer-modal can render it (PDFs in <iframe>, images in <img>).
+        // Without it we fall back to a regular forced download.
+        if ($request->boolean('inline')) {
+            return response()->file($disk->path($attachment->path), [
+                'Content-Type'        => $attachment->mime_type ?: 'application/octet-stream',
+                'Content-Disposition' => 'inline; filename="' . str_replace('"', '', (string) $attachment->name) . '"',
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        }
 
         return $disk->download($attachment->path, $attachment->name);
     }
