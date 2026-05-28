@@ -70,7 +70,7 @@ class AnnualLeaveApplicationForm extends BaseFormDefinition
                         help: 'Leave blank if you have not taken any leave yet.'),
                     new FormField('last_leave_to',       'Last Leave — To',                 FormField::TYPE_DATE,     required: false, col: 6),
 
-                    new FormField('current_entitlement', "Current Academic Year's Leave Entitlement (days)", FormField::TYPE_NUMBER, required: true, col: 4),
+                    new FormField('current_entitlement', "Current Academic Year's Leave Entitlement", FormField::TYPE_NUMBER, required: true, col: 4),
                     new FormField('accrued_days',        'Accrued / Outstanding Leave Days', FormField::TYPE_NUMBER,   required: false, col: 4),
                     new FormField('total_entitlement',   'Total Leave Entitlement (days)',   FormField::TYPE_NUMBER,   required: true,  col: 4),
 
