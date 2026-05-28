@@ -84,30 +84,58 @@
         /* Inline pair: "From: ___ To: ___" */
         .pf-pair__label { font-weight: 600; color: #1f2937; margin-right: 4px; }
 
-        /* ── Signature block (items 13 / 14 / 15) ──
-           Layout: label on top, then a box whose bottom border IS the signature
-           line (with the image inside the box), then a small caption under it
-           with the signer's name + verification badge. Date column mirrors the
-           same height so the two columns align cleanly. */
-        .pf-sig { width: 100%; margin-top: 6px; border-collapse: collapse; }
-        .pf-sig td { vertical-align: top; padding: 0; }
-        .pf-sig__left  { width: 60%; padding-right: 18px !important; }
-        .pf-sig__right { width: 40%; }
-        .pf-sig__label { font-weight: 600; color: #1f2937; display: block; margin-bottom: 4px; }
-        .pf-sig__box {
-            border-bottom: 1.2px solid #111827;
-            min-height: 50px;
-            padding: 4px 6px 2px;
-            text-align: left;
+        /* ── Signature card (items 13 / 14 / 15) ──
+           Modernised version of the PR/PWA signature block. Each card is a
+           single bordered panel with:
+             - small uppercase label header on a light strip
+             - centred signature image inside the body
+             - dashed separator
+             - footer line: "Signed by X on Y · VERIFIED"
+           No more side-by-side Signature/Date columns — the date lives in the
+           footer where it can never drift out of alignment. */
+        .pf-sigcard {
+            margin: 8px 0 4px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: #fff;
         }
-        .pf-sig__box--center { text-align: center; padding-top: 24px; font-weight: 600; font-size: 12px; }
-        .pf-sig-img { max-height: 42px; max-width: 100%; }
-        .pf-sig-caption { font-size: 9.5px; color: #6b7280; margin-top: 3px; line-height: 1.4; }
-        .pf-sig-caption strong { color: #111827; font-weight: 700; }
-        .pf-sig-badge { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 8.5px; font-weight: bold; margin-left: 4px; vertical-align: middle; }
-        .pf-sig-badge--ok  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-        .pf-sig-badge--bad { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-        .pf-sig-pending { color: #9ca3af; font-style: italic; font-size: 10px; margin-top: 18px; }
+        .pf-sigcard__head {
+            background: #f9fafb;
+            padding: 5px 12px;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .pf-sigcard__body {
+            padding: 10px 12px;
+            text-align: center;
+            min-height: 54px;
+        }
+        .pf-sigcard__img { max-height: 48px; max-width: 70%; }
+        .pf-sigcard__empty { color: #9ca3af; font-style: italic; font-size: 10px; padding: 16px 0; }
+        .pf-sigcard__meta {
+            padding: 6px 12px 7px;
+            border-top: 1px dashed #9ca3af;
+            font-size: 10px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+        .pf-sigcard__meta strong { color: #111827; font-weight: 700; }
+        .pf-sigcard__date { color: #111827; font-weight: 600; border-bottom: 1px dotted #9ca3af; padding-bottom: 1px; }
+        .pf-sigcard__badge {
+            display: inline-block;
+            padding: 1px 7px;
+            border-radius: 8px;
+            font-size: 8.5px;
+            font-weight: bold;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+        .pf-sigcard__badge--ok  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .pf-sigcard__badge--bad { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
         /* ── Section break for items 14 / 15 ── */
         .pf-section { margin-top: 16px; padding-top: 10px; border-top: 1px solid #d1d5db; }
@@ -278,40 +306,35 @@
         </td>
     </tr></table>
 
-    {{-- ===== 13. Signature of Officer / Date ===== --}}
+    {{-- ===== 13. Signature of Officer (modernised single-card layout) ===== --}}
     <table class="pf-item" style="margin-top: 14px;"><tr>
         <td class="pf-item__num">13.</td>
         <td>
-            <table class="pf-sig"><tr>
-                <td class="pf-sig__left">
-                    <span class="pf-sig__label">Signature of Officer:</span>
-                    <div class="pf-sig__box">
-                        @if($officerSig)
-                            @php $img = $sigFsPath($officerSig); @endphp
-                            @if($img)
-                                <img class="pf-sig-img" src="{{ $img }}" alt="Officer signature">
-                            @endif
+            <div class="pf-sigcard">
+                <div class="pf-sigcard__head">Signature of Officer</div>
+                <div class="pf-sigcard__body">
+                    @if($officerSig)
+                        @php $img = $sigFsPath($officerSig); @endphp
+                        @if($img)
+                            <img class="pf-sigcard__img" src="{{ $img }}" alt="Officer signature">
                         @endif
-                    </div>
+                    @else
+                        <div class="pf-sigcard__empty">— awaiting officer signature —</div>
+                    @endif
+                </div>
+                <div class="pf-sigcard__meta">
                     @if($officerSig)
                         @php $check = $officerSig->verifyChain(); @endphp
-                        <div class="pf-sig-caption">
-                            <strong>{{ $signerName($officerSig) }}</strong>
-                            <span class="pf-sig-badge {{ $check['valid'] ? 'pf-sig-badge--ok' : 'pf-sig-badge--bad' }}">
-                                {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
-                            </span>
-                        </div>
+                        Signed by <strong>{{ $signerName($officerSig) }}</strong>
+                        on <span class="pf-sigcard__date">{{ $officerSig->signed_at?->format('d M Y, H:i') }}</span>
+                        <span class="pf-sigcard__badge {{ $check['valid'] ? 'pf-sigcard__badge--ok' : 'pf-sigcard__badge--bad' }}">
+                            {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
+                        </span>
                     @else
-                        <div class="pf-sig-pending">— awaiting officer signature —</div>
+                        Not yet signed.
                     @endif
-                </td>
-                <td class="pf-sig__right">
-                    <span class="pf-sig__label">Date:</span>
-                    <div class="pf-sig__box pf-sig__box--center">
-                        {{ $officerSig?->signed_at?->format('d M Y') }}
-                    </div>
-                </td>
-            </tr></table>
+                </div>
+            </div>
         </td>
     </tr></table>
 
@@ -334,40 +357,35 @@
             </td>
         </tr></table>
 
-        {{-- Signature + Date — same indent as the body column --}}
-        <table class="pf-item" style="margin-top: 8px;"><tr>
+        {{-- Signature card (replaces the old Signature | Date columns) --}}
+        <table class="pf-item" style="margin-top: 4px;"><tr>
             <td class="pf-item__num">&nbsp;</td>
             <td>
-                <table class="pf-sig"><tr>
-                    <td class="pf-sig__left">
-                        <span class="pf-sig__label">Signature:</span>
-                        <div class="pf-sig__box">
-                            @if($recommenderSig)
-                                @php $img = $sigFsPath($recommenderSig); @endphp
-                                @if($img)
-                                    <img class="pf-sig-img" src="{{ $img }}" alt="Recommender signature">
-                                @endif
+                <div class="pf-sigcard">
+                    <div class="pf-sigcard__head">Signature of Dean / HOD / Director / Office Head</div>
+                    <div class="pf-sigcard__body">
+                        @if($recommenderSig)
+                            @php $img = $sigFsPath($recommenderSig); @endphp
+                            @if($img)
+                                <img class="pf-sigcard__img" src="{{ $img }}" alt="Recommender signature">
                             @endif
-                        </div>
+                        @else
+                            <div class="pf-sigcard__empty">— awaiting recommender signature —</div>
+                        @endif
+                    </div>
+                    <div class="pf-sigcard__meta">
                         @if($recommenderSig)
                             @php $check = $recommenderSig->verifyChain(); @endphp
-                            <div class="pf-sig-caption">
-                                <strong>{{ $signerName($recommenderSig) }}</strong>
-                                <span class="pf-sig-badge {{ $check['valid'] ? 'pf-sig-badge--ok' : 'pf-sig-badge--bad' }}">
-                                    {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
-                                </span>
-                            </div>
+                            Signed by <strong>{{ $signerName($recommenderSig) }}</strong>
+                            on <span class="pf-sigcard__date">{{ $recommenderSig->signed_at?->format('d M Y, H:i') }}</span>
+                            <span class="pf-sigcard__badge {{ $check['valid'] ? 'pf-sigcard__badge--ok' : 'pf-sigcard__badge--bad' }}">
+                                {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
+                            </span>
                         @else
-                            <div class="pf-sig-pending">— awaiting recommender signature —</div>
+                            Not yet signed.
                         @endif
-                    </td>
-                    <td class="pf-sig__right">
-                        <span class="pf-sig__label">Date:</span>
-                        <div class="pf-sig__box pf-sig__box--center">
-                            {{ $recommenderSig?->signed_at?->format('d M Y') }}
-                        </div>
-                    </td>
-                </tr></table>
+                    </div>
+                </div>
             </td>
         </tr></table>
     </div>
@@ -393,40 +411,35 @@
             </tr></table>
         @endif
 
-        {{-- Signature + Date for the Registrar — same indent as the body column --}}
-        <table class="pf-item" style="margin-top: 8px;"><tr>
+        {{-- Registrar signature card --}}
+        <table class="pf-item" style="margin-top: 4px;"><tr>
             <td class="pf-item__num">&nbsp;</td>
             <td>
-                <table class="pf-sig"><tr>
-                    <td class="pf-sig__left">
-                        <span class="pf-sig__label">Signature:</span>
-                        <div class="pf-sig__box">
-                            @if($registrarSig)
-                                @php $img = $sigFsPath($registrarSig); @endphp
-                                @if($img)
-                                    <img class="pf-sig-img" src="{{ $img }}" alt="Registrar signature">
-                                @endif
+                <div class="pf-sigcard">
+                    <div class="pf-sigcard__head">Signature of Registrar</div>
+                    <div class="pf-sigcard__body">
+                        @if($registrarSig)
+                            @php $img = $sigFsPath($registrarSig); @endphp
+                            @if($img)
+                                <img class="pf-sigcard__img" src="{{ $img }}" alt="Registrar signature">
                             @endif
-                        </div>
+                        @else
+                            <div class="pf-sigcard__empty">— awaiting Registrar's signature —</div>
+                        @endif
+                    </div>
+                    <div class="pf-sigcard__meta">
                         @if($registrarSig)
                             @php $check = $registrarSig->verifyChain(); @endphp
-                            <div class="pf-sig-caption">
-                                <strong>{{ $signerName($registrarSig) }}</strong>
-                                <span class="pf-sig-badge {{ $check['valid'] ? 'pf-sig-badge--ok' : 'pf-sig-badge--bad' }}">
-                                    {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
-                                </span>
-                            </div>
+                            Signed by <strong>{{ $signerName($registrarSig) }}</strong>
+                            on <span class="pf-sigcard__date">{{ $registrarSig->signed_at?->format('d M Y, H:i') }}</span>
+                            <span class="pf-sigcard__badge {{ $check['valid'] ? 'pf-sigcard__badge--ok' : 'pf-sigcard__badge--bad' }}">
+                                {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
+                            </span>
                         @else
-                            <div class="pf-sig-pending">— awaiting Registrar's signature —</div>
+                            Not yet signed.
                         @endif
-                    </td>
-                    <td class="pf-sig__right">
-                        <span class="pf-sig__label">Date:</span>
-                        <div class="pf-sig__box pf-sig__box--center">
-                            {{ $registrarSig?->signed_at?->format('d M Y') }}
-                        </div>
-                    </td>
-                </tr></table>
+                    </div>
+                </div>
             </td>
         </tr></table>
     </div>
