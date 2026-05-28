@@ -187,15 +187,14 @@
                     </div>
                 @else
                     <div class="rec-picker__office-hint">
-                        Pick an office — the form is sent to the <strong>head</strong> of that office to recommend.
+                        Pick an office — the form is sent to the <strong>head</strong> of that office (or its first active member if no head has been designated yet).
                     </div>
                     @foreach($allOffices as $office)
                         @php
                             $members = $office->users ?? collect();
-                            $head = $members->where('pivot.is_head', true)->where('pivot.is_active', true)->first();
-                            if (!$head) {
-                                $head = $members->where('pivot.is_active', true)->first();
-                            }
+                            $designatedHead = $members->where('pivot.is_head', true)->where('pivot.is_active', true)->first();
+                            $head = $designatedHead ?: $members->where('pivot.is_active', true)->first();
+                            $isRealHead = $designatedHead !== null;
                             $headName = $head ? trim(($head->first_name ?? '') . ' ' . ($head->last_name ?? '')) : null;
                             $memberCount = $members->where('pivot.is_active', true)->count();
                             $disabled = $head === null;
@@ -218,9 +217,12 @@
                                 <div class="rec-card__name">{{ $office->name }}</div>
                                 <div class="rec-card__sub">
                                     @if($headName)
-                                        <span>Head: <strong style="color:#374151;">{{ $headName }}</strong></span>
+                                        <span>{{ $isRealHead ? 'Head:' : 'Recipient:' }} <strong style="color:#374151;">{{ $headName }}</strong></span>
+                                        @if(!$isRealHead)
+                                            <span style="color:#b45309; font-size: 0.68rem; font-weight: 600; padding: 1px 6px; background: #fef3c7; border-radius: 99px;">no head set</span>
+                                        @endif
                                     @else
-                                        <span style="color:#b91c1c;">No active head — pick another office</span>
+                                        <span style="color:#b91c1c;">No active members — pick another office</span>
                                     @endif
                                     @if($headName)<span class="rec-card__dot"></span><span>{{ $memberCount }} {{ $memberCount === 1 ? 'member' : 'members' }}</span>@endif
                                 </div>

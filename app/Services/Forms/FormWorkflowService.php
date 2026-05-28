@@ -551,17 +551,19 @@ class FormWorkflowService
                 if (!$office || !$office->is_active) {
                     abort(422, 'The selected office is not available. Refresh the page and pick again.');
                 }
-                $head = $office->head();
+                // Resolve the recipient: designated head if any, otherwise the
+                // first active member. Mirrors the picker UI which also falls
+                // back to the first active member when no head is marked, and
+                // matches how POOL_OFFICE already behaves further below.
+                $head = $office->head() ?? $office->activeUsers()->first();
                 if (!$head) {
-                    abort(422, "{$office->name} has no active head. Pick another office or ask an administrator to designate a head.");
+                    abort(422, "{$office->name} has no active members. Pick another office or ask an administrator to add someone to it.");
                 }
-                // Cross-check against the assignee id submitted by the form (which
-                // the client mirrors from the office's head). This prevents the
-                // form from silently routing to a stale user if the head changes
-                // between page load and submit.
+                // Cross-check against the assignee id submitted by the form
+                // (the client mirrors it from the office's head/first member).
+                // Trust the server-resolved value over a possibly-stale client
+                // hint; just log when they differ.
                 if ($nextAssigneeId && (int) $nextAssigneeId !== (int) $head->id) {
-                    // Not a hard error — trust the server-resolved head over a
-                    // possibly-stale client-side hint. Just log it.
                     Log::info('Form recommender office head differs from client hint', [
                         'office_id'   => $office->id,
                         'client_hint' => $nextAssigneeId,

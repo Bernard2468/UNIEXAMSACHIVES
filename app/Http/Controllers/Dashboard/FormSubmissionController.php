@@ -136,7 +136,7 @@ class FormSubmissionController extends Controller
             ? app(\App\Policies\FormSubmissionPolicy::class)->fillCurrentStage($user, $submission)
             : false;
 
-        $nextContext = ['office' => null, 'leadership' => null];
+        $nextContext = ['office' => null, 'leadership' => null, 'all_offices' => collect()];
         $vcOffice    = null;
 
         if ($canFill && $currentStage) {
