@@ -103,19 +103,11 @@
 .rcpt-picker__stats { font-size: 0.74rem; color: #6b7280; }
 .rcpt-picker__stats strong { color: #0c0c0c; font-weight: 700; }
 
-/* Search — wrapper padding is symmetric (10px top + 10px bottom) so the
-   absolutely-positioned icon centered with top:50% sits exactly on the input's
-   vertical middle instead of drifting up. */
-.rcpt-picker__search { position: relative; padding: 10px 16px; background: #fff; }
-.rcpt-picker__search svg { position: absolute; top: 50%; left: 30px; transform: translateY(-50%); color: #6b7280; pointer-events: none; }
-/* Selector doubled (.rcpt-picker .rcpt-picker__search-input) to push specificity
-   to (0,2,0). shared-styles.blade.php declares `.form-shell input[type="text"]`
-   at (0,1,1) — without this bump, its `padding: 11px 14px` clobbers our
-   left-padding and the search icon overlaps the placeholder text. The 48px
-   padding-left gives the icon ~22px of clear breathing room before the text. */
-.rcpt-picker .rcpt-picker__search-input { width: 100%; padding: 10px 14px 10px 48px; background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 9px; font-size: 0.84rem; color: #111827; outline: none; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
-.rcpt-picker .rcpt-picker__search-input:focus { background: #fff; border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
-.rcpt-picker .rcpt-picker__search-input::placeholder { color: #c7cbd6; }
+.rcpt-picker__search { position: relative; padding: 12px 16px 4px; background: #fff; }
+.rcpt-picker__search svg { position: absolute; top: 50%; left: 28px; transform: translateY(-50%); color: #b0b5c0; pointer-events: none; }
+.rcpt-picker__search-input { width: 100%; padding: 10px 14px 10px 38px; background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 9px; font-size: 0.84rem; color: #111827; outline: none; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
+.rcpt-picker__search-input:focus { background: #fff; border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
+.rcpt-picker__search-input::placeholder { color: #b0b5c0; }
 
 .rcpt-picker__list { padding: 8px; max-height: 320px; overflow-y: auto; background: #fff; }
 .rcpt-picker__list::-webkit-scrollbar { width: 6px; }
@@ -148,7 +140,7 @@
 .is_dark .rcpt-picker__office { color: #f3f4f6; }
 .is_dark .rcpt-picker__office-dot { background: #f3f4f6; }
 .is_dark .rcpt-picker__search { background: #111827; }
-.is_dark .rcpt-picker .rcpt-picker__search-input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
+.is_dark .rcpt-picker__search-input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
 .is_dark .rcpt-picker__list { background: #111827; }
 .is_dark .rcpt-card:hover { background: #0f172a; }
 .is_dark .rcpt-card.is-selected { background: #0f172a; border-color: #f3f4f6; }
