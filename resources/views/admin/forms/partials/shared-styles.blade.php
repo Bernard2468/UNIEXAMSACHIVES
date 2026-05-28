@@ -23,7 +23,10 @@
 .stage-stepper::-webkit-scrollbar { height: 6px; }
 .stage-stepper::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 3px; }
 .stage-step { display: flex; align-items: center; flex-shrink: 0; gap: 10px; padding: 0 12px; position: relative; }
-.stage-step:not(:last-child)::after { content: ''; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 16px; height: 1.5px; background: #ebebeb; }
+/* Connector straddles the boundary between two steps (right: -8px → 8px in
+   current step's right-padding, 8px in next step's left-padding). With each
+   side's padding at 12px the line never bleeds into the label text. */
+.stage-step:not(:last-child)::after { content: ''; position: absolute; right: -8px; top: 50%; transform: translateY(-50%); width: 16px; height: 1.5px; background: #e5e7eb; pointer-events: none; }
 .stage-step__dot { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; background: #f3f4f6; color: #9ca3af; border: 1.5px solid #ebebeb; transition: all .2s; flex-shrink: 0; }
 .stage-step__label { font-size: 0.78rem; font-weight: 500; color: #9ca3af; white-space: nowrap; }
 .stage-step--done .stage-step__dot { background: #0c0c0c; color: #fff; border-color: #0c0c0c; }
