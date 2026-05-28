@@ -8,6 +8,7 @@ use App\Forms\Definitions\CasualLeaveApplicationForm;
 use App\Forms\Definitions\LeaveResumptionForm;
 use App\Forms\Definitions\PaymentRequisitionForm;
 use App\Forms\Definitions\PurchaseWorksAuthorizationForm;
+use App\Forms\Definitions\RenewalOfAppointmentForm;
 use App\Forms\Definitions\VehicleMaintenanceAllowanceForm;
 use App\Forms\FormRegistry;
 use App\Models\Detail;
@@ -56,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
             $registry->register(new CasualLeaveApplicationForm());
             $registry->register(new LeaveResumptionForm());
             $registry->register(new VehicleMaintenanceAllowanceForm());
+            $registry->register(new RenewalOfAppointmentForm());
             return $registry;
         });
     }

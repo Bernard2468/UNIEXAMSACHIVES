@@ -69,6 +69,9 @@ class FormSubmissionController extends Controller
             'nextOffice'           => $nextContext['office'],
             'leadershipCandidates' => $nextContext['leadership'],
             'allOffices'           => $nextContext['all_offices'],
+            // For POOL_CREATOR stages, the "creator" is the form's applicant.
+            // On the initial compose page that's always the current user.
+            'creatorRecipient'     => $nextStage && $nextStage->isCreatorPool() ? $user : null,
             'submission'           => null,
             'sectionData'          => $this->prefillRequisitioner($user, $stage),
             'savedSignature'       => $user->savedSignature,
@@ -159,6 +162,10 @@ class FormSubmissionController extends Controller
             'nextOffice'           => $nextContext['office'],
             'leadershipCandidates' => $nextContext['leadership'],
             'allOffices'           => $nextContext['all_offices'],
+            // POOL_CREATOR routes back to the original applicant (the form's creator).
+            'creatorRecipient'     => isset($nextStage) && $nextStage->isCreatorPool()
+                                        ? $submission->creator
+                                        : null,
             'vcOffice'             => $vcOffice,
             'canFill'              => $canFill,
             'canComment'           => app(\App\Policies\FormSubmissionPolicy::class)->comment($user, $submission),
@@ -477,6 +484,13 @@ class FormSubmissionController extends Controller
         }
 
         if (!$nextStage) {
+            return null;
+        }
+
+        // POOL_CREATOR auto-routes to the form's original applicant — no
+        // assignee_id is expected from the client. The workflow service
+        // resolves the user from submission->created_by.
+        if ($nextStage->isCreatorPool()) {
             return null;
         }
 

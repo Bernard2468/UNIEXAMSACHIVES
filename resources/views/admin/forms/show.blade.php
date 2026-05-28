@@ -209,7 +209,9 @@
                                             <div class="form-panel__head">
                                                 <div>
                                                     <h2 class="form-panel__title">Forward to {{ $nextStage->label ?? '—' }}<span class="form-panel__title-bar"></span></h2>
-                                                    @if($nextStage && $nextStage->isLeadershipOrOfficePool())
+                                                    @if($nextStage && $nextStage->isCreatorPool())
+                                                        <p class="form-panel__desc">This form returns to the applicant for their declaration. No need to pick anyone — it's routed automatically.</p>
+                                                    @elseif($nextStage && $nextStage->isLeadershipOrOfficePool())
                                                         <p class="form-panel__desc">Choose <strong>Dean</strong>, <strong>HOD</strong>, <strong>Director</strong>, or <strong>Office</strong> — then pick the specific person, or the office whose head will recommend.</p>
                                                     @elseif($nextStage && $nextStage->isLeadershipPool())
                                                         <p class="form-panel__desc">Choose whether this form is going to a <strong>Dean</strong>, <strong>HOD</strong> or <strong>Director</strong>, then pick the specific person from the list.</p>
@@ -219,7 +221,12 @@
                                                 </div>
                                             </div>
                                             <div class="form-panel__body">
-                                                @if($nextStage && $nextStage->isLeadershipOrOfficePool())
+                                                @if($nextStage && $nextStage->isCreatorPool())
+                                                    @include('admin.forms.partials.creator-recipient-notice', [
+                                                        'recipient' => $creatorRecipient ?? null,
+                                                        'nextStage' => $nextStage,
+                                                    ])
+                                                @elseif($nextStage && $nextStage->isLeadershipOrOfficePool())
                                                     @include('admin.forms.partials.recommender-picker', [
                                                         'leadershipCandidates' => $leadershipCandidates ?? [],
                                                         'allOffices'           => $allOffices ?? collect(),

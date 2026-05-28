@@ -229,20 +229,31 @@ class FormWorkflowService
                 return $this->completeSubmission($submission, $signer);
             }
 
-            $assignee = $this->resolveNextAssignee($nextStage, $nextAssigneeId, $leadershipCategory, $nextOfficeId);
-            if (!$assignee) {
-                if ($nextStage->isLeadershipPool()) {
-                    abort(422, "No matching leadership user is available for this form. Ask an administrator to tag the appropriate positions as HOD / Dean / Director.");
+            // Creator pool — form returns to the applicant for re-confirmation
+            // (e.g. the Renewal of Appointment form's declaration stage).
+            if ($nextStage->isCreatorPool()) {
+                $assignee = User::find($submission->created_by);
+                if (!$assignee) {
+                    abort(422, "The original applicant's account is no longer available to receive this form.");
                 }
-                if ($nextStage->isLeadershipOrOfficePool()) {
-                    abort(422, "No matching recipient is available. Pick a Dean / HOD / Director, or an office whose head is active.");
+            } else {
+                $assignee = $this->resolveNextAssignee($nextStage, $nextAssigneeId, $leadershipCategory, $nextOfficeId);
+                if (!$assignee) {
+                    if ($nextStage->isLeadershipPool()) {
+                        abort(422, "No matching leadership user is available for this form. Ask an administrator to tag the appropriate positions as HOD / Dean / Director.");
+                    }
+                    if ($nextStage->isLeadershipOrOfficePool()) {
+                        abort(422, "No matching recipient is available. Pick a Dean / HOD / Director, or an office whose head is active.");
+                    }
+                    abort(422, "No active member of the {$nextStage->label} office is available to receive this form. Ask your administrator to assign someone to that office.");
                 }
-                abort(422, "No active member of the {$nextStage->label} office is available to receive this form. Ask your administrator to assign someone to that office.");
             }
 
             // Resolve the office record this stage now lives under, if any.
             // For LEADERSHIP_OR_OFFICE with category=office we use the picked office.
             // For POOL_OFFICE we use the stage's hard-wired office slug.
+            // POOL_CREATOR stages never have an office (the form is held by the
+            // applicant personally).
             $office = null;
             if ($nextStage->isLeadershipOrOfficePool() && $leadershipCategory === 'office' && $nextOfficeId) {
                 $office = Office::find($nextOfficeId);
@@ -285,14 +296,21 @@ class FormWorkflowService
     {
         $this->assertEditableStage($submission, $submission->current_stage, $user);
 
-        if ($submission->current_stage === 'requisitioner') {
-            abort(422, 'The requisitioner stage cannot be rejected.');
+        // The applicant cannot reject their own stage — they should cancel
+        // or edit it instead. "First stage" varies per form (requisitioner /
+        // officer / applicant / applicant_details) so we resolve it
+        // dynamically from the definition.
+        $definition       = $this->resolveDefinition($submission);
+        $firstStageSlug   = $definition->firstStage()->slug;
+
+        if ($submission->current_stage === $firstStageSlug) {
+            abort(422, 'The applicant\'s own stage cannot be rejected.');
         }
 
-        return DB::transaction(function () use ($submission, $user, $reason) {
+        return DB::transaction(function () use ($submission, $user, $reason, $firstStageSlug) {
             $submission->status              = FormSubmission::STATUS_REJECTED;
             $submission->rejected_at         = now();
-            $submission->current_stage       = 'requisitioner';
+            $submission->current_stage       = $firstStageSlug;
             $submission->current_assignee_id = $submission->created_by;
             $submission->current_office_id   = null;
 
