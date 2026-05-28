@@ -175,9 +175,13 @@
 /* Search */
 .lead-picker__search { position: relative; padding: 12px 16px 4px; background: #fff; }
 .lead-picker__search svg { position: absolute; top: 50%; left: 28px; transform: translateY(-50%); color: #b0b5c0; pointer-events: none; }
-.lead-picker__search-input { width: 100%; padding: 10px 14px 10px 38px; background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 9px; font-size: 0.84rem; color: #111827; outline: none; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
-.lead-picker__search-input:focus { background: #fff; border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
-.lead-picker__search-input::placeholder { color: #b0b5c0; }
+/* Selector doubled (.lead-picker .lead-picker__search-input) to push specificity
+   to (0,2,0). shared-styles.blade.php declares `.form-shell input[type="text"]`
+   at (0,1,1) — without this bump, its `padding: 11px 14px` clobbers our
+   38px left-padding and the search icon overlaps the placeholder text. */
+.lead-picker .lead-picker__search-input { width: 100%; padding: 10px 14px 10px 38px; background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 9px; font-size: 0.84rem; color: #111827; outline: none; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
+.lead-picker .lead-picker__search-input:focus { background: #fff; border-color: #0c0c0c; box-shadow: 0 0 0 3px rgba(12,12,12,.06); }
+.lead-picker .lead-picker__search-input::placeholder { color: #b0b5c0; }
 
 /* Lists */
 .lead-picker__lists { padding: 8px; max-height: 360px; overflow-y: auto; background: #fff; }
@@ -220,7 +224,7 @@
     transform: translateY(-1px);
 }
 .is_dark .lead-picker__search { background: #111827; }
-.is_dark .lead-picker__search-input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
+.is_dark .lead-picker .lead-picker__search-input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
 .is_dark .lead-picker__lists { background: #111827; }
 .is_dark .lead-card:hover { background: #0f172a; }
 .is_dark .lead-card.is-selected { background: #0f172a; border-color: #f3f4f6; }
