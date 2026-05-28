@@ -49,6 +49,9 @@
     
     {{-- modern notifications --}}
     @include('components.modern-notifications')
+
+    {{-- Global flash → toast renderer (success/error/warning/info + validation errors) --}}
+    @include('components.flash-toast')
     
     {{-- confirmation modal --}}
     @include('components.confirmation-modal')

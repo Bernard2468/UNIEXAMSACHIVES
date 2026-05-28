@@ -27,10 +27,6 @@
                             </a>
                         </div>
 
-                        @if(session('success'))
-                            <div class="alert alert-success">{{ session('success') }}</div>
-                        @endif
-
                         <div class="gallery-grid">
                             @foreach($forms as $form)
                                 <a href="{{ route('admin.forms.compose', $form->slug()) }}" class="gallery-card">
