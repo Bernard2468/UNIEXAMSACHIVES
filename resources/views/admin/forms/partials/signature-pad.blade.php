@@ -159,13 +159,16 @@
 .sigtyped-card input { display: none; }
 .sigtyped-card__preview { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #111827; line-height: 1.15; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; min-height: 48px; min-width: 0; max-width: 100%; }
 
-/* Per-font overrides — the form-shell wildcard rule forces Outfit with
-   !important on every descendant, so each cursive face needs its own
-   !important to win the cascade and actually render differently. */
-.sigtyped-card__preview--caveat         { font-family: 'Caveat', cursive !important; font-weight: 700; }
-.sigtyped-card__preview--dancing-script { font-family: 'Dancing Script', cursive !important; font-weight: 600; }
-.sigtyped-card__preview--great-vibes    { font-family: 'Great Vibes', cursive !important; font-size: 1.7rem; }
-.sigtyped-card__preview--sacramento     { font-family: 'Sacramento', cursive !important; font-size: 1.55rem; }
+/* Per-font overrides. The selector is intentionally doubled
+   (`.sigtyped-card__preview.sigtyped-card__preview--xxx`) to push specificity
+   to (0,2,0). `shared-styles.blade.php` is included AFTER this partial and
+   carries `.form-shell * { font-family: 'Outfit' !important }` at (0,1,0) —
+   without the doubled class our rule ties on specificity and loses the
+   later-wins tiebreaker, so every card renders in Outfit. */
+.sigtyped-card__preview.sigtyped-card__preview--caveat         { font-family: 'Caveat', cursive !important; font-weight: 700; }
+.sigtyped-card__preview.sigtyped-card__preview--dancing-script { font-family: 'Dancing Script', cursive !important; font-weight: 600; }
+.sigtyped-card__preview.sigtyped-card__preview--great-vibes    { font-family: 'Great Vibes', cursive !important; font-size: 1.7rem; }
+.sigtyped-card__preview.sigtyped-card__preview--sacramento     { font-family: 'Sacramento', cursive !important; font-size: 1.55rem; }
 .sigtyped-card__meta { display: flex; align-items: center; justify-content: space-between; font-size: 0.7rem; color: #9ca3af; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
 .sigtyped-card__check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #e5e7eb; display: inline-flex; align-items: center; justify-content: center; color: transparent; transition: all .15s; }
 .sigtyped-card.is-selected .sigtyped-card__check { background: #0c0c0c; color: #fff; border-color: #0c0c0c; }
