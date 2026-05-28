@@ -1,26 +1,26 @@
 {{--
     Global toast system — server flash + programmatic API.
+    Premium glassmorphism design (Sonner / Linear / Vercel aesthetic).
 
-    ARCHITECTURE — bulletproof by design:
-      • The toast stack <div> is ALWAYS in the DOM (even with zero initial
-        toasts), so client-side JS can append at any time.
-      • Initial toasts (from session flash + $errors) are server-rendered
-        as static HTML, so they're visible even if JS is broken or blocked.
-      • Visibility is CSS-only (animation + animation-fill-mode: both).
-        If JS never runs the toast still ends up visible.
-      • Programmatic API: window.toast(type, message, opts?)
-        - Use from ANY JS code: AJAX callbacks, button handlers, push events.
-        - Dedupes within 3s so retries don't spam.
-        - Caps the visible stack at 5; oldest auto-dismiss when over.
-      • Bottom-right position (Slack / Linear / Vercel convention).
-      • Reduced-motion respected.
+    DESIGN NOTES
+      • No left-border accent stripe (user feedback). The type is signalled
+        by (a) the colored icon halo and (b) a thin gradient progress bar
+        across the bottom.
+      • CSS owns both visibility AND timing. The progress bar's animation
+        duration IS the toast lifespan; when it finishes (animationend), the
+        toast dismisses itself. Hover pauses the animation → pauses the timer
+        automatically. No CSS/JS desync possible.
+      • Dark slate background regardless of page theme — toasts read as a
+        distinct "system overlay" the way top SaaS apps do.
+      • All server-rendered AND JS-created toasts go through the same
+        setup() pipeline.
 
-    Public API:
+    Public API (unchanged):
       window.toast('success', 'Saved!')
       window.toast('error', 'Network failed', { duration: 10000 })
       window.toast({ type, message, title, duration })
       window.toast.dismissAll()
-      window.toast.test()    // shows one of each type — handy for QA
+      window.toast.test()
 --}}
 @php
     $initialToasts = [];
@@ -45,248 +45,366 @@
         'info'    => 'Info',
         default   => 'Notice',
     };
-    $iconFor = fn (string $t) => match($t) {
-        'success' => '✓',
-        'error'   => '!',
-        'warning' => '!',
-        'info'    => 'i',
-        default   => 'i',
-    };
 @endphp
 
 <style>
-    /* =================================================================
-       BOTTOM-RIGHT STACK — Slack / Linear / Vercel convention.
-       Stack is bottom-anchored; new toasts append to the bottom of the
-       flex column so the newest sits nearest the corner where the user's
-       eye lands. Older ones float up as the column grows.
-       ================================================================= */
+    /* ============================================================
+       STACK — bottom-right, newest near the corner
+       ============================================================ */
     .flash-toast-stack {
         position: fixed;
         bottom: 24px;
         right: 24px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        max-width: 400px;
+        gap: 12px;
+        max-width: 420px;
         width: max-content;
-        /* Max signed-32-bit int — guaranteed above the preloader (999999)
-           and any third-party overlay. */
         z-index: 2147483647;
         pointer-events: none;
     }
 
+    /* ============================================================
+       TOAST CARD — dark glassmorphism, no accent stripe
+       ============================================================ */
     .flash-toast {
+        --toast-lifespan: 5000ms;
+        --toast-accent: #6366f1;
+        --toast-accent-glow: rgba(99, 102, 241, 0.45);
+
         pointer-events: auto;
-        display: flex; align-items: flex-start; gap: 12px;
-        padding: 13px 16px; padding-right: 38px;
-        min-width: 280px;
-        max-width: 400px;
-        background: #ffffff;
-        border-radius: 12px;
-        border-left: 4px solid #2563eb;
-        box-shadow:
-            0 14px 36px rgba(15, 23, 42, 0.22),
-            0 4px 10px rgba(15, 23, 42, 0.10),
-            0 0 0 1px rgba(15, 23, 42, 0.04);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 13.5px; line-height: 1.45;
-        color: #1f2937;
         position: relative;
-        /* DEFAULT STATE IS VISIBLE. Animation uses `backwards` fill mode to
-           apply the from-state ONLY during the animation, then snap back to
-           the default (visible) state. If the animation NEVER runs for any
-           reason (CSS conflict, animation namespace collision, browser bug)
-           the toast still appears instantly. This is the safety property. */
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+        padding: 14px 40px 16px 16px;
+        min-width: 320px;
+        max-width: 420px;
+
+        color: #f1f5f9;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+        font-size: 13.5px; line-height: 1.45;
+        letter-spacing: -0.005em;
+
+        /* Layered dark glass + saturate boost so it stays vivid on any
+           page background. */
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(2, 6, 23, 0.97) 100%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        backdrop-filter: blur(24px) saturate(180%);
+
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        overflow: hidden;
+
+        box-shadow:
+            0 24px 60px rgba(0, 0, 0, 0.45),
+            0 8px 18px rgba(0, 0, 0, 0.25),
+            0 0 0 1px var(--toast-accent-glow),     /* type-tinted edge */
+            inset 0 1px 0 rgba(255, 255, 255, 0.06), /* top highlight */
+            inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+
         opacity: 1;
-        transform: translateY(0);
-        animation: flashToastIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        transform: translateY(0) scale(1);
+        animation: flashToastIn 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
         will-change: transform, opacity;
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    .flash-toast:hover {
+        transform: translateY(-2px) scale(1.005);
+        box-shadow:
+            0 28px 70px rgba(0, 0, 0, 0.5),
+            0 10px 22px rgba(0, 0, 0, 0.3),
+            0 0 0 1px var(--toast-accent-glow),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
     @keyframes flashToastIn {
-        from { opacity: 0; transform: translateY(20px) scale(0.96); }
-        to   { opacity: 1; transform: translateY(0)    scale(1);    }
+        from { opacity: 0; transform: translateY(28px) scale(0.92); filter: blur(6px); }
+        to   { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0);   }
     }
-    /* Leave: collapse the box so neighbours fall smoothly into the gap. */
+
+    /* Leave: collapse smoothly so the stack falls into place. */
     .flash-toast.flash-toast--leave {
-        animation: flashToastOut 0.28s cubic-bezier(0.4, 0, 1, 1) both;
-        overflow: hidden;
+        animation: flashToastOut 0.32s cubic-bezier(0.4, 0, 1, 1) both;
         pointer-events: none;
     }
     @keyframes flashToastOut {
-        0%   { opacity: 1; transform: translateY(0) scale(1);    max-height: 240px; margin-top: 0;    }
-        100% { opacity: 0; transform: translateY(8px) scale(0.97); max-height: 0;   margin-top: -10px; }
+        0%   { opacity: 1; transform: translateY(0)  scale(1);    max-height: 240px; margin-top: 0;    }
+        100% { opacity: 0; transform: translateY(10px) scale(0.96); max-height: 0;   margin-top: -12px; }
     }
 
+    /* ============================================================
+       ICON — circular halo with type color + soft outer glow
+       ============================================================ */
     .flash-toast__icon {
-        flex: 0 0 22px; width: 22px; height: 22px;
+        flex: 0 0 32px;
+        width: 32px; height: 32px;
+        border-radius: 50%;
         display: inline-flex; align-items: center; justify-content: center;
-        border-radius: 50%; color: #fff; font-weight: 700;
-        font-size: 13px;
+        color: #fff;
+        position: relative;
         margin-top: 1px;
+        box-shadow:
+            0 0 24px var(--toast-accent-glow),
+            0 2px 8px rgba(0, 0, 0, 0.25),
+            inset 0 1px 0 rgba(255, 255, 255, 0.25);
     }
+    .flash-toast__icon svg {
+        width: 16px; height: 16px;
+        display: block;
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+    }
+    /* Subtle pulse on the icon's outer ring while the toast is alive. */
+    .flash-toast__icon::after {
+        content: '';
+        position: absolute; inset: -2px;
+        border-radius: 50%;
+        border: 1px solid var(--toast-accent-glow);
+        opacity: 0.6;
+        animation: flashToastIconPulse 2.2s ease-out infinite;
+    }
+    @keyframes flashToastIconPulse {
+        0%   { transform: scale(1);    opacity: 0.6; }
+        70%  { transform: scale(1.45); opacity: 0;   }
+        100% { transform: scale(1.45); opacity: 0;   }
+    }
+
+    /* ============================================================
+       TEXT
+       ============================================================ */
     .flash-toast__body { flex: 1; min-width: 0; }
-    .flash-toast__title { font-weight: 600; margin: 0 0 2px; color: #0f172a; font-size: 13px; }
-    .flash-toast__msg { margin: 0; word-wrap: break-word; color: #374151; }
-    .flash-toast__close {
-        position: absolute; top: 8px; right: 10px;
-        background: transparent; border: 0; cursor: pointer;
-        color: #9ca3af; font-size: 20px; line-height: 1;
-        padding: 2px 4px;
-        border-radius: 4px;
-        transition: color .15s, background .15s;
+    .flash-toast__title {
+        font-weight: 600;
+        font-size: 13px;
+        color: #f8fafc;
+        margin: 0 0 3px;
+        letter-spacing: -0.01em;
     }
-    .flash-toast__close:hover { color: #1f2937; background: rgba(15, 23, 42, 0.05); }
+    .flash-toast__msg {
+        margin: 0;
+        color: #cbd5e1;
+        font-size: 12.5px;
+        word-wrap: break-word;
+        line-height: 1.5;
+    }
 
-    .flash-toast--success { border-left-color: #16a34a; }
-    .flash-toast--success .flash-toast__icon { background: #16a34a; }
-    .flash-toast--error   { border-left-color: #dc2626; }
-    .flash-toast--error   .flash-toast__icon { background: #dc2626; }
-    .flash-toast--warning { border-left-color: #d97706; }
-    .flash-toast--warning .flash-toast__icon { background: #d97706; }
-    .flash-toast--info    { border-left-color: #2563eb; }
-    .flash-toast--info    .flash-toast__icon { background: #2563eb; }
+    /* ============================================================
+       CLOSE BUTTON
+       ============================================================ */
+    .flash-toast__close {
+        position: absolute; top: 10px; right: 11px;
+        width: 22px; height: 22px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        cursor: pointer;
+        color: #94a3b8;
+        font-size: 16px; line-height: 1;
+        padding: 0;
+        border-radius: 6px;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .flash-toast__close:hover {
+        color: #f1f5f9;
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.14);
+    }
 
-    /* Mobile — stretch close to the edges with safe-area insets. */
+    /* ============================================================
+       PROGRESS BAR — CSS-driven, IS the auto-dismiss timer
+       ============================================================ */
+    .flash-toast__progress {
+        position: absolute;
+        bottom: 0; left: 0;
+        height: 2px;
+        width: 100%;
+        background: linear-gradient(90deg,
+            transparent 0%,
+            var(--toast-accent) 30%,
+            var(--toast-accent) 70%,
+            transparent 100%);
+        opacity: 0.85;
+        transform-origin: left center;
+        animation: flashToastProgress var(--toast-lifespan) linear forwards;
+        box-shadow: 0 0 8px var(--toast-accent-glow);
+    }
+    @keyframes flashToastProgress {
+        from { transform: scaleX(1); }
+        to   { transform: scaleX(0); }
+    }
+    .flash-toast:hover .flash-toast__progress { animation-play-state: paused; }
+    .flash-toast--persist .flash-toast__progress { display: none; }
+
+    /* ============================================================
+       TYPE COLOR PALETTES (only the icon halo + progress bar)
+       ============================================================ */
+    .flash-toast--success {
+        --toast-accent: #10b981;
+        --toast-accent-glow: rgba(16, 185, 129, 0.42);
+    }
+    .flash-toast--success .flash-toast__icon { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+
+    .flash-toast--error {
+        --toast-accent: #ef4444;
+        --toast-accent-glow: rgba(239, 68, 68, 0.45);
+    }
+    .flash-toast--error .flash-toast__icon { background: linear-gradient(135deg, #f87171 0%, #dc2626 100%); }
+
+    .flash-toast--warning {
+        --toast-accent: #f59e0b;
+        --toast-accent-glow: rgba(245, 158, 11, 0.45);
+    }
+    .flash-toast--warning .flash-toast__icon { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
+
+    .flash-toast--info {
+        --toast-accent: #6366f1;
+        --toast-accent-glow: rgba(99, 102, 241, 0.45);
+    }
+    .flash-toast--info .flash-toast__icon { background: linear-gradient(135deg, #818cf8 0%, #4f46e5 100%); }
+
+    /* ============================================================
+       MOBILE — stretch to edges, respect safe-area
+       ============================================================ */
     @media (max-width: 540px) {
         .flash-toast-stack {
-            left: 12px; right: 12px; bottom: 12px;
+            left: 12px; right: 12px;
             bottom: calc(12px + env(safe-area-inset-bottom));
             max-width: none; width: auto;
         }
         .flash-toast { min-width: 0; max-width: none; }
     }
     @media (prefers-reduced-motion: reduce) {
-        .flash-toast { animation: none; opacity: 1; transform: none; }
-        .flash-toast.flash-toast--leave { animation: none; opacity: 0; }
+        .flash-toast { animation: none; opacity: 1; transform: none; filter: none; }
+        .flash-toast:hover { transform: none; }
+        .flash-toast__icon::after { animation: none; }
+        .flash-toast__progress { animation: none; transform: scaleX(0); }
     }
 </style>
 
-{{-- ALWAYS-PRESENT STACK. Even when there are no initial toasts, the empty
-     stack must exist so window.toast() can append into it later. --}}
+{{-- ALWAYS-PRESENT STACK so window.toast() can append at any time. --}}
 <div class="flash-toast-stack" id="flashToastStack" aria-live="polite" aria-atomic="false">
     @foreach($initialToasts as $i => $t)
-        <div class="flash-toast flash-toast--{{ $t['type'] }}" role="status" data-toast-source="server">
-            <span class="flash-toast__icon" aria-hidden="true">{{ $iconFor($t['type']) }}</span>
+        <div class="flash-toast flash-toast--{{ $t['type'] }}" role="{{ in_array($t['type'], ['error','warning'], true) ? 'alert' : 'status' }}" data-toast-source="server">
+            <span class="flash-toast__icon" aria-hidden="true">
+                @switch($t['type'])
+                    @case('success')
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        @break
+                    @case('error')
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        @break
+                    @case('warning')
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        @break
+                    @default
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                @endswitch
+            </span>
             <div class="flash-toast__body">
                 <p class="flash-toast__title">{{ $titleFor($t['type']) }}</p>
                 <p class="flash-toast__msg">{{ $t['message'] }}</p>
             </div>
             <button type="button" class="flash-toast__close" aria-label="Dismiss">&times;</button>
+            <span class="flash-toast__progress" aria-hidden="true"></span>
         </div>
     @endforeach
 </div>
 
 <script>
 (function () {
-    /* =================================================================
-       Toast engine. Designed so:
-         1. Server-rendered toasts work even if THIS script never runs
-            (CSS animation + animation-fill-mode handle visibility).
-         2. JS-created toasts (via window.toast(...)) go through the
-            SAME setup() pipeline as server-rendered ones — single code path.
-         3. Dedup window prevents spam from rapid identical calls.
-         4. Stack limit auto-dismisses oldest when over 5 visible.
-       ================================================================= */
     var STACK_ID    = 'flashToastStack';
     var STACK_LIMIT = 5;
     var DEDUP_MS    = 3000;
+    var DEFAULT_DURATION  = 5000;
+    var LONG_DURATION     = 6500;
     var TITLES = {
-        success: 'Success',
-        error:   'Something went wrong',
-        warning: 'Heads up',
-        info:    'Info'
+        success: 'Success', error: 'Something went wrong',
+        warning: 'Heads up', info: 'Info',
     };
-    var ICONS = { success: '✓', error: '!', warning: '!', info: 'i' };
+    var ICONS_SVG = {
+        success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+        error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+        warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    };
     var VALID_TYPES = ['success', 'error', 'warning', 'info'];
+    var recent = new Map();
 
-    var recent = new Map();   // dedup tracker (type+message → timestamp)
-
-    function getStack() {
-        return document.getElementById(STACK_ID);
-    }
-
+    function getStack() { return document.getElementById(STACK_ID); }
     function escapeHtml(s) {
         return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
             return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
         });
     }
-
     function shouldShow(type, message) {
-        var key = type + '' + message;
+        var key = type + '' + message;
         var now = Date.now();
         var last = recent.get(key);
         if (last && (now - last) < DEDUP_MS) return false;
         recent.set(key, now);
-        // Trim old entries so the map doesn't grow unbounded.
-        if (recent.size > 64) {
-            recent.forEach(function (t, k) {
-                if (now - t > 30000) recent.delete(k);
-            });
-        }
+        if (recent.size > 64) recent.forEach(function (t, k) { if (now - t > 30000) recent.delete(k); });
         return true;
     }
-
     function enforceLimit(stack) {
         var visible = stack.querySelectorAll('.flash-toast:not(.flash-toast--leave)');
         var over = visible.length - STACK_LIMIT;
-        for (var i = 0; i < over; i++) {
-            // Drop oldest (first child of the flex column).
-            dismiss(visible[i]);
-        }
+        for (var i = 0; i < over; i++) dismiss(visible[i]);
     }
-
     function dismiss(toast) {
         if (!toast || toast.classList.contains('flash-toast--leave')) return;
         toast.classList.add('flash-toast--leave');
-        // Fallback removal if 'animationend' never fires (e.g. reduced motion).
         var removeT = setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 600);
-        toast.addEventListener('animationend', function onEnd() {
+        toast.addEventListener('animationend', function () {
             clearTimeout(removeT);
             if (toast.parentNode) toast.parentNode.removeChild(toast);
         }, { once: true });
     }
-
+    /* CSS-driven timing. The progress bar's animationend IS the auto-dismiss.
+       Hover pauses the CSS animation, which automatically pauses the timer.
+       Zero possibility of CSS/JS desync. */
     function setup(toast, opts) {
         opts = opts || {};
-        var isLongLived = toast.classList.contains('flash-toast--error') || toast.classList.contains('flash-toast--warning');
-        var duration = typeof opts.duration === 'number' ? opts.duration : (isLongLived ? 6500 : 5000);
-        var timer = duration > 0 ? setTimeout(function () { dismiss(toast); }, duration) : null;
+        var isLong = toast.classList.contains('flash-toast--error') || toast.classList.contains('flash-toast--warning');
+        var duration = typeof opts.duration === 'number' ? opts.duration : (isLong ? LONG_DURATION : DEFAULT_DURATION);
+
+        if (duration > 0) {
+            toast.style.setProperty('--toast-lifespan', duration + 'ms');
+            var progress = toast.querySelector('.flash-toast__progress');
+            if (progress) {
+                // animationend on the progress bar IS the dismiss signal.
+                progress.addEventListener('animationend', function () { dismiss(toast); }, { once: true });
+            }
+        } else {
+            toast.classList.add('flash-toast--persist');
+        }
 
         var closeBtn = toast.querySelector('.flash-toast__close');
         if (closeBtn) {
             closeBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                if (timer) clearTimeout(timer);
                 dismiss(toast);
             });
         }
-        toast.addEventListener('mouseenter', function () { if (timer) clearTimeout(timer); });
-        toast.addEventListener('mouseleave', function () {
-            if (duration > 0) timer = setTimeout(function () { dismiss(toast); }, 2500);
-        });
     }
-
     function create(type, message, opts) {
         opts = opts || {};
         var stack = getStack();
         if (!stack) return null;
-
         if (VALID_TYPES.indexOf(type) === -1) type = 'info';
         if (!shouldShow(type, message)) return null;
 
         var title = opts.title || TITLES[type] || 'Notice';
         var html =
-            '<span class="flash-toast__icon" aria-hidden="true">' + escapeHtml(ICONS[type] || 'i') + '</span>' +
+            '<span class="flash-toast__icon" aria-hidden="true">' + (ICONS_SVG[type] || ICONS_SVG.info) + '</span>' +
             '<div class="flash-toast__body">' +
                 '<p class="flash-toast__title">' + escapeHtml(title) + '</p>' +
                 '<p class="flash-toast__msg">' + escapeHtml(message) + '</p>' +
             '</div>' +
-            '<button type="button" class="flash-toast__close" aria-label="Dismiss">&times;</button>';
+            '<button type="button" class="flash-toast__close" aria-label="Dismiss">&times;</button>' +
+            '<span class="flash-toast__progress" aria-hidden="true"></span>';
 
         var toast = document.createElement('div');
         toast.className = 'flash-toast flash-toast--' + type;
-        toast.setAttribute('role', type === 'error' || type === 'warning' ? 'alert' : 'status');
+        toast.setAttribute('role', (type === 'error' || type === 'warning') ? 'alert' : 'status');
         toast.setAttribute('data-toast-source', 'js');
         toast.innerHTML = html;
 
@@ -296,62 +414,37 @@
         return toast;
     }
 
-    // -------- PUBLIC API ----------------------------------------------
     function api(typeOrOpts, message, opts) {
         if (typeOrOpts && typeof typeOrOpts === 'object' && typeOrOpts.message) {
             return create(typeOrOpts.type || 'info', String(typeOrOpts.message), typeOrOpts);
         }
-        // toast('Just a message') → assume success
         if (typeof typeOrOpts === 'string' && message === undefined) {
             return create('success', typeOrOpts, opts);
         }
         return create(String(typeOrOpts || 'info'), String(message || ''), opts);
     }
-    api.dismissAll = function () {
-        var stack = getStack(); if (!stack) return;
-        stack.querySelectorAll('.flash-toast').forEach(dismiss);
-    };
+    api.dismissAll = function () { var s = getStack(); if (s) s.querySelectorAll('.flash-toast').forEach(dismiss); };
     api.test = function () {
         ['success', 'info', 'warning', 'error'].forEach(function (t, i) {
-            setTimeout(function () { api(t, t.charAt(0).toUpperCase() + t.slice(1) + ' — toast working ✓'); }, i * 350);
+            setTimeout(function () { api(t, t.charAt(0).toUpperCase() + t.slice(1) + ' — toast working ✓'); }, i * 380);
         });
     };
-    // Short aliases used by some teams' conventions — both call through.
     api.success = function (m, o) { return api('success', m, o); };
     api.error   = function (m, o) { return api('error',   m, o); };
     api.warning = function (m, o) { return api('warning', m, o); };
     api.info    = function (m, o) { return api('info',    m, o); };
-
     window.toast = api;
 
-    // ----- Diagnostic log -----------------------------------------------
-    // Always logs to console so you can verify the server-side flash pipeline
-    // end-to-end. After a form action, open DevTools and look for "[Toast]".
-    //   "0 server-rendered toast(s)" + you expected one  → server didn't set
-    //       the flash (or a middleware ate it). Server-side problem.
-    //   "1 server-rendered toast(s)" + you can't see it → CSS/visibility
-    //       problem. Re-check this file or look for overriding rules.
+    // Diagnostic log — kept for future "toast not showing" issues.
     var initialCount = @json(count($initialToasts));
     var initialPayload = @json($initialToasts);
     console.log('[Toast]', initialCount, 'server-rendered toast(s) on this page', initialPayload);
-    if (initialCount > 0) {
-        var verify = document.querySelectorAll('#' + STACK_ID + ' .flash-toast').length;
-        console.log('[Toast]', verify, 'toast element(s) in DOM after render');
-        if (verify !== initialCount) {
-            console.warn('[Toast] Mismatch — server said', initialCount, 'but DOM has', verify, '. Check Blade rendering.');
-        }
-    }
 
-    // Attach behaviour to server-rendered toasts (they're already visible).
     function attachInitial() {
-        var stack = getStack();
-        if (!stack) return;
+        var stack = getStack(); if (!stack) return;
         stack.querySelectorAll('.flash-toast').forEach(function (t) { setup(t, {}); });
     }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', attachInitial);
-    } else {
-        attachInitial();
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attachInitial);
+    else attachInitial();
 })();
 </script>
