@@ -39,7 +39,7 @@ class OfficeController extends Controller
                         ->orWhere('slug', 'like', $like)
                         ->orWhere('description', 'like', $like)
                         ->orWhereHas('users', function ($uq) use ($like) {
-                            $uq->wherePivot('is_active', true)
+                            $uq->where('office_user.is_active', true)
                                 ->where(function ($n) use ($like) {
                                     $n->where('first_name', 'like', $like)
                                         ->orWhere('last_name', 'like', $like)
