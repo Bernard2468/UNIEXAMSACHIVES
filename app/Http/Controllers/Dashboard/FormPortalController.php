@@ -63,7 +63,29 @@ class FormPortalController extends Controller
                 break;
         }
 
-        $submissions = $base->latest('updated_at')->paginate(15)->appends($request->only('tab'));
+        $search = trim((string) $request->input('q', ''));
+        if ($search !== '') {
+            $like = '%' . addcslashes($search, '%_\\') . '%';
+            $base->where(function ($q) use ($like) {
+                $q->where('reference', 'like', $like)
+                    ->orWhere('title', 'like', $like)
+                    ->orWhere('form_code', 'like', $like)
+                    ->orWhere('status', 'like', $like)
+                    ->orWhereHas('creator', function ($c) use ($like) {
+                        $c->where('first_name', 'like', $like)
+                            ->orWhere('last_name', 'like', $like)
+                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$like]);
+                    })
+                    ->orWhereHas('currentAssignee', function ($a) use ($like) {
+                        $a->where('first_name', 'like', $like)
+                            ->orWhere('last_name', 'like', $like)
+                            ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$like]);
+                    })
+                    ->orWhereHas('currentOffice', fn ($o) => $o->where('name', 'like', $like));
+            });
+        }
+
+        $submissions = $base->latest('updated_at')->paginate(15)->appends($request->only(['tab', 'q']));
 
         $counts = $this->tabCounts($userId, $officeIds);
 
@@ -71,6 +93,7 @@ class FormPortalController extends Controller
             'submissions' => $submissions,
             'tab'         => $tab,
             'counts'      => $counts,
+            'search'      => $search,
         ]);
     }
 

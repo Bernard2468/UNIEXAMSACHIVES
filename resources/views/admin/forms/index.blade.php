@@ -27,9 +27,19 @@
                             </a>
                         </div>
 
-                        <div class="gallery-grid">
+                        @include('components.premium-search-bar', [
+                            'placeholder'      => 'Search forms by name, code, or description…',
+                            'target'           => '.gallery-card[data-search]',
+                            'countLabel'       => 'forms',
+                            'id'               => 'forms-gallery-search',
+                            'hideWhenFilter'   => '.gallery-card--placeholder',
+                        ])
+
+                        <div class="gallery-grid" data-gallery-grid>
                             @foreach($forms as $form)
-                                <a href="{{ route('admin.forms.compose', $form->slug()) }}" class="gallery-card">
+                                <a href="{{ route('admin.forms.compose', $form->slug()) }}"
+                                   class="gallery-card"
+                                   data-search="{{ strtolower($form->code() . ' ' . $form->title() . ' ' . $form->description()) }}">
                                     <div class="gallery-card__top">
                                         <div class="gallery-card__code">{{ $form->code() }}</div>
                                         <div class="gallery-card__steps">{{ count($form->stages()) }} stages</div>

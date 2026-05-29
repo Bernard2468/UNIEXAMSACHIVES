@@ -27,13 +27,32 @@ use Illuminate\Support\Str;
  */
 class OfficeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $offices = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
-            ->orderBy('name')
-            ->paginate(15);
+        $search = trim((string) $request->input('q', ''));
 
-        return view('admin.offices.index', compact('offices'));
+        $offices = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%' . addcslashes($search, '%_\\') . '%';
+                $query->where(function ($q) use ($like) {
+                    $q->where('name', 'like', $like)
+                        ->orWhere('slug', 'like', $like)
+                        ->orWhere('description', 'like', $like)
+                        ->orWhereHas('users', function ($uq) use ($like) {
+                            $uq->wherePivot('is_active', true)
+                                ->where(function ($n) use ($like) {
+                                    $n->where('first_name', 'like', $like)
+                                        ->orWhere('last_name', 'like', $like)
+                                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", [$like]);
+                                });
+                        });
+                });
+            })
+            ->orderBy('name')
+            ->paginate(15)
+            ->appends($request->only('q'));
+
+        return view('admin.offices.index', compact('offices', 'search'));
     }
 
     public function show(Office $office)

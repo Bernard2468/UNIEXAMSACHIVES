@@ -53,9 +53,27 @@
                             <div class="ps-card__hd">
                                 <div>
                                     <h2 class="ps-card__title">All offices<span class="ps-card__bar"></span></h2>
-                                    <p class="ps-card__count">{{ $offices->total() }} {{ $offices->total() === 1 ? 'office' : 'offices' }} total</p>
+                                    <p class="ps-card__count">
+                                        @if(!empty($search))
+                                            {{ $offices->total() }} {{ $offices->total() === 1 ? 'match' : 'matches' }} for “{{ $search }}”
+                                        @else
+                                            {{ $offices->total() }} {{ $offices->total() === 1 ? 'office' : 'offices' }} total
+                                        @endif
+                                    </p>
                                 </div>
                             </div>
+
+                            @if($offices->isNotEmpty())
+                                <div class="ps-card__search-wrap">
+                                    @include('components.premium-search-bar', [
+                                        'placeholder' => 'Search offices by name, slug, or head…',
+                                        'target'      => '.off-card[data-search]',
+                                        'countLabel'  => 'offices',
+                                        'id'          => 'offices-index-search',
+                                        'server'      => true,
+                                    ])
+                                </div>
+                            @endif
 
                             @if($offices->isEmpty())
                                 <div class="ps-empty">
@@ -76,7 +94,15 @@
                                             $activeCount = $office->users->where('pivot.is_active', true)->count();
                                             $headName = $head ? trim(($head->first_name ?? '') . ' ' . ($head->last_name ?? '')) : null;
                                         @endphp
-                                        <a href="{{ route('offices.show', $office->id) }}" class="off-card">
+                                        <a href="{{ route('offices.show', $office->id) }}"
+                                           class="off-card"
+                                           data-search="{{ strtolower(implode(' ', array_filter([
+                                               $office->name,
+                                               $office->slug,
+                                               $office->description,
+                                               $headName,
+                                               $office->is_active ? 'active' : 'inactive',
+                                           ]))) }}">
                                             <div class="off-card__top">
                                                 <div class="off-card__icon">
                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"/></svg>
@@ -116,19 +142,19 @@
                                                 @if($offices->onFirstPage())
                                                     <li class="pagination-item"><span class="pagination-link icon disabled"><i class="icofont-arrow-left"></i></span></li>
                                                 @else
-                                                    <li class="pagination-item"><a href="{{ $offices->previousPageUrl() }}" class="pagination-link icon"><i class="icofont-arrow-left"></i></a></li>
+                                                    <li class="pagination-item"><a href="{{ $offices->appends(request()->only('q'))->previousPageUrl() }}" class="pagination-link icon"><i class="icofont-arrow-left"></i></a></li>
                                                 @endif
                                                 @for ($i = max(1, $offices->currentPage()-2); $i <= min($offices->lastPage(), $offices->currentPage()+2); $i++)
                                                     <li class="pagination-item">
                                                         @if ($i == $offices->currentPage())
                                                             <span class="pagination-link active">{{ $i }}</span>
                                                         @else
-                                                            <a href="{{ $offices->url($i) }}" class="pagination-link">{{ $i }}</a>
+                                                            <a href="{{ $offices->appends(request()->only('q'))->url($i) }}" class="pagination-link">{{ $i }}</a>
                                                         @endif
                                                     </li>
                                                 @endfor
                                                 @if ($offices->hasMorePages())
-                                                    <li class="pagination-item"><a href="{{ $offices->nextPageUrl() }}" class="pagination-link icon"><i class="icofont-arrow-right"></i></a></li>
+                                                    <li class="pagination-item"><a href="{{ $offices->appends(request()->only('q'))->nextPageUrl() }}" class="pagination-link icon"><i class="icofont-arrow-right"></i></a></li>
                                                 @else
                                                     <li class="pagination-item"><span class="pagination-link icon disabled"><i class="icofont-arrow-right"></i></span></li>
                                                 @endif
@@ -225,6 +251,8 @@
 .ps-card__title { font-size: 0.95rem; font-weight: 700; color: #0c0c0c; letter-spacing: -0.02em; margin: 0; display: inline-flex; flex-direction: column; }
 .ps-card__bar { display: block; width: 1.7rem; height: 2.5px; background: #0c0c0c; border-radius: 2px; margin-top: 6px; }
 .ps-card__count { margin: 8px 0 0; font-size: 0.78rem; color: #b0b5c0; }
+.ps-card__search-wrap { padding: 0 18px 6px; border-bottom: 1.5px solid #f5f5f5; margin-bottom: 4px; }
+.is_dark .ps-card__search-wrap { border-color: #1e2330; }
 
 /* Office cards grid */
 .off-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; padding: 18px 18px 20px; }

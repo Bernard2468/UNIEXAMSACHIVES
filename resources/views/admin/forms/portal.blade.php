@@ -50,6 +50,15 @@
                             @endforeach
                         </div>
 
+                        @include('components.premium-search-bar', [
+                            'placeholder' => 'Search by reference, form, title, person, or status…',
+                            'target'      => '.form-list__table tbody tr[data-search]',
+                            'countLabel'  => 'submissions',
+                            'id'          => 'forms-portal-search',
+                            'server'      => true,
+                            'preserve'    => ['tab' => $tab],
+                        ])
+
                         @if($submissions->isEmpty())
                             <div class="empty-state">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -57,7 +66,15 @@
                                     <path d="M9 9h6M9 13h6M9 17h4"></path>
                                 </svg>
                                 <h5>Nothing here yet</h5>
-                                <p>{{ $tab === 'awaiting' ? 'No forms are currently waiting on your action.' : 'No forms match this view.' }}</p>
+                                <p>
+                                    @if(!empty($search))
+                                        No submissions match “{{ $search }}” in this tab.
+                                    @elseif($tab === 'awaiting')
+                                        No forms are currently waiting on your action.
+                                    @else
+                                        No forms match this view.
+                                    @endif
+                                </p>
                                 @if($tab === 'awaiting')
                                     <a href="{{ route('admin.forms.gallery') }}" class="btn-action btn-action--primary">Start a new form</a>
                                 @endif
@@ -79,16 +96,31 @@
                                     </thead>
                                     <tbody>
                                         @foreach($submissions as $s)
-                                            <tr>
+                                            @php
+                                                $creatorName = trim((optional($s->creator)->first_name ?? '') . ' ' . (optional($s->creator)->last_name ?? ''));
+                                                $awaitingName = $s->currentAssignee
+                                                    ? trim(($s->currentAssignee->first_name ?? '') . ' ' . ($s->currentAssignee->last_name ?? ''))
+                                                    : '';
+                                                $officeName = $s->currentOffice?->name ?? '';
+                                            @endphp
+                                            <tr data-search="{{ strtolower(implode(' ', array_filter([
+                                                $s->reference,
+                                                $s->form_code,
+                                                $s->title,
+                                                $creatorName,
+                                                $s->status,
+                                                $awaitingName,
+                                                $officeName,
+                                            ]))) }}">
                                                 <td><code>{{ $s->reference }}</code></td>
                                                 <td><span class="form-list__code">{{ $s->form_code }}</span></td>
                                                 <td>{{ $s->title ?? '—' }}</td>
-                                                <td>{{ trim((optional($s->creator)->first_name ?? '') . ' ' . (optional($s->creator)->last_name ?? '')) }}</td>
+                                                <td>{{ $creatorName ?: '—' }}</td>
                                                 <td><span class="status-pill status-pill--{{ $s->status }}">{{ str_replace('_', ' ', $s->status) }}</span></td>
                                                 <td>
                                                     @if($s->currentAssignee)
-                                                        {{ trim(($s->currentAssignee->first_name ?? '') . ' ' . ($s->currentAssignee->last_name ?? '')) }}
-                                                        @if($s->currentOffice)<small style="color:#9ca3af;">— {{ $s->currentOffice->name }}</small>@endif
+                                                        {{ $awaitingName }}
+                                                        @if($officeName)<small style="color:#9ca3af;">— {{ $officeName }}</small>@endif
                                                     @else
                                                         —
                                                     @endif
