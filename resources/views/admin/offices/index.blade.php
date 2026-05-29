@@ -53,39 +53,43 @@
                             <div class="ps-card__hd">
                                 <div>
                                     <h2 class="ps-card__title">All offices<span class="ps-card__bar"></span></h2>
-                                    <p class="ps-card__count">
-                                        @if(!empty($search))
-                                            {{ $offices->total() }} {{ $offices->total() === 1 ? 'match' : 'matches' }} for “{{ $search }}”
-                                        @else
-                                            {{ $offices->total() }} {{ $offices->total() === 1 ? 'office' : 'offices' }} total
-                                        @endif
-                                    </p>
                                 </div>
                             </div>
 
-                            @if($offices->isNotEmpty())
+                            @if($offices->isNotEmpty() || $search !== '')
                                 <div class="ps-card__search-wrap">
                                     @include('components.premium-search-bar', [
-                                        'placeholder' => 'Search offices by name, slug, or head…',
-                                        'target'      => '.off-card[data-search]',
-                                        'countLabel'  => 'offices',
-                                        'id'          => 'offices-index-search',
-                                        'server'      => true,
+                                        'placeholder'      => 'Search offices by name, slug, or head…',
+                                        'countLabel'       => 'offices',
+                                        'id'               => 'offices-index-search',
+                                        'ajax'             => true,
+                                        'resultsContainer' => '#offices-results',
                                     ])
                                 </div>
                             @endif
 
+                            <div id="offices-results" data-search-results>
+                                <span data-psb-meta data-total="{{ $offices->total() }}" hidden></span>
                             @if($offices->isEmpty())
-                                <div class="ps-empty">
-                                    <div class="ps-empty__icon">
-                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"/></svg>
+                                @if($search !== '')
+                                    <div class="ps-empty">
+                                        <div class="ps-empty__icon">
+                                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                                        </div>
+                                        <p class="ps-empty__text">No offices match “{{ $search }}”. Try a different keyword.</p>
                                     </div>
-                                    <p class="ps-empty__text">No offices yet. Create one to start routing forms.</p>
-                                    <button type="button" class="ps-btn-primary" id="triggerOfficeModalEmpty">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        Create first office
-                                    </button>
-                                </div>
+                                @else
+                                    <div class="ps-empty">
+                                        <div class="ps-empty__icon">
+                                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M9 9v.01M9 12v.01M9 15v.01M9 18v.01M13 9v.01M13 12v.01M13 15v.01M13 18v.01"/></svg>
+                                        </div>
+                                        <p class="ps-empty__text">No offices yet. Create one to start routing forms.</p>
+                                        <button type="button" class="ps-btn-primary" id="triggerOfficeModalEmpty">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            Create first office
+                                        </button>
+                                    </div>
+                                @endif
                             @else
                                 <div class="off-grid">
                                     @foreach($offices as $office)
@@ -163,6 +167,7 @@
                                     </div>
                                 @endif
                             @endif
+                            </div>{{-- /#offices-results --}}
                         </div>
                     </div>
                 </div>
@@ -381,10 +386,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    var open = document.getElementById('triggerOfficeModal');
-    var openEmpty = document.getElementById('triggerOfficeModalEmpty');
-    if (open) open.addEventListener('click', show);
-    if (openEmpty) openEmpty.addEventListener('click', show);
+    // Delegated so the trigger keeps working after AJAX search swaps the
+    // results region (which may re-render the empty-state "Create" button).
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('#triggerOfficeModal, #triggerOfficeModalEmpty')) {
+            show(e);
+        }
+    });
 });
 </script>
 @endsection

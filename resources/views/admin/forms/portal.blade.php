@@ -51,14 +51,15 @@
                         </div>
 
                         @include('components.premium-search-bar', [
-                            'placeholder' => 'Search by reference, form, title, person, or status…',
-                            'target'      => '.form-list__table tbody tr[data-search]',
-                            'countLabel'  => 'submissions',
-                            'id'          => 'forms-portal-search',
-                            'server'      => true,
-                            'preserve'    => ['tab' => $tab],
+                            'placeholder'      => 'Search by reference, form, title, person, or status…',
+                            'countLabel'       => 'submissions',
+                            'id'               => 'forms-portal-search',
+                            'ajax'             => true,
+                            'resultsContainer' => '#forms-portal-results',
                         ])
 
+                        <div id="forms-portal-results" data-search-results>
+                            <span data-psb-meta data-total="{{ $submissions->total() }}" hidden></span>
                         @if($submissions->isEmpty())
                             <div class="empty-state">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -146,6 +147,7 @@
                                 {{ $submissions->links() }}
                             </div>
                         @endif
+                        </div>{{-- /#forms-portal-results --}}
                     </div>
                 </div>
             </div>

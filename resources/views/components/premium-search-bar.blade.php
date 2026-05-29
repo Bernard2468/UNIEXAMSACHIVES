@@ -1,44 +1,41 @@
 {{--
-    Premium live-search bar.
+    Premium search bar — two modes.
 
-    Client mode: instant filter on elements matching `target` with [data-search].
-    Server mode: GET form with ?q= — searches full paginated datasets (set server => true).
+    CLIENT mode (default): instant in-DOM filter of elements matching `target`
+    (each must carry a lowercase [data-search] string). Best for small, fully
+    rendered lists (e.g. the forms gallery).
+
+    AJAX mode (`ajax => true`): debounced, no-reload live search against the
+    server. It fetches the current URL with ?q=… , swaps the inner HTML of
+    `resultsContainer`, updates the address bar, and hijacks pagination links
+    inside that container so they load via AJAX too. Focus never leaves the box.
 
     @param string $placeholder
-    @param string $target
     @param string $countLabel
     @param string $id
-    @param string $hideWhenFilter
-    @param bool   $server
-    @param array  $preserve  Query keys to keep on submit (e.g. ['tab' => $tab])
+    @param string $target            (client mode) selector of filterable items
+    @param string $hideWhenFilter     (client mode) selector to hide while typing
+    @param bool   $ajax
+    @param string $resultsContainer   (ajax mode) selector of the swappable region
 --}}
 @php
-    $placeholder    = $placeholder ?? 'Search…';
-    $target         = $target ?? '[data-search]';
-    $countLabel     = $countLabel ?? 'results';
-    $uid            = $id ?? 'psb-' . substr(md5($target . $placeholder), 0, 8);
-    $hideWhenFilter = $hideWhenFilter ?? '';
-    $server         = !empty($server);
-    $preserve       = $preserve ?? [];
-    $queryValue     = request('q', '');
+    $placeholder       = $placeholder ?? 'Search…';
+    $countLabel        = $countLabel ?? 'results';
+    $uid               = $id ?? 'psb-' . substr(md5($placeholder . $countLabel), 0, 8);
+    $target            = $target ?? '[data-search]';
+    $hideWhenFilter    = $hideWhenFilter ?? '';
+    $ajax              = !empty($ajax);
+    $resultsContainer  = $resultsContainer ?? '';
+    $queryValue        = request('q', '');
 @endphp
 
-<div class="premium-search {{ $server ? 'premium-search--server' : '' }}"
+<div class="premium-search {{ $ajax ? 'premium-search--ajax' : '' }}"
      data-premium-search
-     data-target="{{ $target }}"
      data-count-label="{{ $countLabel }}"
+     data-target="{{ $target }}"
      @if($hideWhenFilter) data-hide-when-filter="{{ $hideWhenFilter }}" @endif
-     @if($server) data-server="1" data-debounce="450" @endif
+     @if($ajax) data-ajax="1" data-results="{{ $resultsContainer }}" data-debounce="280" @endif
      id="{{ $uid }}">
-
-    @if($server)
-        <form method="GET" action="{{ url()->current() }}" class="premium-search__form" data-premium-search-form>
-            @foreach($preserve as $key => $val)
-                @if($val !== null && $val !== '')
-                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
-                @endif
-            @endforeach
-    @endif
 
     <div class="premium-search__shell">
         <div class="premium-search__icon" aria-hidden="true">
@@ -50,23 +47,19 @@
             type="search"
             class="premium-search__input"
             data-premium-search-input
-            name="{{ $server ? 'q' : '' }}"
-            value="{{ $server ? $queryValue : '' }}"
+            value="{{ $ajax ? $queryValue : '' }}"
             placeholder="{{ $placeholder }}"
             autocomplete="off"
             spellcheck="false"
             aria-label="{{ $placeholder }}"
+            enterkeyhint="search"
         >
         <kbd class="premium-search__kbd" data-premium-search-kbd aria-hidden="true"></kbd>
+        <span class="premium-search__spinner" data-premium-search-spinner hidden aria-hidden="true"></span>
         <button type="button" class="premium-search__clear" data-premium-search-clear aria-label="Clear search" {{ $queryValue ? '' : 'hidden' }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 3L3 11M3 3l8 8"/></svg>
         </button>
-        <span class="premium-search__spinner" data-premium-search-spinner hidden aria-hidden="true"></span>
     </div>
-
-    @if($server)
-        </form>
-    @endif
 
     <div class="premium-search__meta">
         <span class="premium-search__count" data-premium-search-count></span>
@@ -80,7 +73,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
 
 .premium-search { font-family: 'Outfit', sans-serif !important; margin-bottom: 20px; width: 100%; }
-.premium-search__form { margin: 0; width: 100%; }
 
 .premium-search__shell {
     position: relative;
@@ -118,11 +110,6 @@
 }
 
 .premium-search:focus-within .premium-search__shell::before { opacity: 1; }
-
-.premium-search--loading .premium-search__shell {
-    border-color: #0c0c0c;
-    opacity: 0.92;
-}
 
 .premium-search__icon {
     flex-shrink: 0;
@@ -202,17 +189,17 @@
 .premium-search__clear[hidden] { display: none !important; }
 
 .premium-search__spinner {
+    flex-shrink: 0;
     width: 18px;
     height: 18px;
-    margin-right: 10px;
+    margin-right: 12px;
     border: 2px solid #e5e7eb;
     border-top-color: #0c0c0c;
     border-radius: 50%;
-    animation: premium-search-spin .65s linear infinite;
+    animation: premium-search-spin .6s linear infinite;
 }
 
 .premium-search__spinner[hidden] { display: none !important; }
-
 @keyframes premium-search-spin { to { transform: rotate(360deg); } }
 
 .premium-search__meta {
@@ -231,6 +218,9 @@
 .premium-search__empty[hidden] { display: none !important; }
 
 [data-search-hidden="true"] { display: none !important; }
+
+/* Soft fade applied to the results region while an AJAX swap is in flight */
+[data-premium-results-busy="1"] { opacity: 0.45; transition: opacity .15s; pointer-events: none; }
 
 .is_dark .premium-search__shell { background: linear-gradient(135deg, #0f172a 0%, #111827 50%, #0f172a 100%); border-color: #2d3748; }
 .is_dark .premium-search:focus-within .premium-search__shell { border-color: #f3f4f6; box-shadow: 0 0 0 4px rgba(243, 244, 246, 0.08); background: #111827; }
@@ -266,103 +256,24 @@
         var emptyEl  = root.querySelector('[data-premium-search-empty-msg]');
         var kbdEl    = root.querySelector('[data-premium-search-kbd]');
         var spinner  = root.querySelector('[data-premium-search-spinner]');
-        var form     = root.querySelector('[data-premium-search-form]');
-        var target   = root.dataset.target || '[data-search]';
         var label    = root.dataset.countLabel || 'results';
-        var isServer = root.dataset.server === '1';
-        var debounce = parseInt(root.dataset.debounce || '450', 10);
-        var submitTimer = null;
-        var lastSubmitted = isServer ? (input.value || '').trim() : null;
+        var isAjax   = root.dataset.ajax === '1';
+        var target   = root.dataset.target || '[data-search]';
+        var resultsSel = root.dataset.results || '';
+        var debounceMs = parseInt(root.dataset.debounce || '280', 10);
 
         if (kbdEl) kbdEl.textContent = isMac ? '⌘ K' : 'Ctrl K';
 
-        function items() {
-            return Array.prototype.slice.call(document.querySelectorAll(target));
-        }
-
-        function setLoading(on) {
-            root.classList.toggle('premium-search--loading', on);
-            if (spinner) spinner.hidden = !on;
-        }
-
-        function applyClient() {
-            var q = (input.value || '').trim().toLowerCase();
-            var all = items();
-            var visible = 0;
-
-            all.forEach(function (el) {
-                var hay = (el.getAttribute('data-search') || el.textContent || '').toLowerCase();
-                var show = !q || hay.indexOf(q) !== -1;
-                el.setAttribute('data-search-hidden', show ? 'false' : 'true');
-                if (show) visible++;
-            });
-
+        function setHasValue(q) {
             root.classList.toggle('premium-search--has-value', q.length > 0);
             if (clear) clear.hidden = !q.length;
-
-            if (countEl) {
-                if (q.length && all.length) {
-                    countEl.innerHTML = 'Showing <strong>' + visible + '</strong> of <strong>' + all.length + '</strong> ' + label;
-                } else if (all.length) {
-                    countEl.innerHTML = '<strong>' + all.length + '</strong> ' + label + (isServer && q.length ? ' on this page' : '');
-                } else if (isServer && q.length) {
-                    countEl.innerHTML = 'Searching…';
-                } else {
-                    countEl.innerHTML = '';
-                }
-            }
-
-            if (emptyEl) {
-                emptyEl.hidden = !(q.length && all.length && visible === 0);
-            }
-
-            var hideSel = root.dataset.hideWhenFilter;
-            if (hideSel) {
-                document.querySelectorAll(hideSel).forEach(function (el) {
-                    el.setAttribute('data-search-hidden', q.length ? 'true' : 'false');
-                });
-            }
         }
 
-        function submitServer() {
-            if (!form) return;
-            var q = (input.value || '').trim();
-            if (q === lastSubmitted) return;
-            lastSubmitted = q;
-            setLoading(true);
-            form.submit();
-        }
+        function setCount(html) { if (countEl) countEl.innerHTML = html; }
 
-        function scheduleServer() {
-            if (!isServer) return;
-            clearTimeout(submitTimer);
-            submitTimer = setTimeout(submitServer, debounce);
-        }
-
-        function apply() {
-            applyClient();
-            scheduleServer();
-        }
-
-        input.addEventListener('input', apply);
-        input.addEventListener('search', apply);
-
-        if (clear) {
-            clear.addEventListener('click', function () {
-                input.value = '';
-                lastSubmitted = '__cleared__';
-                applyClient();
-                if (isServer && form) {
-                    setLoading(true);
-                    form.submit();
-                } else {
-                    input.focus();
-                }
-            });
-        }
-
+        /* ─────────── Global keyboard shortcut (Ctrl/⌘ + K) ─────────── */
         document.addEventListener('keydown', function (e) {
-            if ((isMac ? e.metaKey : e.ctrlKey) && e.key === 'k') {
+            if ((isMac ? e.metaKey : e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
                 var tag = (document.activeElement && document.activeElement.tagName) || '';
                 if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
                 e.preventDefault();
@@ -371,7 +282,185 @@
             }
         });
 
-        applyClient();
+        /* ════════════════════════ CLIENT MODE ════════════════════════ */
+        if (!isAjax) {
+            function applyClient() {
+                var q = (input.value || '').trim().toLowerCase();
+                var all = Array.prototype.slice.call(document.querySelectorAll(target));
+                var visible = 0;
+
+                all.forEach(function (el) {
+                    var hay = (el.getAttribute('data-search') || el.textContent || '').toLowerCase();
+                    var show = !q || hay.indexOf(q) !== -1;
+                    el.setAttribute('data-search-hidden', show ? 'false' : 'true');
+                    if (show) visible++;
+                });
+
+                setHasValue(q);
+
+                if (q.length && all.length) {
+                    setCount('Showing <strong>' + visible + '</strong> of <strong>' + all.length + '</strong> ' + label);
+                } else if (all.length) {
+                    setCount('<strong>' + all.length + '</strong> ' + label);
+                } else {
+                    setCount('');
+                }
+
+                if (emptyEl) emptyEl.hidden = !(q.length && all.length && visible === 0);
+
+                var hideSel = root.dataset.hideWhenFilter;
+                if (hideSel) {
+                    document.querySelectorAll(hideSel).forEach(function (el) {
+                        el.setAttribute('data-search-hidden', q.length ? 'true' : 'false');
+                    });
+                }
+            }
+
+            input.addEventListener('input', applyClient);
+            input.addEventListener('search', applyClient);
+            if (clear) clear.addEventListener('click', function () {
+                input.value = ''; input.focus(); applyClient();
+            });
+            applyClient();
+            return;
+        }
+
+        /* ════════════════════════ AJAX MODE ════════════════════════ */
+        var container = resultsSel ? document.querySelector(resultsSel) : null;
+        if (!container) { return; }
+
+        var timer = null;
+        var inFlight = null;          // AbortController for the active request
+        var lastUrl = window.location.href;
+
+        function syncCountFromContainer(q) {
+            var meta = container.querySelector('[data-psb-meta]');
+            var total = meta ? parseInt(meta.getAttribute('data-total') || '0', 10) : null;
+            if (total === null || isNaN(total)) { setCount(''); return; }
+
+            if (q.length) {
+                setCount(total
+                    ? '<strong>' + total + '</strong> ' + label + ' found'
+                    : 'No ' + label + ' found');
+            } else {
+                setCount('<strong>' + total + '</strong> ' + label);
+            }
+        }
+
+        function buildUrl(q) {
+            var url = new URL(window.location.href);
+            if (q) { url.searchParams.set('q', q); } else { url.searchParams.delete('q'); }
+            url.searchParams.delete('page');   // a fresh query always starts on page 1
+            return url;
+        }
+
+        function load(urlObj, opts) {
+            opts = opts || {};
+            var urlStr = urlObj.toString();
+
+            if (inFlight) inFlight.abort();
+            inFlight = new AbortController();
+
+            if (spinner) spinner.hidden = false;
+            container.setAttribute('data-premium-results-busy', '1');
+
+            fetch(urlStr, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-Premium-Search': '1' },
+                signal: inFlight.signal,
+            })
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                var fresh = doc.querySelector(resultsSel);
+                if (fresh) {
+                    container.innerHTML = fresh.innerHTML;
+                }
+                container.removeAttribute('data-premium-results-busy');
+                if (spinner) spinner.hidden = true;
+
+                if (opts.push !== false) {
+                    window.history.replaceState({ psb: true }, '', urlStr);
+                    lastUrl = urlStr;
+                }
+
+                var q = (input.value || '').trim();
+                setHasValue(q);
+                syncCountFromContainer(q);
+                if (emptyEl) emptyEl.hidden = true;   // container renders its own empty state
+                inFlight = null;
+            })
+            .catch(function (err) {
+                if (err && err.name === 'AbortError') return;
+                container.removeAttribute('data-premium-results-busy');
+                if (spinner) spinner.hidden = true;
+                if (countEl) setCount('Search failed — press Enter to retry');
+            });
+        }
+
+        function schedule() {
+            clearTimeout(timer);
+            var q = (input.value || '').trim();
+            setHasValue(q);
+            timer = setTimeout(function () { load(buildUrl(q)); }, debounceMs);
+        }
+
+        input.addEventListener('input', schedule);
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(timer);
+                load(buildUrl((input.value || '').trim()));
+            } else if (e.key === 'Escape' && input.value) {
+                e.preventDefault();
+                input.value = '';
+                clearTimeout(timer);
+                load(buildUrl(''));
+            }
+        });
+
+        if (clear) clear.addEventListener('click', function () {
+            input.value = '';
+            input.focus();
+            clearTimeout(timer);
+            load(buildUrl(''));
+        });
+
+        /* Hijack pagination so paging through search results never does a hard
+           reload. We treat any in-container link that carries a `page` query
+           param (or sits in a known pager) as pagination — this works for both
+           the Tailwind and Bootstrap paginators as well as the custom one on
+           the offices page, while leaving real navigation links untouched. */
+        container.addEventListener('click', function (e) {
+            var a = e.target.closest('a');
+            if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+            var href = a.getAttribute('href');
+            if (!href || href === '#') return;
+
+            var url;
+            try { url = new URL(a.href, window.location.origin); } catch (_) { return; }
+
+            var isPager = url.searchParams.has('page')
+                || a.closest('.pagination, .pagination-wrapper, [data-psb-pager], nav[role="navigation"]');
+            if (!isPager) return;                 // let normal links navigate
+            if (url.pathname !== window.location.pathname) return;
+
+            e.preventDefault();
+            var q = (input.value || '').trim();
+            if (q) { url.searchParams.set('q', q); } else { url.searchParams.delete('q'); }
+            load(url);
+            try { container.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
+        });
+
+        // Back/forward buttons → re-sync from the URL.
+        window.addEventListener('popstate', function () {
+            if (window.location.href === lastUrl) return;
+            var url = new URL(window.location.href);
+            input.value = url.searchParams.get('q') || '';
+            load(url, { push: false });
+        });
+
+        // Initial count reflects whatever the server already rendered.
+        syncCountFromContainer((input.value || '').trim());
     }
 
     function boot() {
