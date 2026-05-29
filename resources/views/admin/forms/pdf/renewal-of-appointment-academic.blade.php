@@ -100,10 +100,14 @@
         .pf-meta span { margin-right: 14px; }
         .pf-meta strong { color: #111827; }
 
-        /* ── Top top-of-form fields ── */
+        /* ── Top top-of-form fields ──
+           Label cell uses the shrink-to-fit trick (width:1% + nowrap) so the
+           dotted-underline value sits *immediately* to the right of the label,
+           regardless of how short the label text is — matching the paper form
+           ("Label: ___value___" rather than "Label:    ___value___"). */
         .pf-top-fields { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
         .pf-top-fields td { padding: 3px 0; vertical-align: middle; }
-        .pf-top-fields__label-cell { width: 34%; padding-right: 8px !important; }
+        .pf-top-fields__label-cell { width: 1%; white-space: nowrap; padding-right: 8px !important; }
         .pf-top-fields__label { font-weight: 600; color: #1f2937; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; }
         .pf-top-fields__value-cell { border-bottom: 1px dotted #6b7280; padding-bottom: 2px !important; }
         .pf-top-fields__value { font-weight: 500; color: #0c0c0c; }
@@ -116,10 +120,12 @@
         .pf-section__title-cell { font-weight: 700; font-size: 11.5px; letter-spacing: 0.3px; text-transform: uppercase; color: #111827; }
         .pf-section--bordered { padding-top: 10px; border-top: 1px solid #d1d5db; }
 
-        /* ── Field rows ── */
+        /* ── Field rows ──
+           Same shrink-to-fit trick: label cell auto-sizes to its text width,
+           value cell with the dotted underline fills the rest of the row. */
         .pf-item { width: 100%; margin: 0 0 6px; border-collapse: collapse; }
         .pf-item td { vertical-align: top; padding: 0; }
-        .pf-item__label-cell { width: 28%; padding-right: 8px !important; vertical-align: middle; }
+        .pf-item__label-cell { width: 1%; white-space: nowrap; padding-right: 6px !important; vertical-align: middle; }
         .pf-item__label { font-weight: 600; color: #1f2937; }
         .pf-item__value-cell { border-bottom: 1px dotted #6b7280; padding-bottom: 1px !important; vertical-align: bottom; }
         .pf-item__value { font-weight: 500; color: #0c0c0c; }
@@ -257,13 +263,13 @@
             <tr>
                 <td class="pf-pair__left">
                     <table class="pf-item"><tr>
-                        <td class="pf-item__label-cell" style="width: 40%;"><span class="pf-item__label">First Name(s):</span></td>
+                        <td class="pf-item__label-cell"><span class="pf-item__label">First Name(s):</span></td>
                         <td class="pf-item__value-cell"><span class="pf-item__value">{{ $applicantData['first_names'] ?? '' }}</span></td>
                     </tr></table>
                 </td>
                 <td class="pf-pair__right">
                     <table class="pf-item"><tr>
-                        <td class="pf-item__label-cell" style="width: 32%;"><span class="pf-item__label">Middle Name:</span></td>
+                        <td class="pf-item__label-cell"><span class="pf-item__label">Middle Name:</span></td>
                         <td class="pf-item__value-cell"><span class="pf-item__value">{{ $applicantData['middle_name'] ?? '' }}</span></td>
                     </tr></table>
                 </td>
@@ -284,13 +290,13 @@
             <tr>
                 <td class="pf-pair__left">
                     <table class="pf-item"><tr>
-                        <td class="pf-item__label-cell" style="width: 24%;"><span class="pf-item__label">E-mail:</span></td>
+                        <td class="pf-item__label-cell"><span class="pf-item__label">E-mail:</span></td>
                         <td class="pf-item__value-cell"><span class="pf-item__value">{{ $applicantData['email'] ?? '' }}</span></td>
                     </tr></table>
                 </td>
                 <td class="pf-pair__right">
                     <table class="pf-item"><tr>
-                        <td class="pf-item__label-cell" style="width: 44%;"><span class="pf-item__label">Telephone / Mobile No:</span></td>
+                        <td class="pf-item__label-cell"><span class="pf-item__label">Telephone / Mobile No:</span></td>
                         <td class="pf-item__value-cell"><span class="pf-item__value">{{ $applicantData['telephone_mobile'] ?? '' }}</span></td>
                     </tr></table>
                 </td>
@@ -302,13 +308,13 @@
             <tr>
                 <td class="pf-pair__left">
                     <table class="pf-item"><tr>
-                        <td class="pf-item__label-cell" style="width: 60%;"><span class="pf-item__label">Nationality at Birth <em style="font-weight: 400; color: #6b7280;">(if different)</em>:</span></td>
+                        <td class="pf-item__label-cell"><span class="pf-item__label">Nationality at Birth <em style="font-weight: 400; color: #6b7280;">(if different)</em>:</span></td>
                         <td class="pf-item__value-cell"><span class="pf-item__value">{{ $applicantData['nationality_at_birth'] ?? '' }}</span></td>
                     </tr></table>
                 </td>
                 <td class="pf-pair__right">
                     <table class="pf-item"><tr>
-                        <td class="pf-item__label-cell" style="width: 30%;"><span class="pf-item__label">Home Town:</span></td>
+                        <td class="pf-item__label-cell"><span class="pf-item__label">Home Town:</span></td>
                         <td class="pf-item__value-cell"><span class="pf-item__value">{{ $applicantData['home_town'] ?? '' }}</span></td>
                     </tr></table>
                 </td>
@@ -320,13 +326,13 @@
             <tr>
                 <td class="pf-pair__left">
                     <table class="pf-item"><tr>
-                        <td class="pf-item__label-cell" style="width: 36%;"><span class="pf-item__label">Date of Birth:</span></td>
+                        <td class="pf-item__label-cell"><span class="pf-item__label">Date of Birth:</span></td>
                         <td class="pf-item__value-cell"><span class="pf-item__value">{{ $fmtDate($applicantData['date_of_birth'] ?? null) }}</span></td>
                     </tr></table>
                 </td>
                 <td class="pf-pair__right">
                     <table class="pf-item"><tr>
-                        <td class="pf-item__label-cell" style="width: 18%;"><span class="pf-item__label">Age:</span></td>
+                        <td class="pf-item__label-cell"><span class="pf-item__label">Age:</span></td>
                         <td class="pf-item__value-cell"><span class="pf-item__value">{{ $applicantData['age'] ?? '' }}</span> <span style="color:#6b7280; font-size: 10px;">years</span></td>
                     </tr></table>
                 </td>
