@@ -77,6 +77,7 @@
                         name="{{ $field->name }}"
                         class="form-control"
                         value="{{ $value }}"
+                        @if($field->calculatesAgeTarget) data-calc-age-target="{{ $field->calculatesAgeTarget }}" @endif
                         @if($readonly) disabled readonly @endif>
                     @break
 
@@ -372,6 +373,49 @@
     }
 
     document.querySelectorAll('[data-form-table]').forEach(initFormTable);
+})();
+</script>
+
+{{-- ─────────────────────────────────────────────────────────────
+     Auto-calculate age from a date-of-birth field.
+     Any date input carrying  data-calc-age-target="age_field_name"
+     will update that target field in years whenever its value
+     changes. Runs once on page load too, so reopening a saved
+     submission re-derives the age. The user can still override.
+     ───────────────────────────────────────────────────────────── --}}
+<script>
+(function () {
+    function computeAge(dobValue) {
+        if (!dobValue) return null;
+        var dob = new Date(dobValue);
+        if (isNaN(dob.getTime())) return null;
+        var today = new Date();
+        var age = today.getFullYear() - dob.getFullYear();
+        var m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+        return (age >= 0 && age <= 150) ? age : null;
+    }
+
+    function wire(dateEl) {
+        var targetName = dateEl.dataset.calcAgeTarget;
+        if (!targetName) return;
+        var form = dateEl.closest('form') || document;
+        var target = form.querySelector('[name="' + targetName + '"]');
+        if (!target) return;
+
+        function update() {
+            var age = computeAge(dateEl.value);
+            if (age !== null) target.value = age;
+        }
+
+        dateEl.addEventListener('change', update);
+        // Derive on load if the field is already populated (editing a saved
+        // submission) AND the target is still empty — never clobber a value
+        // the user has manually typed.
+        if (dateEl.value && !target.value) update();
+    }
+
+    document.querySelectorAll('input[type="date"][data-calc-age-target]').forEach(wire);
 })();
 </script>
 @endonce

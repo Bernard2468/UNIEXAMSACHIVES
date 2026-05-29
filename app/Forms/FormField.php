@@ -53,6 +53,13 @@ class FormField
         public readonly int $minTableRows = 1,
         public readonly int $maxTableRows = 10,
         public readonly string $addRowLabel = 'Add another row',
+        /**
+         * When set on a TYPE_DATE field, the named sibling field
+         * (typically an "age" number field) is auto-filled in years on
+         * change. The user can still override the computed value
+         * manually. Null = no auto-fill.
+         */
+        public readonly ?string $calculatesAgeTarget = null,
     ) {
     }
 

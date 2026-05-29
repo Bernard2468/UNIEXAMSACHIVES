@@ -87,8 +87,10 @@ class AcademicRenewalOfAppointmentForm extends BaseFormDefinition
                     new FormField('nationality_at_birth', 'Nationality at Birth (if different)', FormField::TYPE_TEXT, required: false, col: 6,
                         help: 'Leave blank if same as current nationality.'),
                     new FormField('home_town',        'Home Town',                          FormField::TYPE_TEXT,     required: true,  col: 6),
-                    new FormField('date_of_birth',    'Date of Birth',                      FormField::TYPE_DATE,     required: true,  col: 4),
-                    new FormField('age',              'Age (years)',                        FormField::TYPE_NUMBER,   required: true,  col: 4),
+                    new FormField('date_of_birth',    'Date of Birth',                      FormField::TYPE_DATE,     required: true,  col: 4,
+                        calculatesAgeTarget: 'age'),
+                    new FormField('age',              'Age (years)',                        FormField::TYPE_NUMBER,   required: true,  col: 4,
+                        help: 'Auto-calculated from Date of Birth. You can edit it if needed.'),
                     new FormField('place_of_birth',   'Place of Birth',                     FormField::TYPE_TEXT,     required: true,  col: 4),
 
                     // ── 2. Education ──
