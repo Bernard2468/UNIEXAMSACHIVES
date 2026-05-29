@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Forms\Contracts\SignatureProvider;
+use App\Forms\Definitions\AcademicRenewalOfAppointmentForm;
 use App\Forms\Definitions\AnnualLeaveApplicationForm;
 use App\Forms\Definitions\CasualLeaveApplicationForm;
 use App\Forms\Definitions\LeaveResumptionForm;
@@ -58,6 +59,7 @@ class AppServiceProvider extends ServiceProvider
             $registry->register(new LeaveResumptionForm());
             $registry->register(new VehicleMaintenanceAllowanceForm());
             $registry->register(new RenewalOfAppointmentForm());
+            $registry->register(new AcademicRenewalOfAppointmentForm());
             return $registry;
         });
     }

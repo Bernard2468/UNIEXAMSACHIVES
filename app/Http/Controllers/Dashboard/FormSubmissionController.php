@@ -573,18 +573,22 @@ class FormSubmissionController extends Controller
         $defaults = [
             // Identity
             'name'                   => $fullName,
+            'surname'                => $user->last_name,    // academic renewal
+            'first_names'            => $user->first_name,   // academic renewal
             'email'                  => $user->email,
 
             // Department / faculty / unit — known synonyms used across forms.
-            'faculty_department'      => $departmentName,   // leave forms
-            'department_section_unit' => $departmentName,   // vehicle maintenance
-            'faculty_centre_dept'     => $departmentName,   // renewal of appointment
+            'faculty_department'        => $departmentName,   // leave forms
+            'department_section_unit'   => $departmentName,   // vehicle maintenance
+            'faculty_centre_dept'       => $departmentName,   // renewal of appointment (senior & junior staff)
+            'faculty_school_department' => $departmentName,   // renewal of appointment (academic)
 
             // Position / rank / job title — known synonyms.
             'job_title'              => $positionName,      // PR / PWA
             'rank'                   => $positionName,      // leave forms
             'post_status'            => $positionName,      // vehicle maintenance
-            'present_position_rank'  => $positionName,      // renewal of appointment
+            'present_position_rank'  => $positionName,      // renewal of appointment (senior & junior staff)
+            'current_position_rank'  => $positionName,      // renewal of appointment (academic)
 
             // Contact (not stored on User today — left null intentionally).
             'phone'                  => null,
