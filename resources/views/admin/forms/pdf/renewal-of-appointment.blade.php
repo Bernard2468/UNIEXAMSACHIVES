@@ -101,15 +101,26 @@
         .pf-meta span { margin-right: 14px; }
         .pf-meta strong { color: #111827; }
 
-        /* ── Top top-of-form fields ── */
-        .pf-top-fields td { padding: 2px 0; }
+        /* ── Top top-of-form fields ──
+           Real HTML table — label cell on the left, value cell on the right.
+           Guarantees they sit on the same line and the dotted underline fills
+           the cell width regardless of label length. */
+        .pf-top-fields { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+        .pf-top-fields td { padding: 3px 0; vertical-align: middle; }
+        .pf-top-fields__label-cell { width: 34%; padding-right: 8px !important; }
         .pf-top-fields__label { font-weight: 600; color: #1f2937; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; }
-        .pf-top-fields__value { display: inline-block; border-bottom: 1px dotted #6b7280; padding: 0 4px 1px; min-height: 13px; font-weight: 500; color: #0c0c0c; }
+        .pf-top-fields__value-cell { border-bottom: 1px dotted #6b7280; padding-bottom: 2px !important; }
+        .pf-top-fields__value { font-weight: 500; color: #0c0c0c; }
 
-        /* ── Numbered sections ── */
+        /* ── Numbered sections ──
+           Section title rendered as a 2-cell table so the number and the
+           title text share the same baseline (inline-block min-width caused
+           a small vertical drift in dompdf). */
         .pf-section { margin: 12px 0; }
-        .pf-section__title { font-weight: 700; font-size: 11.5px; letter-spacing: 0.3px; text-transform: uppercase; margin-bottom: 6px; color: #111827; }
-        .pf-section__title .pf-num { display: inline-block; min-width: 22px; }
+        .pf-section__title-row { width: auto; border-collapse: collapse; margin-bottom: 6px; }
+        .pf-section__title-row td { vertical-align: baseline; padding: 0; }
+        .pf-section__num-cell { width: 24px; padding-right: 6px !important; font-weight: 700; font-size: 11.5px; color: #111827; }
+        .pf-section__title-cell { font-weight: 700; font-size: 11.5px; letter-spacing: 0.3px; text-transform: uppercase; color: #111827; }
         .pf-section--bordered { padding-top: 10px; border-top: 1px solid #d1d5db; }
 
         /* ── Field rows inside a section ── */
@@ -210,24 +221,28 @@
         @if($submission->completed_at)<span><strong>Completed:</strong> {{ $submission->completed_at->format('d M Y, H:i') }}</span>@endif
     </div>
 
-    {{-- ===== Top fields (precede the numbered sections) ===== --}}
-    <table class="pf-top-fields"><tr>
-        <td style="width: 100%; padding-bottom: 4px;">
-            <span class="pf-top-fields__label">Present Position / Rank:</span>
-            <span class="pf-top-fields__value" style="width: 70%;">{{ $applicantData['present_position_rank'] ?? '' }}</span>
-        </td>
-    </tr><tr>
-        <td style="padding-top: 2px;">
-            <span class="pf-top-fields__label">Faculty / Centre / Dept:</span>
-            <span class="pf-top-fields__value" style="width: 72%;">{{ $applicantData['faculty_centre_dept'] ?? '' }}</span>
-        </td>
-    </tr></table>
+    {{-- ===== Top fields (precede the numbered sections) =====
+         Real two-column rows: label cell on the left, value cell with its
+         dotted underline on the right — both on a single line. --}}
+    <table class="pf-top-fields">
+        <tr>
+            <td class="pf-top-fields__label-cell"><span class="pf-top-fields__label">Present Position / Rank:</span></td>
+            <td class="pf-top-fields__value-cell"><span class="pf-top-fields__value">{{ $applicantData['present_position_rank'] ?? '' }}</span></td>
+        </tr>
+        <tr>
+            <td class="pf-top-fields__label-cell"><span class="pf-top-fields__label">Faculty / Centre / Dept:</span></td>
+            <td class="pf-top-fields__value-cell"><span class="pf-top-fields__value">{{ $applicantData['faculty_centre_dept'] ?? '' }}</span></td>
+        </tr>
+    </table>
 
     {{-- =========================================================
          1. PERSONAL PARTICULARS
          ========================================================= --}}
     <div class="pf-section">
-        <div class="pf-section__title"><span class="pf-num">1.</span>Personal Particulars</div>
+        <table class="pf-section__title-row"><tr>
+            <td class="pf-section__num-cell">1.</td>
+            <td class="pf-section__title-cell">Personal Particulars</td>
+        </tr></table>
 
         <table class="pf-item"><tr><td>
             <span class="pf-item__label">Name:</span>
@@ -278,7 +293,10 @@
          2. EDUCATION
          ========================================================= --}}
     <div class="pf-section">
-        <div class="pf-section__title"><span class="pf-num">2.</span>Education</div>
+        <table class="pf-section__title-row"><tr>
+            <td class="pf-section__num-cell">2.</td>
+            <td class="pf-section__title-cell">Education</td>
+        </tr></table>
 
         {{-- (a) Secondary Schools / Technical Institutes --}}
         <div style="font-weight: 600; margin: 4px 0 2px;">(a) Where educated — Secondary Schools / Technical Institutes with dates</div>
@@ -333,7 +351,10 @@
          3. DETAILS OF GRADUATE PROGRAMME
          ========================================================= --}}
     <div class="pf-section">
-        <div class="pf-section__title"><span class="pf-num">3.</span>Details of Graduate Programme <span style="font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0; color: #6b7280;">(MA, MSc, MBA etc.)</span></div>
+        <table class="pf-section__title-row"><tr>
+            <td class="pf-section__num-cell">3.</td>
+            <td class="pf-section__title-cell">Details of Graduate Programme <span style="font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0; color: #6b7280;">(MA, MSc, MBA etc.)</span></td>
+        </tr></table>
         <div class="pf-item__value--grow" style="min-height: 60px;">{{ $applicantData['graduate_programme'] ?? '' }}</div>
     </div>
 
@@ -341,7 +362,10 @@
          4. PREVIOUS EMPLOYMENT
          ========================================================= --}}
     <div class="pf-section">
-        <div class="pf-section__title"><span class="pf-num">4.</span>Previous Employment</div>
+        <table class="pf-section__title-row"><tr>
+            <td class="pf-section__num-cell">4.</td>
+            <td class="pf-section__title-cell">Previous Employment</td>
+        </tr></table>
         <table class="pf-table">
             <thead><tr>
                 <th class="pf-table__index">&nbsp;</th>
@@ -370,7 +394,10 @@
          5. ADDITIONAL INFORMATION
          ========================================================= --}}
     <div class="pf-section">
-        <div class="pf-section__title"><span class="pf-num">5.</span>Additional Information</div>
+        <table class="pf-section__title-row"><tr>
+            <td class="pf-section__num-cell">5.</td>
+            <td class="pf-section__title-cell">Additional Information</td>
+        </tr></table>
         <p style="margin: 0 0 4px; font-style: italic; color: #6b7280; font-size: 10px;">The space below may be used for any additional information you wish to give.</p>
         <div class="pf-item__value--grow" style="min-height: 80px;">{{ $applicantData['additional_info'] ?? '' }}</div>
     </div>
@@ -382,10 +409,13 @@
           on the PDF for clarity.)
          ========================================================= --}}
     <div class="pf-section pf-section--bordered">
-        <div class="pf-section__title">
-            <span class="pf-num">6.</span>Assessment by {{ $assessorRoleLabel }}
-            <span style="font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0; color: #6b7280;">(replaces Sections 6/7 of the paper form — the applicant chose this role)</span>
-        </div>
+        <table class="pf-section__title-row"><tr>
+            <td class="pf-section__num-cell">6.</td>
+            <td class="pf-section__title-cell">
+                Assessment by {{ $assessorRoleLabel }}
+                <span style="font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0; color: #6b7280;">(replaces Sections 6/7 of the paper form — the applicant chose this role)</span>
+            </td>
+        </tr></table>
 
         <div class="pf-statement">
             <strong>Comment(s) by {{ $assessorRoleLabel }}:</strong>
@@ -426,7 +456,10 @@
             because we merged the paper's 6 and 7 into our section 6).
          ========================================================= --}}
     <div class="pf-section pf-section--bordered">
-        <div class="pf-section__title"><span class="pf-num">7.</span>Declaration by Applicant</div>
+        <table class="pf-section__title-row"><tr>
+            <td class="pf-section__num-cell">7.</td>
+            <td class="pf-section__title-cell">Declaration by Applicant</td>
+        </tr></table>
 
         <div class="pf-statement pf-statement--declaration">
             I hereby certify that to the best of my knowledge, all the details given in this form are correct.
@@ -477,7 +510,10 @@
          8. APPROVAL & FILING BY REGISTRAR
          ========================================================= --}}
     <div class="pf-section pf-section--bordered">
-        <div class="pf-section__title"><span class="pf-num">8.</span>Approval & Filing by Registrar</div>
+        <table class="pf-section__title-row"><tr>
+            <td class="pf-section__num-cell">8.</td>
+            <td class="pf-section__title-cell">Approval & Filing by Registrar</td>
+        </tr></table>
 
         @if(!empty($registrarData['registrar_comments']))
             <table class="pf-item"><tr><td>
