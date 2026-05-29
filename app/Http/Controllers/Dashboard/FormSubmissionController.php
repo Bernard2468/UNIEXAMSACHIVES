@@ -561,15 +561,33 @@ class FormSubmissionController extends Controller
      */
     protected function prefillRequisitioner($user, $stage): array
     {
-        $positionName = optional($user->position)->name;
+        $positionName   = optional($user->position)->name;
+        $departmentName = optional($user->department)->name;
+        $fullName       = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
 
+        // Map every known field-name a form might use to its user-profile
+        // value. The loop below only copies values that actually appear on
+        // the current stage, so forms that don't have a given field are
+        // unaffected. Add new keys here whenever a form introduces a field
+        // that's derivable from the user's profile.
         $defaults = [
-            'name'                => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
-            'faculty_department'  => optional($user->department)->name,
-            'job_title'           => $positionName,
-            'rank'                => $positionName,
-            'phone'               => null,
-            'email'               => $user->email,
+            // Identity
+            'name'                   => $fullName,
+            'email'                  => $user->email,
+
+            // Department / faculty / unit — known synonyms used across forms.
+            'faculty_department'      => $departmentName,   // leave forms
+            'department_section_unit' => $departmentName,   // vehicle maintenance
+            'faculty_centre_dept'     => $departmentName,   // renewal of appointment
+
+            // Position / rank / job title — known synonyms.
+            'job_title'              => $positionName,      // PR / PWA
+            'rank'                   => $positionName,      // leave forms
+            'post_status'            => $positionName,      // vehicle maintenance
+            'present_position_rank'  => $positionName,      // renewal of appointment
+
+            // Contact (not stored on User today — left null intentionally).
+            'phone'                  => null,
         ];
 
         $prefill = [];
