@@ -87,10 +87,39 @@ class RenewalOfAppointmentForm extends BaseFormDefinition
 
                     // ── 2. Education ──
                     new FormField(name: 'section_2_heading', label: '2. Education', type: FormField::TYPE_HEADING),
-                    new FormField('secondary_education',     '(a) Secondary Schools / Technical Institutes',     FormField::TYPE_TEXTAREA, required: true, col: 12,
-                        help: 'List each institution on a new line, separated by | (pipe). Format:  School | Dates | Position Held. Example:  St. James SHS | 2010-2013 | Class Prefect'),
-                    new FormField('university_education',    '(b) University Qualifications',                    FormField::TYPE_TEXTAREA, required: true, col: 12,
-                        help: 'List each university award on a new line, separated by | (pipe). Format:  University | Dates | Award | Class. Example:  University of Ghana | 2014-2018 | BSc Mathematics | First Class'),
+                    new FormField(
+                        name: 'secondary_education',
+                        label: '(a) Secondary Schools / Technical Institutes — with dates',
+                        type: FormField::TYPE_TABLE,
+                        required: false,
+                        col: 12,
+                        help: 'Use the + button to add another school. Each row holds one institution.',
+                        tableColumns: [
+                            ['name' => 'school',   'label' => 'Schools',       'col' => 5, 'required' => false, 'max' => 200, 'placeholder' => 'e.g. St. James SHS'],
+                            ['name' => 'dates',    'label' => 'Dates',         'col' => 3, 'required' => false, 'max' => 60,  'placeholder' => 'e.g. 2010-2013'],
+                            ['name' => 'position', 'label' => 'Position Held', 'col' => 4, 'required' => false, 'max' => 150, 'placeholder' => 'e.g. Class Prefect'],
+                        ],
+                        minTableRows: 1,
+                        maxTableRows: 8,
+                        addRowLabel: 'Add another school',
+                    ),
+                    new FormField(
+                        name: 'university_education',
+                        label: '(b) University Qualifications',
+                        type: FormField::TYPE_TABLE,
+                        required: false,
+                        col: 12,
+                        help: 'University awards — indicate class of degree, distinction, etc. and the date and place of award.',
+                        tableColumns: [
+                            ['name' => 'university', 'label' => 'University', 'col' => 4, 'required' => false, 'max' => 200, 'placeholder' => 'e.g. University of Ghana'],
+                            ['name' => 'dates',      'label' => 'Dates',      'col' => 2, 'required' => false, 'max' => 60,  'placeholder' => 'e.g. 2014-2018'],
+                            ['name' => 'award',      'label' => 'Award',      'col' => 4, 'required' => false, 'max' => 200, 'placeholder' => 'e.g. BSc Mathematics'],
+                            ['name' => 'class',      'label' => 'Class',      'col' => 2, 'required' => false, 'max' => 80,  'placeholder' => 'e.g. First Class'],
+                        ],
+                        minTableRows: 1,
+                        maxTableRows: 8,
+                        addRowLabel: 'Add another university',
+                    ),
 
                     // ── 3. Graduate Programme ──
                     new FormField(name: 'section_3_heading', label: '3. Details of Graduate Programme (MA, MSc, MBA etc.)', type: FormField::TYPE_HEADING),
@@ -99,8 +128,23 @@ class RenewalOfAppointmentForm extends BaseFormDefinition
 
                     // ── 4. Previous Employment ──
                     new FormField(name: 'section_4_heading', label: '4. Previous Employment', type: FormField::TYPE_HEADING),
-                    new FormField('previous_employment',     'Employment History',           FormField::TYPE_TEXTAREA, required: false, col: 12,
-                        help: 'List each role on a new line, separated by | (pipe). Format:  Institution | Dates Worked | Position Held | Reasons for Leaving.'),
+                    new FormField(
+                        name: 'previous_employment',
+                        label: 'Employment History',
+                        type: FormField::TYPE_TABLE,
+                        required: false,
+                        col: 12,
+                        help: 'Add one row per role. Use the + button to add more rows.',
+                        tableColumns: [
+                            ['name' => 'institution', 'label' => 'Institution / Organisation', 'col' => 3, 'required' => false, 'max' => 200, 'placeholder' => 'e.g. KNUST'],
+                            ['name' => 'dates',       'label' => 'Dates Worked',               'col' => 2, 'required' => false, 'max' => 80,  'placeholder' => 'e.g. 2018-2022'],
+                            ['name' => 'position',    'label' => 'Position Held',              'col' => 3, 'required' => false, 'max' => 150, 'placeholder' => 'e.g. Tutor'],
+                            ['name' => 'reasons',     'label' => 'Reasons for Leaving',        'col' => 4, 'required' => false, 'max' => 300, 'placeholder' => 'e.g. Contract ended'],
+                        ],
+                        minTableRows: 1,
+                        maxTableRows: 8,
+                        addRowLabel: 'Add another role',
+                    ),
 
                     // ── 5. Additional Information ──
                     new FormField(name: 'section_5_heading', label: '5. Additional Information', type: FormField::TYPE_HEADING),

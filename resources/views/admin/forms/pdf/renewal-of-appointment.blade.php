@@ -48,25 +48,15 @@
         return $u ? trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) : '';
     };
 
-    // Parse a pipe-delimited textarea field into rows of cells.
-    // "School A | 2010-2013 | Class Captain" → ['School A', '2010-2013', 'Class Captain']
-    $parseTableRows = function (?string $raw, int $expectedCols): array {
-        if (!$raw) return [];
-        $rows = [];
-        foreach (preg_split('/\r?\n/', trim($raw)) as $line) {
-            $line = trim($line);
-            if ($line === '') continue;
-            $cells = array_map('trim', explode('|', $line));
-            // Pad / truncate so every row has exactly $expectedCols cells.
-            $cells = array_pad(array_slice($cells, 0, $expectedCols), $expectedCols, '');
-            $rows[] = $cells;
-        }
-        return $rows;
+    // Read rows from the TYPE_TABLE fields. Each row is an associative array
+    // keyed by column name (see RenewalOfAppointmentForm). Falls back to []
+    // when nothing has been entered.
+    $rowsOf = function (mixed $raw): array {
+        return is_array($raw) ? array_values(array_filter($raw, 'is_array')) : [];
     };
-
-    $secondaryRows  = $parseTableRows($applicantData['secondary_education']  ?? '', 3);
-    $universityRows = $parseTableRows($applicantData['university_education'] ?? '', 4);
-    $employmentRows = $parseTableRows($applicantData['previous_employment']  ?? '', 4);
+    $secondaryRows  = $rowsOf($applicantData['secondary_education']  ?? null);
+    $universityRows = $rowsOf($applicantData['university_education'] ?? null);
+    $employmentRows = $rowsOf($applicantData['previous_employment']  ?? null);
 
     // Roman numerals for the table-row indices on the paper form.
     $romans = ['i.', 'ii.', 'iii.', 'iv.', 'v.', 'vi.', 'vii.', 'viii.'];
@@ -303,9 +293,9 @@
                 @forelse($secondaryRows as $idx => $row)
                     <tr>
                         <td class="pf-table__index">{{ $romans[$idx] ?? ($idx + 1) . '.' }}</td>
-                        <td>{{ $row[0] }}</td>
-                        <td>{{ $row[1] }}</td>
-                        <td>{{ $row[2] }}</td>
+                        <td>{{ $row['school']   ?? '' }}</td>
+                        <td>{{ $row['dates']    ?? '' }}</td>
+                        <td>{{ $row['position'] ?? '' }}</td>
                     </tr>
                 @empty
                     <tr class="pf-table__empty"><td colspan="4">— no entries —</td></tr>
@@ -327,10 +317,10 @@
                 @forelse($universityRows as $idx => $row)
                     <tr>
                         <td class="pf-table__index">{{ $romans[$idx] ?? ($idx + 1) . '.' }}</td>
-                        <td>{{ $row[0] }}</td>
-                        <td>{{ $row[1] }}</td>
-                        <td>{{ $row[2] }}</td>
-                        <td>{{ $row[3] }}</td>
+                        <td>{{ $row['university'] ?? '' }}</td>
+                        <td>{{ $row['dates']      ?? '' }}</td>
+                        <td>{{ $row['award']      ?? '' }}</td>
+                        <td>{{ $row['class']      ?? '' }}</td>
                     </tr>
                 @empty
                     <tr class="pf-table__empty"><td colspan="5">— no entries —</td></tr>
@@ -364,10 +354,10 @@
                 @forelse($employmentRows as $idx => $row)
                     <tr>
                         <td class="pf-table__index">{{ $romans[$idx] ?? ($idx + 1) . '.' }}</td>
-                        <td>{{ $row[0] }}</td>
-                        <td>{{ $row[1] }}</td>
-                        <td>{{ $row[2] }}</td>
-                        <td>{{ $row[3] }}</td>
+                        <td>{{ $row['institution'] ?? '' }}</td>
+                        <td>{{ $row['dates']       ?? '' }}</td>
+                        <td>{{ $row['position']    ?? '' }}</td>
+                        <td>{{ $row['reasons']     ?? '' }}</td>
                     </tr>
                 @empty
                     <tr class="pf-table__empty"><td colspan="5">— no entries —</td></tr>

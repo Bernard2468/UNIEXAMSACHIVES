@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Forms\FormField;
 use App\Forms\FormRegistry;
 use App\Forms\FormStage;
 use App\Http\Controllers\Controller;
@@ -450,14 +451,37 @@ class FormSubmissionController extends Controller
      */
     protected function validateStageInput($request, $definition, $stage, bool $requireSignature): array
     {
+        // Pre-clean TYPE_TABLE inputs by dropping rows where every cell is blank.
+        // Done BEFORE validation so a user adding an extra empty row doesn't
+        // trip required-column rules, and so we never persist phantom rows.
+        $cleaned = $request->all();
+        foreach ($stage->fields as $field) {
+            if ($field->type !== FormField::TYPE_TABLE) {
+                continue;
+            }
+            $rows = $cleaned[$field->name] ?? null;
+            if (!is_array($rows)) {
+                continue;
+            }
+            $rows = array_values(array_filter($rows, function ($row) {
+                if (!is_array($row)) return false;
+                foreach ($row as $cell) {
+                    if (trim((string) $cell) !== '') return true;
+                }
+                return false;
+            }));
+            $cleaned[$field->name] = $rows;
+            $request->merge([$field->name => $rows]);
+        }
+
         $rules = $stage->validationRules();
 
-        $validator = Validator::make($request->all(), $rules);
+        $validator = Validator::make($cleaned, $rules);
         $validator->validate();
 
         $values = [];
         foreach ($stage->fieldNames() as $name) {
-            $raw = $request->input($name);
+            $raw = $cleaned[$name] ?? null;
             $values[$name] = $raw;
         }
 

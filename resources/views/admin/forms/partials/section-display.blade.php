@@ -50,7 +50,7 @@
             @foreach($stage->fields as $field)
                 @if($field->type === FormField::TYPE_HEADING) @continue @endif
                 @php $raw = $sectionData[$field->name] ?? null; @endphp
-                @if($raw === null || $raw === '') @continue @endif
+                @if($raw === null || $raw === '' || (is_array($raw) && empty($raw))) @continue @endif
 
                 <div class="locked-fields__row">
                     <dt>{{ $field->label }}</dt>
@@ -65,6 +65,31 @@
                             @case(FormField::TYPE_RADIO)
                             @case(FormField::TYPE_SELECT)
                                 {{ $field->options[$raw] ?? $raw }}
+                                @break
+                            @case(FormField::TYPE_TABLE)
+                                @if(is_array($raw) && count($raw))
+                                    <table class="locked-table">
+                                        <thead><tr>
+                                            <th class="locked-table__index">#</th>
+                                            @foreach($field->tableColumns as $col)
+                                                <th>{{ $col['label'] ?? $col['name'] }}</th>
+                                            @endforeach
+                                        </tr></thead>
+                                        <tbody>
+                                            @foreach($raw as $i => $row)
+                                                @if(!is_array($row)) @continue @endif
+                                                <tr>
+                                                    <td class="locked-table__index">{{ $i + 1 }}.</td>
+                                                    @foreach($field->tableColumns as $col)
+                                                        <td>{{ $row[$col['name']] ?? '' }}</td>
+                                                    @endforeach
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                @else
+                                    <em style="color:#9ca3af;">No entries.</em>
+                                @endif
                                 @break
                             @default
                                 {!! nl2br(e($raw)) !!}
@@ -114,3 +139,15 @@
         @endif
     </div>
 </div>
+
+@once
+<style>
+.locked-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 0.82rem; font-family: 'Outfit', sans-serif !important; }
+.locked-table th, .locked-table td { padding: 6px 10px; border-bottom: 1px solid #ebebeb; text-align: left; vertical-align: top; }
+.locked-table th { background: #fafafa; font-weight: 600; color: #374151; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1.5px solid #e5e7eb; }
+.locked-table td { color: #111827; }
+.locked-table__index { width: 32px; color: #9ca3af; font-weight: 600; font-family: 'JetBrains Mono', monospace, sans-serif; }
+.is_dark .locked-table th { background: #0f172a; color: #d1d5db; border-color: #2d3748; }
+.is_dark .locked-table td { color: #f3f4f6; border-color: #1e2330; }
+</style>
+@endonce

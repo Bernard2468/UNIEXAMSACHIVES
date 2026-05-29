@@ -23,7 +23,20 @@ class FormField
     public const TYPE_CHECKBOX  = 'checkbox';
     public const TYPE_HIDDEN    = 'hidden';
     public const TYPE_HEADING   = 'heading';
+    /**
+     * Repeating-row table — for fields like education history, employment
+     * history, etc. Each row is a record with the columns described by
+     * $tableColumns. Stored as an array of associative arrays in
+     * section_data. Renders as a stacked-row table with an "Add row" button.
+     */
+    public const TYPE_TABLE     = 'table';
 
+    /**
+     * @param  array<int, array{name:string,label:string,type?:string,col?:int,required?:bool,max?:int,placeholder?:string,options?:array<string,string>}> $tableColumns
+     *         Column descriptors for TYPE_TABLE fields. Each column is rendered
+     *         as a cell in every row. The "col" value (1-12) controls how wide
+     *         the cell is relative to the others in the row.
+     */
     public function __construct(
         public readonly string $name,
         public readonly string $label,
@@ -36,6 +49,10 @@ class FormField
         public readonly mixed $default = null,
         public readonly ?string $rule = null,
         public readonly ?int $maxLength = null,
+        public readonly array $tableColumns = [],
+        public readonly int $minTableRows = 1,
+        public readonly int $maxTableRows = 10,
+        public readonly string $addRowLabel = 'Add another row',
     ) {
     }
 
@@ -47,6 +64,11 @@ class FormField
     {
         if ($this->rule) {
             return [$this->name => $this->rule];
+        }
+
+        // TYPE_TABLE returns multi-key rules covering the array + each column.
+        if ($this->type === self::TYPE_TABLE) {
+            return $this->tableValidationRules();
         }
 
         $rules = [];
@@ -97,6 +119,58 @@ class FormField
         }
 
         return [$this->name => $rules];
+    }
+
+    /**
+     * Validation rules for TYPE_TABLE: the field itself is an array, and each
+     * declared column maps to a "name.*.column" rule key. After empty-row
+     * filtering in the controller, every remaining row has at least one
+     * non-empty cell — column-level rules are applied to those rows.
+     *
+     * @return array<string, array<int, string>>
+     */
+    protected function tableValidationRules(): array
+    {
+        $outer = [$this->required ? 'required' : 'nullable', 'array', 'max:' . $this->maxTableRows];
+        if ($this->required) {
+            $outer[] = 'min:' . max(1, $this->minTableRows);
+        }
+        $rules = [$this->name => $outer];
+
+        foreach ($this->tableColumns as $col) {
+            $colName = $col['name'] ?? null;
+            if (!$colName) continue;
+
+            $colRules = [($col['required'] ?? false) ? 'required' : 'nullable'];
+            $colType  = $col['type'] ?? self::TYPE_TEXT;
+
+            switch ($colType) {
+                case self::TYPE_DATE:
+                    $colRules[] = 'date';
+                    break;
+                case self::TYPE_NUMBER:
+                    $colRules[] = 'integer';
+                    break;
+                case self::TYPE_CURRENCY:
+                    $colRules[] = 'numeric';
+                    $colRules[] = 'min:0';
+                    break;
+                case self::TYPE_SELECT:
+                case self::TYPE_RADIO:
+                    if (!empty($col['options'])) {
+                        $colRules[] = 'in:' . implode(',', array_keys($col['options']));
+                    }
+                    break;
+                default:
+                    $colRules[] = 'string';
+                    $colRules[] = 'max:' . ($col['max'] ?? 500);
+                    break;
+            }
+
+            $rules[$this->name . '.*.' . $colName] = $colRules;
+        }
+
+        return $rules;
     }
 
     public function isDisplayOnly(): bool
