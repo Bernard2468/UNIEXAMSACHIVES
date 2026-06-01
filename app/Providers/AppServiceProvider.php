@@ -6,6 +6,7 @@ use App\Forms\Contracts\SignatureProvider;
 use App\Forms\Definitions\AcademicRenewalOfAppointmentForm;
 use App\Forms\Definitions\AnnualLeaveApplicationForm;
 use App\Forms\Definitions\CasualLeaveApplicationForm;
+use App\Forms\Definitions\EmployeePersonalRecordsForm;
 use App\Forms\Definitions\LeaveResumptionForm;
 use App\Forms\Definitions\PaymentRequisitionForm;
 use App\Forms\Definitions\PurchaseWorksAuthorizationForm;
@@ -60,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
             $registry->register(new VehicleMaintenanceAllowanceForm());
             $registry->register(new RenewalOfAppointmentForm());
             $registry->register(new AcademicRenewalOfAppointmentForm());
+            $registry->register(new EmployeePersonalRecordsForm());
             return $registry;
         });
     }

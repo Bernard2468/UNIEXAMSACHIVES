@@ -80,7 +80,12 @@
       "Bash(git -C \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES\" status --short)",
       "Bash(git mv *)",
       "Bash(php \"c:/Users/FJ/Desktop/UNIEXAMSACHIVES/artisan\" view:clear)",
-      "PowerShell(php artisan view:clear)"
+      "PowerShell(php artisan view:clear)",
+      "Bash(php -l app/Forms/Definitions/EmployeePersonalRecordsForm.php)",
+      "Bash(php -l app/Providers/AppServiceProvider.php)",
+      "PowerShell(php -l c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\app\\\\Forms\\\\Definitions\\\\EmployeePersonalRecordsForm.php)",
+      "PowerShell(php -l c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\app\\\\Providers\\\\AppServiceProvider.php)",
+      "PowerShell(Get-Command php -ErrorAction SilentlyContinue; \\(Test-Path \"C:\\\\xampp\\\\php\\\\php.exe\"\\); \\(Test-Path \"C:\\\\laragon\\\\bin\\\\php\\\\php.exe\"\\))"
     ],
     "deny": []
   }
