@@ -1,5 +1,17 @@
 @extends('layout.app')
 
+@php
+    /**
+     * Multi-step "wizard" mode is opt-in per form: when the form definition
+     * returns a non-null composeWizardSteps() the long applicant page is
+     * sliced into discrete steps so the user isn't forced to scroll for
+     * minutes. All values still post as a single submission — the wizard
+     * is presentational only.
+     */
+    $wizardSteps = $definition->composeWizardSteps();
+    $isWizard    = is_array($wizardSteps) && count($wizardSteps) > 1;
+@endphp
+
 @section('content')
 @include('frontend.header')
 @include('frontend.theme_shadow')
@@ -44,6 +56,38 @@
 
                             <input type="hidden" name="action" id="formActionInput" value="send">
 
+                            {{-- ════════════════════════════════════════════════════════
+                                 WIZARD STEPPER (only when the form opts in)
+                                 ════════════════════════════════════════════════════════ --}}
+                            @if($isWizard)
+                                <div class="form-wizard-stepper" id="formWizardStepper" data-wizard-steps='@json($wizardSteps)'>
+                                    <div class="form-wizard-stepper__progress">
+                                        <div class="form-wizard-stepper__bar" id="formWizardBar" style="width: 0%;"></div>
+                                    </div>
+                                    <div class="form-wizard-stepper__chips">
+                                        @foreach($wizardSteps as $i => $w)
+                                            <button type="button"
+                                                    class="form-wizard-chip {{ $i === 0 ? 'is-active' : '' }}"
+                                                    data-wizard-chip
+                                                    data-wizard-target="{{ $w['key'] }}"
+                                                    aria-label="Go to step {{ $i + 1 }}: {{ $w['label'] }}">
+                                                <span class="form-wizard-chip__circle">{{ $i + 1 }}</span>
+                                                <span class="form-wizard-chip__body">
+                                                    <span class="form-wizard-chip__num">Step {{ $i + 1 }} of {{ count($wizardSteps) }}</span>
+                                                    <span class="form-wizard-chip__label">{{ $w['label'] }}</span>
+                                                </span>
+                                            </button>
+                                            @if($i < count($wizardSteps) - 1)
+                                                <span class="form-wizard-chip__connector"></span>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                    <div class="form-wizard-stepper__sub" id="formWizardSub">
+                                        {{ $wizardSteps[0]['description'] ?? '' }}
+                                    </div>
+                                </div>
+                            @endif
+
                             {{-- Stage 1: requisitioner fields --}}
                             <div class="form-panel">
                                 <div class="form-panel__head">
@@ -57,7 +101,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="form-panel__body">
+                                <div class="form-panel__body" id="formWizardFieldsHost">
                                     @include('admin.forms.partials.field-renderer', [
                                         'stage'       => $stage,
                                         'sectionData' => $sectionData,
@@ -66,8 +110,8 @@
                                 </div>
                             </div>
 
-                            {{-- Stage 2: attachments --}}
-                            <div class="form-panel">
+                            {{-- Stage 2: attachments — only visible on the final wizard step --}}
+                            <div class="form-panel" @if($isWizard) data-wizard-final-only @endif>
                                 <div class="form-panel__head">
                                     <div style="display: flex; align-items: flex-start; gap: 14px;">
                                         <span class="form-panel__step-num">2</span>
@@ -94,7 +138,7 @@
 
                             {{-- Stage 3: signature --}}
                             @if($stage->signatureRequired)
-                                <div class="form-panel">
+                                <div class="form-panel" @if($isWizard) data-wizard-final-only @endif>
                                     <div class="form-panel__head">
                                         <div style="display: flex; align-items: flex-start; gap: 14px;">
                                             <span class="form-panel__step-num">3</span>
@@ -114,7 +158,7 @@
 
                             {{-- Stage 4: forward to next office / leadership --}}
                             @if($nextStage)
-                                <div class="form-panel">
+                                <div class="form-panel" @if($isWizard) data-wizard-final-only @endif>
                                     <div class="form-panel__head">
                                         <div style="display: flex; align-items: flex-start; gap: 14px;">
                                             <span class="form-panel__step-num">4</span>
@@ -165,12 +209,27 @@
                                 </div>
                             @endif
 
-                            <div class="form-actions">
+                            <div class="form-actions" id="formActionsBar">
+                                @if($isWizard)
+                                    <button type="button" class="btn-action btn-action--ghost" id="formWizardPrev" style="display: none;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                                        Previous
+                                    </button>
+                                @endif
+
                                 <button type="submit" class="btn-action btn-action--draft" data-action="draft">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
                                     Save as draft
                                 </button>
-                                <button type="submit" class="btn-action btn-action--primary" data-action="send">
+
+                                @if($isWizard)
+                                    <button type="button" class="btn-action btn-action--primary" id="formWizardNext">
+                                        Next
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                    </button>
+                                @endif
+
+                                <button type="submit" class="btn-action btn-action--primary" data-action="send" id="formForwardBtn" @if($isWizard) style="display: none;" @endif>
                                     {{ $stage->signatureRequired ? 'Sign & forward' : 'Forward' }}
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                 </button>
@@ -203,6 +262,197 @@
 .is_dark .upload-dropzone__text strong { color: #f3f4f6; }
 .is_dark .upload-list__item { background: #111827; border-color: #2d3748; }
 .is_dark .upload-list__name { color: #f3f4f6; }
+
+/* ════════════════════════════════════════════════════════
+   WIZARD STEPPER — modern multi-step compose UI
+   ════════════════════════════════════════════════════════ */
+.form-wizard-stepper {
+    margin: 0 0 22px;
+    padding: 18px 22px 16px;
+    background: #ffffff;
+    border: 1.5px solid #ebebeb;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(12, 12, 12, 0.04);
+    position: sticky;
+    top: 10px;
+    z-index: 6;
+    backdrop-filter: saturate(180%) blur(8px);
+    font-family: 'Outfit', sans-serif !important;
+}
+.form-wizard-stepper__progress {
+    height: 4px;
+    background: #f3f4f6;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.form-wizard-stepper__bar {
+    height: 100%;
+    background: linear-gradient(90deg, #15803d 0%, #16a34a 50%, #22c55e 100%);
+    border-radius: 99px;
+    transition: width .35s cubic-bezier(.4, 0, .2, 1);
+}
+.form-wizard-stepper__chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+.form-wizard-stepper__chips::-webkit-scrollbar { height: 4px; }
+.form-wizard-stepper__chips::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+
+.form-wizard-chip {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px 8px 8px;
+    background: #fafafa;
+    border: 1.5px solid #ebebeb;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all .22s cubic-bezier(.4, 0, .2, 1);
+    font-family: 'Outfit', sans-serif !important;
+    color: #6b7280;
+    text-align: left;
+}
+.form-wizard-chip:hover {
+    background: #f5f5f5;
+    border-color: #d1d5db;
+    color: #111827;
+    transform: translateY(-1px);
+}
+.form-wizard-chip__circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1.5px solid #ebebeb;
+    color: #6b7280;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+    transition: all .22s;
+}
+.form-wizard-chip__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1;
+}
+.form-wizard-chip__num {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: #9ca3af;
+}
+.form-wizard-chip__label {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: inherit;
+    white-space: nowrap;
+}
+
+.form-wizard-chip.is-active {
+    background: linear-gradient(135deg, #0c0c0c 0%, #1f2937 100%);
+    border-color: #0c0c0c;
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(12, 12, 12, 0.22);
+    transform: translateY(-1px);
+}
+.form-wizard-chip.is-active .form-wizard-chip__circle {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #0c0c0c;
+}
+.form-wizard-chip.is-active .form-wizard-chip__num { color: rgba(255, 255, 255, 0.65); }
+
+.form-wizard-chip.is-done {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #047857;
+}
+.form-wizard-chip.is-done .form-wizard-chip__circle {
+    background: #15803d;
+    border-color: #15803d;
+    color: #ffffff;
+}
+.form-wizard-chip.is-done .form-wizard-chip__num { color: #16a34a; }
+
+.form-wizard-chip__connector {
+    flex: 0 0 18px;
+    height: 2px;
+    background: #ebebeb;
+    border-radius: 99px;
+}
+
+.form-wizard-stepper__sub {
+    margin-top: 12px;
+    font-size: 0.82rem;
+    color: #6b7280;
+    line-height: 1.55;
+    transition: opacity .25s;
+}
+
+/* Animate when fields toggle between steps */
+.form-grid > [data-wizard-hidden="1"] { display: none !important; }
+.form-grid {
+    transition: opacity .25s ease, transform .25s ease;
+}
+.form-grid.is-transitioning { opacity: 0; transform: translateY(4px); }
+
+[data-wizard-final-only][data-wizard-hidden="1"] { display: none !important; }
+
+/* Ghost (Previous) button */
+.btn-action.btn-action--ghost {
+    background: transparent;
+    color: #374151;
+    border: 1.5px solid #e5e7eb;
+}
+.btn-action.btn-action--ghost:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    color: #111827;
+}
+
+/* Mobile: stack chips vertically with reduced padding */
+@media (max-width: 760px) {
+    .form-wizard-stepper { padding: 14px 14px 12px; border-radius: 14px; position: relative; top: 0; }
+    .form-wizard-chip { padding: 6px 12px 6px 6px; }
+    .form-wizard-chip__label { font-size: 0.78rem; }
+    .form-wizard-chip__num { display: none; }
+}
+
+/* Dark mode */
+.is_dark .form-wizard-stepper {
+    background: #0b1322;
+    border-color: #1e2330;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.is_dark .form-wizard-stepper__progress { background: #1e2330; }
+.is_dark .form-wizard-chip { background: #0f172a; border-color: #1e2330; color: #9ca3af; }
+.is_dark .form-wizard-chip:hover { background: #111827; border-color: #2d3748; color: #f3f4f6; }
+.is_dark .form-wizard-chip__circle { background: #0b1322; border-color: #1e2330; color: #9ca3af; }
+.is_dark .form-wizard-chip__num { color: #6b7280; }
+.is_dark .form-wizard-chip.is-active {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #0c0c0c;
+    border-color: #f3f4f6;
+    box-shadow: 0 6px 18px rgba(243, 244, 246, 0.18);
+}
+.is_dark .form-wizard-chip.is-active .form-wizard-chip__circle { background: #0c0c0c; color: #f3f4f6; border-color: #0c0c0c; }
+.is_dark .form-wizard-chip.is-active .form-wizard-chip__num { color: rgba(12, 12, 12, 0.6); }
+.is_dark .form-wizard-chip.is-done { background: rgba(21, 128, 61, 0.18); border-color: #15803d; color: #6ee7b7; }
+.is_dark .form-wizard-chip__connector { background: #1e2330; }
+.is_dark .form-wizard-stepper__sub { color: #9ca3af; }
+.is_dark .btn-action.btn-action--ghost { color: #d1d5db; border-color: #2d3748; }
+.is_dark .btn-action.btn-action--ghost:hover { background: #111827; border-color: #4b5563; color: #f3f4f6; }
 </style>
 
 <script>
@@ -250,8 +500,255 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+
+    // ════════════════════════════════════════════════════════
+    // WIZARD — multi-step compose page
+    // ════════════════════════════════════════════════════════
+    const stepperEl = document.getElementById('formWizardStepper');
+    if (!stepperEl) return; // Single-step form — nothing else to wire.
+
+    let steps = [];
+    try { steps = JSON.parse(stepperEl.dataset.wizardSteps || '[]'); } catch (e) { steps = []; }
+    if (steps.length < 2) return;
+
+    const fieldGrid = document.querySelector('#formWizardFieldsHost .form-grid');
+    if (!fieldGrid) return;
+
+    // Tag every grid child with the wizard step it belongs to. We walk the
+    // children in document order; whenever we hit a child whose data-field-name
+    // matches a step's `startAt`, that step becomes the current "owner" for
+    // every subsequent child until the next boundary.
+    const firstKey = steps[0].key;
+    let currentKey = firstKey;
+    const stepBoundaryByField = {};
+    steps.forEach(function (s) { stepBoundaryByField[s.startAt] = s.key; });
+
+    Array.from(fieldGrid.children).forEach(function (child) {
+        const fname = child.dataset.fieldName;
+        if (fname && stepBoundaryByField[fname]) {
+            currentKey = stepBoundaryByField[fname];
+        }
+        child.dataset.wizardOwner = currentKey;
+    });
+
+    // Panels marked data-wizard-final-only are only visible on the final step.
+    const finalKey = steps[steps.length - 1].key;
+    const finalOnlyPanels = Array.from(document.querySelectorAll('[data-wizard-final-only]'));
+
+    const chips = Array.from(stepperEl.querySelectorAll('[data-wizard-chip]'));
+    const subEl = document.getElementById('formWizardSub');
+    const barEl = document.getElementById('formWizardBar');
+    const prevBtn = document.getElementById('formWizardPrev');
+    const nextBtn = document.getElementById('formWizardNext');
+    const forwardBtn = document.getElementById('formForwardBtn');
+
+    let activeIndex = 0;
+    const visitedSteps = new Set([firstKey]);
+
+    function applyStep(targetIndex, opts) {
+        opts = opts || {};
+        targetIndex = Math.max(0, Math.min(steps.length - 1, targetIndex));
+        const target = steps[targetIndex];
+        activeIndex = targetIndex;
+        visitedSteps.add(target.key);
+
+        // Fade the grid during the swap so the change feels intentional.
+        fieldGrid.classList.add('is-transitioning');
+
+        setTimeout(function () {
+            // Toggle every tagged child of the grid.
+            Array.from(fieldGrid.children).forEach(function (child) {
+                child.dataset.wizardHidden = (child.dataset.wizardOwner === target.key) ? '0' : '1';
+            });
+            // Toggle the panels that should only appear on the final step.
+            finalOnlyPanels.forEach(function (panel) {
+                panel.dataset.wizardHidden = (target.key === finalKey) ? '0' : '1';
+            });
+
+            // Stepper chip states.
+            chips.forEach(function (chip, i) {
+                chip.classList.remove('is-active', 'is-done');
+                if (i === activeIndex) {
+                    chip.classList.add('is-active');
+                } else if (i < activeIndex || visitedSteps.has(steps[i].key)) {
+                    chip.classList.add('is-done');
+                }
+            });
+
+            // Progress bar — % of completed steps INCLUDING the current.
+            if (barEl) {
+                const pct = Math.round(((activeIndex + 1) / steps.length) * 100);
+                barEl.style.width = pct + '%';
+            }
+            if (subEl) {
+                subEl.textContent = target.description || '';
+            }
+
+            // Buttons.
+            if (prevBtn) {
+                prevBtn.style.display = activeIndex === 0 ? 'none' : '';
+            }
+            const isFinal = activeIndex === steps.length - 1;
+            if (nextBtn) {
+                nextBtn.style.display = isFinal ? 'none' : '';
+            }
+            if (forwardBtn) {
+                forwardBtn.style.display = isFinal ? '' : 'none';
+            }
+
+            fieldGrid.classList.remove('is-transitioning');
+
+            if (!opts.noScroll) {
+                // Scroll the user back to the top of the form so the new
+                // step's first field is visible.
+                stepperEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, opts.noScroll ? 0 : 140);
+    }
+
+    // Validate required fields in the current step before advancing.
+    // The field-renderer emits data-required="1" on every field whose
+    // FormField was marked required. We treat empty values (or unchecked
+    // required-checkbox / no-checked-radio) as invalid and nudge the user
+    // to that field. Server-side validation still runs on final submit.
+    function validateCurrentStep() {
+        const target = steps[activeIndex];
+        const requiredFields = Array.from(
+            fieldGrid.querySelectorAll('[data-wizard-owner="' + CSS.escape(target.key) + '"][data-required="1"]')
+        );
+        let firstInvalidField = null;
+        let firstInvalidInput = null;
+
+        for (let i = 0; i < requiredFields.length; i++) {
+            const field = requiredFields[i];
+            const fieldType = field.dataset.fieldType;
+            let invalid = false;
+
+            if (fieldType === 'checkbox') {
+                const cb = field.querySelector('input[type="checkbox"]');
+                if (cb && !cb.checked) invalid = true;
+            } else if (fieldType === 'radio') {
+                const radios = field.querySelectorAll('input[type="radio"]');
+                const anyChecked = Array.from(radios).some(function (r) { return r.checked; });
+                if (radios.length && !anyChecked) invalid = true;
+            } else if (fieldType === 'table') {
+                // Tables: at least one row must have at least one non-empty cell.
+                const cellInputs = Array.from(field.querySelectorAll('[data-table-rows] input, [data-table-rows] textarea, [data-table-rows] select'));
+                const anyFilled = cellInputs.some(function (i) { return (i.value || '').trim() !== ''; });
+                if (!anyFilled) invalid = true;
+            } else {
+                // text / textarea / number / date / currency / select
+                const input = field.querySelector('input, textarea, select');
+                if (input && (!input.value || !input.value.trim())) invalid = true;
+            }
+
+            if (invalid && !firstInvalidField) {
+                firstInvalidField = field;
+                firstInvalidInput = field.querySelector('input, textarea, select');
+            }
+        }
+
+        if (firstInvalidField) {
+            if (firstInvalidInput) firstInvalidInput.focus({ preventScroll: false });
+            firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalidField.classList.add('is-wizard-invalid-field');
+            setTimeout(function () { firstInvalidField.classList.remove('is-wizard-invalid-field'); }, 2200);
+            return false;
+        }
+        return true;
+    }
+
+    // Wire chip clicks. Allow jumping back freely; for jumping FORWARD
+    // require the in-between steps to validate so the user isn't
+    // accidentally skipping required content.
+    chips.forEach(function (chip, idx) {
+        chip.addEventListener('click', function () {
+            if (idx <= activeIndex) {
+                applyStep(idx);
+                return;
+            }
+            // Walk forward, validating each step on the way.
+            let okIndex = activeIndex;
+            for (let i = activeIndex; i < idx; i++) {
+                if (i === activeIndex) {
+                    if (validateCurrentStep()) {
+                        okIndex = i + 1;
+                    } else {
+                        return;
+                    }
+                } else {
+                    // Briefly land on the intermediate step to validate it.
+                    applyStep(i, { noScroll: true });
+                    if (validateCurrentStep()) {
+                        okIndex = i + 1;
+                    } else {
+                        return;
+                    }
+                }
+            }
+            applyStep(okIndex);
+        });
+    });
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function () {
+            if (validateCurrentStep()) {
+                applyStep(activeIndex + 1);
+            }
+        });
+    }
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function () { applyStep(activeIndex - 1); });
+    }
+
+    // Save-as-draft should always succeed, regardless of step. But the
+    // "Sign & forward" button is hidden until the last step — if a user
+    // hits Enter inside an input (which natively submits the form), we
+    // intercept here and behave like clicking Next: validate this step,
+    // advance if valid, otherwise prevent the submit and highlight the
+    // missing field.
+    form.addEventListener('submit', function (e) {
+        if (actionInput.value === 'send' && activeIndex !== steps.length - 1) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (validateCurrentStep()) {
+                applyStep(activeIndex + 1);
+            }
+        }
+    }, true); // capture phase so we run before the existing submit handler
+
+    // On load: hide everything except the first step.
+    applyStep(0, { noScroll: true });
 });
 </script>
+
+<style>
+.is-wizard-invalid-field {
+    position: relative;
+    animation: wizardNudge .55s cubic-bezier(.36, .07, .19, .97);
+}
+.is-wizard-invalid-field .form-field__label::after {
+    content: ' — please complete';
+    font-size: 0.74rem;
+    color: #b91c1c;
+    font-weight: 600;
+    font-style: italic;
+    margin-left: 4px;
+}
+.is-wizard-invalid-field .form-control,
+.is-wizard-invalid-field .form-select,
+.is-wizard-invalid-field .radio-group,
+.is-wizard-invalid-field .checkbox-pill,
+.is-wizard-invalid-field .form-table {
+    border-color: #b91c1c !important;
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.12) !important;
+}
+@keyframes wizardNudge {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+</style>
 
 @include('admin.forms.partials.shared-styles')
 @endsection

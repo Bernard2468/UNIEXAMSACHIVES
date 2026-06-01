@@ -9,26 +9,28 @@ use App\Forms\FormStage;
 /**
  * Employee Personal Records (Form EPR) — Catholic University of Ghana, Fiapre-Sunyani.
  *
- * Captured at the point of hire so the Registrar's office and the Human
- * Resource Unit each hold a complete record of the new staff member.
- *
- * The paper form carries the rubric "The forms must be completed in duplicate
- * and forwarded to the Registrar's office." In the digital workflow the same
- * record is the canonical source of truth — both the Registrar and the HR
- * Unit countersign it so each office has formally acknowledged its copy.
+ * The employee's personal-records form. Conceptually the employee is filing
+ * *two copies* of the same record — one with the Human Resource Unit
+ * (primary holder of staff personnel files) and one with the Registrar's
+ * Office (institutional record). It is the EMPLOYEE who is initiating both
+ * filings — neither office is gate-keeping the other.
  *
  * Workflow (3 stages):
  *   1. applicant — Parts I-IV: the employee fills personal & family details,
  *                  education, employment history, other information, then
- *                  signs the declaration.
- *   2. registrar — The Registrar's Office assigns the Staff Number and
- *                  Appointment Number, files the record, and signs.
- *   3. hr        — The Human Resource Unit takes its copy, confirms the
- *                  placement (faculty / department / position), and signs.
+ *                  signs the declaration. The compose page renders as a
+ *                  four-step wizard (see composeWizardSteps()) so the
+ *                  employee isn't scrolling through one giant page.
+ *   2. hr        — Human Resource Unit (the primary recipient): files its
+ *                  copy, assigns the Staff Number, confirms placement and
+ *                  signs.
+ *   3. registrar — Registrar's Office (the second recipient): files its
+ *                  copy, assigns the Appointment Number and signs.
  *
- * Final-state of "fully filed" is signalled by completion of both office
- * stages — exactly the "duplicate forwarded to Registrar AND held by HR"
- * pattern described on the paper form.
+ * Both office stages exist so each office formally acknowledges receipt of
+ * its own copy — matching the paper rubric "forms must be completed in
+ * duplicate and forwarded to the Registrar's Office", with HR taking the
+ * lead because the form is primarily an HR personnel record.
  */
 class EmployeePersonalRecordsForm extends BaseFormDefinition
 {
@@ -49,7 +51,7 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
 
     public function description(): string
     {
-        return 'New-hire personal records form. Capture your personal & family details, education, employment history and other information, then route to the Registrar (who assigns your Staff No. and Appointment No.) and the Human Resource Unit, both of whom hold a copy on file.';
+        return 'Your personal records form. Capture your personal & family details, education, employment history and other information, then file a copy with the Human Resource Unit (who will assign your Staff No.) and a copy with the Registrar\'s Office (who will assign your Appointment No.). Filled across four short steps — you won\'t be scrolling forever.';
     }
 
     public function templateView(): string
@@ -67,6 +69,43 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
         return 'This form must be completed in duplicate and forwarded to the Registrar\'s Office.';
     }
 
+    /**
+     * Four-step wizard for the applicant stage so the employee doesn't
+     * have to scroll through Part I → IV on a single page. Each entry's
+     * `startAt` names the FIRST field in that step — the renderer
+     * groups every following field into the step until it sees the
+     * `startAt` of the next step.
+     */
+    public function composeWizardSteps(): ?array
+    {
+        return [
+            [
+                'key'         => 'part1',
+                'label'       => 'Personal & Family',
+                'startAt'     => 'part_1_heading',
+                'description' => 'Your particulars, contact details, addresses, marital status, vehicle, banking, children, parents, next-of-kin and beneficiaries.',
+            ],
+            [
+                'key'         => 'part2',
+                'label'       => 'Education',
+                'startAt'     => 'part_2_heading',
+                'description' => 'Schools attended and your qualifications. Attach copies of your certificates below.',
+            ],
+            [
+                'key'         => 'part3',
+                'label'       => 'Employment',
+                'startAt'     => 'part_3_heading',
+                'description' => 'Every place you have worked at, starting from your current / most recent role.',
+            ],
+            [
+                'key'         => 'part4',
+                'label'       => 'Other Info & Sign',
+                'startAt'     => 'part_4_heading',
+                'description' => 'Convictions disclosure, position at CUG, declaration. Upload supporting documents and sign here.',
+            ],
+        ];
+    }
+
     public function stages(): array
     {
         return [
@@ -74,7 +113,7 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
                 slug: 'applicant',
                 label: 'Employee — Personal Records (Parts I–IV)',
                 officeSlug: null,
-                description: 'Fill in every field carefully and accurately. You will sign the declaration at the bottom. Once submitted, the form moves to the Registrar\'s Office (who assigns your Staff Number and Appointment Number) and finally to the Human Resource Unit for filing.',
+                description: 'Fill in every field carefully and accurately, then sign the declaration. Once you submit, the form goes to the Human Resource Unit (your primary file holder — they will assign your Staff Number) and then to the Registrar\'s Office for the duplicate copy (they will assign your Appointment Number). You are filing your own record with both offices — neither office is sending it to the other.',
                 fields: [
                     // ═══════════════════════════════════════════════════════
                     // PART I — PERSONAL & FAMILY DETAILS
@@ -309,31 +348,31 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
             ),
 
             new FormStage(
-                slug: 'registrar',
-                label: 'Registrar — Assign Staff Number & File',
-                officeSlug: 'registrar',
-                description: 'Assign the new staff member their Staff Number and Appointment Number, then sign to file the Registrar\'s copy. The form will then move to the Human Resource Unit for the duplicate copy.',
+                slug: 'hr',
+                label: 'Human Resource Unit — Primary Copy',
+                officeSlug: 'human-resource-unit',
+                description: 'The Human Resource Unit holds the primary copy of this record. Assign the Staff Number, confirm the placement details (faculty / department / position) and sign to file the HR copy. The form then moves on to the Registrar\'s Office for the second copy.',
                 fields: [
-                    new FormField('staff_no',        'Staff Number',         FormField::TYPE_TEXT, required: true, col: 6, maxLength: 60,
-                        help: 'The Staff Number assigned by the Registrar\'s Office. Marked "Office Use" on the paper form.'),
-                    new FormField('appointment_no',  'Appointment Number',   FormField::TYPE_TEXT, required: true, col: 6, maxLength: 60,
-                        help: 'The Appointment Reference Number issued for this employee.'),
-                    new FormField('registrar_comments', 'Comments (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12,
-                        help: 'Optional remarks on filing — e.g. confirmation of identity documents sighted.'),
+                    new FormField('staff_no',                'Staff Number',         FormField::TYPE_TEXT, required: true, col: 6, maxLength: 60,
+                        help: 'The Staff Number assigned by HR for this new employee. Marked "Office Use" on the paper form.'),
+                    new FormField('hr_placement_confirmed',  'Placement confirmed',  FormField::TYPE_CHECKBOX, required: true, col: 6,
+                        help: 'I confirm that the staff member\'s faculty / department / position as stated above match the HR placement and the personal-records copy has been filed with the Human Resource Unit.'),
+                    new FormField('hr_comments',             'HR comments (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12,
+                        help: 'Optional remarks — induction notes, missing documents requested, etc.'),
                 ],
                 signatureRequired: true,
             ),
 
             new FormStage(
-                slug: 'hr',
-                label: 'Human Resource Unit — Final Filing',
-                officeSlug: 'human-resource-unit',
-                description: 'Take the duplicate copy of the record for the Human Resource Unit\'s files. Confirm the placement details and sign to complete the workflow.',
+                slug: 'registrar',
+                label: 'Registrar\'s Office — Duplicate Copy',
+                officeSlug: 'registrar',
+                description: 'The Registrar\'s Office holds the duplicate (institutional) copy of this record. Assign the Appointment Number and sign to file the Registrar\'s copy. This completes the workflow.',
                 fields: [
-                    new FormField('hr_placement_confirmed', 'Placement confirmed', FormField::TYPE_CHECKBOX, required: true, col: 12,
-                        help: 'I confirm that the staff member\'s faculty / department / position as stated above match the HR records, and the personal-records copy has been filed with the Human Resource Unit.'),
-                    new FormField('hr_comments', 'Comments (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12,
-                        help: 'Optional remarks — induction notes, missing documents requested, etc.'),
+                    new FormField('appointment_no',     'Appointment Number',   FormField::TYPE_TEXT, required: true, col: 12, maxLength: 60,
+                        help: 'The Appointment Reference Number issued by the Registrar\'s Office for this employee.'),
+                    new FormField('registrar_comments', 'Registrar comments (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12,
+                        help: 'Optional remarks on filing — e.g. confirmation of identity documents sighted.'),
                 ],
                 signatureRequired: true,
             ),

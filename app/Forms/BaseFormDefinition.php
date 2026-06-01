@@ -77,6 +77,31 @@ abstract class BaseFormDefinition
     }
 
     /**
+     * Optional multi-step "wizard" configuration for the requisitioner /
+     * applicant compose page. When non-null, the first stage's fields are
+     * grouped into the named steps (driven by `startAt` field-name
+     * boundaries) and rendered with a stepper UI + Next/Previous controls
+     * so long forms don't force endless scrolling.
+     *
+     * Each entry is an associative array:
+     *   - 'key'     : stable step identifier (used only for DOM ids)
+     *   - 'label'   : short label shown in the stepper chip
+     *   - 'startAt' : name of the FIRST field belonging to this step
+     *                 (typically a HEADING field). All subsequent fields,
+     *                 up to but not including the next step's startAt,
+     *                 are rendered inside this step.
+     *   - 'icon'    : optional SVG markup or character shown on the chip
+     *
+     * Return null = single-step compose page (current default behaviour).
+     *
+     * @return array<int, array{key:string,label:string,startAt:string,icon?:string,description?:string}>|null
+     */
+    public function composeWizardSteps(): ?array
+    {
+        return null;
+    }
+
+    /**
      * Convenience lookup of a stage by slug.
      */
     public function stage(string $slug): ?FormStage

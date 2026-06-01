@@ -18,8 +18,8 @@
                  convicted_offence, conviction_details,
                  position_at_cug, cug_office_department,
                  declaration_accepted
-      registrar: staff_no, appointment_no, registrar_comments
-      hr:        hr_placement_confirmed, hr_comments
+      hr:        staff_no, hr_placement_confirmed, hr_comments     (PRIMARY copy)
+      registrar: appointment_no, registrar_comments                (DUPLICATE copy)
 --}}
 @php
     $applicantData = $submission->sectionData('applicant');
@@ -299,14 +299,14 @@
         @if($submission->completed_at)<span><strong>Completed:</strong> {{ $submission->completed_at->format('d M Y, H:i') }}</span>@endif
     </div>
 
-    {{-- ===== Staff No / Appointment No box (assigned by Registrar) ===== --}}
+    {{-- ===== Staff No (HR) / Appointment No (Registrar) box ===== --}}
     <div class="pf-staffbox">
         <table>
             <tr>
                 <td class="pf-staffbox__label">STAFF NO.</td>
-                <td class="pf-staffbox__value">{{ $registrarData['staff_no'] ?? '' }}
-                    @if(empty($registrarData['staff_no']))
-                        <span class="pf-staffbox__hint">— assigned by Registrar (Office Use)</span>
+                <td class="pf-staffbox__value">{{ $hrData['staff_no'] ?? '' }}
+                    @if(empty($hrData['staff_no']))
+                        <span class="pf-staffbox__hint">— assigned by HR (Office Use)</span>
                     @endif
                 </td>
                 <td class="pf-staffbox__label">APPOINTMENT NO.</td>
@@ -661,15 +661,71 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════
-         REGISTRAR — Office Filing
+         HUMAN RESOURCE UNIT — Primary Copy
+         (Listed first because the form is primarily an HR personnel record;
+          the employee files a copy with HR and a duplicate with the Registrar.)
          ═══════════════════════════════════════════════════════ --}}
-    <div class="pf-part-head">For Office Use — Registrar's Office</div>
+    <div class="pf-part-head">For Office Use — Human Resource Unit (Primary Copy)</div>
+    <p style="margin: 0 0 6px; font-size: 10px; color: #374151;">
+        The Human Resource Unit holds the primary copy of this personnel record. By signing
+        below, HR confirms the placement details above and assigns the Staff Number.
+    </p>
     <table class="pf-grid">
         <tr>
-            <td><span class="pf-kv__label">Staff No.:</span>
-                <span class="pf-kv__value" style="min-width: 60%;">{{ $registrarData['staff_no'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">Appointment No.:</span>
-                <span class="pf-kv__value" style="min-width: 60%;">{{ $registrarData['appointment_no'] ?? '' }}</span></td>
+            <td><span class="pf-kv__label">Staff Number (assigned by HR):</span>
+                <span class="pf-kv__value" style="min-width: 50%;">{{ $hrData['staff_no'] ?? '' }}</span></td>
+            <td>
+                @if(!empty($hrData['hr_placement_confirmed']))
+                    <span style="font-size: 10px; color: #15803d; font-weight: 700;">✓ Placement confirmed by HR.</span>
+                @endif
+            </td>
+        </tr>
+    </table>
+    @if(!empty($hrData['hr_comments']))
+        <div class="pf-row">
+            <span class="pf-row__label">HR Comments:</span>
+            <div class="pf-row__value">{{ $hrData['hr_comments'] }}</div>
+        </div>
+    @endif
+
+    <div class="pf-sigcard pf-keep">
+        <div class="pf-sigcard__head">Signature of Head of Human Resource Unit</div>
+        <div class="pf-sigcard__body">
+            @if($hrSig)
+                @php $img = $sigFsPath($hrSig); @endphp
+                @if($img)
+                    <img class="pf-sigcard__img" src="{{ $img }}" alt="HR signature">
+                @endif
+            @else
+                <div class="pf-sigcard__empty">— awaiting HR signature —</div>
+            @endif
+        </div>
+        <div class="pf-sigcard__meta">
+            @if($hrSig)
+                @php $check = $hrSig->verifyChain(); @endphp
+                Signed by <strong>{{ $signerName($hrSig) }}</strong>
+                on <span class="pf-sigcard__date">{{ $hrSig->signed_at?->format('d M Y, H:i') }}</span>
+                <span class="pf-sigcard__badge {{ $check['valid'] ? 'pf-sigcard__badge--ok' : 'pf-sigcard__badge--bad' }}">
+                    {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
+                </span>
+            @else
+                Not yet signed.
+            @endif
+        </div>
+    </div>
+
+    {{-- ═══════════════════════════════════════════════════════
+         REGISTRAR'S OFFICE — Duplicate Copy
+         ═══════════════════════════════════════════════════════ --}}
+    <div class="pf-part-head">For Office Use — Registrar's Office (Duplicate Copy)</div>
+    <p style="margin: 0 0 6px; font-size: 10px; color: #374151;">
+        The Registrar's Office holds the institutional duplicate of this personnel record and
+        assigns the Appointment Number.
+    </p>
+    <table class="pf-grid">
+        <tr>
+            <td colspan="2"><span class="pf-kv__label">Appointment Number (assigned by Registrar):</span>
+                <span class="pf-kv__value" style="min-width: 55%;">{{ $registrarData['appointment_no'] ?? '' }}</span></td>
         </tr>
     </table>
     @if(!empty($registrarData['registrar_comments']))
@@ -696,52 +752,6 @@
                 @php $check = $registrarSig->verifyChain(); @endphp
                 Signed by <strong>{{ $signerName($registrarSig) }}</strong>
                 on <span class="pf-sigcard__date">{{ $registrarSig->signed_at?->format('d M Y, H:i') }}</span>
-                <span class="pf-sigcard__badge {{ $check['valid'] ? 'pf-sigcard__badge--ok' : 'pf-sigcard__badge--bad' }}">
-                    {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
-                </span>
-            @else
-                Not yet signed.
-            @endif
-        </div>
-    </div>
-
-    {{-- ═══════════════════════════════════════════════════════
-         HUMAN RESOURCE UNIT — Duplicate Copy
-         ═══════════════════════════════════════════════════════ --}}
-    <div class="pf-part-head">For Office Use — Human Resource Unit (Duplicate Copy)</div>
-    <p style="margin: 0 0 6px; font-size: 10px; color: #374151;">
-        The Human Resource Unit holds the duplicate copy of this record. By signing below, the
-        HR Unit confirms that the placement details above match the HR records on file.
-    </p>
-    @if(!empty($hrData['hr_placement_confirmed']))
-        <div style="margin: 4px 0 8px; font-size: 10px; color: #15803d; font-weight: 700;">
-            ✓ Placement confirmed by HR.
-        </div>
-    @endif
-    @if(!empty($hrData['hr_comments']))
-        <div class="pf-row">
-            <span class="pf-row__label">HR Comments:</span>
-            <div class="pf-row__value">{{ $hrData['hr_comments'] }}</div>
-        </div>
-    @endif
-
-    <div class="pf-sigcard pf-keep">
-        <div class="pf-sigcard__head">Signature of Head of Human Resource Unit</div>
-        <div class="pf-sigcard__body">
-            @if($hrSig)
-                @php $img = $sigFsPath($hrSig); @endphp
-                @if($img)
-                    <img class="pf-sigcard__img" src="{{ $img }}" alt="HR signature">
-                @endif
-            @else
-                <div class="pf-sigcard__empty">— awaiting HR signature —</div>
-            @endif
-        </div>
-        <div class="pf-sigcard__meta">
-            @if($hrSig)
-                @php $check = $hrSig->verifyChain(); @endphp
-                Signed by <strong>{{ $signerName($hrSig) }}</strong>
-                on <span class="pf-sigcard__date">{{ $hrSig->signed_at?->format('d M Y, H:i') }}</span>
                 <span class="pf-sigcard__badge {{ $check['valid'] ? 'pf-sigcard__badge--ok' : 'pf-sigcard__badge--bad' }}">
                     {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
                 </span>
