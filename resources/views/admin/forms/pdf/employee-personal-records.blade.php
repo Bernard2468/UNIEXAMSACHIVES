@@ -125,29 +125,36 @@
         .pf-head h2 { font-size: 14px; font-weight: 800; margin-top: 4px; text-decoration: underline; letter-spacing: 0.3px; }
         .pf-head .pf-rubric { font-style: italic; font-size: 9.5px; color: #374151; margin-top: 3px; }
 
-        /* ── Passport-photograph box (paper-faithful) ── */
+        /* ── Passport-photograph box (paper-faithful, dompdf-safe) ──
+           Implemented as a nested <table> so the inner <td> can do
+           vertical-align: middle without using display: table-cell on a
+           non-cell element — dompdf throws "Frame not found in cellmap"
+           when an anonymous table-cell is created inside a real <td>. */
         .pf-photo {
             width: 105px;
             height: 130px;
             margin-left: auto;
             border: 1.2px solid #111827;
-            border-radius: 2px;
             background: #fff;
-            display: table-cell;
-            vertical-align: middle;
+            border-collapse: collapse;
+        }
+        .pf-photo--filled { border-color: #15803d; }
+        .pf-photo__cell {
+            width: 105px;
+            height: 130px;
             text-align: center;
+            vertical-align: middle;
+            padding: 0;
             overflow: hidden;
         }
-        .pf-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pf-photo__img { display: block; margin: 0 auto; }
         .pf-photo__hint {
             font-style: italic;
             font-size: 9.5px;
             color: #6b7280;
             line-height: 1.4;
             padding: 0 4px;
-            display: inline-block;
         }
-        .pf-photo--filled { border-style: solid; border-color: #15803d; }
 
         /* ── Reference strip ── */
         .pf-meta { margin: 8px 0 12px; padding: 6px 10px; background: #f3f4f6; border-radius: 4px; font-size: 9.5px; color: #374151; }
@@ -350,13 +357,17 @@
                 </div>
             </td>
             <td class="pf-headtbl__right">
-                <div class="pf-photo {{ $passportPhotoFs ? 'pf-photo--filled' : '' }}">
-                    @if($passportPhotoFs)
-                        <img src="{{ $passportPhotoFs }}" alt="Passport photograph">
-                    @else
-                        <span class="pf-photo__hint">Affix recent<br>passport size<br>photograph</span>
-                    @endif
-                </div>
+                <table class="pf-photo {{ $passportPhotoFs ? 'pf-photo--filled' : '' }}" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="pf-photo__cell">
+                            @if($passportPhotoFs)
+                                <img class="pf-photo__img" src="{{ $passportPhotoFs }}" width="103" height="128" alt="Passport photograph">
+                            @else
+                                <span class="pf-photo__hint">Affix recent<br>passport size<br>photograph</span>
+                            @endif
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>
