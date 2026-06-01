@@ -380,8 +380,10 @@
      Auto-calculate age from a date-of-birth field.
      Any date input carrying  data-calc-age-target="age_field_name"
      will update that target field in years whenever its value
-     changes. Runs once on page load too, so reopening a saved
-     submission re-derives the age. The user can still override.
+     changes. Listens on both `input` AND `change` so the age fills
+     in the moment the user picks (or types) a complete date —
+     not only when they tab away. Re-runs on DOMContentLoaded as
+     a safety net for any inputs added later in the page lifecycle.
      ───────────────────────────────────────────────────────────── --}}
 <script>
 (function () {
@@ -397,6 +399,9 @@
     }
 
     function wire(dateEl) {
+        if (dateEl.dataset.ageWired === '1') return; // idempotent
+        dateEl.dataset.ageWired = '1';
+
         var targetName = dateEl.dataset.calcAgeTarget;
         if (!targetName) return;
         var form = dateEl.closest('form') || document;
@@ -405,17 +410,39 @@
 
         function update() {
             var age = computeAge(dateEl.value);
-            if (age !== null) target.value = age;
+            if (age !== null) {
+                target.value = age;
+                // Fire input/change on the target so any other listeners
+                // (validation, dependent fields) hear about it too.
+                target.dispatchEvent(new Event('input',  { bubbles: true }));
+                target.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
 
+        // `input` fires on every keystroke / picker selection — fastest path
+        // to a populated age. `change` is the safety net for browsers that
+        // suppress `input` on type=date.
+        dateEl.addEventListener('input', update);
         dateEl.addEventListener('change', update);
+        dateEl.addEventListener('blur', update);
+
         // Derive on load if the field is already populated (editing a saved
         // submission) AND the target is still empty — never clobber a value
         // the user has manually typed.
         if (dateEl.value && !target.value) update();
     }
 
-    document.querySelectorAll('input[type="date"][data-calc-age-target]').forEach(wire);
+    function wireAll() {
+        document.querySelectorAll('input[type="date"][data-calc-age-target]').forEach(wire);
+    }
+
+    // Run immediately (inline-script timing — the relevant inputs precede
+    // this <script> in document order, so they are guaranteed parsed) AND
+    // again on DOMContentLoaded in case any are added later.
+    wireAll();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', wireAll);
+    }
 })();
 </script>
 @endonce
