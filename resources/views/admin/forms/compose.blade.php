@@ -110,7 +110,11 @@
                                              picks it up as the first image at applicant stage.
                                              ───────────────────────────────────────────────── --}}
                                         <label class="passport-uploader" for="passport_photo_input" id="passportUploaderBox" tabindex="0" aria-label="Upload your passport-size photograph">
-                                            <input type="file" name="passport_photo" id="passport_photo_input" accept="image/*" hidden>
+                                            {{-- inline display:none rather than the `hidden` HTML attribute — every
+                                                 browser submits a file input regardless of either approach, but the
+                                                 inline style works around a handful of legacy / mobile browsers that
+                                                 incorrectly treat `hidden` form controls as disabled-for-submit. --}}
+                                            <input type="file" name="passport_photo" id="passport_photo_input" accept="image/*" style="display:none;">
                                             <div class="passport-uploader__inner" id="passportUploaderInner">
                                                 <svg class="passport-uploader__icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                                                     <rect x="3" y="6" width="18" height="14" rx="2"/>

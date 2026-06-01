@@ -99,11 +99,40 @@ class FormSubmissionController extends Controller
         // attachments array so it's the first FormAttachment row created —
         // the PDF view picks "the first image at applicant stage" as the
         // passport photograph to embed in the top-right of page 1.
+        //
+        // Acceptance is lenient: a file counts as an image if EITHER the
+        // detected mime type starts with image/ OR the original filename has
+        // a common image extension. Some shared-hosting PHP builds report
+        // empty / generic mime types for uploads, so the extension fallback
+        // is essential. Rejections are logged so a misconfigured upload (size
+        // limit hit, php-fileinfo missing, etc.) is visible in the log.
         $attachments = $request->file('attachments', []);
         if ($definition->requiresPassportPhoto()) {
             $photo = $request->file('passport_photo');
-            if ($photo && $photo->isValid() && str_starts_with((string) $photo->getMimeType(), 'image/')) {
-                array_unshift($attachments, $photo);
+            if ($photo) {
+                if (!$photo->isValid()) {
+                    \Illuminate\Support\Facades\Log::warning('EPR passport photo upload error', [
+                        'php_upload_error' => $photo->getError(),
+                        'original_name'    => $photo->getClientOriginalName(),
+                        'size'             => $photo->getSize(),
+                        'submission_form'  => $definition->slug(),
+                    ]);
+                } else {
+                    $mime = strtolower((string) ($photo->getMimeType() ?? ''));
+                    $ext  = strtolower((string) $photo->getClientOriginalExtension());
+                    $isImage = ($mime !== '' && str_starts_with($mime, 'image/'))
+                            || in_array($ext, ['jpg','jpeg','png','gif','webp','bmp'], true);
+
+                    if ($isImage) {
+                        array_unshift($attachments, $photo);
+                    } else {
+                        \Illuminate\Support\Facades\Log::warning('EPR passport photo rejected — not an image', [
+                            'mime'          => $mime,
+                            'ext'           => $ext,
+                            'original_name' => $photo->getClientOriginalName(),
+                        ]);
+                    }
+                }
             }
         }
 
