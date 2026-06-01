@@ -65,19 +65,38 @@
     $genderRaw      = strtolower((string) ($applicantData['gender'] ?? ''));
     $genderLabel    = ['male' => 'Male', 'female' => 'Female'][$genderRaw] ?? '';
 
-    // Passport photograph — first image attachment uploaded at the applicant stage.
+    // Passport photograph — find the first image attachment on this submission.
+    // The controller prepends the dedicated `passport_photo` upload to the
+    // attachments array before storage, so the FIRST image at the applicant
+    // stage is reliably the passport photo. We accept any of these proofs of
+    // being an image — some shared-hosting environments report no/odd mime
+    // types, so a file-extension fallback is essential:
+    //   1. mime_type starts with "image/", OR
+    //   2. the original filename / stored path ends in a common image extension.
     $passportPhotoFs = null;
-    if ($submission->relationLoaded('attachments') || method_exists($submission, 'attachments')) {
-        $photoAttachment = $submission->attachments
-            ->where('stage_slug', 'applicant')
-            ->first(function ($a) {
-                return is_string($a->mime_type ?? null) && str_starts_with($a->mime_type, 'image/');
-            });
-        if ($photoAttachment && $photoAttachment->path) {
-            $fs = storage_path('app/public/' . ltrim($photoAttachment->path, '/'));
-            if (file_exists($fs)) {
-                $passportPhotoFs = $fs;
-            }
+    $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+
+    $resolveImage = function ($attachment) use ($imageExts) {
+        $mime = strtolower((string) ($attachment->mime_type ?? ''));
+        $name = (string) ($attachment->name ?? '');
+        $path = (string) ($attachment->path ?? '');
+        $ext  = strtolower(pathinfo($name !== '' ? $name : $path, PATHINFO_EXTENSION));
+        $isImage = ($mime !== '' && str_starts_with($mime, 'image/'))
+                || in_array($ext, $imageExts, true);
+        if (!$isImage || $path === '') return null;
+        $fs = storage_path('app/public/' . ltrim($path, '/'));
+        return file_exists($fs) ? $fs : null;
+    };
+
+    // Prefer an applicant-stage image (where the passport upload lives).
+    foreach ($submission->attachments ?? [] as $a) {
+        if (($a->stage_slug ?? '') !== 'applicant') continue;
+        if ($fs = $resolveImage($a)) { $passportPhotoFs = $fs; break; }
+    }
+    // Last-ditch fallback: any image attachment on the submission.
+    if (!$passportPhotoFs) {
+        foreach ($submission->attachments ?? [] as $a) {
+            if ($fs = $resolveImage($a)) { $passportPhotoFs = $fs; break; }
         }
     }
 
@@ -112,11 +131,15 @@
         body { font-family: 'DejaVu Sans', sans-serif; color: #111827; font-size: 11px; line-height: 1.45; }
         h1, h2, h3, h4, h5 { margin: 0; padding: 0; }
 
-        /* ── Header layout (left-aligned title + right-aligned photo box, like paper) ── */
+        /* ── Header layout (paper-faithful): a 3-column table where the
+              left spacer column mirrors the right photo column, keeping
+              the centre title block centred on the *page* regardless of
+              the photo box on the right. ── */
         .pf-headtbl { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
         .pf-headtbl td { vertical-align: top; padding: 0; }
-        .pf-headtbl__left { width: 75%; padding-right: 10px; }
-        .pf-headtbl__right { width: 25%; text-align: right; }
+        .pf-headtbl__sp     { width: 18%; }
+        .pf-headtbl__center { width: 64%; text-align: center; }
+        .pf-headtbl__right  { width: 18%; text-align: right; }
 
         .pf-head { text-align: center; }
         .pf-head h1 { font-size: 14.5px; font-weight: 800; letter-spacing: 0.4px; }
@@ -342,10 +365,13 @@
 </head>
 <body>
 
-    {{-- ===== Header (matches paper form: left-aligned title + right-aligned photo box) ===== --}}
+    {{-- ===== Header (paper-faithful): 3-column table — empty spacer on the
+         left exactly mirrors the photo column on the right so the centre
+         title block stays centred on the page. ===== --}}
     <table class="pf-headtbl">
         <tr>
-            <td class="pf-headtbl__left">
+            <td class="pf-headtbl__sp">&nbsp;</td>
+            <td class="pf-headtbl__center">
                 <div class="pf-head">
                     <h1>CATHOLIC UNIVERSITY OF GHANA, FIAPRE-SUNYANI</h1>
                     <div class="pf-subhead">[Office of the Registrar, P. O. Box 363, Sunyani – B/R]</div>
