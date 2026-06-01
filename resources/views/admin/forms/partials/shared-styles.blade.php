@@ -134,11 +134,127 @@
 .radio-pill input[type="radio"], .checkbox-pill input[type="checkbox"] { margin: 0; accent-color: #0c0c0c; }
 .radio-pill:has(input:checked), .checkbox-pill:has(input:checked) { background: #0c0c0c; color: #fff; border-color: #0c0c0c; }
 
-/* Locked / signed fields display */
-.locked-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 28px; margin: 0; }
-.locked-fields__row { padding: 6px 0; border-bottom: 1.5px dashed #ebebeb; }
-.locked-fields__row dt { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: #b0b5c0; margin-bottom: 4px; font-weight: 600; }
-.locked-fields__row dd { margin: 0; color: #111827; font-size: 0.88rem; font-weight: 500; line-height: 1.4; }
+/* ── Locked / signed fields display — 12-col grid mirroring the
+   field-renderer so each field honours its `col` width. Long-label
+   fields (e.g. "14. Have you ever been convicted of any criminal or
+   legal offence?") and wide-content fields (textareas, tables) are
+   auto-promoted to full width by section-display.blade.php so they
+   never collide with their neighbours. ── */
+.locked-fields {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 18px 20px;
+    margin: 0;
+    align-items: stretch;
+}
+.locked-fields__row {
+    grid-column: span 12;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    background: #fafafa;
+    border: 1.5px solid #ebebeb;
+    border-radius: 10px;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.locked-fields__row:hover {
+    border-color: #d1d5db;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(12, 12, 12, 0.05);
+}
+.locked-fields__row dt {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6b7280;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.35;
+}
+.locked-fields__row dd {
+    margin: 0;
+    color: #111827;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.5;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+/* Tables / textareas often span the full grid — give them a hair more padding */
+.locked-fields__row:has(.locked-table),
+.locked-fields__row:has(dd:not(:empty)) > dd { /* default empty-dd safety */ }
+
+/* Stack to one column on narrow viewports */
+@media (max-width: 640px) {
+    .locked-fields__row { grid-column: span 12 !important; }
+}
+
+/* ── Photo preview card in section header (e.g. EPR passport photo) ── */
+.form-panel__head--with-photo-preview {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+.photo-preview-card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 110px;
+    height: 140px;
+    border-radius: 12px;
+    border: 2px solid #15803d;
+    background: #fff;
+    overflow: hidden;
+    display: block;
+    text-decoration: none;
+    transition: transform .2s, box-shadow .2s;
+    box-shadow: 0 4px 14px rgba(21, 128, 61, 0.18);
+}
+.photo-preview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(21, 128, 61, 0.28);
+}
+.photo-preview-card__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.photo-preview-card__badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #15803d;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(21, 128, 61, 0.5);
+}
+.photo-preview-card__caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 4px 6px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    color: #ffffff;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(21,128,61,0.92) 100%);
+    font-family: 'Outfit', sans-serif !important;
+}
+
+@media (max-width: 640px) {
+    .form-panel__head--with-photo-preview { flex-direction: column-reverse; align-items: stretch; }
+    .photo-preview-card { width: 100px; height: 130px; align-self: flex-end; }
+}
 .locked-signature { margin-top: 18px; padding-top: 16px; border-top: 1.5px solid #f5f5f5; }
 .locked-signature__label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: #b0b5c0; margin-bottom: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
 .locked-signature__img { max-height: 90px; max-width: 280px; background: #fff; border: 1.5px solid #ebebeb; padding: 6px; border-radius: 8px; display: block; }
@@ -230,5 +346,9 @@
 .is_dark .btn-action--draft { background: #0f172a; color: #d1d5db; border-color: #2d3748; }
 .is_dark .form-meta-strip { background: #111827; border-color: #1e2330; }
 .is_dark .form-meta-strip__value { color: #f3f4f6; }
+.is_dark .locked-fields__row { background: #0b1322; border-color: #1e2330; }
+.is_dark .locked-fields__row:hover { background: #0f172a; border-color: #2d3748; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+.is_dark .locked-fields__row dt { color: #9ca3af; }
 .is_dark .locked-fields__row dd { color: #f3f4f6; }
+.is_dark .photo-preview-card { border-color: #16a34a; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.22); background: #0b1322; }
 </style>

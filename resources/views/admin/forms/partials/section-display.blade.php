@@ -7,6 +7,7 @@
 --}}
 @php
     use App\Forms\FormField;
+    use App\Models\FormAttachment;
     $sectionData = $sectionData ?? [];
     // Attachments uploaded at THIS stage. Cheap because $submission->attachments
     // is eager-loaded in FormSubmissionController::show — this is just an
@@ -14,11 +15,29 @@
     $stageAttachments = isset($submission)
         ? $submission->attachments->where('stage_slug', $stage->slug)
         : collect();
+
+    // ── Photo preview ──────────────────────────────────────────────
+    // If this stage has an image attachment (e.g. the EPR passport
+    // photo), pick the first one and surface it as a card in the
+    // section header so the user can immediately confirm the upload
+    // succeeded. Mirrors the PDF detection: mime starts with image/
+    // OR filename extension is a common image extension.
+    $imageExts = ['jpg','jpeg','png','gif','webp','bmp'];
+    $stagePhoto = null;
+    foreach ($stageAttachments as $att) {
+        $mime = strtolower((string) ($att->mime_type ?? ''));
+        $name = (string) ($att->name ?? '');
+        $path = (string) ($att->path ?? '');
+        $ext  = strtolower(pathinfo($name !== '' ? $name : $path, PATHINFO_EXTENSION));
+        $isImage = ($mime !== '' && str_starts_with($mime, 'image/'))
+                || in_array($ext, $imageExts, true);
+        if ($isImage && $path !== '') { $stagePhoto = $att; break; }
+    }
 @endphp
 
 <div class="form-panel form-panel--locked">
-    <div class="form-panel__head">
-        <div style="display: flex; align-items: flex-start; gap: 14px;">
+    <div class="form-panel__head @if($stagePhoto) form-panel__head--with-photo-preview @endif">
+        <div style="display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0;">
             <span class="form-panel__lockicon">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </span>
@@ -35,7 +54,25 @@
             </div>
         </div>
 
-        @if($stageAttachments->count() > 0)
+        @if($stagePhoto)
+            {{-- Photo preview card — visual confirmation that the upload succeeded.
+                 The controller serves images inline when the URL carries ?inline=1
+                 so the <img> tag below can render directly; without that flag the
+                 same endpoint would force a download. --}}
+            @php $photoInlineUrl = route('admin.forms.attachment', [$submission->id, $stagePhoto->id]) . '?inline=1'; @endphp
+            <a href="{{ $photoInlineUrl }}"
+               target="_blank"
+               class="photo-preview-card"
+               title="Open photograph in a new tab">
+                <img class="photo-preview-card__img"
+                     src="{{ $photoInlineUrl }}"
+                     alt="Uploaded photograph">
+                <span class="photo-preview-card__badge" aria-hidden="true">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+                <span class="photo-preview-card__caption">Photograph uploaded</span>
+            </a>
+        @elseif($stageAttachments->count() > 0)
             <span class="stage-clip-badge" title="{{ $stageAttachments->count() }} file{{ $stageAttachments->count() === 1 ? '' : 's' }} attached at this stage">
                 <span class="stage-clip-badge__bubble">
                     <img src="https://img.icons8.com/officel/80/attach.png" alt="" class="stage-clip-badge__img" loading="lazy" decoding="async">
@@ -52,7 +89,20 @@
                 @php $raw = $sectionData[$field->name] ?? null; @endphp
                 @if($raw === null || $raw === '' || (is_array($raw) && empty($raw))) @continue @endif
 
-                <div class="locked-fields__row">
+                @php
+                    // Tables and textareas are always wide content — force them
+                    // to span the full 12-column grid regardless of the field's
+                    // declared col, so they never get cramped next to a sibling.
+                    $isWideType = in_array($field->type, [FormField::TYPE_TABLE, FormField::TYPE_TEXTAREA], true);
+                    $rowCol     = $isWideType ? 12 : max(1, min(12, (int) ($field->col ?? 12)));
+                    // Long-label fields (e.g. item 14 "Have you ever been convicted…")
+                    // also get full-width to stop the label wrapping over neighbouring cells.
+                    if (!$isWideType && mb_strlen((string) $field->label) > 48) {
+                        $rowCol = 12;
+                    }
+                @endphp
+
+                <div class="locked-fields__row" style="grid-column: span {{ $rowCol }};">
                     <dt>{{ $field->label }}</dt>
                     <dd>
                         @switch($field->type)
