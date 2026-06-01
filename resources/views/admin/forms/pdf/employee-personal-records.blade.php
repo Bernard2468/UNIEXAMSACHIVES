@@ -2,24 +2,31 @@
     Employee Personal Records — paper-form-faithful PDF.
 
     Stage data keys (must match EmployeePersonalRecordsForm):
-      applicant: title, surname, other_names, nationality, country, city_region,
-                 home_town, date_of_birth, religion, faculty_admin, department,
-                 email, telephone_number, contact_address, permanent_address,
-                 date_of_appointment, date_of_assumption,
-                 marital_status, name_of_spouse, dependants,
-                 vehicle_no, vehicle_make_model, vehicle_chassis_no,
-                 provident_fund_number, social_security_fund_number,
-                 name_of_bank, branch_name, bank_account_number,
+      applicant — PART I (items 1–11):
+                 full_name,
+                 date_of_birth, age, gender,
+                 place_of_birth, home_town,
+                 contact_address,
+                 permanent_address, email, telephone_number,
+                 marital_status, spouse_name_and_address,
                  children[], father_name, mother_name,
                  next_of_kin_name, next_of_kin_relation, next_of_kin_address, next_of_kin_telephone,
-                 beneficiaries[],
-                 schools_attended[], qualifications,
-                 employment_history[],
+                 beneficiaries[]
+      applicant — PART II:  schools_attended[], qualifications
+      applicant — PART III: employment_history[]
+      applicant — PART IV (items 14–18):
                  convicted_offence, conviction_details,
                  position_at_cug, cug_office_department,
+                 social_security_number,
+                 date_of_first_appointment, date_of_assumption_of_duty,
                  declaration_accepted
       hr:        staff_no, hr_placement_confirmed, hr_comments     (PRIMARY copy)
       registrar: appointment_no, registrar_comments                (DUPLICATE copy)
+
+    The passport-size photograph in the top-right of page 1 is sourced from the
+    first image attachment uploaded at the applicant stage (any image/* mime
+    type). If none was uploaded, a "Affix recent passport size photograph"
+    placeholder box is rendered instead.
 --}}
 @php
     $applicantData = $submission->sectionData('applicant');
@@ -55,6 +62,24 @@
     $isMarried      = $maritalStatus === 'married';
     $isSingle       = $maritalStatus === 'single';
     $convictionAns  = strtolower((string) ($applicantData['convicted_offence'] ?? ''));
+    $genderRaw      = strtolower((string) ($applicantData['gender'] ?? ''));
+    $genderLabel    = ['male' => 'Male', 'female' => 'Female'][$genderRaw] ?? '';
+
+    // Passport photograph — first image attachment uploaded at the applicant stage.
+    $passportPhotoFs = null;
+    if ($submission->relationLoaded('attachments') || method_exists($submission, 'attachments')) {
+        $photoAttachment = $submission->attachments
+            ->where('stage_slug', 'applicant')
+            ->first(function ($a) {
+                return is_string($a->mime_type ?? null) && str_starts_with($a->mime_type, 'image/');
+            });
+        if ($photoAttachment && $photoAttachment->path) {
+            $fs = storage_path('app/public/' . ltrim($photoAttachment->path, '/'));
+            if (file_exists($fs)) {
+                $passportPhotoFs = $fs;
+            }
+        }
+    }
 
     $children          = is_array($applicantData['children'] ?? null)         ? $applicantData['children']         : [];
     $beneficiaries     = is_array($applicantData['beneficiaries'] ?? null)    ? $applicantData['beneficiaries']    : [];
@@ -87,13 +112,42 @@
         body { font-family: 'DejaVu Sans', sans-serif; color: #111827; font-size: 11px; line-height: 1.45; }
         h1, h2, h3, h4, h5 { margin: 0; padding: 0; }
 
-        /* ── Header (centred, matches paper form) ── */
-        .pf-head { text-align: center; margin-bottom: 12px; }
-        .pf-head h1 { font-size: 16px; font-weight: 800; letter-spacing: 0.6px; text-decoration: underline; }
-        .pf-head .pf-subhead { font-style: italic; font-weight: 700; font-size: 11.5px; margin-top: 3px; }
-        .pf-head__logo { display: block; margin: 6px auto 4px; height: 64px; width: auto; }
-        .pf-head h2 { font-size: 14.5px; font-weight: 800; margin-top: 4px; text-decoration: underline; letter-spacing: 0.3px; }
-        .pf-head .pf-rubric { font-style: italic; font-size: 10px; color: #374151; margin-top: 4px; }
+        /* ── Header layout (left-aligned title + right-aligned photo box, like paper) ── */
+        .pf-headtbl { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        .pf-headtbl td { vertical-align: top; padding: 0; }
+        .pf-headtbl__left { width: 75%; padding-right: 10px; }
+        .pf-headtbl__right { width: 25%; text-align: right; }
+
+        .pf-head { text-align: center; }
+        .pf-head h1 { font-size: 14.5px; font-weight: 800; letter-spacing: 0.4px; }
+        .pf-head .pf-subhead { font-style: italic; font-weight: 600; font-size: 10.5px; margin-top: 2px; }
+        .pf-head__logo { display: block; margin: 4px auto 3px; height: 50px; width: auto; }
+        .pf-head h2 { font-size: 14px; font-weight: 800; margin-top: 4px; text-decoration: underline; letter-spacing: 0.3px; }
+        .pf-head .pf-rubric { font-style: italic; font-size: 9.5px; color: #374151; margin-top: 3px; }
+
+        /* ── Passport-photograph box (paper-faithful) ── */
+        .pf-photo {
+            width: 105px;
+            height: 130px;
+            margin-left: auto;
+            border: 1.2px solid #111827;
+            border-radius: 2px;
+            background: #fff;
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            overflow: hidden;
+        }
+        .pf-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pf-photo__hint {
+            font-style: italic;
+            font-size: 9.5px;
+            color: #6b7280;
+            line-height: 1.4;
+            padding: 0 4px;
+            display: inline-block;
+        }
+        .pf-photo--filled { border-style: solid; border-color: #15803d; }
 
         /* ── Reference strip ── */
         .pf-meta { margin: 8px 0 12px; padding: 6px 10px; background: #f3f4f6; border-radius: 4px; font-size: 9.5px; color: #374151; }
@@ -281,15 +335,31 @@
 </head>
 <body>
 
-    {{-- ===== Header (matches paper form) ===== --}}
-    <div class="pf-head">
-        <h1>CATHOLIC UNIVERSITY OF GHANA (FIAPRE, SUNYANI)</h1>
-        @if(file_exists($logoFsPath))
-            <img class="pf-head__logo" src="{{ $logoFsPath }}" alt="CUG Logo">
-        @endif
-        <h2>EMPLOYEE PERSONAL RECORDS</h2>
-        <div class="pf-rubric">[This form must be completed in duplicate and forwarded to the Registrar's Office]</div>
-    </div>
+    {{-- ===== Header (matches paper form: left-aligned title + right-aligned photo box) ===== --}}
+    <table class="pf-headtbl">
+        <tr>
+            <td class="pf-headtbl__left">
+                <div class="pf-head">
+                    <h1>CATHOLIC UNIVERSITY OF GHANA, FIAPRE-SUNYANI</h1>
+                    <div class="pf-subhead">[Office of the Registrar, P. O. Box 363, Sunyani – B/R]</div>
+                    @if(file_exists($logoFsPath))
+                        <img class="pf-head__logo" src="{{ $logoFsPath }}" alt="CUG Logo">
+                    @endif
+                    <h2>EMPLOYEE PERSONAL RECORDS</h2>
+                    <div class="pf-rubric">(This Form must be completed in Duplicate and forwarded to the Registrar's Office)</div>
+                </div>
+            </td>
+            <td class="pf-headtbl__right">
+                <div class="pf-photo {{ $passportPhotoFs ? 'pf-photo--filled' : '' }}">
+                    @if($passportPhotoFs)
+                        <img src="{{ $passportPhotoFs }}" alt="Passport photograph">
+                    @else
+                        <span class="pf-photo__hint">Affix recent<br>passport size<br>photograph</span>
+                    @endif
+                </div>
+            </td>
+        </tr>
+    </table>
 
     {{-- Reference strip --}}
     <div class="pf-meta">
@@ -299,7 +369,7 @@
         @if($submission->completed_at)<span><strong>Completed:</strong> {{ $submission->completed_at->format('d M Y, H:i') }}</span>@endif
     </div>
 
-    {{-- ===== Staff No (HR) / Appointment No (Registrar) box ===== --}}
+    {{-- ===== Staff No (HR) / Appointment No (Registrar) — compact strip ===== --}}
     <div class="pf-staffbox">
         <table>
             <tr>
@@ -316,127 +386,74 @@
                     @endif
                 </td>
             </tr>
-            <tr>
-                <td class="pf-staffbox__label">DATE OF APPOINTMENT</td>
-                <td class="pf-staffbox__value">{{ $fmtDate($applicantData['date_of_appointment'] ?? null) }}</td>
-                <td class="pf-staffbox__label">DATE OF ASSUMPTION</td>
-                <td class="pf-staffbox__value">{{ $fmtDate($applicantData['date_of_assumption'] ?? null) }}</td>
-            </tr>
         </table>
     </div>
 
     {{-- ═══════════════════════════════════════════════════════
          PART I — PERSONAL & FAMILY DETAILS
          ═══════════════════════════════════════════════════════ --}}
-    <div class="pf-part-head">PART I — Personal &amp; Family Details</div>
+    <div class="pf-part-head">PART I — Personal Particulars</div>
 
-    {{-- Personal particulars: 2-column grid --}}
-    <div class="pf-section__title">Personal Particulars</div>
+    {{-- ===== 1. Name ===== --}}
+    <div class="pf-row">
+        <span class="pf-row__label">1. Name:</span>
+        <span class="pf-row__value pf-row__value--inline" style="min-width: 80%;">{{ strtoupper((string) ($applicantData['full_name'] ?? '')) }}</span>
+    </div>
+
+    {{-- ===== 2. Date of Birth + Age + Gender ===== --}}
     <table class="pf-grid">
         <tr>
-            <td><span class="pf-kv__label">Title:</span>
-                <span class="pf-kv__value" style="min-width: 50%;">{{ $applicantData['title'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">Nationality:</span>
-                <span class="pf-kv__value" style="min-width: 50%;">{{ $applicantData['nationality'] ?? '' }}</span></td>
-        </tr>
-        <tr>
-            <td><span class="pf-kv__label">Surname:</span>
-                <span class="pf-kv__value" style="min-width: 60%;">{{ strtoupper((string) ($applicantData['surname'] ?? '')) }}</span></td>
-            <td><span class="pf-kv__label">Country:</span>
-                <span class="pf-kv__value" style="min-width: 55%;">{{ $applicantData['country'] ?? '' }}</span></td>
-        </tr>
-        <tr>
-            <td><span class="pf-kv__label">Other Names:</span>
-                <span class="pf-kv__value" style="min-width: 55%;">{{ strtoupper((string) ($applicantData['other_names'] ?? '')) }}</span></td>
-            <td><span class="pf-kv__label">City / Region:</span>
-                <span class="pf-kv__value" style="min-width: 50%;">{{ $applicantData['city_region'] ?? '' }}</span></td>
-        </tr>
-        <tr>
-            <td><span class="pf-kv__label">Home Town:</span>
-                <span class="pf-kv__value" style="min-width: 55%;">{{ $applicantData['home_town'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">Date of Birth:</span>
-                <span class="pf-kv__value" style="min-width: 50%;">{{ $fmtDate($applicantData['date_of_birth'] ?? null) }}</span></td>
-        </tr>
-        <tr>
-            <td><span class="pf-kv__label">Religion:</span>
-                <span class="pf-kv__value" style="min-width: 60%;">{{ $applicantData['religion'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">Faculty / Admin:</span>
-                <span class="pf-kv__value" style="min-width: 50%;">{{ $applicantData['faculty_admin'] ?? '' }}</span></td>
-        </tr>
-        <tr>
-            <td><span class="pf-kv__label">Department:</span>
-                <span class="pf-kv__value" style="min-width: 55%;">{{ $applicantData['department'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">Telephone Number:</span>
-                <span class="pf-kv__value" style="min-width: 50%;">{{ $applicantData['telephone_number'] ?? '' }}</span></td>
-        </tr>
-        <tr>
-            <td colspan="2"><span class="pf-kv__label">E-mail:</span>
-                <span class="pf-kv__value" style="min-width: 70%;">{{ $applicantData['email'] ?? '' }}</span></td>
+            <td style="width: 38%;"><span class="pf-kv__label">2. Date of Birth:</span>
+                <span class="pf-kv__value" style="min-width: 55%;">{{ $fmtDate($applicantData['date_of_birth'] ?? null) }}</span></td>
+            <td style="width: 26%;"><span class="pf-kv__label">Age:</span>
+                <span class="pf-kv__value" style="min-width: 55%;">{{ $applicantData['age'] ?? '' }}</span></td>
+            <td style="width: 36%;"><span class="pf-kv__label">Gender:</span>
+                <span class="pf-kv__value" style="min-width: 55%;">{{ $genderLabel }}</span></td>
         </tr>
     </table>
 
-    {{-- Addresses --}}
-    <div class="pf-section__title">Addresses</div>
+    {{-- ===== 3. Place of Birth + Home Town ===== --}}
+    <table class="pf-grid">
+        <tr>
+            <td><span class="pf-kv__label">3. Place of Birth:</span>
+                <span class="pf-kv__value" style="min-width: 60%;">{{ $applicantData['place_of_birth'] ?? '' }}</span></td>
+            <td><span class="pf-kv__label">Home Town:</span>
+                <span class="pf-kv__value" style="min-width: 60%;">{{ $applicantData['home_town'] ?? '' }}</span></td>
+        </tr>
+    </table>
+
+    {{-- ===== 4. Contact Address ===== --}}
     <div class="pf-row">
-        <span class="pf-row__label">Contact Address:</span>
+        <span class="pf-row__label">4. Contact Address:</span>
         <div class="pf-row__value">{{ $applicantData['contact_address'] ?? '' }}</div>
     </div>
+
+    {{-- ===== 5. Permanent Address + Email + Telephone ===== --}}
     <div class="pf-row">
-        <span class="pf-row__label">Permanent Address:</span>
+        <span class="pf-row__label">5. Permanent Address:</span>
         <div class="pf-row__value">{{ $applicantData['permanent_address'] ?? '' }}</div>
     </div>
+    <table class="pf-grid" style="margin-top: 4px;">
+        <tr>
+            <td><span class="pf-kv__label">Email:</span>
+                <span class="pf-kv__value" style="min-width: 70%;">{{ $applicantData['email'] ?? '' }}</span></td>
+            <td><span class="pf-kv__label">Telephone Number(s):</span>
+                <span class="pf-kv__value" style="min-width: 55%;">{{ $applicantData['telephone_number'] ?? '' }}</span></td>
+        </tr>
+    </table>
 
-    {{-- Marital status --}}
-    <div class="pf-section__title">Marital Status &amp; Dependants</div>
+    {{-- ===== 6. Marital Status ===== --}}
     <div class="pf-pillrow">
-        <span class="pf-pillrow__label">Marital Status:</span>
+        <span class="pf-pillrow__label">6. Marital Status:</span>
         <span class="pf-pill {{ $isSingle ? 'pf-pill--on' : '' }}">Single</span>
         <span class="pf-pill {{ $isMarried ? 'pf-pill--on' : '' }}">Married</span>
     </div>
-    <div class="pf-row">
-        <span class="pf-row__label">Name of Spouse:</span>
-        <span class="pf-row__value pf-row__value--inline" style="min-width: 70%;">{{ $applicantData['name_of_spouse'] ?? '' }}</span>
-    </div>
-    <div class="pf-row">
-        <span class="pf-row__label">Dependants:</span>
-        <div class="pf-row__value">{{ $applicantData['dependants'] ?? '' }}</div>
-    </div>
 
-    {{-- Vehicle particulars --}}
-    <div class="pf-section__title">Particulars of Vehicle (if owned — attach relevant ownership documents)</div>
-    <table class="pf-grid">
-        <tr>
-            <td><span class="pf-kv__label">I. Vehicle No.:</span>
-                <span class="pf-kv__value" style="min-width: 55%;">{{ $applicantData['vehicle_no'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">II. Make / Model:</span>
-                <span class="pf-kv__value" style="min-width: 55%;">{{ $applicantData['vehicle_make_model'] ?? '' }}</span></td>
-        </tr>
-        <tr>
-            <td colspan="2"><span class="pf-kv__label">III. Chassis No.:</span>
-                <span class="pf-kv__value" style="min-width: 70%;">{{ $applicantData['vehicle_chassis_no'] ?? '' }}</span></td>
-        </tr>
-    </table>
-
-    {{-- Pension & Banking --}}
-    <div class="pf-section__title">Pension &amp; Banking Details</div>
-    <table class="pf-grid">
-        <tr>
-            <td><span class="pf-kv__label">Provident Fund Number (if any):</span>
-                <span class="pf-kv__value" style="min-width: 45%;">{{ $applicantData['provident_fund_number'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">Social Security Fund Number:</span>
-                <span class="pf-kv__value" style="min-width: 45%;">{{ $applicantData['social_security_fund_number'] ?? '' }}</span></td>
-        </tr>
-        <tr>
-            <td><span class="pf-kv__label">Name of Bank:</span>
-                <span class="pf-kv__value" style="min-width: 60%;">{{ $applicantData['name_of_bank'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">Branch Name:</span>
-                <span class="pf-kv__value" style="min-width: 60%;">{{ $applicantData['branch_name'] ?? '' }}</span></td>
-        </tr>
-        <tr>
-            <td colspan="2"><span class="pf-kv__label">Bank Account Number:</span>
-                <span class="pf-kv__value" style="min-width: 60%;">{{ $applicantData['bank_account_number'] ?? '' }}</span></td>
-        </tr>
-    </table>
+    {{-- ===== 7. Name and Address of Spouse ===== --}}
+    <div class="pf-row">
+        <span class="pf-row__label">7. Name and Address of Spouse <em style="font-weight: 400; color: #6b7280;">(with supporting document)</em>:</span>
+        <div class="pf-row__value">{{ $applicantData['spouse_name_and_address'] ?? '' }}</div>
+    </div>
 
     {{-- ===== 8. Children ===== --}}
     <div class="pf-section__title">8. Children — Names and Dates of Birth</div>
@@ -612,14 +629,14 @@
                 <span class="pf-kv__value" style="min-width: 45%;">{{ $applicantData['cug_office_department'] ?? '' }}</span></td>
         </tr>
         <tr>
-            <td><span class="pf-kv__label">17. Social Security Number:</span>
-                <span class="pf-kv__value" style="min-width: 45%;">{{ $applicantData['social_security_fund_number'] ?? '' }}</span></td>
-            <td><span class="pf-kv__label">18. Date of 1<sup>st</sup> Appointment:</span>
-                <span class="pf-kv__value" style="min-width: 45%;">{{ $fmtDate($applicantData['date_of_appointment'] ?? null) }}</span></td>
+            <td colspan="2"><span class="pf-kv__label">17. Social Security Number <em style="font-weight: 400; color: #6b7280;">(if any)</em>:</span>
+                <span class="pf-kv__value" style="min-width: 60%;">{{ $applicantData['social_security_number'] ?? '' }}</span></td>
         </tr>
         <tr>
-            <td colspan="2"><span class="pf-kv__label">&nbsp;&nbsp;&nbsp;&nbsp;Date of Assumption of Duty:</span>
-                <span class="pf-kv__value" style="min-width: 30%;">{{ $fmtDate($applicantData['date_of_assumption'] ?? null) }}</span></td>
+            <td><span class="pf-kv__label">18. Date of 1<sup>st</sup> Appointment:</span>
+                <span class="pf-kv__value" style="min-width: 50%;">{{ $fmtDate($applicantData['date_of_first_appointment'] ?? null) }}</span></td>
+            <td><span class="pf-kv__label">Date of Assumption of Duty:</span>
+                <span class="pf-kv__value" style="min-width: 50%;">{{ $fmtDate($applicantData['date_of_assumption_of_duty'] ?? null) }}</span></td>
         </tr>
     </table>
 

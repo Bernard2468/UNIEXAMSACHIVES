@@ -81,15 +81,15 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
         return [
             [
                 'key'         => 'part1',
-                'label'       => 'Personal & Family',
+                'label'       => 'Personal Particulars',
                 'startAt'     => 'part_1_heading',
-                'description' => 'Your particulars, contact details, addresses, marital status, vehicle, banking, children, parents, next-of-kin and beneficiaries.',
+                'description' => 'Items 1–7 (name, date of birth, place of birth, addresses, marital status, spouse) and items 8–11 (children, parents, next-of-kin, beneficiaries).',
             ],
             [
                 'key'         => 'part2',
                 'label'       => 'Education',
                 'startAt'     => 'part_2_heading',
-                'description' => 'Schools attended and your qualifications. Attach copies of your certificates below.',
+                'description' => 'Schools attended and your qualifications. Attach copies of your certificates at the final step.',
             ],
             [
                 'key'         => 'part3',
@@ -101,7 +101,7 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
                 'key'         => 'part4',
                 'label'       => 'Other Info & Sign',
                 'startAt'     => 'part_4_heading',
-                'description' => 'Convictions disclosure, position at CUG, declaration. Upload supporting documents and sign here.',
+                'description' => 'Convictions disclosure, position at CUG, SSNIT number, appointment dates, declaration. Upload your passport photograph + supporting documents and sign here.',
             ],
         ];
     }
@@ -116,99 +116,67 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
                 description: 'Fill in every field carefully and accurately, then sign the declaration. Once you submit, the form goes to the Human Resource Unit (your primary file holder — they will assign your Staff Number) and then to the Registrar\'s Office for the duplicate copy (they will assign your Appointment Number). You are filing your own record with both offices — neither office is sending it to the other.',
                 fields: [
                     // ═══════════════════════════════════════════════════════
-                    // PART I — PERSONAL & FAMILY DETAILS
+                    // PART I — PERSONAL PARTICULARS
                     // ═══════════════════════════════════════════════════════
-                    new FormField(name: 'part_1_heading', label: 'PART I — Personal & Family Details', type: FormField::TYPE_HEADING,
-                        help: 'Please use BLOCK LETTERS. Items marked * are required.'),
+                    new FormField(name: 'part_1_heading', label: 'PART I — Personal Particulars', type: FormField::TYPE_HEADING,
+                        help: 'Items 1–7 are personal particulars. Items 8–11 cover children, parents, next-of-kin and beneficiaries.'),
 
-                    // ── Personal Particulars ──
-                    new FormField(name: 'sub_personal_heading', label: 'Personal Particulars', type: FormField::TYPE_HEADING),
+                    // ── Passport photograph guidance ──
+                    new FormField(name: 'sub_photo_heading', label: 'Passport Photograph', type: FormField::TYPE_HEADING,
+                        help: 'Upload a recent passport-size photograph as an image attachment at the end of the form (you\'ll see the "Attachments" panel at the final step). The first image you attach will be embedded in the top-right of the printed record, where the paper form says "Affix recent passport size photograph".'),
+
+                    // ── 1. Name ──
+                    new FormField('full_name', '1. Name (Full Name in BLOCK LETTERS)', FormField::TYPE_TEXT, required: true, col: 12, maxLength: 250,
+                        help: 'Surname followed by other names, exactly as on your national ID. Use BLOCK LETTERS.'),
+
+                    // ── 2. Date of Birth + Age + Gender ──
+                    new FormField('date_of_birth', '2. Date of Birth', FormField::TYPE_DATE, required: true, col: 4,
+                        calculatesAgeTarget: 'age'),
+                    new FormField('age', 'Age (years)', FormField::TYPE_NUMBER, required: true, col: 4,
+                        help: 'Auto-calculated from your Date of Birth. You can override it if needed.'),
                     new FormField(
-                        name: 'title',
-                        label: 'Title',
+                        name: 'gender',
+                        label: 'Gender',
                         type: FormField::TYPE_SELECT,
                         required: true,
-                        col: 3,
+                        col: 4,
                         options: [
-                            'Mr'   => 'Mr',
-                            'Mrs'  => 'Mrs',
-                            'Miss' => 'Miss',
-                            'Ms'   => 'Ms',
-                            'Dr'   => 'Dr',
-                            'Prof' => 'Prof',
-                            'Rev'  => 'Rev',
-                            'Fr'   => 'Fr',
-                            'Sr'   => 'Sr',
+                            'male'   => 'Male',
+                            'female' => 'Female',
                         ],
                     ),
-                    new FormField('surname',      'Surname',                 FormField::TYPE_TEXT, required: true, col: 4, maxLength: 100,
-                        help: 'In BLOCK LETTERS.'),
-                    new FormField('other_names',  'Other Names (First / Middle)', FormField::TYPE_TEXT, required: true, col: 5, maxLength: 150,
-                        help: 'First name(s) and middle name. The paper form has only "Surname", but capturing the full name here ensures unambiguous identification.'),
 
-                    new FormField('nationality',  'Nationality',             FormField::TYPE_TEXT, required: true, col: 4, maxLength: 80),
-                    new FormField('country',      'Country',                 FormField::TYPE_TEXT, required: true, col: 4, maxLength: 80),
-                    new FormField('city_region',  'City / Region',           FormField::TYPE_TEXT, required: true, col: 4, maxLength: 120),
+                    // ── 3. Place of Birth + Home Town ──
+                    new FormField('place_of_birth', '3. Place of Birth', FormField::TYPE_TEXT, required: true, col: 6, maxLength: 150),
+                    new FormField('home_town',      'Home Town',         FormField::TYPE_TEXT, required: true, col: 6, maxLength: 150),
 
-                    new FormField('home_town',    'Home Town',               FormField::TYPE_TEXT, required: true, col: 4, maxLength: 120),
-                    new FormField('date_of_birth','Date of Birth',           FormField::TYPE_DATE, required: true, col: 4),
-                    new FormField('religion',     'Religion',                FormField::TYPE_TEXT, required: false, col: 4, maxLength: 80),
-
-                    new FormField('faculty_admin','Faculty / Admin',         FormField::TYPE_TEXT, required: true, col: 6, maxLength: 150,
-                        help: 'The Faculty (e.g. "Faculty of Science") or "Administration" if you are non-academic staff.'),
-                    new FormField('department',   'Department',              FormField::TYPE_TEXT, required: true, col: 6, maxLength: 150),
-
-                    new FormField('email',           'E-mail',               FormField::TYPE_TEXT, required: true, col: 6, maxLength: 150),
-                    new FormField('telephone_number','Telephone Number',     FormField::TYPE_TEXT, required: true, col: 6, maxLength: 60),
-
-                    // ── Addresses ──
-                    new FormField(name: 'sub_address_heading', label: 'Addresses', type: FormField::TYPE_HEADING),
-                    new FormField('contact_address',   'Contact Address',    FormField::TYPE_TEXTAREA, required: true, col: 6,
+                    // ── 4. Contact Address ──
+                    new FormField('contact_address', '4. Contact Address', FormField::TYPE_TEXTAREA, required: true, col: 12,
                         help: 'Your current postal / residential address (the address at which you can be reached during the working week).'),
-                    new FormField('permanent_address', 'Permanent Address',  FormField::TYPE_TEXTAREA, required: true, col: 6,
+
+                    // ── 5. Permanent Address + Email + Telephone ──
+                    new FormField('permanent_address', '5. Permanent Address', FormField::TYPE_TEXTAREA, required: true, col: 12,
                         help: 'Your permanent home address.'),
+                    new FormField('email',            'Email',              FormField::TYPE_TEXT, required: true, col: 6, maxLength: 150),
+                    new FormField('telephone_number', 'Telephone Number(s)', FormField::TYPE_TEXT, required: true, col: 6, maxLength: 100,
+                        help: 'Separate multiple numbers with a comma.'),
 
-                    // ── Appointment dates (employee fills; Registrar assigns Staff/Appointment numbers later) ──
-                    new FormField(name: 'sub_appointment_heading', label: 'Appointment Dates', type: FormField::TYPE_HEADING,
-                        help: 'Your Staff Number and Appointment Number will be assigned by the Registrar\'s Office at the next stage.'),
-                    new FormField('date_of_appointment', 'Date of Appointment',     FormField::TYPE_DATE, required: true, col: 6,
-                        help: 'The effective date of your appointment, as stated in your appointment letter.'),
-                    new FormField('date_of_assumption',  'Date of Assumption of Duty', FormField::TYPE_DATE, required: true, col: 6,
-                        help: 'The date on which you actually reported for duty.'),
-
-                    // ── Marital Status & Dependants ──
-                    new FormField(name: 'sub_marital_heading', label: 'Marital Status & Dependants', type: FormField::TYPE_HEADING),
+                    // ── 6. Marital Status ──
                     new FormField(
                         name: 'marital_status',
-                        label: 'Marital Status',
+                        label: '6. Marital Status',
                         type: FormField::TYPE_RADIO,
                         required: true,
-                        col: 6,
+                        col: 12,
                         options: [
                             'single'  => 'Single',
                             'married' => 'Married',
                         ],
                     ),
-                    new FormField('name_of_spouse', 'Name of Spouse', FormField::TYPE_TEXT, required: false, col: 6, maxLength: 200,
-                        help: 'Required only if married. Leave blank otherwise.'),
-                    new FormField('dependants', 'Dependants', FormField::TYPE_TEXTAREA, required: false, col: 12,
-                        help: 'List the people (other than your spouse and children, who are captured separately below) who depend on you for support. Include the relationship.'),
 
-                    // ── Vehicle Particulars (optional) ──
-                    new FormField(name: 'sub_vehicle_heading', label: 'Particulars of Vehicle (if you own one)', type: FormField::TYPE_HEADING,
-                        help: 'Optional. Attach relevant ownership documents (insurance, registration, log-book) as supporting attachments below.'),
-                    new FormField('vehicle_no',          'Vehicle No.',     FormField::TYPE_TEXT, required: false, col: 4, maxLength: 60),
-                    new FormField('vehicle_make_model',  'Make / Model',    FormField::TYPE_TEXT, required: false, col: 4, maxLength: 120),
-                    new FormField('vehicle_chassis_no',  'Chassis No.',     FormField::TYPE_TEXT, required: false, col: 4, maxLength: 100),
-
-                    // ── Pension & Banking ──
-                    new FormField(name: 'sub_banking_heading', label: 'Pension & Banking Details', type: FormField::TYPE_HEADING),
-                    new FormField('provident_fund_number',       'Provident Fund Number (if any)', FormField::TYPE_TEXT, required: false, col: 6, maxLength: 80),
-                    new FormField('social_security_fund_number', 'Social Security Fund Number',    FormField::TYPE_TEXT, required: true,  col: 6, maxLength: 80,
-                        help: 'Your SSNIT number.'),
-                    new FormField('name_of_bank',                'Name of Bank',                   FormField::TYPE_TEXT, required: true,  col: 4, maxLength: 150),
-                    new FormField('branch_name',                 'Branch Name',                    FormField::TYPE_TEXT, required: true,  col: 4, maxLength: 150),
-                    new FormField('bank_account_number',         'Bank Account Number',            FormField::TYPE_TEXT, required: true,  col: 4, maxLength: 60),
+                    // ── 7. Name and Address of Spouse (with supporting document) ──
+                    new FormField('spouse_name_and_address', '7. Name and Address of Spouse', FormField::TYPE_TEXTAREA, required: false, col: 12,
+                        help: 'Required only if married. Include your spouse\'s full name and address. Attach a supporting document (marriage certificate) via the Attachments panel at the final step.'),
 
                     // ── 8. Children ──
                     new FormField(name: 'sub_children_heading', label: '8. Children — Names and Dates of Birth', type: FormField::TYPE_HEADING,
@@ -333,7 +301,15 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
 
                     new FormField('position_at_cug',     '15. Position given at CUG',   FormField::TYPE_TEXT, required: true,  col: 6, maxLength: 200),
                     new FormField('cug_office_department','16. Office / Department',    FormField::TYPE_TEXT, required: true,  col: 6, maxLength: 200,
-                        help: 'The CUG office or department you are joining. May match "Department" above if you are joining a teaching department.'),
+                        help: 'The CUG office or department you are joining.'),
+
+                    new FormField('social_security_number', '17. Social Security Number (if any)', FormField::TYPE_TEXT, required: false, col: 12, maxLength: 80,
+                        help: 'Your SSNIT number. Leave blank if you have not yet been registered.'),
+
+                    new FormField('date_of_first_appointment', '18. Date of 1st Appointment', FormField::TYPE_DATE, required: true, col: 6,
+                        help: 'The effective date of your appointment, as stated in your appointment letter.'),
+                    new FormField('date_of_assumption_of_duty', 'Date of Assumption of Duty', FormField::TYPE_DATE, required: true, col: 6,
+                        help: 'The date on which you actually reported for duty.'),
 
                     new FormField(
                         name: 'declaration_accepted',
