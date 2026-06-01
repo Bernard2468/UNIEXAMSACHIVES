@@ -90,8 +90,8 @@
 
                             {{-- Stage 1: requisitioner fields --}}
                             <div class="form-panel">
-                                <div class="form-panel__head">
-                                    <div style="display: flex; align-items: flex-start; gap: 14px;">
+                                <div class="form-panel__head @if($definition->requiresPassportPhoto()) form-panel__head--with-photo @endif">
+                                    <div class="form-panel__head-text">
                                         <span class="form-panel__step-num">1</span>
                                         <div>
                                             <h2 class="form-panel__title">{{ $stage->label }}<span class="form-panel__title-bar"></span></h2>
@@ -100,6 +100,34 @@
                                             @endif
                                         </div>
                                     </div>
+
+                                    @if($definition->requiresPassportPhoto())
+                                        {{-- ─────────────────────────────────────────────────
+                                             Passport-photo upload box. Click to choose a file;
+                                             after upload, preview is shown in the same box.
+                                             The chosen file posts as `passport_photo` and the
+                                             controller prepends it to attachments[] so the PDF
+                                             picks it up as the first image at applicant stage.
+                                             ───────────────────────────────────────────────── --}}
+                                        <label class="passport-uploader" for="passport_photo_input" id="passportUploaderBox" tabindex="0" aria-label="Upload your passport-size photograph">
+                                            <input type="file" name="passport_photo" id="passport_photo_input" accept="image/*" hidden>
+                                            <div class="passport-uploader__inner" id="passportUploaderInner">
+                                                <svg class="passport-uploader__icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="6" width="18" height="14" rx="2"/>
+                                                    <circle cx="12" cy="13" r="3.4"/>
+                                                    <path d="M8.5 6l1.5-2.2h4l1.5 2.2"/>
+                                                </svg>
+                                                <div class="passport-uploader__lines">
+                                                    <strong>Passport Photo</strong>
+                                                    <small>Click to upload</small>
+                                                </div>
+                                            </div>
+                                            <div class="passport-uploader__overlay">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+                                                <span>Change photo</span>
+                                            </div>
+                                        </label>
+                                    @endif
                                 </div>
                                 <div class="form-panel__body" id="formWizardFieldsHost">
                                     @include('admin.forms.partials.field-renderer', [
@@ -262,6 +290,168 @@
 .is_dark .upload-dropzone__text strong { color: #f3f4f6; }
 .is_dark .upload-list__item { background: #111827; border-color: #2d3748; }
 .is_dark .upload-list__name { color: #f3f4f6; }
+
+/* ════════════════════════════════════════════════════════
+   PASSPORT-PHOTO UPLOADER — square click-to-upload box that
+   sits opposite the stage description in the panel head.
+   ════════════════════════════════════════════════════════ */
+.form-panel__head--with-photo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+.form-panel__head--with-photo .form-panel__head-text {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+}
+
+.passport-uploader {
+    position: relative;
+    flex: 0 0 auto;
+    width: 130px;
+    height: 130px;
+    border-radius: 14px;
+    border: 2px dashed #d4d7de;
+    background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+    color: #6b7280;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all .22s cubic-bezier(.4, 0, .2, 1);
+    display: block;
+    font-family: 'Outfit', sans-serif !important;
+    box-shadow: 0 1px 2px rgba(12, 12, 12, 0.04);
+}
+.passport-uploader:hover {
+    border-color: #0c0c0c;
+    background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+    color: #111827;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(12, 12, 12, 0.12);
+}
+.passport-uploader:focus { outline: none; }
+.passport-uploader:focus-visible {
+    border-color: #0c0c0c;
+    box-shadow: 0 0 0 4px rgba(12, 12, 12, 0.12);
+}
+
+.passport-uploader__inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    text-align: center;
+    transition: opacity .2s, transform .2s;
+}
+.passport-uploader__icon { color: inherit; flex-shrink: 0; }
+.passport-uploader__lines { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
+.passport-uploader__lines strong {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: 0.01em;
+}
+.passport-uploader__lines small {
+    font-size: 0.68rem;
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+/* Preview image fills the box once loaded */
+.passport-uploader__preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity .25s ease;
+}
+
+/* "Change photo" overlay shown on hover when an image is present */
+.passport-uploader__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    background: linear-gradient(180deg, rgba(12, 12, 12, 0) 0%, rgba(12, 12, 12, 0.85) 100%);
+    color: #ffffff;
+    font-size: 0.74rem;
+    font-weight: 600;
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .22s, transform .22s;
+    pointer-events: none;
+}
+
+.passport-uploader.has-photo {
+    border-style: solid;
+    border-color: #15803d;
+    background: #ffffff;
+}
+.passport-uploader.has-photo .passport-uploader__preview { opacity: 1; }
+.passport-uploader.has-photo .passport-uploader__inner { opacity: 0; }
+.passport-uploader.has-photo:hover .passport-uploader__overlay {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* A subtle green check ribbon when an image is loaded */
+.passport-uploader.has-photo::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #15803d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center / 13px 13px no-repeat;
+    box-shadow: 0 2px 6px rgba(21, 128, 61, 0.35);
+}
+
+/* Mobile: keep the box reasonable, drop to row layout */
+@media (max-width: 720px) {
+    .form-panel__head--with-photo {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    .passport-uploader {
+        width: 100%;
+        height: 110px;
+        margin-bottom: 4px;
+    }
+    .passport-uploader__inner { flex-direction: row; gap: 12px; }
+    .passport-uploader__lines { text-align: left; }
+}
+
+/* Dark mode */
+.is_dark .passport-uploader {
+    background: linear-gradient(135deg, #0f172a 0%, #0b1322 100%);
+    border-color: #2d3748;
+    color: #9ca3af;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.is_dark .passport-uploader:hover {
+    background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
+    border-color: #f3f4f6;
+    color: #f3f4f6;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+.is_dark .passport-uploader__lines strong { color: #f3f4f6; }
+.is_dark .passport-uploader__lines small { color: #6b7280; }
+.is_dark .passport-uploader.has-photo { background: #0b1322; border-color: #16a34a; }
 
 /* ════════════════════════════════════════════════════════
    WIZARD STEPPER — modern multi-step compose UI
@@ -498,6 +688,60 @@ document.addEventListener('DOMContentLoaded', function () {
                 row.querySelector('.upload-list__size').textContent = sizeText;
                 uploadList.appendChild(row);
             });
+        });
+    }
+
+    // ════════════════════════════════════════════════════════
+    // PASSPORT-PHOTO UPLOADER — click-to-upload + live preview
+    // ════════════════════════════════════════════════════════
+    const passportInput = document.getElementById('passport_photo_input');
+    const passportBox   = document.getElementById('passportUploaderBox');
+    if (passportInput && passportBox) {
+        let previewImg = null;
+
+        // Keyboard accessibility — Space / Enter on the focused box opens the picker.
+        passportBox.addEventListener('keydown', function (e) {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                passportInput.click();
+            }
+        });
+
+        passportInput.addEventListener('change', function () {
+            const file = passportInput.files && passportInput.files[0];
+            if (!file) return;
+
+            // Guard: must be an image. The accept="image/*" attribute is a hint
+            // only — paranoid browsers and drag/drop can still slip non-images
+            // through.
+            if (!file.type || !file.type.startsWith('image/')) {
+                alert('Please choose an image file (JPEG, PNG, etc.) for your passport photo.');
+                passportInput.value = '';
+                return;
+            }
+
+            // Reasonable cap to avoid users uploading a 30 MB phone snap.
+            const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+            if (file.size > MAX_BYTES) {
+                alert('That image is larger than 8 MB. Please choose a smaller passport photo.');
+                passportInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                if (!previewImg) {
+                    previewImg = document.createElement('img');
+                    previewImg.className = 'passport-uploader__preview';
+                    previewImg.alt = 'Passport photograph preview';
+                    // Insert preview before the inner content so the absolute-
+                    // positioned overlay still sits on top of it.
+                    passportBox.insertBefore(previewImg, passportBox.firstChild.nextSibling);
+                }
+                previewImg.src = e.target.result;
+                passportBox.classList.add('has-photo');
+            };
+            reader.readAsDataURL(file);
         });
     }
 

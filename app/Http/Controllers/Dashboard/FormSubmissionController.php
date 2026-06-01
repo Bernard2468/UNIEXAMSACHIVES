@@ -94,11 +94,24 @@ class FormSubmissionController extends Controller
         $leadershipCategory   = $action === 'send' ? $this->extractLeadershipCategory($request) : null;
         $nextOfficeId         = $action === 'send' ? $this->extractNextOfficeId($request) : null;
 
+        // Passport photo (forms that opt in via requiresPassportPhoto()) is a
+        // dedicated file input on the compose page. We prepend it to the
+        // attachments array so it's the first FormAttachment row created —
+        // the PDF view picks "the first image at applicant stage" as the
+        // passport photograph to embed in the top-right of page 1.
+        $attachments = $request->file('attachments', []);
+        if ($definition->requiresPassportPhoto()) {
+            $photo = $request->file('passport_photo');
+            if ($photo && $photo->isValid() && str_starts_with((string) $photo->getMimeType(), 'image/')) {
+                array_unshift($attachments, $photo);
+            }
+        }
+
         $submission = $this->workflow->createSubmission(
             definition: $definition,
             creator: Auth::user(),
             requisitionerData: $data['fields'],
-            attachments: $request->file('attachments', []),
+            attachments: $attachments,
             action: $action,
             nextAssigneeId: $nextAssigneeId,
             signatureContext: $this->signatureContext($request),

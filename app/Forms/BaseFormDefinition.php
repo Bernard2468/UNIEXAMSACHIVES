@@ -77,6 +77,21 @@ abstract class BaseFormDefinition
     }
 
     /**
+     * Does this form request a passport-style photo on the applicant's
+     * compose page? When true, the compose view renders a click-to-upload
+     * square box in the top-right of the first panel and the controller
+     * prepends the chosen file to the attachments array (so the PDF's
+     * "first image at applicant stage" detection picks it up as the
+     * passport photograph).
+     *
+     * Default: false — most forms don't need one.
+     */
+    public function requiresPassportPhoto(): bool
+    {
+        return false;
+    }
+
+    /**
      * Optional multi-step "wizard" configuration for the requisitioner /
      * applicant compose page. When non-null, the first stage's fields are
      * grouped into the named steps (driven by `startAt` field-name

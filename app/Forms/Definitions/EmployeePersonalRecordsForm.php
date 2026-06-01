@@ -69,6 +69,11 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
         return 'This form must be completed in duplicate and forwarded to the Registrar\'s Office.';
     }
 
+    public function requiresPassportPhoto(): bool
+    {
+        return true;
+    }
+
     /**
      * Four-step wizard for the applicant stage so the employee doesn't
      * have to scroll through Part I → IV on a single page. Each entry's
@@ -113,17 +118,13 @@ class EmployeePersonalRecordsForm extends BaseFormDefinition
                 slug: 'applicant',
                 label: 'Employee — Personal Records (Parts I–IV)',
                 officeSlug: null,
-                description: 'Fill in every field carefully and accurately, then sign the declaration. Once you submit, the form goes to the Human Resource Unit (your primary file holder — they will assign your Staff Number) and then to the Registrar\'s Office for the duplicate copy (they will assign your Appointment Number). You are filing your own record with both offices — neither office is sending it to the other.',
+                description: 'Fill in every field accurately, upload your passport photo, then sign. Your copy goes to HR (who assigns your Staff No.) and to the Registrar (who assigns your Appointment No.).',
                 fields: [
                     // ═══════════════════════════════════════════════════════
                     // PART I — PERSONAL PARTICULARS
                     // ═══════════════════════════════════════════════════════
                     new FormField(name: 'part_1_heading', label: 'PART I — Personal Particulars', type: FormField::TYPE_HEADING,
                         help: 'Items 1–7 are personal particulars. Items 8–11 cover children, parents, next-of-kin and beneficiaries.'),
-
-                    // ── Passport photograph guidance ──
-                    new FormField(name: 'sub_photo_heading', label: 'Passport Photograph', type: FormField::TYPE_HEADING,
-                        help: 'Upload a recent passport-size photograph as an image attachment at the end of the form (you\'ll see the "Attachments" panel at the final step). The first image you attach will be embedded in the top-right of the printed record, where the paper form says "Affix recent passport size photograph".'),
 
                     // ── 1. Name ──
                     new FormField('full_name', '1. Name (Full Name in BLOCK LETTERS)', FormField::TYPE_TEXT, required: true, col: 12, maxLength: 250,
