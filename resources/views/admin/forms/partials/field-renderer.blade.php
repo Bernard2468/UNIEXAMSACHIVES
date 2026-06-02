@@ -77,7 +77,16 @@
                         name="{{ $field->name }}"
                         class="form-control"
                         value="{{ $value }}"
-                        @if($field->calculatesAgeTarget) data-calc-age-target="{{ $field->calculatesAgeTarget }}" @endif
+                        @if($field->calculatesAgeTarget)
+                            data-calc-age-target="{{ $field->calculatesAgeTarget }}"
+                            {{-- Inline event handlers in addition to the addEventListener
+                                 wiring at the bottom of this partial — this is a
+                                 belt-and-braces guarantee that the age field auto-fills
+                                 the moment the user picks (or types) a complete DOB. --}}
+                            oninput="if(window.cugFillAgeFrom)window.cugFillAgeFrom(this)"
+                            onchange="if(window.cugFillAgeFrom)window.cugFillAgeFrom(this)"
+                            onblur="if(window.cugFillAgeFrom)window.cugFillAgeFrom(this)"
+                        @endif
                         @if($readonly) disabled readonly @endif>
                     @break
 
@@ -389,7 +398,20 @@
 (function () {
     function computeAge(dobValue) {
         if (!dobValue) return null;
-        var dob = new Date(dobValue);
+        // Parse "YYYY-MM-DD" explicitly so timezone juggling doesn't push
+        // the date over a day boundary on certain locales (e.g. type=date
+        // returns "1990-01-15" and `new Date("1990-01-15")` is UTC midnight).
+        var parts = String(dobValue).split('-');
+        var dob;
+        if (parts.length === 3) {
+            var y = parseInt(parts[0], 10);
+            var mo = parseInt(parts[1], 10) - 1;
+            var d = parseInt(parts[2], 10);
+            if (!isNaN(y) && !isNaN(mo) && !isNaN(d)) {
+                dob = new Date(y, mo, d);
+            }
+        }
+        if (!dob) dob = new Date(dobValue);
         if (isNaN(dob.getTime())) return null;
         var today = new Date();
         var age = today.getFullYear() - dob.getFullYear();
@@ -398,38 +420,48 @@
         return (age >= 0 && age <= 150) ? age : null;
     }
 
-    function wire(dateEl) {
-        if (dateEl.dataset.ageWired === '1') return; // idempotent
-        dateEl.dataset.ageWired = '1';
-
+    // ──────────────────────────────────────────────────────────────
+    // Public auto-fill entry point — also bound directly via inline
+    // oninput / onchange / onblur attributes on the date input itself
+    // (see field-renderer @case TYPE_DATE). Either path lands here.
+    // ──────────────────────────────────────────────────────────────
+    window.cugFillAgeFrom = function (dateEl) {
+        if (!dateEl) return;
         var targetName = dateEl.dataset.calcAgeTarget;
         if (!targetName) return;
         var form = dateEl.closest('form') || document;
         var target = form.querySelector('[name="' + targetName + '"]');
         if (!target) return;
+        var age = computeAge(dateEl.value);
+        if (age === null) return;
+        target.value = age;
+        // Notify any other listeners (validation, dependent fields, etc.)
+        try {
+            target.dispatchEvent(new Event('input',  { bubbles: true }));
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (e) { /* ignore — value is set either way */ }
+    };
 
-        function update() {
-            var age = computeAge(dateEl.value);
-            if (age !== null) {
-                target.value = age;
-                // Fire input/change on the target so any other listeners
-                // (validation, dependent fields) hear about it too.
-                target.dispatchEvent(new Event('input',  { bubbles: true }));
-                target.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }
+    function wire(dateEl) {
+        if (dateEl.dataset.ageWired === '1') return; // idempotent
+        dateEl.dataset.ageWired = '1';
 
-        // `input` fires on every keystroke / picker selection — fastest path
-        // to a populated age. `change` is the safety net for browsers that
-        // suppress `input` on type=date.
-        dateEl.addEventListener('input', update);
-        dateEl.addEventListener('change', update);
-        dateEl.addEventListener('blur', update);
+        var run = function () { window.cugFillAgeFrom(dateEl); };
 
-        // Derive on load if the field is already populated (editing a saved
-        // submission) AND the target is still empty — never clobber a value
-        // the user has manually typed.
-        if (dateEl.value && !target.value) update();
+        // `input` fires on every keystroke / picker change — fastest path
+        // to a populated age. `change` and `blur` are belt-and-braces for
+        // browsers that suppress `input` on type=date.
+        dateEl.addEventListener('input',  run);
+        dateEl.addEventListener('change', run);
+        dateEl.addEventListener('blur',   run);
+
+        // Derive on load if the date is already populated (editing a saved
+        // submission) AND the age field is still empty — never clobber a
+        // value the user has manually typed.
+        var targetName = dateEl.dataset.calcAgeTarget;
+        var form = dateEl.closest('form') || document;
+        var target = form.querySelector('[name="' + targetName + '"]');
+        if (dateEl.value && target && !target.value) run();
     }
 
     function wireAll() {
