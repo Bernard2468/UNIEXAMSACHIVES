@@ -423,7 +423,7 @@
     // ──────────────────────────────────────────────────────────────
     // Public auto-fill entry point — also bound directly via inline
     // oninput / onchange / onblur attributes on the date input itself
-    // (see field-renderer @case TYPE_DATE). Either path lands here.
+    // (see the TYPE_DATE branch up above). Either path lands here.
     // ──────────────────────────────────────────────────────────────
     window.cugFillAgeFrom = function (dateEl) {
         if (!dateEl) return;

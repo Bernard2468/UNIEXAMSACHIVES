@@ -658,6 +658,7 @@
         </div>
     @endif
 
+    {{-- Items 15 + 16 share a 2-col row (.pf-grid honours width:50% on each td). --}}
     <table class="pf-grid">
         <tr>
             <td><span class="pf-kv__label">15. Position given at CUG:</span>
@@ -665,10 +666,19 @@
             <td><span class="pf-kv__label">16. Office / Department:</span>
                 <span class="pf-kv__value" style="min-width: 45%;">{{ $applicantData['cug_office_department'] ?? '' }}</span></td>
         </tr>
-        <tr>
-            <td colspan="2"><span class="pf-kv__label">17. Social Security Number <em style="font-weight: 400; color: #6b7280;">(if any)</em>:</span>
-                <span class="pf-kv__value" style="min-width: 60%;">{{ $applicantData['social_security_number'] ?? '' }}</span></td>
-        </tr>
+    </table>
+
+    {{-- Item 17 (full-width) rendered as a standalone block — NOT a colspan
+         row inside .pf-grid, because the CSS sets width:50% on every td and
+         dompdf's cellmap can't reconcile a colspan-2 cell with a 50%
+         per-cell width rule (it throws "Frame not found in cellmap"). --}}
+    <div class="pf-row" style="margin-top: 4px;">
+        <span class="pf-row__label">17. Social Security Number <em style="font-weight: 400; color: #6b7280;">(if any)</em>:</span>
+        <span class="pf-row__value pf-row__value--inline" style="min-width: 70%;">{{ $applicantData['social_security_number'] ?? '' }}</span>
+    </div>
+
+    {{-- Item 18 — both dates back to a 2-col row. --}}
+    <table class="pf-grid">
         <tr>
             <td><span class="pf-kv__label">18. Date of 1<sup>st</sup> Appointment:</span>
                 <span class="pf-kv__value" style="min-width: 50%;">{{ $fmtDate($applicantData['date_of_first_appointment'] ?? null) }}</span></td>
@@ -776,12 +786,13 @@
         The Registrar's Office holds the institutional duplicate of this personnel record and
         assigns the Appointment Number.
     </p>
-    <table class="pf-grid">
-        <tr>
-            <td colspan="2"><span class="pf-kv__label">Appointment Number (assigned by Registrar):</span>
-                <span class="pf-kv__value" style="min-width: 55%;">{{ $registrarData['appointment_no'] ?? '' }}</span></td>
-        </tr>
-    </table>
+    {{-- Full-width single field — use the .pf-row block to avoid a
+         colspan-2 td inside .pf-grid (the per-td width:50% rule and
+         colspan don't co-exist in dompdf's cellmap allocator). --}}
+    <div class="pf-row" style="margin-top: 4px;">
+        <span class="pf-row__label">Appointment Number (assigned by Registrar):</span>
+        <span class="pf-row__value pf-row__value--inline" style="min-width: 60%;">{{ $registrarData['appointment_no'] ?? '' }}</span>
+    </div>
     @if(!empty($registrarData['registrar_comments']))
         <div class="pf-row">
             <span class="pf-row__label">Registrar's Comments:</span>
