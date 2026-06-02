@@ -172,7 +172,7 @@
                                                     <p class="form-panel__desc">{{ $currentStage->description }}</p>
                                                 @endif
                                                 @if(!$canFill)
-                                                    <p class="form-panel__desc"><em>This section is waiting on the assigned officer. You can view the form but not edit it.</em></p>
+                                                    <p class="form-panel__desc"><em>Awaiting the assigned officer — view only.</em></p>
                                                 @endif
                                             </div>
                                         </div>

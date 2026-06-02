@@ -304,7 +304,7 @@ class NonAcademicRenewalOfAppointmentForm extends BaseFormDefinition
                 slug: 'recommender',
                 label: 'Recommendation — Unit Head / Supervisor / HOD / Director / Office Head',
                 officeSlug: null,
-                description: 'Sections 8 and 9 of the paper form are handled here. The applicant chooses where the recommendation should go — to a Dean, HOD, Director, or an Office head (e.g. Unit Head / Sectional Head / Supervisor). The named recommender writes their comment and signs.',
+                description: 'Provide your recommendation on the applicant\'s suitability for renewal, then sign.',
                 fields: [
                     new FormField(
                         name: 'assessor_role',

@@ -258,7 +258,7 @@ class AcademicRenewalOfAppointmentForm extends BaseFormDefinition
                 slug: 'recommender',
                 label: 'Comments by Dean / HOD / Director',
                 officeSlug: null,
-                description: 'Section 9 — Comments by the Dean, Head of Department or Director on the applicant\'s suitability for renewal.',
+                description: 'Provide your assessment of the applicant\'s suitability for renewal, then sign.',
                 fields: [
                     new FormField(
                         name: 'assessor_role',

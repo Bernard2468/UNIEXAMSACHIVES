@@ -157,7 +157,7 @@ class RenewalOfAppointmentForm extends BaseFormDefinition
                 slug: 'recommender',
                 label: 'Assessment — Dean / Director / HOD / Office Head',
                 officeSlug: null,
-                description: 'Comment(s) by the Dean, Director, Head of Department, Unit Head or Supervisor on the applicant\'s suitability for renewal. The applicant chooses who should provide the assessment so that Sections 6 and 7 of the paper form are handled here in one place.',
+                description: 'Provide your assessment of the applicant\'s suitability for renewal, then sign.',
                 fields: [
                     new FormField('assessor_role',
                         label: 'Your role for this assessment',
