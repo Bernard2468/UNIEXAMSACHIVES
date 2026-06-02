@@ -101,24 +101,51 @@
                             </div>
                         @endif
 
-                        {{-- ====== PRIOR (SIGNED) STAGES ====== --}}
+                        {{-- ====== PRIOR / COMPLETED STAGES ======
+                             A stage renders as a locked panel here when EITHER it has a
+                             signature on file OR it has saved section_data — and is not
+                             the form's current (editable) stage. The data-only path
+                             covers forms where the first stage declares
+                             signatureRequired:false because the applicant signs the
+                             declaration stage later (CUGA-1A / CUGA-1B / CUGA-1C). EPR /
+                             PR / PWA / VMA / leave forms all sign their first stage, so
+                             the data path is redundant for them — but harmless. --}}
                         @foreach($definition->stages() as $stage)
                             @php
-                                $isSigned   = in_array($stage->slug, $completedStages, true);
-                                $isCurrent  = $currentStage && $stage->slug === $currentStage->slug;
+                                $isSigned        = in_array($stage->slug, $completedStages, true);
+                                $isCurrent       = $currentStage && $stage->slug === $currentStage->slug;
+                                $stageData       = $submission->sectionData($stage->slug);
+                                $stageHasData    = is_array($stageData) && count($stageData) > 0;
+                                $shouldRender    = !$isCurrent && ($isSigned || $stageHasData);
                                 $skippedOptional = $stage->optional && !$isSigned && !$isCurrent;
                             @endphp
 
-                            @if($isSigned)
+                            @if($shouldRender)
                                 @php
                                     $sigs = $signaturesByStage[$stage->slug] ?? collect();
                                     $sig  = $sigs->last();
+
+                                    // ── Filled-by attribution for data-only stages ──
+                                    // When the panel has data but no signature (common
+                                    // for the first stage of CUGA-1A / CUGA-1B / CUGA-1C
+                                    // where the applicant signs the declaration stage
+                                    // later), pass the original applicant as the
+                                    // "filler" so the recommender / HOD / next office
+                                    // can see WHO entered this data and WHEN — they
+                                    // need that confidence before they sign anything.
+                                    $isFirstStage = $stage->slug === $definition->firstStage()->slug;
+                                    $filler   = (!$sig && $isFirstStage) ? $submission->creator : null;
+                                    $filledAt = (!$sig && $isFirstStage)
+                                        ? ($submission->submitted_at ?? $submission->updated_at ?? $submission->created_at)
+                                        : null;
                                 @endphp
                                 @include('admin.forms.partials.section-display', [
                                     'stage'       => $stage,
-                                    'sectionData' => $submission->sectionData($stage->slug),
+                                    'sectionData' => $stageData,
                                     'signature'   => $sig,
                                     'signer'      => $sig?->user,
+                                    'filler'      => $filler,
+                                    'filledAt'    => $filledAt,
                                 ])
                             @endif
                         @endforeach

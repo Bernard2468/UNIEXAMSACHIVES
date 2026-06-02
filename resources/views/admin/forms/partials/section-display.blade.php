@@ -50,6 +50,19 @@
                             on <span style="color:#111827;font-weight:600;border-bottom:1px dashed #94a3b8;padding-bottom:1px;">{{ optional($signature->signed_at)->format('d M Y, H:i') }}</span>
                         @endif
                     </p>
+                @elseif(!empty($filler ?? null))
+                    {{-- Data-only stage (e.g. CUGA-1A/1B/1C applicant_details where
+                         the applicant signs the declaration stage later). Tell the
+                         next office WHO submitted this and WHEN, so they know they're
+                         attesting to data a real person filled in — not a blank slate. --}}
+                    <p class="form-panel__desc">
+                        <span style="display: inline-block; padding: 1px 7px; border-radius: 8px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-right: 6px; vertical-align: middle;">Filled</span>
+                        Filled by <strong>{{ trim(($filler->first_name ?? '') . ' ' . ($filler->last_name ?? '')) ?: 'the applicant' }}</strong>
+                        @if(!empty($filledAt ?? null))
+                            on <span style="color:#111827;font-weight:600;border-bottom:1px dashed #94a3b8;padding-bottom:1px;">{{ \Illuminate\Support\Carbon::parse($filledAt)->format('d M Y, H:i') }}</span>
+                        @endif
+                        — please review the details below before adding your section.
+                    </p>
                 @endif
             </div>
         </div>
