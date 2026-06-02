@@ -52,14 +52,6 @@
                                     </div>
                                 </a>
                             @endforeach
-
-                            <div class="gallery-card gallery-card--placeholder">
-                                <div class="gallery-card__top">
-                                    <div class="gallery-card__code gallery-card__code--ghost">+</div>
-                                </div>
-                                <h3 class="gallery-card__title">More forms coming</h3>
-                                <p class="gallery-card__desc">New form types can be dropped in without re-deployment.</p>
-                            </div>
                         </div>
                     </div>
                 </div>
