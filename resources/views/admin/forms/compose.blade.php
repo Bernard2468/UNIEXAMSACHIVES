@@ -159,17 +159,7 @@
                                     </div>
                                 </div>
                                 <div class="form-panel__body">
-                                    <label class="upload-dropzone" id="uploadDropzone">
-                                        <input type="file" name="attachments[]" multiple id="attachmentsInput" hidden>
-                                        <div class="upload-dropzone__icon">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                        </div>
-                                        <div class="upload-dropzone__text">
-                                            <strong>Click to choose files</strong>
-                                            <small>PDF, DOC, JPG, PNG — multiple files allowed</small>
-                                        </div>
-                                    </label>
-                                    <div class="upload-list" id="uploadList"></div>
+                                    @include('admin.forms.partials.attachment-uploader')
 
                                     @if(!empty($attachmentsPanelFieldNames))
                                         <div class="attachments-confirm">
@@ -291,32 +281,12 @@
 </div>
 
 <style>
-/* Compose-specific extras (dropzone) */
-.upload-dropzone { display: flex; align-items: center; gap: 14px; padding: 16px; background: #fafafa; border: 1.5px dashed #d4d7de; border-radius: 12px; cursor: pointer; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
-.upload-dropzone:hover { border-color: #0c0c0c; background: #f5f5f5; }
-.upload-dropzone__icon { width: 44px; height: 44px; border-radius: 10px; background: #fff; border: 1.5px solid #ebebeb; color: #0c0c0c; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.upload-dropzone__text strong { display: block; font-size: 0.86rem; color: #111827; font-weight: 600; line-height: 1.2; }
-.upload-dropzone__text small { display: block; font-size: 0.74rem; color: #9ca3af; margin-top: 3px; }
-
-.upload-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
-
 /* "I confirm I've attached X" checkbox(es) relocated into the Attachments panel
    (per definition->attachmentsPanelFieldNames). Set off with a subtle divider
    so it reads as a step within this panel, not a floating control. */
 .attachments-confirm { margin-top: 14px; padding-top: 14px; border-top: 1.5px dashed #ebebeb; }
 .attachments-confirm .form-grid { gap: 8px 16px; }
 .is_dark .attachments-confirm { border-top-color: #2d3748; }
-.upload-list__item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #fff; border: 1.5px solid #ebebeb; border-radius: 10px; font-size: 0.82rem; color: #374151; }
-.upload-list__item svg { color: #9ca3af; flex-shrink: 0; }
-.upload-list__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: #111827; }
-.upload-list__size { color: #9ca3af; font-size: 0.74rem; flex-shrink: 0; }
-
-.is_dark .upload-dropzone { background: #0f172a; border-color: #2d3748; }
-.is_dark .upload-dropzone:hover { border-color: #f3f4f6; background: #111827; }
-.is_dark .upload-dropzone__icon { background: #111827; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .upload-dropzone__text strong { color: #f3f4f6; }
-.is_dark .upload-list__item { background: #111827; border-color: #2d3748; }
-.is_dark .upload-list__name { color: #f3f4f6; }
 
 /* ════════════════════════════════════════════════════════
    PASSPORT-PHOTO UPLOADER — square click-to-upload box that
@@ -697,26 +667,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // ── File upload preview ──
-    const fileInput = document.getElementById('attachmentsInput');
-    const uploadList = document.getElementById('uploadList');
-    if (fileInput && uploadList) {
-        fileInput.addEventListener('change', function () {
-            uploadList.innerHTML = '';
-            Array.from(fileInput.files).forEach(function (f) {
-                const row = document.createElement('div');
-                row.className = 'upload-list__item';
-                const sizeKb = (f.size / 1024).toFixed(1);
-                const sizeText = sizeKb > 1024 ? (sizeKb / 1024).toFixed(1) + ' MB' : sizeKb + ' KB';
-                row.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>' +
-                    '<span class="upload-list__name"></span>' +
-                    '<span class="upload-list__size"></span>';
-                row.querySelector('.upload-list__name').textContent = f.name;
-                row.querySelector('.upload-list__size').textContent = sizeText;
-                uploadList.appendChild(row);
-            });
-        });
-    }
+    // File upload preview + remove buttons are now handled by
+    // partials/attachment-uploader.blade.php (shared with show.blade.php).
 
     // ════════════════════════════════════════════════════════
     // PASSPORT-PHOTO UPLOADER — click-to-upload + live preview

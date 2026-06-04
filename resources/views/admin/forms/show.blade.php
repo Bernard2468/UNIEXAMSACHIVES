@@ -211,11 +211,11 @@
                                         <div class="form-panel__head">
                                             <div>
                                                 <h2 class="form-panel__title">Attachments<span class="form-panel__title-bar"></span></h2>
-                                                <p class="form-panel__desc">Add files relevant to your section (optional).</p>
+                                                <p class="form-panel__desc">Add files relevant to your section. Click the × on a row to remove a file before forwarding.</p>
                                             </div>
                                         </div>
                                         <div class="form-panel__body">
-                                            <input type="file" name="attachments[]" multiple class="form-control">
+                                            @include('admin.forms.partials.attachment-uploader')
 
                                             @if(!empty($attachmentsPanelFieldNames))
                                                 <div class="attachments-confirm" style="margin-top: 14px; padding-top: 14px; border-top: 1.5px dashed #ebebeb;">

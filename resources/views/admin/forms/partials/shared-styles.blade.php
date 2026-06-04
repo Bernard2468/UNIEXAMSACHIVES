@@ -134,6 +134,29 @@
 .radio-pill input[type="radio"], .checkbox-pill input[type="checkbox"] { margin: 0; accent-color: #0c0c0c; }
 .radio-pill:has(input:checked), .checkbox-pill:has(input:checked) { background: #0c0c0c; color: #fff; border-color: #0c0c0c; }
 
+/* ── Attachment uploader (dropzone + preview list) ──
+   Used by partials/attachment-uploader.blade.php on every form page that
+   captures attachments (compose page + show page). Per-file remove button
+   styles live in the partial itself via @once. */
+.upload-dropzone { display: flex; align-items: center; gap: 14px; padding: 16px; background: #fafafa; border: 1.5px dashed #d4d7de; border-radius: 12px; cursor: pointer; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
+.upload-dropzone:hover { border-color: #0c0c0c; background: #f5f5f5; }
+.upload-dropzone__icon { width: 44px; height: 44px; border-radius: 10px; background: #fff; border: 1.5px solid #ebebeb; color: #0c0c0c; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.upload-dropzone__text strong { display: block; font-size: 0.86rem; color: #111827; font-weight: 600; line-height: 1.2; }
+.upload-dropzone__text small { display: block; font-size: 0.74rem; color: #9ca3af; margin-top: 3px; }
+
+.upload-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.upload-list__item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #fff; border: 1.5px solid #ebebeb; border-radius: 10px; font-size: 0.82rem; color: #374151; }
+.upload-list__item svg { color: #9ca3af; flex-shrink: 0; }
+.upload-list__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: #111827; }
+.upload-list__size { color: #9ca3af; font-size: 0.74rem; flex-shrink: 0; }
+
+.is_dark .upload-dropzone { background: #0f172a; border-color: #2d3748; }
+.is_dark .upload-dropzone:hover { border-color: #f3f4f6; background: #111827; }
+.is_dark .upload-dropzone__icon { background: #111827; border-color: #2d3748; color: #f3f4f6; }
+.is_dark .upload-dropzone__text strong { color: #f3f4f6; }
+.is_dark .upload-list__item { background: #111827; border-color: #2d3748; }
+.is_dark .upload-list__name { color: #f3f4f6; }
+
 /* ── Locked / signed fields display ──
    Kept visually identical to the original dashed-underline rows
    (used across every form's show page). The container is a 12-col
