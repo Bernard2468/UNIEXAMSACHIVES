@@ -615,6 +615,7 @@ class FormSubmissionController extends Controller
         $defaults = [
             // Identity
             'name'                   => $fullName,
+            'applicant_name'         => $fullName,           // promotion (senior members, non-teaching)
             'surname'                => $user->last_name,    // academic renewal
             'first_names'            => $user->first_name,   // academic renewal
             'email'                  => $user->email,
@@ -624,6 +625,7 @@ class FormSubmissionController extends Controller
             'department_section_unit'   => $departmentName,   // vehicle maintenance
             'faculty_centre_dept'       => $departmentName,   // renewal of appointment (senior & junior staff)
             'faculty_school_department' => $departmentName,   // renewal of appointment (academic)
+            'department_unit'           => $departmentName,   // promotion (senior members, non-teaching)
 
             // Position / rank / job title — known synonyms.
             'job_title'              => $positionName,      // PR / PWA
