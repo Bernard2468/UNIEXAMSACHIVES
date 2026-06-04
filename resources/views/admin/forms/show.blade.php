@@ -146,6 +146,7 @@
                                     'signer'      => $sig?->user,
                                     'filler'      => $filler,
                                     'filledAt'    => $filledAt,
+                                    'definition'  => $definition,
                                 ])
                             @endif
                         @endforeach
@@ -191,7 +192,7 @@
                                     <div class="form-panel__body">
                                         @include('admin.forms.partials.field-renderer', [
                                             'stage'             => $currentStage,
-                                            'sectionData'       => $submission->sectionData($currentStage->slug),
+                                            'sectionData'       => $currentStageSectionData ?? $submission->sectionData($currentStage->slug),
                                             'readonly'          => !$canFill,
                                             'excludeFieldNames' => $attachmentsPanelFieldNames,
                                         ])
@@ -220,7 +221,7 @@
                                                 <div class="attachments-confirm" style="margin-top: 14px; padding-top: 14px; border-top: 1.5px dashed #ebebeb;">
                                                     @include('admin.forms.partials.field-renderer', [
                                                         'stage'          => $currentStage,
-                                                        'sectionData'    => $submission->sectionData($currentStage->slug),
+                                                        'sectionData'    => $currentStageSectionData ?? $submission->sectionData($currentStage->slug),
                                                         'readonly'       => false,
                                                         'onlyFieldNames' => $attachmentsPanelFieldNames,
                                                     ])

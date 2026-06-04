@@ -92,6 +92,36 @@ abstract class BaseFormDefinition
     }
 
     /**
+     * Optional groups of fields on the given stage that should render as a
+     * single COMPACT TABLE in the read-only display (section-display.blade.php)
+     * — instead of one wide row per field. Useful for things like a
+     * 14-indicator self-evaluation scoring grid: on the PDF it's a tight
+     * table, so the show page should match instead of forcing a downstream
+     * approver to scroll past 14 separate dl-rows just to reach the sign
+     * button.
+     *
+     * Each group entry:
+     *   - 'label'       : heading rendered above the table
+     *   - 'help'        : optional sub-heading text
+     *   - 'fieldNames'  : ordered list of field names that form the table rows
+     *   - 'valueColumn' : optional header for the value column (default "Value")
+     *   - 'showTotal'   : when true, render a total row that sums numeric values
+     *                     and the percentage formula (sum / (count × 10)) × 100
+     *
+     * Fields named here are still defined normally on the stage; only their
+     * read-only DISPLAY layout changes — the editor and PDF are unchanged.
+     *
+     * Default: no grouping (current behaviour).
+     *
+     * @param  string $stageSlug
+     * @return array<int, array{label:string,help?:string,fieldNames:array<int,string>,valueColumn?:string,showTotal?:bool}>
+     */
+    public function displayFieldGroups(string $stageSlug): array
+    {
+        return [];
+    }
+
+    /**
      * Optional list of field NAMES (declared on the given stage) that should
      * be visually relocated from the main field grid into the Attachments
      * panel body. Useful for "I confirm I've attached X" checkboxes that

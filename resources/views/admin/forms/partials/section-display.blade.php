@@ -4,11 +4,27 @@
     - $sectionData : array of saved values keyed by field name
     - $signature   : App\Models\FormSignature|null
     - $signer      : App\Models\User|null
+    - $definition  : optional App\Forms\BaseFormDefinition (required if you want
+                     displayFieldGroups() to be honoured)
 --}}
 @php
     use App\Forms\FormField;
     use App\Models\FormAttachment;
     $sectionData = $sectionData ?? [];
+
+    // Field groups that this stage's form definition wants rendered as a
+    // single compact table (instead of one dl-row per field). Used for the
+    // Promotion form's 14-indicator self-evaluation so downstream approvers
+    // don't have to scroll past 14 separate rows to reach the sign button.
+    $fieldGroups       = (isset($definition) && $definition) ? $definition->displayFieldGroups($stage->slug) : [];
+    $groupedFieldNames = [];                  // set of names consumed by any group
+    $groupByAnchor     = [];                  // map: first-field-name → group config
+    foreach ($fieldGroups as $g) {
+        $names = $g['fieldNames'] ?? [];
+        if (empty($names)) continue;
+        $groupByAnchor[$names[0]] = $g;
+        foreach ($names as $n) { $groupedFieldNames[$n] = true; }
+    }
     // Attachments uploaded at THIS stage. Cheap because $submission->attachments
     // is eager-loaded in FormSubmissionController::show — this is just an
     // in-memory ->where() on the loaded Collection.
@@ -99,6 +115,69 @@
         <dl class="locked-fields">
             @foreach($stage->fields as $field)
                 @if($field->type === FormField::TYPE_HEADING) @continue @endif
+
+                {{-- ── Grouped fields: render as a single compact table the first time we hit one ── --}}
+                @if(isset($groupByAnchor[$field->name]))
+                    @php
+                        $group       = $groupByAnchor[$field->name];
+                        $groupFields = [];
+                        foreach ($group['fieldNames'] as $gn) {
+                            foreach ($stage->fields as $gf) {
+                                if ($gf->name === $gn) { $groupFields[] = $gf; break; }
+                            }
+                        }
+                        $groupSum = 0; $groupFilled = 0;
+                        foreach ($groupFields as $gf) {
+                            $gv = $sectionData[$gf->name] ?? null;
+                            if (is_numeric($gv)) { $groupSum += (int) $gv; $groupFilled++; }
+                        }
+                        $denominator = count($groupFields) * 10;
+                        $groupPct    = ($groupFilled > 0 && $denominator > 0)
+                            ? round(($groupSum / $denominator) * 100, 1)
+                            : null;
+                    @endphp
+                    <div class="locked-fields__row" style="grid-column: span 12;">
+                        <dt>{{ $group['label'] }}</dt>
+                        <dd>
+                            @if(!empty($group['help']))
+                                <p style="margin: 0 0 6px; font-size: 0.78rem; color: #6b7280; font-style: italic;">{{ $group['help'] }}</p>
+                            @endif
+                            <table class="locked-table">
+                                <thead><tr>
+                                    <th class="locked-table__index">#</th>
+                                    <th>Description</th>
+                                    <th style="width: 140px; text-align: center;">{{ $group['valueColumn'] ?? 'Value' }}</th>
+                                </tr></thead>
+                                <tbody>
+                                    @foreach($groupFields as $gi => $gf)
+                                        @php $gv = $sectionData[$gf->name] ?? null; @endphp
+                                        <tr>
+                                            <td class="locked-table__index">{{ $gi + 1 }}.</td>
+                                            <td>{{ $gf->label }}</td>
+                                            <td style="text-align: center; font-weight: 600;">{{ is_numeric($gv) ? (int) $gv : '—' }}</td>
+                                        </tr>
+                                    @endforeach
+                                    @if(!empty($group['showTotal']))
+                                        <tr style="background: #f9fafb;">
+                                            <td colspan="2" style="text-align: right; font-weight: 700;">Total Score</td>
+                                            <td style="text-align: center; font-weight: 700;">{{ $groupFilled > 0 ? $groupSum : '—' }} / {{ $denominator }}</td>
+                                        </tr>
+                                        @if($groupPct !== null)
+                                            <tr style="background: #f3f4f6;">
+                                                <td colspan="2" style="text-align: right; font-weight: 700;">Percentage</td>
+                                                <td style="text-align: center; font-weight: 700; color: #15803d;">{{ $groupPct }}%</td>
+                                            </tr>
+                                        @endif
+                                    @endif
+                                </tbody>
+                            </table>
+                        </dd>
+                    </div>
+                @endif
+
+                {{-- Skip every field that belongs to a group (handled above) --}}
+                @if(isset($groupedFieldNames[$field->name])) @continue @endif
+
                 @php $raw = $sectionData[$field->name] ?? null; @endphp
                 @if($raw === null || $raw === '' || (is_array($raw) && empty($raw))) @continue @endif
 

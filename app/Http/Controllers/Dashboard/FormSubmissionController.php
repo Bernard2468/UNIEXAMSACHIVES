@@ -74,7 +74,7 @@ class FormSubmissionController extends Controller
             // On the initial compose page that's always the current user.
             'creatorRecipient'     => $nextStage && $nextStage->isCreatorPool() ? $user : null,
             'submission'           => null,
-            'sectionData'          => $this->prefillRequisitioner($user, $stage),
+            'sectionData'          => $this->prefillFromProfile($user, $stage),
             'savedSignature'       => $user->savedSignature,
         ]);
     }
@@ -197,10 +197,22 @@ class FormSubmissionController extends Controller
                 : null;
         }
 
+        // Prefill the current stage's form fields from the user's profile
+        // when the stage hasn't been filled in yet. Saved data always wins,
+        // so re-opening a partly-saved stage never overwrites the user's edits.
+        $currentStageSectionData = $currentStage ? $submission->sectionData($currentStage->slug) : [];
+        if ($canFill && $currentStage) {
+            $currentStageSectionData = array_merge(
+                $this->prefillFromProfile($user, $currentStage),
+                $currentStageSectionData,
+            );
+        }
+
         return view('admin.forms.show', [
             'submission'           => $submission,
             'definition'           => $definition,
             'currentStage'         => $currentStage,
+            'currentStageSectionData' => $currentStageSectionData,
             'nextStage'            => $nextStage ?? null,
             'nextOffice'           => $nextContext['office'],
             'leadershipCandidates' => $nextContext['leadership'],
@@ -598,20 +610,23 @@ class FormSubmissionController extends Controller
     }
 
     /**
-     * Pre-populate the requisitioner section with the user's profile data
-     * (still editable, but saves typing).
+     * Pre-populate any stage's section data with the current user's profile
+     * fields (still editable, but saves typing). Originally only ran on the
+     * initial compose page (stage 1 / requisitioner), but downstream stages
+     * also benefit — e.g. the Promotion form's supervisor stage prefills the
+     * supervisor's own department instead of making them type it.
+     *
+     * The loop below only copies values whose field-name appears on the
+     * given stage, so forms that don't have a given field are unaffected.
+     * Add new keys to $defaults whenever a form introduces a field that's
+     * derivable from the user's profile.
      */
-    protected function prefillRequisitioner($user, $stage): array
+    protected function prefillFromProfile($user, $stage): array
     {
         $positionName   = optional($user->position)->name;
         $departmentName = optional($user->department)->name;
         $fullName       = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
 
-        // Map every known field-name a form might use to its user-profile
-        // value. The loop below only copies values that actually appear on
-        // the current stage, so forms that don't have a given field are
-        // unaffected. Add new keys here whenever a form introduces a field
-        // that's derivable from the user's profile.
         $defaults = [
             // Identity
             'name'                   => $fullName,
@@ -625,7 +640,8 @@ class FormSubmissionController extends Controller
             'department_section_unit'   => $departmentName,   // vehicle maintenance
             'faculty_centre_dept'       => $departmentName,   // renewal of appointment (senior & junior staff)
             'faculty_school_department' => $departmentName,   // renewal of appointment (academic)
-            'department_unit'           => $departmentName,   // promotion (senior members, non-teaching)
+            'department_unit'           => $departmentName,   // promotion (senior members, non-teaching) — applicant
+            'supervisor_department_unit' => $departmentName,  // promotion (senior members, non-teaching) — supervisor stage
 
             // Position / rank / job title — known synonyms.
             'job_title'              => $positionName,      // PR / PWA

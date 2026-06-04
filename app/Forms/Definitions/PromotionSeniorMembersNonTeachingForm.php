@@ -94,6 +94,44 @@ class PromotionSeniorMembersNonTeachingForm extends BaseFormDefinition
     }
 
     /**
+     * Render the 14-indicator self-evaluation as one tight scoring table on
+     * the read-only show page (mirrors the PDF). Without this grouping each
+     * indicator becomes its own dl-row and the supervisor has to scroll
+     * forever to reach the sign button.
+     */
+    public function displayFieldGroups(string $stageSlug): array
+    {
+        if ($stageSlug !== 'applicant') {
+            return [];
+        }
+
+        return [
+            [
+                'label'      => '16. Self-Evaluation of Job Performance',
+                'help'       => 'Maximum 10 points per indicator. Final percentage = (Total Score ÷ 140) × 100.',
+                'valueColumn' => 'Score (out of 10)',
+                'showTotal'  => true,
+                'fieldNames' => [
+                    'eval_admin_procedures',
+                    'eval_work_independently',
+                    'eval_meet_deadlines',
+                    'eval_additional_work',
+                    'eval_legit_instructions',
+                    'eval_ict_new_techniques',
+                    'eval_regularity',
+                    'eval_punctuality',
+                    'eval_initiative',
+                    'eval_supervision',
+                    'eval_peer_relations',
+                    'eval_appearance',
+                    'eval_quality_duties',
+                    'eval_quality_reports',
+                ],
+            ],
+        ];
+    }
+
+    /**
      * Five-step wizard for the applicant stage so a 17-item paper form
      * doesn't render as one long scroll.
      */
