@@ -157,10 +157,30 @@
         .pf-eval th, .pf-eval td { border: 1px solid #6b7280; padding: 4px 6px; vertical-align: middle; }
         .pf-eval th { font-weight: 700; text-align: left; background: #f3f4f6; }
         .pf-eval__idx { width: 24px; text-align: center; font-weight: 700; }
-        .pf-eval__score { width: 78px; text-align: center; font-weight: 700; }
-        .pf-eval__pct { width: 78px; text-align: center; }
+        .pf-eval__score { width: 110px; text-align: center; font-weight: 700; }
+        .pf-eval__pct { width: 90px; text-align: center; }
         .pf-eval__totalrow td { background: #f9fafb; font-weight: 700; }
-        .pf-eval__formula { font-size: 9px; font-style: italic; color: #6b7280; text-align: right; margin-top: -2px; }
+        .pf-eval__totalrow .pf-eval__score, .pf-eval__totalrow .pf-eval__pct { color: #111827; font-size: 11px; }
+        .pf-eval__notice {
+            margin: 4px 0 6px;
+            padding: 6px 10px;
+            background: #fef3c7;
+            border-left: 4px solid #ca8a04;
+            border-radius: 0 4px 4px 0;
+            font-size: 10.5px;
+            color: #713f12;
+            font-weight: 600;
+        }
+        .pf-eval__formula {
+            margin-top: 4px;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border-radius: 3px;
+            font-size: 10px;
+            color: #374151;
+            text-align: right;
+        }
+        .pf-eval__formula strong { color: #111827; }
 
         /* ── Statement / declaration blocks ── */
         .pf-statement {
@@ -369,40 +389,42 @@
             <td class="pf-section__num-cell">16.</td>
             <td class="pf-section__title-cell">Self-Evaluation of Job Performance by the Applicant</td>
         </tr></table>
-        <p style="margin: 0 0 6px; font-size: 10px; color: #4b5563; font-style: italic;">
-            (Based on the following indicators — 10 points maximum for each.)
-        </p>
+        <div class="pf-eval__notice">
+            ⚠ Score: MAXIMUM 10 POINTS for each indicator. Final percentage = (Total Score ÷ 140) × 100.
+        </div>
 
         <table class="pf-eval">
             <thead>
                 <tr>
                     <th class="pf-eval__idx">#</th>
                     <th>Description</th>
-                    <th class="pf-eval__score">Score<br>(out of 10)</th>
+                    <th class="pf-eval__score">Score<br>(10 points each)</th>
                     <th class="pf-eval__pct">Percentage (%)</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($evalRows as $i => $row)
-                    @php
-                        $v = $applicantData[$row['key']] ?? null;
-                        $pct = is_numeric($v) ? round(((int) $v / 10) * 100, 0) . '%' : '';
-                    @endphp
+                    @php $v = $applicantData[$row['key']] ?? null; @endphp
                     <tr>
                         <td class="pf-eval__idx">{{ $i + 1 }}.</td>
                         <td>{{ $row['label'] }}</td>
                         <td class="pf-eval__score">{{ is_numeric($v) ? (int) $v : '' }}</td>
-                        <td class="pf-eval__pct">{{ $pct }}</td>
+                        <td class="pf-eval__pct">&mdash;</td>
                     </tr>
                 @endforeach
                 <tr class="pf-eval__totalrow">
                     <td colspan="2" style="text-align: right;">Total Score</td>
-                    <td class="pf-eval__score">{{ $evalFilled > 0 ? $evalTotal : '' }} / 140</td>
+                    <td class="pf-eval__score">{{ $evalFilled > 0 ? $evalTotal . ' / 140' : '— / 140' }}</td>
                     <td class="pf-eval__pct">{{ $evalPercentage !== null ? $evalPercentage . '%' : '' }}</td>
                 </tr>
             </tbody>
         </table>
-        <div class="pf-eval__formula">e.g. (total score × 100) ÷ 140</div>
+        <div class="pf-eval__formula">
+            Formula: <strong>(Total Score ÷ 140) × 100</strong>
+            @if($evalFilled > 0)
+                &nbsp;=&nbsp; <strong>({{ $evalTotal }} ÷ 140) × 100 = {{ $evalPercentage }}%</strong>
+            @endif
+        </div>
     </div>
 
     {{-- =========================================================

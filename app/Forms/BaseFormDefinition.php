@@ -92,6 +92,28 @@ abstract class BaseFormDefinition
     }
 
     /**
+     * Optional list of field NAMES (declared on the given stage) that should
+     * be visually relocated from the main field grid into the Attachments
+     * panel body. Useful for "I confirm I've attached X" checkboxes that
+     * read more naturally next to the file uploader than buried at the end
+     * of the question list.
+     *
+     * The fields stay in the stage definition (so they validate and persist
+     * exactly as before) — only their *rendering location* changes. The
+     * compose and show pages exclude these names from the main pass and
+     * re-render them inside the Attachments panel.
+     *
+     * Default: empty (no relocation — current behaviour).
+     *
+     * @param  string $stageSlug
+     * @return array<int, string>
+     */
+    public function attachmentsPanelFieldNames(string $stageSlug): array
+    {
+        return [];
+    }
+
+    /**
      * Optional multi-step "wizard" configuration for the requisitioner /
      * applicant compose page. When non-null, the first stage's fields are
      * grouped into the named steps (driven by `startAt` field-name

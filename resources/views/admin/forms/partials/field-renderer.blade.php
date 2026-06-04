@@ -1,18 +1,26 @@
 {{--
     Renders every fillable field of a FormStage on a clean 12-col grid.
-    - $stage       : App\Forms\FormStage
-    - $sectionData : array of prior values keyed by field name
-    - $readonly    : bool — when true the inputs render as disabled/locked rows.
+    - $stage             : App\Forms\FormStage
+    - $sectionData       : array of prior values keyed by field name
+    - $readonly          : bool — when true the inputs render as disabled/locked rows.
+    - $excludeFieldNames : array of field names to SKIP (rendered elsewhere — e.g. inside the Attachments panel)
+    - $onlyFieldNames    : array of field names to RENDER (all others skipped). null = no restriction.
+                           When set, headings whose own name is not in the list ARE rendered iff at least one
+                           sibling field within the same heading group is — kept simple: skip headings entirely.
 --}}
 @php
     use App\Forms\FormField;
     $sectionData = $sectionData ?? [];
     $readonly = $readonly ?? false;
+    $excludeFieldNames = $excludeFieldNames ?? [];
+    $onlyFieldNames = $onlyFieldNames ?? null;
 @endphp
 
 <div class="form-grid">
     @foreach($stage->fields as $field)
         @php
+            if (in_array($field->name, $excludeFieldNames, true)) continue;
+            if (is_array($onlyFieldNames) && !in_array($field->name, $onlyFieldNames, true)) continue;
             $value   = old($field->name, $sectionData[$field->name] ?? $field->default);
             $col     = max(1, min(12, $field->col));
             $inputId = 'field_' . $stage->slug . '_' . $field->name;

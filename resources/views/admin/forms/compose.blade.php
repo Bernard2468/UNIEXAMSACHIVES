@@ -10,6 +10,10 @@
      */
     $wizardSteps = $definition->composeWizardSteps();
     $isWizard    = is_array($wizardSteps) && count($wizardSteps) > 1;
+    // Fields the definition wants to live INSIDE the Attachments panel
+    // (e.g. "I confirm I've attached X" checkboxes). Skipped from the main
+    // field-renderer pass; re-rendered below the upload dropzone.
+    $attachmentsPanelFieldNames = $definition->attachmentsPanelFieldNames($stage->slug);
 @endphp
 
 @section('content')
@@ -135,9 +139,10 @@
                                 </div>
                                 <div class="form-panel__body" id="formWizardFieldsHost">
                                     @include('admin.forms.partials.field-renderer', [
-                                        'stage'       => $stage,
-                                        'sectionData' => $sectionData,
-                                        'readonly'    => false,
+                                        'stage'             => $stage,
+                                        'sectionData'       => $sectionData,
+                                        'readonly'          => false,
+                                        'excludeFieldNames' => $attachmentsPanelFieldNames,
                                     ])
                                 </div>
                             </div>
@@ -165,6 +170,17 @@
                                         </div>
                                     </label>
                                     <div class="upload-list" id="uploadList"></div>
+
+                                    @if(!empty($attachmentsPanelFieldNames))
+                                        <div class="attachments-confirm">
+                                            @include('admin.forms.partials.field-renderer', [
+                                                'stage'          => $stage,
+                                                'sectionData'    => $sectionData,
+                                                'readonly'       => false,
+                                                'onlyFieldNames' => $attachmentsPanelFieldNames,
+                                            ])
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 
@@ -283,6 +299,13 @@
 .upload-dropzone__text small { display: block; font-size: 0.74rem; color: #9ca3af; margin-top: 3px; }
 
 .upload-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+
+/* "I confirm I've attached X" checkbox(es) relocated into the Attachments panel
+   (per definition->attachmentsPanelFieldNames). Set off with a subtle divider
+   so it reads as a step within this panel, not a floating control. */
+.attachments-confirm { margin-top: 14px; padding-top: 14px; border-top: 1.5px dashed #ebebeb; }
+.attachments-confirm .form-grid { gap: 8px 16px; }
+.is_dark .attachments-confirm { border-top-color: #2d3748; }
 .upload-list__item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #fff; border: 1.5px solid #ebebeb; border-radius: 10px; font-size: 0.82rem; color: #374151; }
 .upload-list__item svg { color: #9ca3af; flex-shrink: 0; }
 .upload-list__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: #111827; }

@@ -79,6 +79,21 @@ class PromotionSeniorMembersNonTeachingForm extends BaseFormDefinition
     }
 
     /**
+     * Relocate every "I confirm I've attached X" checkbox out of the main
+     * question list and into the Attachments panel — that's where the user
+     * actually picks the files, so the confirmation belongs next to it.
+     */
+    public function attachmentsPanelFieldNames(string $stageSlug): array
+    {
+        return match ($stageSlug) {
+            'applicant'  => ['applicant_attachments_confirmed'],
+            'supervisor' => ['confidential_report_attached'],
+            'hrd_unit'   => ['appraisal_reports_attached'],
+            default      => [],
+        };
+    }
+
+    /**
      * Five-step wizard for the applicant stage so a 17-item paper form
      * doesn't render as one long scroll.
      */
@@ -170,8 +185,8 @@ class PromotionSeniorMembersNonTeachingForm extends BaseFormDefinition
                     new FormField('professional_qualifications', '15. Professional Qualifications (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12),
 
                     // ── Self-Evaluation (item 16) ──
-                    new FormField(name: 'section_self_eval_heading', label: '16. Self-Evaluation of Job Performance', type: FormField::TYPE_HEADING,
-                        help: 'Score yourself on each of the 14 indicators below — maximum 10 points each. Your final percentage is (total score × 100) ÷ 140 and is computed automatically on the PDF.'),
+                    new FormField(name: 'section_self_eval_heading', label: '16. Self-Evaluation of Job Performance — MAXIMUM 10 POINTS EACH', type: FormField::TYPE_HEADING,
+                        help: 'Score yourself on each of the 14 indicators below. EACH INDICATOR IS OUT OF 10 POINTS (0–10). Your final percentage is computed automatically using the formula: (Total Score ÷ 140) × 100. So a total of 140/140 = 100%, and a total of 70/140 = 50%.'),
 
                     new FormField('eval_admin_procedures',   '1. Knowledge of relevant administrative procedures', FormField::TYPE_NUMBER, required: true, col: 12, rule: 'required|integer|min:0|max:10', help: 'Out of 10.'),
                     new FormField('eval_work_independently', '2. Ability to work independently',                   FormField::TYPE_NUMBER, required: true, col: 12, rule: 'required|integer|min:0|max:10', help: 'Out of 10.'),
@@ -190,7 +205,7 @@ class PromotionSeniorMembersNonTeachingForm extends BaseFormDefinition
 
                     // ── Sign / item 17 ──
                     new FormField(name: 'section_sign_heading', label: '17. Application Letter, CV & Certificates', type: FormField::TYPE_HEADING,
-                        help: 'Tick the confirmation below, sign at the bottom of this stage and attach: (a) your application letter, (b) a copy of your current CV, and (c) copies of your certificates — using the Attachments panel.'),
+                        help: 'Use the Attachments panel below to upload (a) your application letter, (b) a copy of your current CV, and (c) copies of your certificates. After uploading, tick the confirmation inside that panel and sign at the bottom of this stage.'),
                     new FormField(
                         name: 'applicant_attachments_confirmed',
                         label: 'I confirm that my application letter, current CV and copies of my certificates are attached.',

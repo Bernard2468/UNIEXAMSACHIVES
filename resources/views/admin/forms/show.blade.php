@@ -161,6 +161,8 @@
 
                                 @php
                                     $currentStageAttachments = $submission->attachments->where('stage_slug', $currentStage->slug);
+                                    // Fields relocated into the Attachments panel (see BaseFormDefinition::attachmentsPanelFieldNames).
+                                    $attachmentsPanelFieldNames = $definition->attachmentsPanelFieldNames($currentStage->slug);
                                 @endphp
                                 <div class="form-panel @if(!$canFill) form-panel--locked @endif">
                                     <div class="form-panel__head">
@@ -188,9 +190,10 @@
                                     </div>
                                     <div class="form-panel__body">
                                         @include('admin.forms.partials.field-renderer', [
-                                            'stage'       => $currentStage,
-                                            'sectionData' => $submission->sectionData($currentStage->slug),
-                                            'readonly'    => !$canFill,
+                                            'stage'             => $currentStage,
+                                            'sectionData'       => $submission->sectionData($currentStage->slug),
+                                            'readonly'          => !$canFill,
+                                            'excludeFieldNames' => $attachmentsPanelFieldNames,
                                         ])
 
                                         {{-- Existing attachments at this stage (e.g. inherited from a reassignment) --}}
@@ -212,6 +215,17 @@
                                         </div>
                                         <div class="form-panel__body">
                                             <input type="file" name="attachments[]" multiple class="form-control">
+
+                                            @if(!empty($attachmentsPanelFieldNames))
+                                                <div class="attachments-confirm" style="margin-top: 14px; padding-top: 14px; border-top: 1.5px dashed #ebebeb;">
+                                                    @include('admin.forms.partials.field-renderer', [
+                                                        'stage'          => $currentStage,
+                                                        'sectionData'    => $submission->sectionData($currentStage->slug),
+                                                        'readonly'       => false,
+                                                        'onlyFieldNames' => $attachmentsPanelFieldNames,
+                                                    ])
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
 
