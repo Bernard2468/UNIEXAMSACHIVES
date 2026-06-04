@@ -137,7 +137,7 @@
 /* ── Attachment uploader (dropzone + preview list) ──
    Used by partials/attachment-uploader.blade.php on every form page that
    captures attachments (compose page + show page). Per-file remove button
-   styles live in the partial itself via @once. */
+   styles live in the partial itself. */
 .upload-dropzone { display: flex; align-items: center; gap: 14px; padding: 16px; background: #fafafa; border: 1.5px dashed #d4d7de; border-radius: 12px; cursor: pointer; transition: all .15s; font-family: 'Outfit', sans-serif !important; }
 .upload-dropzone:hover { border-color: #0c0c0c; background: #f5f5f5; }
 .upload-dropzone__icon { width: 44px; height: 44px; border-radius: 10px; background: #fff; border: 1.5px solid #ebebeb; color: #0c0c0c; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
