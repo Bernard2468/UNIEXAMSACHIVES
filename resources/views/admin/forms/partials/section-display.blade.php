@@ -144,7 +144,6 @@
                             @endif
                             <table class="locked-table">
                                 <thead><tr>
-                                    <th class="locked-table__index">#</th>
                                     <th>Description</th>
                                     <th style="width: 140px; text-align: center;">{{ $group['valueColumn'] ?? 'Value' }}</th>
                                 </tr></thead>
@@ -152,19 +151,18 @@
                                     @foreach($groupFields as $gi => $gf)
                                         @php $gv = $sectionData[$gf->name] ?? null; @endphp
                                         <tr>
-                                            <td class="locked-table__index">{{ $gi + 1 }}.</td>
                                             <td>{{ $gf->label }}</td>
                                             <td style="text-align: center; font-weight: 600;">{{ is_numeric($gv) ? (int) $gv : '—' }}</td>
                                         </tr>
                                     @endforeach
                                     @if(!empty($group['showTotal']))
                                         <tr style="background: #f9fafb;">
-                                            <td colspan="2" style="text-align: right; font-weight: 700;">Total Score</td>
+                                            <td style="text-align: right; font-weight: 700;">Total Score</td>
                                             <td style="text-align: center; font-weight: 700;">{{ $groupFilled > 0 ? $groupSum : '—' }} / {{ $denominator }}</td>
                                         </tr>
                                         @if($groupPct !== null)
                                             <tr style="background: #f3f4f6;">
-                                                <td colspan="2" style="text-align: right; font-weight: 700;">Percentage</td>
+                                                <td style="text-align: right; font-weight: 700;">Percentage</td>
                                                 <td style="text-align: center; font-weight: 700; color: #15803d;">{{ $groupPct }}%</td>
                                             </tr>
                                         @endif
