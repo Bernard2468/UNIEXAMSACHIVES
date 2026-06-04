@@ -85,8 +85,14 @@
       "Bash(php -l app/Providers/AppServiceProvider.php)",
       "PowerShell(php -l c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\app\\\\Forms\\\\Definitions\\\\EmployeePersonalRecordsForm.php)",
       "PowerShell(php -l c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\app\\\\Providers\\\\AppServiceProvider.php)",
-      "PowerShell(Get-Command php -ErrorAction SilentlyContinue; \\(Test-Path \"C:\\\\xampp\\\\php\\\\php.exe\"\\); \\(Test-Path \"C:\\\\laragon\\\\bin\\\\php\\\\php.exe\"\\))"
+      "PowerShell(Get-Command php -ErrorAction SilentlyContinue; \\(Test-Path \"C:\\\\xampp\\\\php\\\\php.exe\"\\); \\(Test-Path \"C:\\\\laragon\\\\bin\\\\php\\\\php.exe\"\\))",
+      "Bash(grep -rn \"stage_slug\" app/Models/Form* 2>nul | head -20)",
+      "Bash(php -l app/Forms/Definitions/PromotionSeniorMembersNonTeachingForm.php)",
+      "Bash(php -l database/seeders/DatabaseSeeder.php)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "c:\\Users\\FJ\\Desktop\\UNIEXAMSACHIVES"
+    ]
   }
 }

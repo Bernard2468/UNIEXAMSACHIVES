@@ -10,6 +10,7 @@ use App\Forms\Definitions\EmployeePersonalRecordsForm;
 use App\Forms\Definitions\LeaveResumptionForm;
 use App\Forms\Definitions\NonAcademicRenewalOfAppointmentForm;
 use App\Forms\Definitions\PaymentRequisitionForm;
+use App\Forms\Definitions\PromotionSeniorMembersNonTeachingForm;
 use App\Forms\Definitions\PurchaseWorksAuthorizationForm;
 use App\Forms\Definitions\RenewalOfAppointmentForm;
 use App\Forms\Definitions\VehicleMaintenanceAllowanceForm;
@@ -64,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
             $registry->register(new AcademicRenewalOfAppointmentForm());
             $registry->register(new NonAcademicRenewalOfAppointmentForm());
             $registry->register(new EmployeePersonalRecordsForm());
+            $registry->register(new PromotionSeniorMembersNonTeachingForm());
             return $registry;
         });
     }
