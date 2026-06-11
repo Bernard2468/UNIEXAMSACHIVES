@@ -663,37 +663,28 @@ class HomeController extends Controller
 
     public function updateUserInfo(Request $request)
     {
-        if ($request->input('position_id') === '' || $request->input('position_id') === null) {
-            $request->merge(['position_id' => null]);
-        }
-
-        $staffCategoryRule = 'required|string|in:Junior Staff,Senior Staff,Senior Member (Non-Teaching),Senior Member (Teaching)';
-
+        // SECURITY: department_id, staff_category and position_id are deliberately
+        // NOT accepted here. They drive Forms leadership/VC routing, so letting a
+        // user edit their own would be a privilege-escalation vector (e.g. a user
+        // assigning themselves a leadership position to capture VC referrals).
+        // Only a System Administrator can change them — see updateUserOrganization().
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'department_id' => 'required|exists:departments,id',
-            'staff_category' => $staffCategoryRule,
-            'position_id' => 'nullable|exists:positions,id',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
         ], [
             'profile_picture.image' => 'The profile picture must be an image file.',
             'profile_picture.mimes' => 'The profile picture must be a JPEG, PNG, JPG, or GIF file.',
             'profile_picture.max' => 'The profile picture must not be larger than 5MB.',
-            'department_id.required' => 'Please choose your Department/Faculty/Unit.',
-            'staff_category.required' => 'Please choose your Staff Category.',
         ]);
 
         try {
             // Fetch authenticated user
             $user = Auth::user();
 
-            // Update user information
+            // Update user information (organization fields are intentionally excluded)
             $user->first_name = $request->input('first_name');
             $user->last_name = $request->input('last_name');
-            $user->department_id = $request->input('department_id');
-            $user->staff_category = $request->input('staff_category');
-            $user->position_id = $request->input('position_id');
 
             // Handle profile picture upload
             if ($request->hasFile('profile_picture')) {
@@ -1021,6 +1012,35 @@ class HomeController extends Controller
         $user->save();
 
         return redirect()->route('dashboard.users')->with('success', "Email for {$user->first_name} {$user->last_name} updated successfully.");
+    }
+
+    /**
+     * Admin-only: update a user's organization details (department, staff
+     * category, position). These are the sensitive fields that drive Forms
+     * leadership/VC routing and are intentionally NOT editable by users
+     * themselves — only an administrator may change them here.
+     */
+    public function updateUserOrganization(Request $request, User $user)
+    {
+        if ($request->input('position_id') === '' || $request->input('position_id') === null) {
+            $request->merge(['position_id' => null]);
+        }
+
+        $request->validate([
+            'department_id' => 'required|exists:departments,id',
+            'staff_category' => 'required|string|in:Junior Staff,Senior Staff,Senior Member (Non-Teaching),Senior Member (Teaching)',
+            'position_id' => 'nullable|exists:positions,id',
+        ], [
+            'department_id.required' => 'Please choose a Department/Faculty/Unit.',
+            'staff_category.required' => 'Please choose a Staff Category.',
+        ]);
+
+        $user->department_id = $request->input('department_id');
+        $user->staff_category = $request->input('staff_category');
+        $user->position_id = $request->input('position_id');
+        $user->save();
+
+        return redirect()->route('dashboard.users')->with('success', "Organization details for {$user->first_name} {$user->last_name} updated successfully.");
     }
 
     public function logout(Request $request)

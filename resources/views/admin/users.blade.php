@@ -847,6 +847,9 @@
                                                         <button type="button" class="action-btn" style="min-width:auto; padding:8px 12px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" title="Edit Email" onclick="openEditEmailModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ $user->email }}')">
                                                             <i class="fas fa-envelope"></i>
                                                         </button>
+                                                        <button type="button" class="action-btn" style="min-width:auto; padding:8px 12px; background:#fef3c7; color:#92400e; border:1px solid #fde68a;" title="Edit Organization (Department / Staff Category / Position)" onclick="openEditOrgModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}')">
+                                                            <i class="fas fa-sitemap"></i>
+                                                        </button>
                                                         <form action="{{ route('users.destroy', $user->id) }}" method="post" style="display: inline;" id="delete-user-table-form-{{ $user->id }}">
                                                             @csrf
                                                             @method('DELETE')
@@ -1072,6 +1075,65 @@
                     <button type="button" class="cancel-btn" onclick="closeEditEmailModal()">Cancel</button>
                     <button type="submit" class="submit-btn-modal">
                         <i class="fas fa-save"></i> Save Email
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="editOrgModal" class="add-user-modal" style="display: none;">
+    <div class="add-user-modal-overlay"></div>
+    <div class="add-user-modal-content" style="max-width:480px;">
+        <div class="add-user-modal-header">
+            <h3><i class="fas fa-sitemap"></i> Edit Organization Details</h3>
+            <button type="button" class="close-modal-btn" onclick="closeEditOrgModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="add-user-modal-body">
+            <p id="editOrgUserName" style="margin-bottom:1.2rem; color:#475569; font-size:0.95rem;"></p>
+            <form id="editOrgForm" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="form-group">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Department / Faculty / Unit</label>
+                    <div class="input-container">
+                        <select name="department_id" id="editOrgDepartment" class="animated-input" required>
+                            <option value="" disabled>Choose department</option>
+                            @foreach($departments as $dept)
+                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Staff Category</label>
+                    <div class="input-container">
+                        <select name="staff_category" id="editOrgCategory" class="animated-input" required>
+                            <option value="" disabled>Choose category</option>
+                            <option value="Junior Staff">Junior Staff</option>
+                            <option value="Senior Staff">Senior Staff</option>
+                            <option value="Senior Member (Non-Teaching)">Senior Member (Non-Teaching)</option>
+                            <option value="Senior Member (Teaching)">Senior Member (Teaching)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Position <span style="font-weight:400; color:#94a3b8;">(optional)</span></label>
+                    <div class="input-container">
+                        <select name="position_id" id="editOrgPosition" class="animated-input">
+                            <option value="">No position</option>
+                            @foreach($positions as $pos)
+                                <option value="{{ $pos->id }}">{{ $pos->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions-modal">
+                    <button type="button" class="cancel-btn" onclick="closeEditOrgModal()">Cancel</button>
+                    <button type="submit" class="submit-btn-modal">
+                        <i class="fas fa-save"></i> Save Details
                     </button>
                 </div>
             </form>
@@ -1360,12 +1422,42 @@ function closeEditEmailModal() {
     document.body.style.overflow = 'auto';
 }
 
+function openEditOrgModal(userId, userName, departmentId, staffCategory, positionId) {
+    const modal = document.getElementById('editOrgModal');
+    const form = document.getElementById('editOrgForm');
+    const nameLabel = document.getElementById('editOrgUserName');
+
+    form.action = '/dashboard/users/' + userId + '/organization';
+    nameLabel.textContent = 'Editing organization details for: ' + userName;
+    document.getElementById('editOrgDepartment').value = departmentId || '';
+    document.getElementById('editOrgCategory').value = staffCategory || '';
+    document.getElementById('editOrgPosition').value = positionId || '';
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditOrgModal() {
+    const modal = document.getElementById('editOrgModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const editModal = document.getElementById('editEmailModal');
     if (editModal) {
         editModal.addEventListener('click', function(e) {
             if (e.target.classList.contains('add-user-modal-overlay')) {
                 closeEditEmailModal();
+            }
+        });
+    }
+
+    const editOrgModal = document.getElementById('editOrgModal');
+    if (editOrgModal) {
+        editOrgModal.addEventListener('click', function(e) {
+            if (e.target.classList.contains('add-user-modal-overlay')) {
+                closeEditOrgModal();
             }
         });
     }

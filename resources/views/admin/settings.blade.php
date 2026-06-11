@@ -111,49 +111,26 @@
                                 <div class="sp-section">
                                     <div class="sp-section__hd">
                                         <h2 class="sp-section__title">Organization<span class="sp-section__bar"></span></h2>
-                                        <p class="sp-section__hint">Department, staff category, and position — same as when you registered.</p>
+                                        <p class="sp-section__hint">Department, staff category, and position. These can only be changed by a System Administrator.</p>
                                     </div>
 
+                                    {{-- Read-only: these fields drive Forms leadership/VC routing, so they
+                                         are locked here and can only be changed by an administrator. --}}
                                     <div class="sp-grid">
                                         <div class="sp-field sp-field--full">
                                             <label class="sp-label">Department / Faculty / Unit</label>
-                                            <div class="sp-sel-wrap">
-                                                <select class="sp-select" name="department_id" required>
-                                                    <option value="" disabled @selected(!old('department_id', $data->department_id))>Choose department</option>
-                                                    @foreach($departments as $dept)
-                                                        <option value="{{ $dept->id }}" @selected((string)old('department_id', $data->department_id) === (string)$dept->id)>{{ $dept->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <svg class="sp-sel-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                                            </div>
-                                            @error('department_id')<span class="sp-err">{{ $message }}</span>@enderror
+                                            <input class="sp-input" type="text" value="{{ $data->department->name ?? '—' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>Can only be changed by System Administrator</small>
                                         </div>
                                         <div class="sp-field">
                                             <label class="sp-label">Staff category</label>
-                                            <div class="sp-sel-wrap">
-                                                <select class="sp-select" name="staff_category" required>
-                                                    <option value="" disabled @selected(!old('staff_category', $data->staff_category))>Choose category</option>
-                                                    <option value="Junior Staff" @selected(old('staff_category', $data->staff_category) === 'Junior Staff')>Junior Staff</option>
-                                                    <option value="Senior Staff" @selected(old('staff_category', $data->staff_category) === 'Senior Staff')>Senior Staff</option>
-                                                    <option value="Senior Member (Non-Teaching)" @selected(old('staff_category', $data->staff_category) === 'Senior Member (Non-Teaching)')>Senior Member (Non-Teaching)</option>
-                                                    <option value="Senior Member (Teaching)" @selected(old('staff_category', $data->staff_category) === 'Senior Member (Teaching)')>Senior Member (Teaching)</option>
-                                                </select>
-                                                <svg class="sp-sel-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                                            </div>
-                                            @error('staff_category')<span class="sp-err">{{ $message }}</span>@enderror
+                                            <input class="sp-input" type="text" value="{{ $data->staff_category ?? '—' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>Locked</small>
                                         </div>
                                         <div class="sp-field">
-                                            <label class="sp-label">Position <span class="sp-optional">optional</span></label>
-                                            <div class="sp-sel-wrap">
-                                                <select class="sp-select" name="position_id">
-                                                    <option value="" @selected(old('position_id', $data->position_id) === null || old('position_id', $data->position_id) === '')>No position</option>
-                                                    @foreach($positions as $pos)
-                                                        <option value="{{ $pos->id }}" @selected((string)old('position_id', $data->position_id) === (string)$pos->id)>{{ $pos->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <svg class="sp-sel-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                                            </div>
-                                            @error('position_id')<span class="sp-err">{{ $message }}</span>@enderror
+                                            <label class="sp-label">Position</label>
+                                            <input class="sp-input" type="text" value="{{ $data->position->name ?? '—' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>Locked</small>
                                         </div>
                                     </div>
 

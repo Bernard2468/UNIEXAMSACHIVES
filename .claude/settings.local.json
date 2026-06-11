@@ -88,7 +88,10 @@
       "PowerShell(Get-Command php -ErrorAction SilentlyContinue; \\(Test-Path \"C:\\\\xampp\\\\php\\\\php.exe\"\\); \\(Test-Path \"C:\\\\laragon\\\\bin\\\\php\\\\php.exe\"\\))",
       "Bash(grep -rn \"stage_slug\" app/Models/Form* 2>nul | head -20)",
       "Bash(php -l app/Forms/Definitions/PromotionSeniorMembersNonTeachingForm.php)",
-      "Bash(php -l database/seeders/DatabaseSeeder.php)"
+      "Bash(php -l database/seeders/DatabaseSeeder.php)",
+      "Bash(php -l app/Http/Controllers/Dashboard/HomeController.php)",
+      "Bash(php -l routes/web.php)",
+      "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\); if \\($php\\) { & php -l app/Http/Controllers/Dashboard/HomeController.php; & php -l routes/web.php } else { \"php not on PATH\" })"
     ],
     "deny": [],
     "additionalDirectories": [

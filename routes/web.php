@@ -266,13 +266,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/system-documentation/manage/{id}/preview',[\App\Http\Controllers\Dashboard\AdminSystemDocumentationController::class, 'preview'])->name('dashboard.system-documentation.manage.preview');
     Route::get('/dashboard/system-documentation/manage/{id}/download',[\App\Http\Controllers\Dashboard\AdminSystemDocumentationController::class, 'download'])->name('dashboard.system-documentation.manage.download');
 
-    #users
-    Route::get('/dashboard/users',[HomeController::class, 'users'])->name('dashboard.users');
-    Route::post('/dashboard/users', [HomeController::class, 'storeUser'])->name('users.store');
-    Route::post('/dashboard/users/{user}/approve', [HomeController::class, 'approve'])->name('users.approve');
-    Route::post('/dashboard/users/{user}/disapprove', [HomeController::class, 'disapprove'])->name('users.disapprove');
-    Route::delete('/dashboard/users/{user}', [HomeController::class, 'destroy'])->name('users.destroy');
-    Route::patch('/dashboard/users/{user}/email', [HomeController::class, 'updateUserEmail'])->name('users.update-email');
+    #users — institutional-admin only. These are sensitive operations (create,
+    # approve, delete, change email, change organization/position which drives
+    # Forms leadership/VC routing). Gated server-side, not just hidden in the UI,
+    # so a normal user cannot reach them by crafting a direct request.
+    Route::middleware('institutional_admin')->group(function () {
+        Route::get('/dashboard/users',[HomeController::class, 'users'])->name('dashboard.users');
+        Route::post('/dashboard/users', [HomeController::class, 'storeUser'])->name('users.store');
+        Route::post('/dashboard/users/{user}/approve', [HomeController::class, 'approve'])->name('users.approve');
+        Route::post('/dashboard/users/{user}/disapprove', [HomeController::class, 'disapprove'])->name('users.disapprove');
+        Route::delete('/dashboard/users/{user}', [HomeController::class, 'destroy'])->name('users.destroy');
+        Route::patch('/dashboard/users/{user}/email', [HomeController::class, 'updateUserEmail'])->name('users.update-email');
+        Route::patch('/dashboard/users/{user}/organization', [HomeController::class, 'updateUserOrganization'])->name('users.update-organization');
+    });
 
     #systems detail
     Route::post('/dashboard/system-details/store', [DetailsController::class, 'store'])->name('dashboard.details.store');
