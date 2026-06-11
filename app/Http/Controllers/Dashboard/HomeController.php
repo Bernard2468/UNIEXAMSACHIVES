@@ -334,37 +334,28 @@ class HomeController extends Controller
                 continue;
             }
             
-            // Determine the correct route based on whether the recipient is an admin
-            $recipientUser = $campaignRecipient->user;
-            if ($recipientUser && $recipientUser->is_admin) {
-                $repliesUrl = route('admin.communication-admin.replies', $campaign->id);
-            } else {
-                $repliesUrl = route('admin.communication.replies', $campaign->id);
-            }
-            
+            // Open the memo inside the UIMMS portal chat, where the user can read
+            // the memo content and minute / take action on it — the same page the
+            // chat-message and assignment notifications point to.
+            $memoUrl = route('dashboard.uimms.chat', $campaign->id);
+
             Notification::createMemoReplyNotification(
                 $campaignRecipient->user_id,
                 $replyAuthor,
                 $campaign->subject,
-                $repliesUrl
+                $memoUrl
             );
         }
-        
+
         // Also notify the memo creator if they're not already a recipient
         if ($campaign->created_by !== Auth::id()) {
             $creator = User::find($campaign->created_by);
             if ($creator) {
-                if ($creator->is_admin) {
-                    $repliesUrl = route('admin.communication-admin.replies', $campaign->id);
-                } else {
-                    $repliesUrl = route('admin.communication.replies', $campaign->id);
-                }
-                
                 Notification::createMemoReplyNotification(
                     $campaign->created_by,
                     $replyAuthor,
                     $campaign->subject,
-                    $repliesUrl
+                    route('dashboard.uimms.chat', $campaign->id)
                 );
             }
         }
