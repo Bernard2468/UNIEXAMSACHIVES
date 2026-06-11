@@ -1048,71 +1048,200 @@
     </div>
 </div>
 
-<!-- Edit User Info Modal (email + organization details) -->
-<div id="editInfoModal" class="add-user-modal" style="display: none;">
-    <div class="add-user-modal-overlay"></div>
-    <div class="add-user-modal-content" style="max-width:480px;">
-        <div class="add-user-modal-header">
-            <h3><i class="fas fa-user-edit"></i> Edit User Info</h3>
-            <button type="button" class="close-modal-btn" onclick="closeEditInfoModal()">
-                <i class="fas fa-times"></i>
-            </button>
+<!-- Edit User Info Modal — futuristic glassmorphic redesign (namespaced .efi-*) -->
+<div id="editInfoModal" class="add-user-modal efi-modal" style="display: none;">
+    <div class="add-user-modal-overlay efi-overlay"></div>
+    <div class="efi-card" role="dialog" aria-modal="true" aria-labelledby="efiTitle">
+        <button type="button" class="efi-close" onclick="closeEditInfoModal()" aria-label="Close">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="efi-head">
+            <div class="efi-avatar"><span id="editInfoInitials">--</span><i class="efi-avatar__ring"></i></div>
+            <div class="efi-head__text">
+                <h3 class="efi-title" id="efiTitle">Edit User Info <i class="fas fa-wand-magic-sparkles"></i></h3>
+                <p class="efi-sub" id="editInfoUserName">—</p>
+            </div>
         </div>
-        <div class="add-user-modal-body">
-            <p id="editInfoUserName" style="margin-bottom:1.2rem; color:#475569; font-size:0.95rem;"></p>
-            <form id="editInfoForm" method="POST">
-                @csrf
-                @method('PATCH')
-                <div class="form-group">
-                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Email address</label>
-                    <div class="input-container">
-                        <input type="email" name="email" id="editInfoEmail" class="animated-input" placeholder="Enter email address" required>
-                    </div>
+
+        <form id="editInfoForm" method="POST" class="efi-body">
+            @csrf
+            @method('PATCH')
+
+            <div class="efi-field">
+                <label class="efi-label"><i class="fas fa-envelope"></i> Email address</label>
+                <div class="efi-control">
+                    <i class="fas fa-at efi-control__icon"></i>
+                    <input type="email" name="email" id="editInfoEmail" class="efi-input" placeholder="name@institution.edu" required>
                 </div>
-                <div class="form-group">
-                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Department / Faculty / Unit</label>
-                    <div class="input-container">
-                        <select name="department_id" id="editInfoDepartment" class="animated-input" required>
-                            <option value="" disabled>Choose department</option>
-                            @foreach($departments as $dept)
-                                <option value="{{ $dept->id }}">{{ $dept->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+            </div>
+
+            <div class="efi-field">
+                <label class="efi-label"><i class="fas fa-building-columns"></i> Department / Faculty / Unit</label>
+                <div class="efi-control">
+                    <i class="fas fa-sitemap efi-control__icon"></i>
+                    <select name="department_id" id="editInfoDepartment" class="efi-select" required>
+                        <option value="" disabled>Choose department</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}">{{ $dept->name }}</option>
+                        @endforeach
+                    </select>
+                    <i class="fas fa-chevron-down efi-control__chev"></i>
                 </div>
-                <div class="form-group">
-                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Staff Category</label>
-                    <div class="input-container">
-                        <select name="staff_category" id="editInfoCategory" class="animated-input" required>
+            </div>
+
+            <div class="efi-grid">
+                <div class="efi-field">
+                    <label class="efi-label"><i class="fas fa-user-tag"></i> Staff Category</label>
+                    <div class="efi-control">
+                        <i class="fas fa-id-badge efi-control__icon"></i>
+                        <select name="staff_category" id="editInfoCategory" class="efi-select" required>
                             <option value="" disabled>Choose category</option>
                             <option value="Junior Staff">Junior Staff</option>
                             <option value="Senior Staff">Senior Staff</option>
                             <option value="Senior Member (Non-Teaching)">Senior Member (Non-Teaching)</option>
                             <option value="Senior Member (Teaching)">Senior Member (Teaching)</option>
                         </select>
+                        <i class="fas fa-chevron-down efi-control__chev"></i>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Position <span style="font-weight:400; color:#94a3b8;">(optional)</span></label>
-                    <div class="input-container">
-                        <select name="position_id" id="editInfoPosition" class="animated-input">
+
+                <div class="efi-field">
+                    <label class="efi-label"><i class="fas fa-briefcase"></i> Position <span class="efi-opt">optional</span></label>
+                    <div class="efi-control">
+                        <i class="fas fa-star efi-control__icon"></i>
+                        <select name="position_id" id="editInfoPosition" class="efi-select">
                             <option value="">No position</option>
                             @foreach($positions as $pos)
                                 <option value="{{ $pos->id }}">{{ $pos->name }}</option>
                             @endforeach
                         </select>
+                        <i class="fas fa-chevron-down efi-control__chev"></i>
                     </div>
                 </div>
-                <div class="form-actions-modal">
-                    <button type="button" class="cancel-btn" onclick="closeEditInfoModal()">Cancel</button>
-                    <button type="submit" class="submit-btn-modal">
-                        <i class="fas fa-save"></i> Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
+            </div>
+
+            <p class="efi-note"><i class="fas fa-shield-halved"></i> These fields drive Forms routing — only administrators can change them.</p>
+
+            <div class="efi-actions">
+                <button type="button" class="efi-btn efi-btn--ghost" onclick="closeEditInfoModal()">Cancel</button>
+                <button type="submit" class="efi-btn efi-btn--save">
+                    <span><i class="fas fa-bolt"></i> Save Changes</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
+
+<style>
+/* ===== Edit User Info — futuristic modal (scoped .efi-*) ===== */
+#editInfoModal .efi-overlay{
+    background:
+        radial-gradient(60% 50% at 25% 15%, rgba(34,211,238,.18), transparent 60%),
+        radial-gradient(55% 50% at 85% 90%, rgba(232,121,249,.18), transparent 60%),
+        rgba(3,6,16,.78);
+    -webkit-backdrop-filter: blur(12px) saturate(130%);
+    backdrop-filter: blur(12px) saturate(130%);
+    animation: efiFade .35s ease;
+}
+@property --efi-angle{ syntax:'<angle>'; inherits:false; initial-value:0deg; }
+.efi-card{
+    position:relative; z-index:10001;
+    width:92%; max-width:560px; max-height:92vh; overflow:hidden auto;
+    padding:30px 30px 26px;
+    border-radius:26px;
+    border:1.6px solid transparent;
+    background:
+        linear-gradient(165deg, rgba(20,27,48,.95), rgba(9,13,26,.98)) padding-box,
+        conic-gradient(from var(--efi-angle), #22d3ee, #818cf8, #e879f9, #22d3ee) border-box;
+    box-shadow:0 40px 90px -25px rgba(0,0,0,.85), 0 0 60px -20px rgba(129,140,248,.45), inset 0 1px 0 rgba(255,255,255,.05);
+    color:#e5e9f3;
+    animation:efiIn .55s cubic-bezier(.2,.9,.25,1.15), efiSpin 7s linear infinite;
+    scrollbar-width:thin; scrollbar-color:rgba(129,140,248,.5) transparent;
+}
+.efi-card::-webkit-scrollbar{width:8px}
+.efi-card::-webkit-scrollbar-thumb{background:rgba(129,140,248,.45); border-radius:8px}
+/* faint tech grid texture */
+.efi-card::after{
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+    background-image:
+        linear-gradient(rgba(148,163,184,.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,.05) 1px, transparent 1px);
+    background-size:34px 34px;
+    -webkit-mask-image:radial-gradient(80% 70% at 50% 0%, #000, transparent 75%);
+    mask-image:radial-gradient(80% 70% at 50% 0%, #000, transparent 75%);
+}
+.efi-head, .efi-body{ position:relative; z-index:1; }
+.efi-close{
+    position:absolute; top:16px; right:16px; width:38px; height:38px; z-index:3;
+    display:grid; place-items:center; border-radius:50%;
+    background:rgba(148,163,184,.1); border:1px solid rgba(148,163,184,.18);
+    color:#cbd5e1; font-size:15px; cursor:pointer; transition:.25s;
+}
+.efi-close:hover{ background:rgba(244,63,94,.18); border-color:rgba(244,63,94,.5); color:#fff; transform:rotate(90deg); }
+
+.efi-head{ display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.efi-avatar{
+    position:relative; flex:0 0 auto; width:58px; height:58px; border-radius:18px;
+    display:grid; place-items:center; font-weight:800; font-size:20px; letter-spacing:.5px; color:#06121f;
+    background:linear-gradient(135deg, #22d3ee, #818cf8 55%, #e879f9);
+    box-shadow:0 10px 28px -8px rgba(129,140,248,.7), inset 0 0 0 1px rgba(255,255,255,.25);
+}
+.efi-avatar__ring{ position:absolute; inset:-5px; border-radius:22px; border:1.5px solid rgba(34,211,238,.45); animation:efiPulse 2.4s ease-in-out infinite; }
+.efi-title{ margin:0; font-size:1.5rem; font-weight:800; color:#f8fafc; letter-spacing:-.01em; display:flex; align-items:center; gap:9px; }
+.efi-title i{ font-size:.9rem; background:linear-gradient(135deg,#22d3ee,#e879f9); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.efi-sub{ margin:3px 0 0; font-size:.9rem; color:#94a3b8; }
+
+.efi-body{ display:block; }
+.efi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.efi-field{ margin-bottom:16px; }
+.efi-label{ display:flex; align-items:center; gap:7px; margin-bottom:8px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:#9aa7c2; }
+.efi-label i{ font-size:.8rem; color:#818cf8; }
+.efi-opt{ text-transform:none; letter-spacing:0; font-weight:500; color:#64748b; font-size:.8rem; }
+.efi-control{ position:relative; }
+.efi-control__icon{ position:absolute; left:15px; top:50%; transform:translateY(-50%); font-size:.85rem; color:#5eead4; pointer-events:none; transition:.25s; }
+.efi-control__chev{ position:absolute; right:15px; top:50%; transform:translateY(-50%); font-size:.7rem; color:#64748b; pointer-events:none; transition:.25s; }
+.efi-input, .efi-select{
+    width:100%; box-sizing:border-box; padding:13px 16px 13px 42px;
+    border-radius:14px; font-size:.95rem; font-weight:500; color:#f1f5f9;
+    background:rgba(148,163,184,.07); border:1px solid rgba(148,163,184,.18);
+    outline:none; transition:.28s cubic-bezier(.4,0,.2,1); -webkit-appearance:none; appearance:none;
+}
+.efi-select{ padding-right:38px; cursor:pointer; }
+.efi-input::placeholder{ color:#5b6781; }
+.efi-input:focus, .efi-select:focus{
+    border-color:rgba(34,211,238,.75);
+    background:rgba(34,211,238,.07);
+    box-shadow:0 0 0 4px rgba(34,211,238,.13), 0 12px 30px -10px rgba(34,211,238,.45);
+}
+.efi-control:focus-within .efi-control__icon{ color:#22d3ee; transform:translateY(-50%) scale(1.12); }
+.efi-control:focus-within .efi-control__chev{ color:#22d3ee; transform:translateY(-50%) rotate(180deg); }
+.efi-select option{ background:#0c1326; color:#e2e8f0; }
+
+.efi-note{ display:flex; align-items:center; gap:8px; margin:6px 0 0; padding:11px 14px; border-radius:12px;
+    font-size:.78rem; color:#a5b4cf; background:rgba(129,140,248,.08); border:1px solid rgba(129,140,248,.18); }
+.efi-note i{ color:#818cf8; }
+
+.efi-actions{ display:flex; gap:12px; justify-content:flex-end; margin-top:22px; padding-top:20px; border-top:1px solid rgba(148,163,184,.12); }
+.efi-btn{ padding:13px 24px; border-radius:13px; font-weight:700; font-size:.92rem; cursor:pointer; border:1px solid transparent; transition:.28s; }
+.efi-btn--ghost{ background:rgba(148,163,184,.08); border-color:rgba(148,163,184,.2); color:#cbd5e1; }
+.efi-btn--ghost:hover{ background:rgba(148,163,184,.16); color:#fff; }
+.efi-btn--save{ position:relative; overflow:hidden; color:#06121f;
+    background:linear-gradient(135deg,#22d3ee,#818cf8 55%,#e879f9);
+    box-shadow:0 14px 32px -10px rgba(129,140,248,.75); }
+.efi-btn--save span{ position:relative; z-index:2; display:inline-flex; align-items:center; gap:8px; }
+.efi-btn--save::after{ content:""; position:absolute; top:0; left:-120%; width:60%; height:100%;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform:skewX(-18deg); transition:left .6s ease; }
+.efi-btn--save:hover{ transform:translateY(-2px); box-shadow:0 20px 42px -10px rgba(129,140,248,.9); }
+.efi-btn--save:hover::after{ left:130%; }
+
+@keyframes efiIn{ from{ opacity:0; transform:translateY(26px) scale(.94); filter:blur(6px); } to{ opacity:1; transform:none; filter:none; } }
+@keyframes efiFade{ from{opacity:0} to{opacity:1} }
+@keyframes efiSpin{ to{ --efi-angle:360deg; } }
+@keyframes efiPulse{ 0%,100%{ opacity:.65; transform:scale(1);} 50%{ opacity:.2; transform:scale(1.08);} }
+@media (max-width:520px){ .efi-grid{ grid-template-columns:1fr; } .efi-card{ padding:26px 20px 22px; } }
+@media (prefers-reduced-motion:reduce){ .efi-card,.efi-avatar__ring,.efi-overlay{ animation:none; } }
+</style>
 
 <style>
 .add-user-modal {
@@ -1378,10 +1507,18 @@ function openEditInfoModal(userId, userName, currentEmail, departmentId, staffCa
     const modal = document.getElementById('editInfoModal');
     const form = document.getElementById('editInfoForm');
     const nameLabel = document.getElementById('editInfoUserName');
+    const initials = document.getElementById('editInfoInitials');
     const emailInput = document.getElementById('editInfoEmail');
 
     form.action = '/dashboard/users/' + userId + '/details';
-    nameLabel.textContent = 'Editing info for: ' + userName;
+    nameLabel.textContent = userName;
+    if (initials) {
+        const parts = (userName || '').trim().split(/\s+/).filter(Boolean);
+        const text = parts.length
+            ? ((parts[0][0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
+            : '--';
+        initials.textContent = text || '--';
+    }
     emailInput.value = currentEmail || '';
     document.getElementById('editInfoDepartment').value = departmentId || '';
     document.getElementById('editInfoCategory').value = staffCategory || '';
