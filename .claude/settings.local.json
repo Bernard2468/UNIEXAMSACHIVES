@@ -91,7 +91,9 @@
       "Bash(php -l database/seeders/DatabaseSeeder.php)",
       "Bash(php -l app/Http/Controllers/Dashboard/HomeController.php)",
       "Bash(php -l routes/web.php)",
-      "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\); if \\($php\\) { & php -l app/Http/Controllers/Dashboard/HomeController.php; & php -l routes/web.php } else { \"php not on PATH\" })"
+      "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\); if \\($php\\) { & php -l app/Http/Controllers/Dashboard/HomeController.php; & php -l routes/web.php } else { \"php not on PATH\" })",
+      "Bash(command -v sqlite3)",
+      "Bash(sqlite3 database/database.sqlite \"SELECT id, file_path, file_type, file_size FROM system_documentation LIMIT 20;\")"
     ],
     "deny": [],
     "additionalDirectories": [

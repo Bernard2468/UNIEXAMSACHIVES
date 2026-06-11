@@ -63,12 +63,11 @@ class AdminSystemDocumentationController extends Controller
             $fileType = strtolower($file->getClientOriginalExtension());
             $fileSize = $this->formatBytes($file->getSize());
             
-            // Now move the file
+            // Store under storage/app/public so the file survives code deploys.
+            // (public/ is git-ignored and gets replaced on deploy, which is why
+            // previously-uploaded files went missing while the DB rows remained.)
             $fileName = time() . '_' . preg_replace('/[^A-Za-z0-9\-\_\.]/', '_', $file->getClientOriginalName());
-            $destinationPath = 'system-documentation';
-            $file->move(public_path($destinationPath), $fileName);
-            
-            $filePath = $destinationPath . '/' . $fileName;
+            $filePath = $file->storeAs('system-documentation', $fileName, 'public');
 
             SystemDocumentation::create([
                 'title' => $validated['title'],
@@ -109,25 +108,22 @@ class AdminSystemDocumentationController extends Controller
 
         // Handle file replacement if new file is uploaded
         if ($request->hasFile('document_file')) {
-            // Delete old file
-            $oldFilePath = public_path($document->file_path);
-            if (file_exists($oldFilePath)) {
-                unlink($oldFilePath);
+            // Delete the old file wherever it currently lives.
+            $oldFilePath = $this->resolveDocumentPath($document->file_path);
+            if ($oldFilePath) {
+                @unlink($oldFilePath);
             }
 
             // Upload new file
             $file = $request->file('document_file');
-            
+
             // Get file info BEFORE moving (important!)
             $fileType = strtolower($file->getClientOriginalExtension());
             $fileSize = $this->formatBytes($file->getSize());
-            
-            // Now move the file
+
+            // Store under storage/app/public so the file survives code deploys.
             $fileName = time() . '_' . preg_replace('/[^A-Za-z0-9\-\_\.]/', '_', $file->getClientOriginalName());
-            $destinationPath = 'system-documentation';
-            $file->move(public_path($destinationPath), $fileName);
-            
-            $document->file_path = $destinationPath . '/' . $fileName;
+            $document->file_path = $file->storeAs('system-documentation', $fileName, 'public');
             $document->file_type = $fileType;
             $document->file_size = $fileSize;
         }
@@ -149,10 +145,10 @@ class AdminSystemDocumentationController extends Controller
 
         $document = SystemDocumentation::findOrFail($id);
         
-        // Delete file from storage
-        $filePath = public_path($document->file_path);
-        if (file_exists($filePath)) {
-            unlink($filePath);
+        // Delete file from storage (wherever it lives)
+        $filePath = $this->resolveDocumentPath($document->file_path);
+        if ($filePath) {
+            @unlink($filePath);
         }
 
         $documentTitle = $document->title;
@@ -178,9 +174,9 @@ class AdminSystemDocumentationController extends Controller
                 ->with('error', 'Only PDF files can be previewed. ZIP files must be downloaded.');
         }
 
-        $filePath = public_path($document->file_path);
-        
-        if (!file_exists($filePath)) {
+        $filePath = $this->resolveDocumentPath($document->file_path);
+
+        if (!$filePath) {
             return redirect()->route('dashboard.system-documentation.manage')
                 ->with('error', 'File not found.');
         }
@@ -202,14 +198,36 @@ class AdminSystemDocumentationController extends Controller
 
         $document = SystemDocumentation::findOrFail($id);
         
-        $filePath = public_path($document->file_path);
-        
-        if (!file_exists($filePath)) {
+        $filePath = $this->resolveDocumentPath($document->file_path);
+
+        if (!$filePath) {
             return redirect()->route('dashboard.system-documentation.manage')
                 ->with('error', 'File not found.');
         }
 
         return response()->download($filePath, $document->title . '.' . $document->file_type);
+    }
+
+    /**
+     * Resolve a stored document's absolute path on disk. Checks the persistent
+     * storage location first (where new uploads go) and falls back to the legacy
+     * public/ location for files uploaded before the storage change. Returns null
+     * if the physical file is missing in both.
+     */
+    private function resolveDocumentPath(?string $relativePath): ?string
+    {
+        if (!$relativePath) {
+            return null;
+        }
+        foreach ([
+            storage_path('app/public/' . $relativePath),
+            public_path($relativePath),
+        ] as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+        return null;
     }
 
     /**

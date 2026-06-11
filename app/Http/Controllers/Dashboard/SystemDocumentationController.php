@@ -35,9 +35,9 @@ class SystemDocumentationController extends Controller
                 ->with('error', 'Only PDF files can be previewed. ZIP files must be downloaded.');
         }
 
-        $filePath = public_path($document->file_path);
-        
-        if (!file_exists($filePath)) {
+        $filePath = $this->resolveDocumentPath($document->file_path);
+
+        if (!$filePath) {
             return redirect()->route('dashboard.system-documentation')
                 ->with('error', 'File not found.');
         }
@@ -55,13 +55,34 @@ class SystemDocumentationController extends Controller
     {
         $document = SystemDocumentation::findOrFail($id);
         
-        $filePath = public_path($document->file_path);
-        
-        if (!file_exists($filePath)) {
+        $filePath = $this->resolveDocumentPath($document->file_path);
+
+        if (!$filePath) {
             return redirect()->route('dashboard.system-documentation')
                 ->with('error', 'File not found.');
         }
 
         return response()->download($filePath, $document->title . '.' . $document->file_type);
+    }
+
+    /**
+     * Resolve a stored document's absolute path on disk. Checks the persistent
+     * storage location first (where new uploads go) and falls back to the legacy
+     * public/ location for older files. Returns null if missing in both.
+     */
+    private function resolveDocumentPath(?string $relativePath): ?string
+    {
+        if (!$relativePath) {
+            return null;
+        }
+        foreach ([
+            storage_path('app/public/' . $relativePath),
+            public_path($relativePath),
+        ] as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+        return null;
     }
 }
