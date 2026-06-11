@@ -1071,7 +1071,6 @@
             <div class="efi-field">
                 <label class="efi-label"><i class="fas fa-envelope"></i> Email address</label>
                 <div class="efi-control">
-                    <i class="fas fa-at efi-control__icon"></i>
                     <input type="email" name="email" id="editInfoEmail" class="efi-input" placeholder="name@institution.edu" required>
                 </div>
             </div>
@@ -1079,7 +1078,6 @@
             <div class="efi-field">
                 <label class="efi-label"><i class="fas fa-building-columns"></i> Department / Faculty / Unit</label>
                 <div class="efi-control">
-                    <i class="fas fa-sitemap efi-control__icon"></i>
                     <select name="department_id" id="editInfoDepartment" class="efi-select" required>
                         <option value="" disabled>Choose department</option>
                         @foreach($departments as $dept)
@@ -1094,7 +1092,6 @@
                 <div class="efi-field">
                     <label class="efi-label"><i class="fas fa-user-tag"></i> Staff Category</label>
                     <div class="efi-control">
-                        <i class="fas fa-id-badge efi-control__icon"></i>
                         <select name="staff_category" id="editInfoCategory" class="efi-select" required>
                             <option value="" disabled>Choose category</option>
                             <option value="Junior Staff">Junior Staff</option>
@@ -1109,7 +1106,6 @@
                 <div class="efi-field">
                     <label class="efi-label"><i class="fas fa-briefcase"></i> Position <span class="efi-opt">optional</span></label>
                     <div class="efi-control">
-                        <i class="fas fa-star efi-control__icon"></i>
                         <select name="position_id" id="editInfoPosition" class="efi-select">
                             <option value="">No position</option>
                             @foreach($positions as $pos)
@@ -1120,8 +1116,6 @@
                     </div>
                 </div>
             </div>
-
-            <p class="efi-note"><i class="fas fa-shield-halved"></i> These fields drive Forms routing — only administrators can change them.</p>
 
             <div class="efi-actions">
                 <button type="button" class="efi-btn efi-btn--ghost" onclick="closeEditInfoModal()">Cancel</button>
@@ -1182,10 +1176,9 @@
 .efi-label i{ font-size:.78rem; color:#94a3b8; }
 .efi-opt{ font-weight:500; color:#94a3b8; font-size:.78rem; }
 .efi-control{ position:relative; }
-.efi-control__icon{ position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:.82rem; color:#94a3b8; pointer-events:none; transition:.2s; }
 .efi-control__chev{ position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:.7rem; color:#94a3b8; pointer-events:none; transition:.2s; }
 .efi-input, .efi-select{
-    width:100%; box-sizing:border-box; padding:12px 14px 12px 38px;
+    width:100%; box-sizing:border-box; padding:12px 14px;
     border-radius:12px; font-size:.92rem; font-weight:500; color:#0f172a;
     background:#ffffff; border:1px solid #e2e8f0;
     outline:none; transition:.2s ease; -webkit-appearance:none; appearance:none;
@@ -1196,7 +1189,6 @@
     border-color:#0f172a;
     box-shadow:0 0 0 3px rgba(15,23,42,.08);
 }
-.efi-control:focus-within .efi-control__icon{ color:#0f172a; }
 .efi-control:focus-within .efi-control__chev{ color:#0f172a; transform:translateY(-50%) rotate(180deg); }
 .efi-select option{ color:#0f172a; }
 
