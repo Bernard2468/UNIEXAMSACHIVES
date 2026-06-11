@@ -1203,9 +1203,13 @@
     mpRows.forEach(row => {
         row.addEventListener('click', e => {
             if (e.target.closest('.mp-perm')) return;
+            // Clicks inside the checkbox label toggle the (hidden) input natively,
+            // which fires the 'change' listener below. Don't also toggle here or the
+            // two cancel out and the checkbox appears unresponsive.
+            if (e.target.closest('.mp-check')) return;
             const cb = row.querySelector('.mp-checkbox');
             if (!cb) return;
-            if (e.target !== cb) setPickerRow(row, !cb.checked);
+            setPickerRow(row, !cb.checked);
         });
         const cb = row.querySelector('.mp-checkbox');
         if (cb) cb.addEventListener('change', () => setPickerRow(row, cb.checked));
