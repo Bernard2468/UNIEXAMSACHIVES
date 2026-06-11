@@ -766,9 +766,9 @@
                                                     </form>
                                                 @endif
 
-                                                <button type="button" class="action-btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditEmailModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ $user->email }}')">
-                                                    <i class="fas fa-envelope"></i>
-                                                    Edit Email
+                                                <button type="button" class="action-btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}')">
+                                                    <i class="fas fa-user-edit"></i>
+                                                    Edit Info
                                                 </button>
 
                                                 <form action="{{ route('users.destroy', $user->id) }}" method="post" style="display: inline;" id="delete-user-form-{{ $user->id }}">
@@ -844,11 +844,8 @@
                                                             </button>
                                                         </form>
                                                         @endif
-                                                        <button type="button" class="action-btn" style="min-width:auto; padding:8px 12px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" title="Edit Email" onclick="openEditEmailModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ $user->email }}')">
-                                                            <i class="fas fa-envelope"></i>
-                                                        </button>
-                                                        <button type="button" class="action-btn" style="min-width:auto; padding:8px 12px; background:#fef3c7; color:#92400e; border:1px solid #fde68a;" title="Edit Organization (Department / Staff Category / Position)" onclick="openEditOrgModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}')">
-                                                            <i class="fas fa-sitemap"></i>
+                                                        <button type="button" class="action-btn" style="min-width:auto; padding:8px 12px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" title="Edit Info (Email / Department / Staff Category / Position)" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}')">
+                                                            <i class="fas fa-user-edit"></i>
                                                         </button>
                                                         <form action="{{ route('users.destroy', $user->id) }}" method="post" style="display: inline;" id="delete-user-table-form-{{ $user->id }}">
                                                             @csrf
@@ -1051,55 +1048,31 @@
     </div>
 </div>
 
-<!-- Edit Email Modal -->
-<div id="editEmailModal" class="add-user-modal" style="display: none;">
-    <div class="add-user-modal-overlay"></div>
-    <div class="add-user-modal-content" style="max-width:440px;">
-        <div class="add-user-modal-header">
-            <h3><i class="fas fa-envelope"></i> Change User Email</h3>
-            <button type="button" class="close-modal-btn" onclick="closeEditEmailModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="add-user-modal-body">
-            <p id="editEmailUserName" style="margin-bottom:1.2rem; color:#475569; font-size:0.95rem;"></p>
-            <form id="editEmailForm" method="POST">
-                @csrf
-                @method('PATCH')
-                <div class="form-group">
-                    <div class="input-container">
-                        <input type="email" name="email" id="editEmailInput" class="animated-input" placeholder="Enter new email address" required>
-                    </div>
-                </div>
-                <div class="form-actions-modal">
-                    <button type="button" class="cancel-btn" onclick="closeEditEmailModal()">Cancel</button>
-                    <button type="submit" class="submit-btn-modal">
-                        <i class="fas fa-save"></i> Save Email
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div id="editOrgModal" class="add-user-modal" style="display: none;">
+<!-- Edit User Info Modal (email + organization details) -->
+<div id="editInfoModal" class="add-user-modal" style="display: none;">
     <div class="add-user-modal-overlay"></div>
     <div class="add-user-modal-content" style="max-width:480px;">
         <div class="add-user-modal-header">
-            <h3><i class="fas fa-sitemap"></i> Edit Organization Details</h3>
-            <button type="button" class="close-modal-btn" onclick="closeEditOrgModal()">
+            <h3><i class="fas fa-user-edit"></i> Edit User Info</h3>
+            <button type="button" class="close-modal-btn" onclick="closeEditInfoModal()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         <div class="add-user-modal-body">
-            <p id="editOrgUserName" style="margin-bottom:1.2rem; color:#475569; font-size:0.95rem;"></p>
-            <form id="editOrgForm" method="POST">
+            <p id="editInfoUserName" style="margin-bottom:1.2rem; color:#475569; font-size:0.95rem;"></p>
+            <form id="editInfoForm" method="POST">
                 @csrf
                 @method('PATCH')
                 <div class="form-group">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Email address</label>
+                    <div class="input-container">
+                        <input type="email" name="email" id="editInfoEmail" class="animated-input" placeholder="Enter email address" required>
+                    </div>
+                </div>
+                <div class="form-group">
                     <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Department / Faculty / Unit</label>
                     <div class="input-container">
-                        <select name="department_id" id="editOrgDepartment" class="animated-input" required>
+                        <select name="department_id" id="editInfoDepartment" class="animated-input" required>
                             <option value="" disabled>Choose department</option>
                             @foreach($departments as $dept)
                                 <option value="{{ $dept->id }}">{{ $dept->name }}</option>
@@ -1110,7 +1083,7 @@
                 <div class="form-group">
                     <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Staff Category</label>
                     <div class="input-container">
-                        <select name="staff_category" id="editOrgCategory" class="animated-input" required>
+                        <select name="staff_category" id="editInfoCategory" class="animated-input" required>
                             <option value="" disabled>Choose category</option>
                             <option value="Junior Staff">Junior Staff</option>
                             <option value="Senior Staff">Senior Staff</option>
@@ -1122,7 +1095,7 @@
                 <div class="form-group">
                     <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:0.9rem;">Position <span style="font-weight:400; color:#94a3b8;">(optional)</span></label>
                     <div class="input-container">
-                        <select name="position_id" id="editOrgPosition" class="animated-input">
+                        <select name="position_id" id="editInfoPosition" class="animated-input">
                             <option value="">No position</option>
                             @foreach($positions as $pos)
                                 <option value="{{ $pos->id }}">{{ $pos->name }}</option>
@@ -1131,9 +1104,9 @@
                     </div>
                 </div>
                 <div class="form-actions-modal">
-                    <button type="button" class="cancel-btn" onclick="closeEditOrgModal()">Cancel</button>
+                    <button type="button" class="cancel-btn" onclick="closeEditInfoModal()">Cancel</button>
                     <button type="submit" class="submit-btn-modal">
-                        <i class="fas fa-save"></i> Save Details
+                        <i class="fas fa-save"></i> Save Changes
                     </button>
                 </div>
             </form>
@@ -1401,63 +1374,36 @@ function toggleAddUserPasswordConfirm() {
     }
 }
 
-function openEditEmailModal(userId, userName, currentEmail) {
-    const modal = document.getElementById('editEmailModal');
-    const form = document.getElementById('editEmailForm');
-    const nameLabel = document.getElementById('editEmailUserName');
-    const emailInput = document.getElementById('editEmailInput');
+function openEditInfoModal(userId, userName, currentEmail, departmentId, staffCategory, positionId) {
+    const modal = document.getElementById('editInfoModal');
+    const form = document.getElementById('editInfoForm');
+    const nameLabel = document.getElementById('editInfoUserName');
+    const emailInput = document.getElementById('editInfoEmail');
 
-    form.action = '/dashboard/users/' + userId + '/email';
-    nameLabel.textContent = 'Editing email for: ' + userName;
-    emailInput.value = currentEmail;
+    form.action = '/dashboard/users/' + userId + '/details';
+    nameLabel.textContent = 'Editing info for: ' + userName;
+    emailInput.value = currentEmail || '';
+    document.getElementById('editInfoDepartment').value = departmentId || '';
+    document.getElementById('editInfoCategory').value = staffCategory || '';
+    document.getElementById('editInfoPosition').value = positionId || '';
 
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     emailInput.focus();
 }
 
-function closeEditEmailModal() {
-    const modal = document.getElementById('editEmailModal');
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-}
-
-function openEditOrgModal(userId, userName, departmentId, staffCategory, positionId) {
-    const modal = document.getElementById('editOrgModal');
-    const form = document.getElementById('editOrgForm');
-    const nameLabel = document.getElementById('editOrgUserName');
-
-    form.action = '/dashboard/users/' + userId + '/organization';
-    nameLabel.textContent = 'Editing organization details for: ' + userName;
-    document.getElementById('editOrgDepartment').value = departmentId || '';
-    document.getElementById('editOrgCategory').value = staffCategory || '';
-    document.getElementById('editOrgPosition').value = positionId || '';
-
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-
-function closeEditOrgModal() {
-    const modal = document.getElementById('editOrgModal');
+function closeEditInfoModal() {
+    const modal = document.getElementById('editInfoModal');
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    const editModal = document.getElementById('editEmailModal');
+    const editModal = document.getElementById('editInfoModal');
     if (editModal) {
         editModal.addEventListener('click', function(e) {
             if (e.target.classList.contains('add-user-modal-overlay')) {
-                closeEditEmailModal();
-            }
-        });
-    }
-
-    const editOrgModal = document.getElementById('editOrgModal');
-    if (editOrgModal) {
-        editOrgModal.addEventListener('click', function(e) {
-            if (e.target.classList.contains('add-user-modal-overlay')) {
-                closeEditOrgModal();
+                closeEditInfoModal();
             }
         });
     }

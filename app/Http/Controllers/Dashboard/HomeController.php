@@ -667,7 +667,7 @@ class HomeController extends Controller
         // NOT accepted here. They drive Forms leadership/VC routing, so letting a
         // user edit their own would be a privilege-escalation vector (e.g. a user
         // assigning themselves a leadership position to capture VC referrals).
-        // Only a System Administrator can change them — see updateUserOrganization().
+        // Only a System Administrator can change them — see updateUserDetails().
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -1000,47 +1000,37 @@ class HomeController extends Controller
         return redirect()->route('dashboard.users')->with('success', 'User deleted successfully');
     }
 
-    public function updateUserEmail(Request $request, User $user)
-    {
-        $request->validate([
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-        ], [
-            'email.unique' => 'This email is already in use by another account.',
-        ]);
-
-        $user->email = $request->input('email');
-        $user->save();
-
-        return redirect()->route('dashboard.users')->with('success', "Email for {$user->first_name} {$user->last_name} updated successfully.");
-    }
-
     /**
-     * Admin-only: update a user's organization details (department, staff
-     * category, position). These are the sensitive fields that drive Forms
-     * leadership/VC routing and are intentionally NOT editable by users
-     * themselves — only an administrator may change them here.
+     * Admin-only: update a user's info (email + the sensitive organization
+     * fields: department, staff category, position). The organization fields
+     * drive Forms leadership/VC routing and are intentionally NOT editable by
+     * users themselves — only an administrator may change them here. Gated by
+     * the institutional_admin middleware on the route.
      */
-    public function updateUserOrganization(Request $request, User $user)
+    public function updateUserDetails(Request $request, User $user)
     {
         if ($request->input('position_id') === '' || $request->input('position_id') === null) {
             $request->merge(['position_id' => null]);
         }
 
         $request->validate([
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'department_id' => 'required|exists:departments,id',
             'staff_category' => 'required|string|in:Junior Staff,Senior Staff,Senior Member (Non-Teaching),Senior Member (Teaching)',
             'position_id' => 'nullable|exists:positions,id',
         ], [
+            'email.unique' => 'This email is already in use by another account.',
             'department_id.required' => 'Please choose a Department/Faculty/Unit.',
             'staff_category.required' => 'Please choose a Staff Category.',
         ]);
 
+        $user->email = $request->input('email');
         $user->department_id = $request->input('department_id');
         $user->staff_category = $request->input('staff_category');
         $user->position_id = $request->input('position_id');
         $user->save();
 
-        return redirect()->route('dashboard.users')->with('success', "Organization details for {$user->first_name} {$user->last_name} updated successfully.");
+        return redirect()->route('dashboard.users')->with('success', "Details for {$user->first_name} {$user->last_name} updated successfully.");
     }
 
     public function logout(Request $request)
