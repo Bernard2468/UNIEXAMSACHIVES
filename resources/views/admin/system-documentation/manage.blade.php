@@ -787,7 +787,7 @@
                         <div class="table-header-controls">
                             <div class="table-title-section">
                                 <div class="dashboard__section__title">
-                                    <h4>Manage System Documentation</h4>
+                                    <h4>Manage University Policies</h4>
                                 </div>
                             </div>
                             <div class="table-controls">

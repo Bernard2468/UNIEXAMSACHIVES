@@ -554,7 +554,7 @@
                         <div class="table-header-controls">
                             <div class="table-title-section">
                                 <div class="dashboard__section__title">
-                                    <h4>System Documentation</h4>
+                                    <h4>University Policies</h4>
                                 </div>
                             </div>
                             <div class="search-filter-container">
