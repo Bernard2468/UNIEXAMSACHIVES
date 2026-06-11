@@ -1048,7 +1048,7 @@
     </div>
 </div>
 
-<!-- Edit User Info Modal — futuristic glassmorphic redesign (namespaced .efi-*) -->
+<!-- Edit User Info Modal — clean monochrome design (namespaced .efi-*) -->
 <div id="editInfoModal" class="add-user-modal efi-modal" style="display: none;">
     <div class="add-user-modal-overlay efi-overlay"></div>
     <div class="efi-card" role="dialog" aria-modal="true" aria-labelledby="efiTitle">
@@ -1057,9 +1057,9 @@
         </button>
 
         <div class="efi-head">
-            <div class="efi-avatar"><span id="editInfoInitials">--</span><i class="efi-avatar__ring"></i></div>
+            <div class="efi-avatar"><span id="editInfoInitials">--</span></div>
             <div class="efi-head__text">
-                <h3 class="efi-title" id="efiTitle">Edit User Info <i class="fas fa-wand-magic-sparkles"></i></h3>
+                <h3 class="efi-title" id="efiTitle">Edit User Info</h3>
                 <p class="efi-sub" id="editInfoUserName">—</p>
             </div>
         </div>
@@ -1134,113 +1134,88 @@
 </div>
 
 <style>
-/* ===== Edit User Info — futuristic modal (scoped .efi-*) ===== */
+/* ===== Edit User Info — clean monochrome modal (scoped .efi-*) ===== */
 #editInfoModal .efi-overlay{
-    background:
-        radial-gradient(60% 50% at 25% 15%, rgba(34,211,238,.18), transparent 60%),
-        radial-gradient(55% 50% at 85% 90%, rgba(232,121,249,.18), transparent 60%),
-        rgba(3,6,16,.78);
-    -webkit-backdrop-filter: blur(12px) saturate(130%);
-    backdrop-filter: blur(12px) saturate(130%);
-    animation: efiFade .35s ease;
+    background:rgba(15,23,42,.42);
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
+    animation:efiFade .25s ease;
 }
-@property --efi-angle{ syntax:'<angle>'; inherits:false; initial-value:0deg; }
 .efi-card{
     position:relative; z-index:10001;
-    width:92%; max-width:560px; max-height:92vh; overflow:hidden auto;
-    padding:30px 30px 26px;
-    border-radius:26px;
-    border:1.6px solid transparent;
-    background:
-        linear-gradient(165deg, rgba(20,27,48,.95), rgba(9,13,26,.98)) padding-box,
-        conic-gradient(from var(--efi-angle), #22d3ee, #818cf8, #e879f9, #22d3ee) border-box;
-    box-shadow:0 40px 90px -25px rgba(0,0,0,.85), 0 0 60px -20px rgba(129,140,248,.45), inset 0 1px 0 rgba(255,255,255,.05);
-    color:#e5e9f3;
-    animation:efiIn .55s cubic-bezier(.2,.9,.25,1.15), efiSpin 7s linear infinite;
-    scrollbar-width:thin; scrollbar-color:rgba(129,140,248,.5) transparent;
+    width:92%; max-width:480px; max-height:92vh; overflow:hidden auto;
+    padding:28px 28px 24px;
+    border-radius:20px;
+    background:#ffffff;
+    border:1px solid #ebedf1;
+    box-shadow:0 24px 64px -18px rgba(15,23,42,.30), 0 2px 6px rgba(15,23,42,.05);
+    color:#0f172a;
+    animation:efiIn .4s cubic-bezier(.2,.8,.2,1);
+    scrollbar-width:thin;
 }
 .efi-card::-webkit-scrollbar{width:8px}
-.efi-card::-webkit-scrollbar-thumb{background:rgba(129,140,248,.45); border-radius:8px}
-/* faint tech grid texture */
-.efi-card::after{
-    content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
-    background-image:
-        linear-gradient(rgba(148,163,184,.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148,163,184,.05) 1px, transparent 1px);
-    background-size:34px 34px;
-    -webkit-mask-image:radial-gradient(80% 70% at 50% 0%, #000, transparent 75%);
-    mask-image:radial-gradient(80% 70% at 50% 0%, #000, transparent 75%);
-}
+.efi-card::-webkit-scrollbar-thumb{background:#e2e8f0; border-radius:8px}
 .efi-head, .efi-body{ position:relative; z-index:1; }
 .efi-close{
-    position:absolute; top:16px; right:16px; width:38px; height:38px; z-index:3;
-    display:grid; place-items:center; border-radius:50%;
-    background:rgba(148,163,184,.1); border:1px solid rgba(148,163,184,.18);
-    color:#cbd5e1; font-size:15px; cursor:pointer; transition:.25s;
+    position:absolute; top:14px; right:14px; width:34px; height:34px; z-index:3;
+    display:grid; place-items:center; border-radius:10px;
+    background:transparent; border:1px solid #ebedf1;
+    color:#94a3b8; font-size:14px; cursor:pointer; transition:.2s;
 }
-.efi-close:hover{ background:rgba(244,63,94,.18); border-color:rgba(244,63,94,.5); color:#fff; transform:rotate(90deg); }
+.efi-close:hover{ background:#f5f6f8; color:#0f172a; }
 
-.efi-head{ display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.efi-head{ display:flex; align-items:center; gap:14px; margin-bottom:22px; }
 .efi-avatar{
-    position:relative; flex:0 0 auto; width:58px; height:58px; border-radius:18px;
-    display:grid; place-items:center; font-weight:800; font-size:20px; letter-spacing:.5px; color:#06121f;
-    background:linear-gradient(135deg, #22d3ee, #818cf8 55%, #e879f9);
-    box-shadow:0 10px 28px -8px rgba(129,140,248,.7), inset 0 0 0 1px rgba(255,255,255,.25);
+    position:relative; flex:0 0 auto; width:50px; height:50px; border-radius:14px;
+    display:grid; place-items:center; font-weight:700; font-size:17px; letter-spacing:.5px;
+    color:#ffffff; background:#0f172a;
 }
-.efi-avatar__ring{ position:absolute; inset:-5px; border-radius:22px; border:1.5px solid rgba(34,211,238,.45); animation:efiPulse 2.4s ease-in-out infinite; }
-.efi-title{ margin:0; font-size:1.5rem; font-weight:800; color:#f8fafc; letter-spacing:-.01em; display:flex; align-items:center; gap:9px; }
-.efi-title i{ font-size:.9rem; background:linear-gradient(135deg,#22d3ee,#e879f9); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.efi-sub{ margin:3px 0 0; font-size:.9rem; color:#94a3b8; }
+.efi-avatar__ring{ display:none; }
+.efi-title{ margin:0; font-size:1.3rem; font-weight:700; color:#0f172a; letter-spacing:-.01em; }
+.efi-title i{ display:none; }
+.efi-sub{ margin:2px 0 0; font-size:.875rem; color:#64748b; }
 
 .efi-body{ display:block; }
-.efi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-.efi-field{ margin-bottom:16px; }
-.efi-label{ display:flex; align-items:center; gap:7px; margin-bottom:8px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:#9aa7c2; }
-.efi-label i{ font-size:.8rem; color:#818cf8; }
-.efi-opt{ text-transform:none; letter-spacing:0; font-weight:500; color:#64748b; font-size:.8rem; }
+.efi-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.efi-field{ margin-bottom:14px; }
+.efi-label{ display:flex; align-items:center; gap:7px; margin-bottom:7px; font-size:.78rem; font-weight:600; color:#475569; }
+.efi-label i{ font-size:.78rem; color:#94a3b8; }
+.efi-opt{ font-weight:500; color:#94a3b8; font-size:.78rem; }
 .efi-control{ position:relative; }
-.efi-control__icon{ position:absolute; left:15px; top:50%; transform:translateY(-50%); font-size:.85rem; color:#5eead4; pointer-events:none; transition:.25s; }
-.efi-control__chev{ position:absolute; right:15px; top:50%; transform:translateY(-50%); font-size:.7rem; color:#64748b; pointer-events:none; transition:.25s; }
+.efi-control__icon{ position:absolute; left:13px; top:50%; transform:translateY(-50%); font-size:.82rem; color:#94a3b8; pointer-events:none; transition:.2s; }
+.efi-control__chev{ position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:.7rem; color:#94a3b8; pointer-events:none; transition:.2s; }
 .efi-input, .efi-select{
-    width:100%; box-sizing:border-box; padding:13px 16px 13px 42px;
-    border-radius:14px; font-size:.95rem; font-weight:500; color:#f1f5f9;
-    background:rgba(148,163,184,.07); border:1px solid rgba(148,163,184,.18);
-    outline:none; transition:.28s cubic-bezier(.4,0,.2,1); -webkit-appearance:none; appearance:none;
+    width:100%; box-sizing:border-box; padding:12px 14px 12px 38px;
+    border-radius:12px; font-size:.92rem; font-weight:500; color:#0f172a;
+    background:#ffffff; border:1px solid #e2e8f0;
+    outline:none; transition:.2s ease; -webkit-appearance:none; appearance:none;
 }
-.efi-select{ padding-right:38px; cursor:pointer; }
-.efi-input::placeholder{ color:#5b6781; }
+.efi-select{ padding-right:36px; cursor:pointer; }
+.efi-input::placeholder{ color:#cbd5e1; }
 .efi-input:focus, .efi-select:focus{
-    border-color:rgba(34,211,238,.75);
-    background:rgba(34,211,238,.07);
-    box-shadow:0 0 0 4px rgba(34,211,238,.13), 0 12px 30px -10px rgba(34,211,238,.45);
+    border-color:#0f172a;
+    box-shadow:0 0 0 3px rgba(15,23,42,.08);
 }
-.efi-control:focus-within .efi-control__icon{ color:#22d3ee; transform:translateY(-50%) scale(1.12); }
-.efi-control:focus-within .efi-control__chev{ color:#22d3ee; transform:translateY(-50%) rotate(180deg); }
-.efi-select option{ background:#0c1326; color:#e2e8f0; }
+.efi-control:focus-within .efi-control__icon{ color:#0f172a; }
+.efi-control:focus-within .efi-control__chev{ color:#0f172a; transform:translateY(-50%) rotate(180deg); }
+.efi-select option{ color:#0f172a; }
 
-.efi-note{ display:flex; align-items:center; gap:8px; margin:6px 0 0; padding:11px 14px; border-radius:12px;
-    font-size:.78rem; color:#a5b4cf; background:rgba(129,140,248,.08); border:1px solid rgba(129,140,248,.18); }
-.efi-note i{ color:#818cf8; }
+.efi-note{ display:flex; align-items:center; gap:8px; margin:4px 0 0; padding:10px 13px; border-radius:10px;
+    font-size:.78rem; color:#64748b; background:#f5f6f8; border:1px solid #eef0f3; }
+.efi-note i{ color:#94a3b8; }
 
-.efi-actions{ display:flex; gap:12px; justify-content:flex-end; margin-top:22px; padding-top:20px; border-top:1px solid rgba(148,163,184,.12); }
-.efi-btn{ padding:13px 24px; border-radius:13px; font-weight:700; font-size:.92rem; cursor:pointer; border:1px solid transparent; transition:.28s; }
-.efi-btn--ghost{ background:rgba(148,163,184,.08); border-color:rgba(148,163,184,.2); color:#cbd5e1; }
-.efi-btn--ghost:hover{ background:rgba(148,163,184,.16); color:#fff; }
-.efi-btn--save{ position:relative; overflow:hidden; color:#06121f;
-    background:linear-gradient(135deg,#22d3ee,#818cf8 55%,#e879f9);
-    box-shadow:0 14px 32px -10px rgba(129,140,248,.75); }
-.efi-btn--save span{ position:relative; z-index:2; display:inline-flex; align-items:center; gap:8px; }
-.efi-btn--save::after{ content:""; position:absolute; top:0; left:-120%; width:60%; height:100%;
-    background:linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform:skewX(-18deg); transition:left .6s ease; }
-.efi-btn--save:hover{ transform:translateY(-2px); box-shadow:0 20px 42px -10px rgba(129,140,248,.9); }
-.efi-btn--save:hover::after{ left:130%; }
+.efi-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:20px; padding-top:18px; border-top:1px solid #eef0f3; }
+.efi-btn{ padding:11px 22px; border-radius:11px; font-weight:600; font-size:.9rem; cursor:pointer; border:1px solid transparent; transition:.2s; }
+.efi-btn--ghost{ background:#ffffff; border-color:#e2e8f0; color:#475569; }
+.efi-btn--ghost:hover{ background:#f5f6f8; color:#0f172a; }
+.efi-btn--save{ background:#0f172a; color:#ffffff; box-shadow:0 6px 16px -7px rgba(15,23,42,.55); }
+.efi-btn--save span{ display:inline-flex; align-items:center; gap:8px; }
+.efi-btn--save:hover{ background:#1e293b; transform:translateY(-1px); box-shadow:0 10px 22px -8px rgba(15,23,42,.55); }
 
-@keyframes efiIn{ from{ opacity:0; transform:translateY(26px) scale(.94); filter:blur(6px); } to{ opacity:1; transform:none; filter:none; } }
+@keyframes efiIn{ from{ opacity:0; transform:translateY(14px) scale(.985); } to{ opacity:1; transform:none; } }
 @keyframes efiFade{ from{opacity:0} to{opacity:1} }
-@keyframes efiSpin{ to{ --efi-angle:360deg; } }
-@keyframes efiPulse{ 0%,100%{ opacity:.65; transform:scale(1);} 50%{ opacity:.2; transform:scale(1.08);} }
-@media (max-width:520px){ .efi-grid{ grid-template-columns:1fr; } .efi-card{ padding:26px 20px 22px; } }
-@media (prefers-reduced-motion:reduce){ .efi-card,.efi-avatar__ring,.efi-overlay{ animation:none; } }
+@media (max-width:520px){ .efi-grid{ grid-template-columns:1fr; } .efi-card{ padding:24px 18px 20px; } }
+@media (prefers-reduced-motion:reduce){ .efi-card,.efi-overlay{ animation:none; } }
 </style>
 
 <style>
