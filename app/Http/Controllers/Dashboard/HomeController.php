@@ -251,10 +251,14 @@ class HomeController extends Controller
                 'created_at_iso' => $rm->created_at->toIso8601String(),
                 'bucket'         => $this->dateBucket($rm->created_at),
                 'is_read'        => (bool) $rm->is_read,
-                'url'            => route('dashboard.memo.read', $rm->id),
+                // Open the memo inside the UIMMS portal chat — that particular memo,
+                // where the recipient can read it and minute / archive / suspend /
+                // take action. (dashboard.memo.read is the legacy single-memo page.)
+                // Note: uimms.chat is keyed by the memo/campaign id, not the recipient id.
+                'url'            => route('dashboard.uimms.chat', $rm->comm_campaign_id),
                 'actor'          => $this->actorPayload($rm->campaign?->creator),
                 'actions'        => [
-                    ['label' => 'Open memo', 'url' => route('dashboard.memo.read', $rm->id), 'style' => 'primary'],
+                    ['label' => 'Open memo', 'url' => route('dashboard.uimms.chat', $rm->comm_campaign_id), 'style' => 'primary'],
                 ],
             ];
         });
@@ -1294,6 +1298,14 @@ class HomeController extends Controller
 
             // Record that this user has "read" this memo (for Active Chat vs Read split on portal)
             $memo->recordLastReadBy($userId);
+
+            // Mark this user's memo-recipient row as read so the notification tray
+            // badge/unread count clears — opening the memo here is equivalent to the
+            // legacy readMemo page, which also set is_read.
+            EmailCampaignRecipient::where('comm_campaign_id', $memo->id)
+                ->where('user_id', $userId)
+                ->where('is_read', false)
+                ->update(['is_read' => true, 'read_at' => now()]);
 
             // Get all users for assignment dropdown
             $users = User::with('department')
