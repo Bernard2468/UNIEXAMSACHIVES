@@ -1533,12 +1533,14 @@
         shareUserRows.forEach(row => {
             row.addEventListener('click', e => {
                 if (e.target.closest('.nf-share-perm')) return;
+                // Clicks inside the checkbox label toggle the (hidden) input natively,
+                // which fires the 'change' listener below. Don't also toggle here or the
+                // two cancel out and the checkbox appears unresponsive.
+                if (e.target.closest('.nf-share-check')) return;
                 const checkbox = row.querySelector('.nf-share-checkbox');
                 if (!checkbox) return;
-                if (e.target !== checkbox) {
-                    // Clicking anywhere else on the row flips state.
-                    setRowSelected(row, !checkbox.checked);
-                }
+                // Clicking anywhere else on the row flips state.
+                setRowSelected(row, !checkbox.checked);
             });
 
             const checkbox = row.querySelector('.nf-share-checkbox');
