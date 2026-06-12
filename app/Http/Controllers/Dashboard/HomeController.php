@@ -1362,52 +1362,11 @@ class HomeController extends Controller
         $letterheadRecord = \App\Models\SystemLetterhead::findBySlug($memo->letterhead ?? null);
         $letterheadUrl    = $letterheadRecord?->image_url;
 
-        // ── Track temp files for cleanup + the ordered list of PDFs to merge after the main memo ──
-        $tempFiles      = [];
-        $pdfMergeQueue  = []; // [['label' => 'Memo Attachment: foo.pdf', 'path' => '/tmp/x.pdf'], ...]
-
-        // ── Helper: extract a Word document's body HTML using phpoffice/phpword ──
-        $extractWordHtml = function (string $docPath): ?string {
-            if (!class_exists(\PhpOffice\PhpWord\IOFactory::class)) return null;
-            try {
-                $phpWord    = \PhpOffice\PhpWord\IOFactory::load($docPath);
-                $htmlWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'HTML');
-                $tempHtml   = tempnam(sys_get_temp_dir(), 'phpword_') . '.html';
-                $htmlWriter->save($tempHtml);
-                $rawHtml    = file_get_contents($tempHtml);
-                @unlink($tempHtml);
-                if (!$rawHtml) return null;
-                if (preg_match('/<body[^>]*>(.*?)<\/body>/si', $rawHtml, $m)) {
-                    $body = trim($m[1]);
-                } else {
-                    $body = $rawHtml;
-                }
-                return preg_replace('/<script\b[^>]*>.*?<\/script>/si', '', $body ?? '');
-            } catch (\Throwable $e) {
-                \Log::warning('Word HTML extraction failed: ' . $e->getMessage());
-                return null;
-            }
-        };
-
-        // ── Helper: convert Word to a temp PDF (only used when FPDI is available) ──
-        $convertWordToPdf = function (string $docPath) use (&$tempFiles, $extractWordHtml): ?string {
-            $bodyHtml = $extractWordHtml($docPath);
-            if (!$bodyHtml) return null;
-            try {
-                $tempPdf = tempnam(sys_get_temp_dir(), 'docpdf_') . '.pdf';
-                $docPdf  = Pdf::loadHTML('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' . $bodyHtml . '</body></html>')
-                              ->setPaper('a4', 'portrait');
-                file_put_contents($tempPdf, $docPdf->output());
-                $tempFiles[] = $tempPdf;
-                return $tempPdf;
-            } catch (\Throwable $e) {
-                \Log::warning('Word to PDF conversion failed: ' . $e->getMessage());
-                return null;
-            }
-        };
-
         // ── Shared attachment processor (used for both memo and reply attachments) ──
-        $processAttachment = function (array $attachment, int $index, string $sourceLabel) use ($convertWordToPdf, $extractWordHtml, &$pdfMergeQueue): array {
+        // Only images are rendered inline in the export. PDF / Word / other documents are
+        // listed by name only — embedding their content requires external converter
+        // libraries (FPDI / PhpWord / pdfparser) that aren't available on this host.
+        $processAttachment = function (array $attachment, int $index, string $sourceLabel): array {
             $filePath = storage_path('app/public/' . ($attachment['path'] ?? ''));
             $mime     = $attachment['type'] ?? '';
             $name     = $attachment['name'] ?? 'attachment';
@@ -1427,7 +1386,7 @@ class HomeController extends Controller
             }
 
             if (str_starts_with($mime, 'image/')) {
-                // Inline-renderable: embed image directly in main PDF
+                // Inline-renderable: embed image directly in the PDF
                 $entry['type'] = 'image';
                 $entry['data'] = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($filePath));
 
@@ -1435,100 +1394,10 @@ class HomeController extends Controller
                 $entry['type'] = 'text';
                 $entry['text'] = htmlspecialchars(file_get_contents($filePath));
 
-            } elseif ($mime === 'application/pdf') {
-                $hasFpdi = class_exists(\setasign\Fpdi\Fpdi::class);
-
-                if ($hasFpdi) {
-                    // Best path: queue for merging — actual PDF pages appended after main content
-                    $pdfMergeQueue[] = [
-                        'label' => $sourceLabel . ': ' . $name,
-                        'path'  => $filePath,
-                    ];
-                    $entry['type'] = 'merged_ref';
-                } else {
-                    // Fallback: extract text via smalot/pdfparser and show inline
-                    $extractedText = null;
-                    if (class_exists(\Smalot\PdfParser\Parser::class)) {
-                        try {
-                            $parser  = new \Smalot\PdfParser\Parser();
-                            $parsed  = $parser->parseFile($filePath);
-                            $extractedText = trim($parsed->getText());
-                        } catch (\Throwable $e) {
-                            \Log::warning('PDF text extraction failed for ' . $name . ': ' . $e->getMessage());
-                        }
-                    }
-                    if ($extractedText) {
-                        $entry['type'] = 'pdf_text';
-                        $entry['text'] = htmlspecialchars($extractedText);
-                    } else {
-                        $entry['type'] = 'pdf';
-                    }
-                }
-
-            } elseif (in_array($mime, [
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            ])) {
-                $hasFpdi    = class_exists(\setasign\Fpdi\Fpdi::class);
-                $hasPhpWord = class_exists(\PhpOffice\PhpWord\IOFactory::class);
-                $isDocx     = $mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                           || str_ends_with(strtolower($name), '.docx');
-                $handled    = false;
-
-                // Tier 1 (best): convert to PDF + merge real pages — preserves all formatting
-                if ($hasFpdi && $hasPhpWord) {
-                    $tempPdf = $convertWordToPdf($filePath);
-                    if ($tempPdf) {
-                        $pdfMergeQueue[] = [
-                            'label' => $sourceLabel . ': ' . $name,
-                            'path'  => $tempPdf,
-                        ];
-                        $entry['type'] = 'merged_ref';
-                        $handled = true;
-                    }
-                }
-
-                // Tier 2: render as inline HTML in main PDF — preserves bold, headings, tables, lists
-                if (!$handled && $hasPhpWord) {
-                    $bodyHtml = $extractWordHtml($filePath);
-                    if ($bodyHtml) {
-                        $entry['type'] = 'doc_html';
-                        $entry['html'] = $bodyHtml;
-                        $handled = true;
-                    }
-                }
-
-                // Tier 3: ZipArchive text extraction — pure PHP built-in, always works for .docx
-                if (!$handled && $isDocx) {
-                    try {
-                        $zip = new \ZipArchive();
-                        if ($zip->open($filePath) === true) {
-                            $xml = $zip->getFromName('word/document.xml');
-                            $zip->close();
-                            if ($xml) {
-                                $xml  = str_replace(['</w:p>', '</w:tr>'], "\n", $xml);
-                                $text = strip_tags($xml);
-                                $text = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8');
-                                $text = preg_replace('/[ \t]+/', ' ', $text);
-                                $text = preg_replace('/\n{3,}/', "\n\n", trim($text));
-                                if ($text) {
-                                    $entry['type'] = 'doc_text';
-                                    $entry['text'] = htmlspecialchars($text);
-                                    $handled = true;
-                                }
-                            }
-                        }
-                    } catch (\Throwable $e) {
-                        \Log::warning('ZipArchive .docx extraction failed: ' . $e->getMessage());
-                    }
-                }
-
-                if (!$handled) {
-                    $entry['type'] = 'doc';
-                }
-
             } else {
-                $entry['type'] = 'other';
+                // PDF, Word, and any other document type: listed by name only, no inline
+                // content. Content extraction/conversion was removed (no converter libs).
+                $entry['type'] = 'file';
             }
 
             return $entry;
@@ -1585,8 +1454,8 @@ class HomeController extends Controller
 
         $filename = 'Memo-' . ($memo->reference ?? $memo->id) . '.pdf';
 
-        // ── Generate the main memo PDF (memo content + chat thread + image/text inline) ──
-        $mainPdf = Pdf::loadView('admin.uimms.memo-export-pdf', [
+        // ── Generate the memo PDF (memo content + chat thread + inline images) ──
+        $pdf = Pdf::loadView('admin.uimms.memo-export-pdf', [
             'memo'                 => $memo,
             'letterheadBase64'     => $letterheadBase64,
             'hasLetterhead'        => (bool) $letterheadRecord,
@@ -1594,63 +1463,9 @@ class HomeController extends Controller
             'processedReplies'     => $processedReplies,
             'toRecipients'         => $memo->toRecipients,
             'ccRecipients'         => $memo->ccRecipients,
-            'pdfMergeQueue'        => $pdfMergeQueue,
         ])->setPaper('a4', 'portrait');
 
-        // ── If nothing to merge, stream main PDF as-is ──
-        if (empty($pdfMergeQueue) || !class_exists(\setasign\Fpdi\Fpdi::class)) {
-            // Cleanup any temp Word→PDF files (not used since we can't merge)
-            foreach ($tempFiles as $tf) @unlink($tf);
-            return $mainPdf->stream($filename);
-        }
-
-        // ── Use FPDI to merge: main PDF + each attachment PDF (real pages, original formatting preserved) ──
-        try {
-            $tempMain = tempnam(sys_get_temp_dir(), 'memo_main_') . '.pdf';
-            file_put_contents($tempMain, $mainPdf->output());
-            $tempFiles[] = $tempMain;
-
-            $merger = new \setasign\Fpdi\Fpdi();
-
-            // Append main memo PDF
-            $pageCount = $merger->setSourceFile($tempMain);
-            for ($i = 1; $i <= $pageCount; $i++) {
-                $tplId = $merger->importPage($i);
-                $size  = $merger->getTemplateSize($tplId);
-                $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
-                $merger->useTemplate($tplId);
-            }
-
-            // Append each queued attachment PDF
-            foreach ($pdfMergeQueue as $item) {
-                try {
-                    $pageCount = $merger->setSourceFile($item['path']);
-                    for ($i = 1; $i <= $pageCount; $i++) {
-                        $tplId = $merger->importPage($i);
-                        $size  = $merger->getTemplateSize($tplId);
-                        $merger->AddPage($size['orientation'], [$size['width'], $size['height']]);
-                        $merger->useTemplate($tplId);
-                    }
-                } catch (\Throwable $e) {
-                    \Log::warning('FPDI failed to import "' . $item['label'] . '": ' . $e->getMessage());
-                }
-            }
-
-            $mergedBytes = $merger->Output('S');
-
-            // Cleanup all temp files
-            foreach ($tempFiles as $tf) @unlink($tf);
-
-            return response($mergedBytes, 200)
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
-
-        } catch (\Throwable $e) {
-            \Log::error('Memo PDF merge failed: ' . $e->getMessage());
-            foreach ($tempFiles as $tf) @unlink($tf);
-            // Fallback: just stream the main PDF
-            return $mainPdf->stream($filename);
-        }
+        return $pdf->stream($filename);
     }
 
     /**

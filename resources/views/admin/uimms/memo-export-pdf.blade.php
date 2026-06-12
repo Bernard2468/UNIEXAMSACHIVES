@@ -243,35 +243,13 @@
             case 'text':
                 $out .= '<div class="attachment-text">' . $att['text'] . '</div>';
                 break;
-            case 'merged_ref':
-                $out .= '<div class="pdf-label">&#128196; ' . e($att['name']) . '</div>';
-                $out .= '<div class="merged-ref-note">&#10142; Full document content is appended after the chat thread, with original formatting preserved.</div>';
-                break;
-            case 'doc_html':
-                $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="doc-html-content">' . ($att['html'] ?? '') . '</div>';
-                break;
-            case 'pdf_text':
-                $out .= '<div class="pdf-label">&#128196; PDF Content — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-pdf-text">' . ($att['text'] ?? '') . '</div>';
-                break;
-            case 'doc_text':
-                $out .= '<div class="pdf-label">&#128196; Word Document Content — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-pdf-text">' . ($att['text'] ?? '') . '</div>';
-                break;
-            case 'pdf':
-                $out .= '<div class="pdf-label">&#128196; PDF Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-unavailable">PDF content could not be extracted. Verify <code>smalot/pdfparser</code> or <code>setasign/fpdi</code> is installed on the server.</div>';
-                break;
-            case 'doc':
-                $out .= '<div class="pdf-label">&#128196; Word Document — ' . e($att['name']) . '</div>';
-                $out .= '<div class="attachment-unavailable">Document content could not be extracted from this file format.</div>';
-                break;
             case 'missing':
                 $out .= '<div class="attachment-unavailable">&#9888; File not found on server: ' . e($att['name']) . '</div>';
                 break;
             default:
-                $out .= '<div class="attachment-unavailable">&#128196; ' . e($att['name']) . ' — file type not previewable inline.</div>';
+                // PDF, Word and any other document: listed by name only (header above shows
+                // the filename). Inline content rendering needs converter libs not available here.
+                $out .= '<div class="attachment-unavailable">&#128206; Document attached &mdash; open the original file in the system to view its contents.</div>';
         }
 
         $out .= '</div></div>';
@@ -406,21 +384,6 @@
             @endforeach
         @endif
     </div>
-
-    {{-- ══ APPENDED DOCUMENTS INDEX ══ --}}
-    @if(!empty($pdfMergeQueue))
-    <div class="appended-section">
-        <div class="appended-section-title">Documents Appended ({{ count($pdfMergeQueue) }})</div>
-        <p style="font-size:9.5pt; color:#92400e; margin-bottom:8px;">
-            The following documents are appended to this PDF in their original format:
-        </p>
-        <ol class="appended-list">
-            @foreach($pdfMergeQueue as $doc)
-                <li>{{ $doc['label'] }}</li>
-            @endforeach
-        </ol>
-    </div>
-    @endif
 
     {{-- ══ FOOTER ══ --}}
     <div class="pdf-footer">
