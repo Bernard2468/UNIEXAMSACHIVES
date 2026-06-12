@@ -1077,7 +1077,6 @@
                     <div class="message-card login-card">
                         <div class="message-header">
                             <div class="message-title">
-                                <div class="message-icon">✓</div>
                                 Login Successful
                             </div>
                             <div class="loading-spinner" id="loginSpinner">
