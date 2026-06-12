@@ -19,6 +19,7 @@ class FormSubmission extends Model
         'title',
         'status',
         'created_by',
+        'source_campaign_id',
         'current_stage',
         'current_assignee_id',
         'current_office_id',
@@ -66,6 +67,12 @@ class FormSubmission extends Model
     public function currentOffice()
     {
         return $this->belongsTo(Office::class, 'current_office_id');
+    }
+
+    /** The memo (EmailCampaign) this form was started from, if any. */
+    public function sourceCampaign()
+    {
+        return $this->belongsTo(EmailCampaign::class, 'source_campaign_id');
     }
 
     public function signatures()

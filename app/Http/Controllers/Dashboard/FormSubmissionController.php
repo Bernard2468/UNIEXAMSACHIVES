@@ -52,10 +52,15 @@ class FormSubmissionController extends Controller
     /**
      * Render the compose page for a chosen form type (stage 1 = requisitioner).
      */
-    public function compose(string $formSlug)
+    public function compose(Request $request, string $formSlug)
     {
         $definition = $this->registry->findOrFail($formSlug);
         $stage      = $definition->firstStage();
+
+        // When the user arrived here from an approved memo (?source_campaign=ID)
+        // we remember it so the filled form links back to that memo. Null unless
+        // the memo is the user's own, approved, and mapped to this form type.
+        $sourceCampaign = $this->resolveSourceCampaign($request, $formSlug);
 
         // The next stage after the requisitioner determines who we route to.
         $nextStage   = $definition->nextStageAfter($stage->slug);
@@ -76,6 +81,7 @@ class FormSubmissionController extends Controller
             'submission'           => null,
             'sectionData'          => $this->prefillFromProfile($user, $stage),
             'savedSignature'       => $user->savedSignature,
+            'sourceCampaign'       => $sourceCampaign,
         ]);
     }
 
@@ -86,6 +92,9 @@ class FormSubmissionController extends Controller
     {
         $definition = $this->registry->findOrFail($formSlug);
         $stage      = $definition->firstStage();
+
+        // Link this form back to the approved memo it was started from, if valid.
+        $sourceCampaign = $this->resolveSourceCampaign($request, $formSlug);
 
         $action = $request->input('action') === 'draft' ? 'draft' : 'send';
         $data   = $this->validateStageInput($request, $definition, $stage, requireSignature: $action === 'send');
@@ -146,7 +155,23 @@ class FormSubmissionController extends Controller
             signatureContext: $this->signatureContext($request),
             leadershipCategory: $leadershipCategory,
             nextOfficeId: $nextOfficeId,
+            sourceCampaignId: $sourceCampaign?->id,
         );
+
+        // Close the loop: note on the originating memo that the form now exists.
+        // Best-effort — never let a failed note abort the submission.
+        if ($sourceCampaign) {
+            try {
+                \App\Models\MemoReply::create([
+                    'campaign_id' => $sourceCampaign->id,
+                    'user_id'     => Auth::id(),
+                    'message'     => '📝 <em>' . e($definition->title()) . ' (' . e($submission->reference) . ') was created from this memo.</em>',
+                    'attachments' => [],
+                ]);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Form→memo loop note failed: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route('admin.forms.show', $submission->id)
             ->with('success', $action === 'send'
@@ -607,6 +632,33 @@ class FormSubmissionController extends Controller
     {
         $value = $request->input('next_office_id');
         return $value ? (int) $value : null;
+    }
+
+    /**
+     * Resolve the approved memo a form is being started from, validating that
+     * the link is legitimate. Returns null (silently ignored) unless ALL hold:
+     *  - a source_campaign id was supplied,
+     *  - the memo exists and belongs to the current user (the originator),
+     *  - an approver has unlocked the form on it,
+     *  - this form type is one the memo's category maps to.
+     * This is metadata/traceability only — it never gates form access.
+     */
+    protected function resolveSourceCampaign(Request $request, string $formSlug): ?\App\Models\EmailCampaign
+    {
+        $id = $request->input('source_campaign');
+        if (!$id) {
+            return null;
+        }
+
+        $memo = \App\Models\EmailCampaign::find($id);
+        if (!$memo
+            || (int) $memo->created_by !== (int) Auth::id()
+            || !$memo->isFormUnlocked()
+            || !in_array($formSlug, $memo->linkedFormSlugs(), true)) {
+            return null;
+        }
+
+        return $memo;
     }
 
     /**

@@ -41,6 +41,10 @@ class EmailCampaign extends Model
         'suspended_at',
         'archived_at',
         'workflow_history',
+        // Memo → Forms bridge
+        'memo_category',
+        'form_unlocked_at',
+        'form_unlocked_by',
     ];
 
     protected $casts = [
@@ -55,6 +59,7 @@ class EmailCampaign extends Model
         'completed_at' => 'datetime',
         'suspended_at' => 'datetime',
         'archived_at' => 'datetime',
+        'form_unlocked_at' => 'datetime',
     ];
 
     /**
@@ -365,6 +370,55 @@ class EmailCampaign extends Model
         ]);
 
         $this->addToWorkflowHistory('archived', $userId);
+    }
+
+    // ===========================================================
+    // Memo → Forms bridge
+    // ===========================================================
+
+    /** The approver who unlocked the linked form for the requester. */
+    public function formUnlocker(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'form_unlocked_by');
+    }
+
+    /**
+     * Form slugs this memo's category maps to (config/memo_forms.php).
+     * Returns [] for general memos, 'other', or an unmapped category.
+     */
+    public function linkedFormSlugs(): array
+    {
+        if (!$this->memo_category) {
+            return [];
+        }
+        return (array) config("memo_forms.categories.{$this->memo_category}.forms", []);
+    }
+
+    /** Whether this memo's category leads to at least one form. */
+    public function hasLinkedForms(): bool
+    {
+        return !empty($this->linkedFormSlugs());
+    }
+
+    /** Whether an approver has unlocked the linked form for the requester. */
+    public function isFormUnlocked(): bool
+    {
+        return $this->form_unlocked_at !== null;
+    }
+
+    /**
+     * Record that an approver has unlocked the linked form. Decoupled from
+     * memo_status on purpose — approval here never changes the conversation's
+     * completed/archived state.
+     */
+    public function unlockForms(int $userId): void
+    {
+        $this->update([
+            'form_unlocked_at' => now(),
+            'form_unlocked_by' => $userId,
+        ]);
+
+        $this->addToWorkflowHistory('form_unlocked', $userId);
     }
 
     // UIMMS Scopes

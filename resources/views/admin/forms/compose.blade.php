@@ -60,6 +60,18 @@
 
                             <input type="hidden" name="action" id="formActionInput" value="send">
 
+                            {{-- Started from an approved memo: keep the link so the
+                                 submission traces back to that memo. --}}
+                            @if($sourceCampaign ?? null)
+                                <input type="hidden" name="source_campaign" value="{{ $sourceCampaign->id }}">
+                                <div style="display:flex;align-items:center;gap:10px;background:#eef6ff;border:1px solid #bcdcff;border-left:4px solid #1a4a9b;border-radius:10px;padding:12px 14px;margin-bottom:18px;color:#1a3c6b;font-size:13px;">
+                                    <i class="icofont-link" style="font-size:18px;color:#1a4a9b;"></i>
+                                    <span>You're filling this form from your approved memo
+                                        <strong>{{ $sourceCampaign->reference ?? ('#' . $sourceCampaign->id) }}</strong>.
+                                        It will be linked back to that memo automatically.</span>
+                                </div>
+                            @endif
+
                             {{-- ════════════════════════════════════════════════════════
                                  WIZARD STEPPER (only when the form opts in)
                                  ════════════════════════════════════════════════════════ --}}

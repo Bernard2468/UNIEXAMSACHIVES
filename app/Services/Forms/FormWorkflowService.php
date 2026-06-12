@@ -62,6 +62,7 @@ class FormWorkflowService
         array $signatureContext = [],
         ?string $leadershipCategory = null,
         ?int $nextOfficeId = null,
+        ?int $sourceCampaignId = null,
     ): FormSubmission {
         return DB::transaction(function () use (
             $definition,
@@ -72,7 +73,8 @@ class FormWorkflowService
             $nextAssigneeId,
             $signatureContext,
             $leadershipCategory,
-            $nextOfficeId
+            $nextOfficeId,
+            $sourceCampaignId
         ) {
             $firstStage = $definition->firstStage();
 
@@ -83,6 +85,7 @@ class FormWorkflowService
                 'title'       => $this->buildTitle($definition, $requisitionerData),
                 'status'      => FormSubmission::STATUS_DRAFT,
                 'created_by'  => $creator->id,
+                'source_campaign_id' => $sourceCampaignId,
                 'current_stage' => $firstStage->slug,
                 'current_assignee_id' => $creator->id,
                 'current_office_id'   => null,

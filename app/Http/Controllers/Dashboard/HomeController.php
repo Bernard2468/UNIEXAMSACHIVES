@@ -1314,8 +1314,22 @@ class HomeController extends Controller
                 ->select('id', 'first_name', 'last_name', 'email', 'department_id')
                 ->get();
 
-            return view('admin.uimms.chat', compact('memo', 'users', 'canParticipate', 'isAssignedToSomeoneElse'));
-            
+            // Forms this memo's category maps to — drives the "Approve & Unlock"
+            // button (approvers) and the "Proceed to fill form" banner (requester).
+            $linkedForms = [];
+            foreach ($memo->linkedFormSlugs() as $slug) {
+                $def = app(\App\Forms\FormRegistry::class)->find($slug);
+                if ($def) {
+                    $linkedForms[] = (object) [
+                        'slug'  => $def->slug(),
+                        'title' => $def->title(),
+                        'code'  => $def->code(),
+                    ];
+                }
+            }
+
+            return view('admin.uimms.chat', compact('memo', 'users', 'canParticipate', 'isAssignedToSomeoneElse', 'linkedForms'));
+
         } catch (\Exception $e) {
             \Log::error('Error in memoChat: ' . $e->getMessage());
             abort(500, 'Error loading memo chat.');
@@ -1934,6 +1948,99 @@ class HomeController extends Controller
             'success' => true,
             'message' => 'Memo status updated successfully',
             'new_status' => $request->status,
+        ]);
+    }
+
+    /**
+     * Approve & Unlock the form linked to a categorised memo.
+     *
+     * Decoupled from memo_status on purpose (see EmailCampaign::unlockForms):
+     * approving here invites the original requester to proceed to the matching
+     * form; it never changes the conversation's completed/archived state. The
+     * gate mirrors updateMemoStatus() — only the current assignee or an active
+     * participant (the person/office the memo was routed to) may approve.
+     */
+    public function approveFormAccess(EmailCampaign $memo)
+    {
+        $userId = Auth::id();
+
+        if (!$memo->hasLinkedForms()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This memo is not linked to any form.',
+            ], 422);
+        }
+
+        if ($memo->memo_status === 'archived') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This memo is archived and can no longer be approved.',
+            ], 403);
+        }
+
+        if ($memo->isFormUnlocked()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The form has already been unlocked for the requester.',
+            ], 409);
+        }
+
+        $canManageMemo = ($memo->current_assignee_id == $userId) || $memo->isActiveParticipant($userId);
+        if (!$canManageMemo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the current assignee or active participants can approve this memo.',
+            ], 403);
+        }
+
+        // Friendly label for the system message / notification.
+        $registry = app(\App\Forms\FormRegistry::class);
+        $formTitles = collect($memo->linkedFormSlugs())
+            ->map(fn ($slug) => optional($registry->find($slug))->title())
+            ->filter()
+            ->values();
+        $formLabel = $formTitles->count() === 1 ? $formTitles->first() : ($formTitles->count() . ' eligible forms');
+
+        // Persist the unlock (writes form_unlocked_at/by + workflow history).
+        $memo->unlockForms($userId);
+
+        // Loop-closing side effects are best-effort: a failure here must never
+        // undo the approval the approver just performed.
+        try {
+            MemoReply::create([
+                'campaign_id' => $memo->id,
+                'user_id'     => $userId,
+                'message'     => '✅ <em>Request approved — the originator may now proceed to fill the ' . e($formLabel) . '.</em>',
+                'attachments' => [],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('approveFormAccess: system reply failed: ' . $e->getMessage());
+        }
+
+        try {
+            $actor = Auth::user();
+            $actorName = trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? ''));
+            \App\Models\Notification::create([
+                'user_id'  => $memo->created_by,
+                'actor_id' => $userId,
+                'type'     => 'memo',
+                'category' => \App\Models\Notification::CATEGORY_MEMO,
+                'title'    => 'Request Approved — Proceed to Form',
+                'message'  => $actorName . ' approved your memo "' . $memo->subject . '". You can now proceed to fill the ' . $formLabel . '.',
+                'url'      => route('dashboard.uimms.chat', $memo->id),
+                'data'     => [
+                    'memo_id'       => $memo->id,
+                    'memo_category' => $memo->memo_category,
+                    'form_slugs'    => $memo->linkedFormSlugs(),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('approveFormAccess: notification failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Form unlocked for the requester.',
         ]);
     }
 

@@ -122,10 +122,24 @@
                                             @endif
                                         @endif
                                     </div>
+
+                                    {{-- Approve & Unlock Form — only for memos whose type maps to a form.
+                                         Decoupled from memo_status: this never completes/archives the memo. --}}
+                                    @if($memo->hasLinkedForms() && $memo->memo_status !== 'archived')
+                                        @if($memo->isFormUnlocked())
+                                            <span class="btn btn-sm btn-success disabled" title="Form already unlocked for the originator" style="margin-left:6px;">
+                                                <i class="icofont-unlock"></i> Form Unlocked
+                                            </span>
+                                        @elseif($canManageMemo)
+                                            <button class="btn btn-sm" onclick="confirmApproveForm()" style="margin-left:6px;background:#1a4a9b;color:#fff;border:none;">
+                                                <i class="icofont-unlock"></i> Approve &amp; Unlock Form
+                                            </button>
+                                        @endif
+                                    @endif
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {{-- Separator Line --}}
                             <div class="chat-header-separator"></div>
                             
@@ -145,6 +159,40 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- ===== PROCEED-TO-FORM BANNER (originator only, after approval) ===== --}}
+                        @if($memo->isFormUnlocked() && $memo->created_by == auth()->id() && count($linkedForms))
+                        <div class="proceed-form-banner">
+                            <div class="pfb-icon"><i class="icofont-check-circled"></i></div>
+                            <div class="pfb-body">
+                                <div class="pfb-title">Your request has been approved</div>
+                                <div class="pfb-text">
+                                    You can now proceed to fill
+                                    {{ count($linkedForms) === 1 ? 'the form below' : 'one of the forms below' }}.
+                                    @if($memo->formUnlocker)
+                                        <span class="pfb-meta">Approved by {{ $memo->formUnlocker->first_name }} {{ $memo->formUnlocker->last_name }}.</span>
+                                    @endif
+                                </div>
+                                <div class="pfb-actions">
+                                    @foreach($linkedForms as $lf)
+                                        <a class="pfb-btn" href="{{ route('admin.forms.compose', $lf->slug) }}?source_campaign={{ $memo->id }}">
+                                            <i class="icofont-paper"></i> {{ $lf->title }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        <style>
+                            .proceed-form-banner{display:flex;gap:14px;align-items:flex-start;background:linear-gradient(135deg,#e8f5e9,#f1f8f4);border:1px solid #b7e1c1;border-left:5px solid #2e7d32;border-radius:12px;padding:16px 18px;margin:0 0 18px;}
+                            .pfb-icon{flex:0 0 auto;font-size:26px;color:#2e7d32;line-height:1;}
+                            .pfb-title{font-weight:800;color:#1b5e20;font-size:15px;}
+                            .pfb-text{color:#33691e;font-size:13px;margin:2px 0 10px;}
+                            .pfb-meta{color:#558b2f;}
+                            .pfb-actions{display:flex;flex-wrap:wrap;gap:8px;}
+                            .pfb-btn{display:inline-flex;align-items:center;gap:6px;background:#2e7d32;color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:8px 14px;border-radius:8px;transition:background .18s ease;}
+                            .pfb-btn:hover{background:#1b5e20;color:#fff;}
+                        </style>
+                        @endif
 
                         {{-- ===== MEMO DETAILS / FORMAL LETTER ===== --}}
                         @php
@@ -3849,6 +3897,41 @@ function bookmarkMemo() {
         console.error('Error bookmarking memo:', error);
         alert('Error adding memo to Keep in View. Please try again.');
     });
+}
+
+// Approve & unlock the linked form for the originator
+function confirmApproveForm() {
+    confirmAction(
+        'Approve this request and unlock the form for the originator?',
+        function() {
+            const formData = new FormData();
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+            fetch(`/dashboard/uimms/chat/${memoId}/approve-form`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Could not approve. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error approving form access:', error);
+                alert('Error approving. Please try again.');
+            });
+        },
+        null,
+        {
+            title: 'Approve & Unlock Form',
+            type: 'success',
+            confirmText: 'Approve & Unlock',
+            subtitle: 'The originator will be notified that they can now proceed to fill the form. This does not change the memo status.'
+        }
+    );
 }
 
 // Confirmation function for completing memo
