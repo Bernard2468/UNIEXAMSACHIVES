@@ -226,7 +226,11 @@
                                     You can now proceed to fill
                                     {{ count($linkedForms) === 1 ? 'the form below' : 'one of the forms below' }}.
                                     @if($memo->formUnlocker)
-                                        <span class="pfb-meta">Approved by {{ $memo->formUnlocker->first_name }} {{ $memo->formUnlocker->last_name }}.</span>
+                                        @php
+                                            $approverName     = trim($memo->formUnlocker->first_name . ' ' . $memo->formUnlocker->last_name);
+                                            $approverPosition = optional($memo->formUnlocker->position)->name;
+                                        @endphp
+                                        <span class="pfb-meta">Approved by {{ $approverPosition ? $approverPosition . ' — ' . $approverName : $approverName }}</span>
                                     @endif
                                 </div>
                                 <div class="pfb-actions">
@@ -255,9 +259,9 @@
                                 display:flex; align-items:center; justify-content:center;
                                 background:#eef3ff; color:#1a4a9b; font-size:21px;
                             }
-                            .pfb-title{ font-weight:700; color:#0f172a; font-size:16px; letter-spacing:-.01em; }
-                            .pfb-text{ color:#667085; font-size:13.5px; line-height:1.55; margin:3px 0 14px; font-weight:400; }
-                            .pfb-meta{ color:#98a2b3; }
+                            .pfb-title{ font-weight:700; color:#0f172a; font-size:17px; letter-spacing:-.01em; }
+                            .pfb-text{ color:#475569; font-size:15px; line-height:1.6; margin:4px 0 14px; font-weight:400; }
+                            .pfb-meta{ display:block; margin-top:6px; color:#1a4a9b; font-weight:600; font-size:14.5px; }
                             .pfb-actions{ display:flex; flex-wrap:wrap; gap:10px; }
                             .pfb-btn{
                                 display:inline-flex; align-items:center; gap:8px;
