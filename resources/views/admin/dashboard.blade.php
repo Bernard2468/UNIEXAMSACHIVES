@@ -1089,22 +1089,6 @@
                         </div>
                         <p class="message-description">Advanced Security Features Activated</p>
                     </div>
-                    
-                    <div class="message-card security-card">
-                        <div class="message-header">
-                            <div class="message-title">
-                                <div class="message-icon">🔒</div>
-                                Security Verified
-                            </div>
-                            <div class="loading-spinner" id="securitySpinner">
-                                <div class="spinner"></div>
-                            </div>
-                            <div class="checkmark" id="securityCheck" style="display: none;">
-                                <i class="icofont-check"></i>
-                            </div>
-                        </div>
-                        <p class="message-description"><span class="highlight-term">Steganography</span> and <span class="highlight-term">Crypto</span> Features are Activated. All Activities are Safely Guided by the <span class="highlight-term">Meta IronDom</span> Security System</p>
-                    </div>
                 </div>
                 
                 <!-- Continue Section -->
@@ -1710,21 +1694,13 @@ function closeWelcomePopup() {
 function initializeLoginAnimations() {
     const loginSpinner = document.getElementById('loginSpinner');
     const loginCheck = document.getElementById('loginCheck');
-    const securitySpinner = document.getElementById('securitySpinner');
-    const securityCheck = document.getElementById('securityCheck');
-    
-    if (loginSpinner && loginCheck && securitySpinner && securityCheck) {
+
+    if (loginSpinner && loginCheck) {
         // First message completes after 2 seconds
         setTimeout(() => {
             loginSpinner.style.display = 'none';
             loginCheck.style.display = 'flex';
         }, 2000);
-        
-        // Second message completes after 4 seconds (2 seconds after first)
-        setTimeout(() => {
-            securitySpinner.style.display = 'none';
-            securityCheck.style.display = 'flex';
-        }, 4000);
     }
 }
 
