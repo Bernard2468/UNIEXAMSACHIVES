@@ -499,33 +499,21 @@
     }
 
     .message-card {
-        border-radius: 18px;
-        padding: 16px 22px;
+        padding: 4px 0;
         position: relative;
-        overflow: hidden;
-        transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
         min-width: 260px;
     }
 
     .login-card {
-        background: #0d1117;
-        color: #f2f5fa;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06),
-                    0 14px 40px rgba(7, 11, 20, 0.35);
-    }
-
-    .login-card:hover {
-        transform: translateY(-3px);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
-                    0 22px 55px rgba(7, 11, 20, 0.5);
+        background: transparent;
+        color: #111827;
     }
 
     .message-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 12px;
+        gap: 12px;
         min-height: 32px;
     }
 
@@ -540,21 +528,6 @@
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     }
 
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #2dd4bf;
-        flex-shrink: 0;
-        box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.55);
-        animation: statusPulse 2.2s ease-out infinite;
-    }
-
-    @keyframes statusPulse {
-        0% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.5); }
-        70% { box-shadow: 0 0 0 7px rgba(45, 212, 191, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
-    }
 
     .message-icon {
         width: 20px;
@@ -610,8 +583,8 @@
     .spinner {
         width: 20px;
         height: 20px;
-        border: 2px solid rgba(255, 255, 255, 0.12);
-        border-top: 2px solid #ffffff;
+        border: 2px solid rgba(17, 24, 39, 0.15);
+        border-top: 2px solid #111827;
         border-radius: 50%;
         animation: spin 1s linear infinite;
     }
@@ -619,12 +592,12 @@
     .checkmark {
         width: 24px;
         height: 24px;
-        background: #ffffff;
+        background: #111827;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #0d1117;
+        color: #ffffff;
         font-size: 14px;
         animation: checkmarkPop 0.3s ease-out;
         flex-shrink: 0;
@@ -1074,7 +1047,6 @@
                     <div class="message-card login-card">
                         <div class="message-header">
                             <div class="message-title">
-                                <span class="status-dot"></span>
                                 Login Successful
                             </div>
                             <div class="loading-spinner" id="loginSpinner">
@@ -1084,7 +1056,6 @@
                                 <i class="icofont-check"></i>
                             </div>
                         </div>
-                        <p class="message-description">Advanced Security Features Activated</p>
                     </div>
                 </div>
                 
