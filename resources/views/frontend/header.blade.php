@@ -88,13 +88,20 @@
                     <div class="uda-nav-right">
                         @if (Auth::check())
                             @php
-                                // Reversed role terminology (see ROLE_TERMINOLOGY.md):
-                                //   DB 'user' => UI "Admin", DB 'admin' => UI "User".
-                                $roleBadge = match (Auth::user()->role) {
-                                    'super_admin' => ['label' => 'Super Admin', 'class' => 'role-badge--super'],
-                                    'user'        => ['label' => 'Admin',       'class' => 'role-badge--admin'],
-                                    default       => ['label' => 'User',        'class' => 'role-badge--user'],
-                                };
+                                // Drive the badge off `is_admin` (the field the app actually gates on),
+                                // because the `role` column defaults to 'user' and registration never
+                                // sets it — so it's unreliable for telling accounts apart.
+                                // Invariant (see ROLE_TERMINOLOGY.md + role migration):
+                                //   is_admin = 1  -> normal/regular user -> UI "User"
+                                //   is_admin = 0  -> system administrator -> UI "Admin"
+                                //   role 'super_admin' (set explicitly) -> "Super Admin"
+                                if (Auth::user()->role === 'super_admin') {
+                                    $roleBadge = ['label' => 'Super Admin', 'class' => 'role-badge--super'];
+                                } elseif (Auth::user()->is_admin) {
+                                    $roleBadge = ['label' => 'User', 'class' => 'role-badge--user'];
+                                } else {
+                                    $roleBadge = ['label' => 'Admin', 'class' => 'role-badge--admin'];
+                                }
                             @endphp
                             <span class="role-badge {{ $roleBadge['class'] }}" title="Account type: {{ $roleBadge['label'] }}">
                                 <span class="role-badge__dot"></span>
