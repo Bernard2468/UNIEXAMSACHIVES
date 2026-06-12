@@ -223,10 +223,9 @@
     $creatorName = trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? ''));
     if (!$creatorName) $creatorName = $memo->creator->name ?? 'N/A';
 
-    $creatorMeta = collect([
-        optional($memo->creator->position)->name,
-        optional($memo->creator->department)->name,
-    ])->filter()->implode(', ');
+    // Formal memo "From": lead with the sender's office/position, then name.
+    $creatorPosition   = optional($memo->creator->position)->name;
+    $creatorDepartment = optional($memo->creator->department)->name;
 
     // Helper: render a single processed attachment entry
     $renderAttachment = function(array $att) {
@@ -311,7 +310,8 @@
             <td class="fh-label">From</td>
             <td class="fh-colon">:</td>
             <td class="fh-value">
-                {{ $creatorName }}@if($creatorMeta) &mdash; {{ $creatorMeta }}@endif
+                @if($creatorPosition)<strong>{{ $creatorPosition }}</strong> &mdash; @endif{{ $creatorName }}
+                @if($creatorDepartment)<div style="font-size:9pt; color:#555; margin-top:1px;">{{ $creatorDepartment }}</div>@endif
             </td>
         </tr>
         <tr>
