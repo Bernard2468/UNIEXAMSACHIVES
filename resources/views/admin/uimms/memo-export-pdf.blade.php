@@ -224,8 +224,7 @@
     if (!$creatorName) $creatorName = $memo->creator->name ?? 'N/A';
 
     // Formal memo "From": lead with the sender's office/position, then name.
-    $creatorPosition   = optional($memo->creator->position)->name;
-    $creatorDepartment = optional($memo->creator->department)->name;
+    $creatorPosition = optional($memo->creator->position)->name;
 
     // Helper: render a single processed attachment entry
     $renderAttachment = function(array $att) {
@@ -310,8 +309,7 @@
             <td class="fh-label">From</td>
             <td class="fh-colon">:</td>
             <td class="fh-value">
-                @if($creatorPosition)<strong>{{ $creatorPosition }}</strong> &mdash; @endif{{ $creatorName }}
-                @if($creatorDepartment)<div style="font-size:9pt; color:#555; margin-top:1px;">{{ $creatorDepartment }}</div>@endif
+                @if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}
             </td>
         </tr>
         <tr>
