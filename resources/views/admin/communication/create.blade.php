@@ -122,87 +122,8 @@
                                             </div>
                                             {{-- ===== END LETTERHEAD SELECTOR ===== --}}
 
-                                            {{-- ===== MEMO TYPE (optional) ===== --}}
-                                            @php
-                                                $selectedCategory = old('memo_category', '');
-                                                $memoTypes = [
-                                                    'promotion'   => ['label' => 'Promotion Memo',   'icon' => 'icofont-arrow-up',     'desc' => 'Leads to a promotion / renewal form'],
-                                                    'procurement' => ['label' => 'Procurement Memo', 'icon' => 'icofont-cart',         'desc' => 'Leads to a payment / purchase form'],
-                                                    'leave'       => ['label' => 'Leave Memo',        'icon' => 'icofont-beach',        'desc' => 'Leads to a leave application form'],
-                                                    'other'       => ['label' => 'Other',             'icon' => 'icofont-ui-file',      'desc' => 'A specific request without a form'],
-                                                ];
-                                            @endphp
-                                            <div class="form-group">
-                                                <label class="form-label">
-                                                    <i class="icofont-tag"></i> Memo Type
-                                                    <span style="font-weight:500;color:#94a3b8;font-size:12px;">(optional)</span>
-                                                </label>
-                                                <p class="form-help" style="margin-bottom:10px;">
-                                                    Only choose a type if this memo is a request that should lead to a form once approved
-                                                    (e.g. promotion, procurement, leave). Leave it as <strong>General</strong> for an ordinary memo.
-                                                </p>
-                                                <div class="mtype-grid">
-                                                    <label class="mtype-card {{ $selectedCategory === '' ? 'is-active' : '' }}">
-                                                        <input type="radio" name="memo_category" value="" {{ $selectedCategory === '' ? 'checked' : '' }}>
-                                                        <span class="mtype-ic"><i class="icofont-email"></i></span>
-                                                        <span class="mtype-body">
-                                                            <span class="mtype-name">General Memo</span>
-                                                            <span class="mtype-desc">Normal communication — no form</span>
-                                                        </span>
-                                                        <span class="mtype-check"><i class="icofont-check"></i></span>
-                                                    </label>
-                                                    @foreach($memoTypes as $value => $meta)
-                                                        <label class="mtype-card {{ $selectedCategory === $value ? 'is-active' : '' }}">
-                                                            <input type="radio" name="memo_category" value="{{ $value }}" {{ $selectedCategory === $value ? 'checked' : '' }}>
-                                                            <span class="mtype-ic"><i class="{{ $meta['icon'] }}"></i></span>
-                                                            <span class="mtype-body">
-                                                                <span class="mtype-name">{{ $meta['label'] }}</span>
-                                                                <span class="mtype-desc">{{ $meta['desc'] }}</span>
-                                                            </span>
-                                                            <span class="mtype-check"><i class="icofont-check"></i></span>
-                                                        </label>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-
-                                            <style>
-                                                .mtype-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
-                                                .mtype-card {
-                                                    display:flex; align-items:center; gap:10px;
-                                                    border:2px solid #e2e8f0; border-radius:12px; padding:12px 14px;
-                                                    cursor:pointer; background:#fff; position:relative; margin:0;
-                                                    transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-                                                }
-                                                .mtype-card:hover { border-color:#94a3b8; transform:translateY(-1px); }
-                                                .mtype-card.is-active { border-color:#1a4a9b; box-shadow:0 0 0 3px rgba(26,74,155,.12); }
-                                                .mtype-card input { position:absolute; opacity:0; pointer-events:none; }
-                                                .mtype-ic {
-                                                    flex:0 0 38px; width:38px; height:38px; border-radius:9px;
-                                                    background:#eef3ff; color:#1a4a9b;
-                                                    display:flex; align-items:center; justify-content:center; font-size:18px;
-                                                }
-                                                .mtype-card.is-active .mtype-ic { background:#1a4a9b; color:#fff; }
-                                                .mtype-body { display:flex; flex-direction:column; line-height:1.3; }
-                                                .mtype-name { font-weight:700; font-size:14px; color:#1e293b; }
-                                                .mtype-desc { font-size:11.5px; color:#64748b; }
-                                                .mtype-check {
-                                                    margin-left:auto; width:20px; height:20px; border-radius:50%;
-                                                    background:#1a4a9b; color:#fff; display:none;
-                                                    align-items:center; justify-content:center; font-size:11px;
-                                                }
-                                                .mtype-card.is-active .mtype-check { display:flex; }
-                                            </style>
-
-                                            <script>
-                                                document.addEventListener('change', function (e) {
-                                                    if (e.target && e.target.name === 'memo_category') {
-                                                        document.querySelectorAll('.mtype-card').forEach(function (c) {
-                                                            c.classList.toggle('is-active', c.querySelector('input').checked);
-                                                        });
-                                                    }
-                                                });
-                                            </script>
-                                            {{-- ===== END MEMO TYPE ===== --}}
+                                            {{-- Optional memo type (compact radios) — shared partial --}}
+                                            @include('admin.communication.partials.memo-type-selector')
 
                                             <div class="form-group">
                                                 <label for="subject" class="form-label">

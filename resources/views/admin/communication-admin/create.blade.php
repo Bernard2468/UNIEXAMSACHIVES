@@ -122,6 +122,9 @@
                                             </div>
                                             {{-- ===== END LETTERHEAD SELECTOR ===== --}}
 
+                                            {{-- Optional memo type (compact radios) — shared partial --}}
+                                            @include('admin.communication.partials.memo-type-selector')
+
                                             <div class="form-group">
                                                 <label for="subject" class="form-label">
                                                     <i class="icofont-email"></i> Memo Subject

@@ -921,6 +921,12 @@ class AdvanceCommunicationController extends Controller
 
         $isDraft = $request->input('action') === 'draft';
 
+        // "General memo" submits an empty memo_category — treat it as null so the
+        // nullable|in rule passes regardless of middleware config.
+        if ($request->input('memo_category') === '') {
+            $request->merge(['memo_category' => null]);
+        }
+
         $validator = Validator::make($request->all(), [
             'subject' => 'required|string|max:500',
             'message' => 'required|string',
@@ -932,6 +938,7 @@ class AdvanceCommunicationController extends Controller
             }],
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
+            'memo_category' => 'nullable|in:promotion,procurement,leave,other',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,png,gif,zip',
             'send_immediately' => 'boolean',
             'scheduled_at' => $isDraft ? 'nullable|date' : 'nullable|required_if:send_immediately,false|date|after:now',
@@ -981,6 +988,7 @@ class AdvanceCommunicationController extends Controller
             'reference' => $this->generateUniqueReference(),
             'letterhead' => $request->letterhead ?: null,
             'cc_users' => $ccUserIds ?: null,
+            'memo_category' => $request->input('memo_category') ?: null,
         ]);
 
         // If this is a draft, save and return immediately - NO EMAIL PROCESSING
@@ -1260,6 +1268,15 @@ class AdvanceCommunicationController extends Controller
             'scheduled_at' => $isDraft ? null : ($request->scheduled_at ?? now()),
             'total_recipients' => $recipientUsers->count(),
         ]);
+
+        // Preserve / update the optional memo type. Guarded by has() so an edit
+        // submitted without this field never wipes a category set at compose.
+        if ($request->has('memo_category')) {
+            $category = $request->input('memo_category') ?: null;
+            if ($category === null || in_array($category, ['promotion', 'procurement', 'leave', 'other'], true)) {
+                $campaign->update(['memo_category' => $category]);
+            }
+        }
 
         // If this is a draft, save and return immediately - NO EMAIL PROCESSING
         if ($isDraft) {
