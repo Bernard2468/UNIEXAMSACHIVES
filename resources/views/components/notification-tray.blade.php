@@ -638,12 +638,13 @@
             font-weight: 700;
             color: #fff;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            overflow: hidden;
             box-shadow: 0 0 0 2px #fff;
             position: relative;
         }
         .is_dark .nt-avatar { box-shadow: 0 0 0 2px #1f2937; }
-        .nt-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        /* Clip the photo to a circle on the IMG itself (not via overflow:hidden on
+           the avatar) so the corner category pip can overflow outside the avatar. */
+        .nt-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
         /* Deterministic palette for initial-only avatars — H selected by initial */
         .nt-avatar[data-hue="1"]  { background: linear-gradient(135deg, #ef4444, #f97316); }
         .nt-avatar[data-hue="2"]  { background: linear-gradient(135deg, #f59e0b, #eab308); }
