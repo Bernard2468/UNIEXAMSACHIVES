@@ -13,7 +13,7 @@
             'label'  => 'General',
             'tag'    => 'General',
             'title'  => 'General Memo',
-            'desc'   => 'Ordinary communication or announcement. This does not lead to any form — just write your message and send.',
+            'desc'   => 'Ordinary Memo, Communication or Announcement. This does not lead to any form — just write your message and send.',
             'accent' => '#94a3b8',
         ],
         'promotion' => [
