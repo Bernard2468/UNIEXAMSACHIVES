@@ -87,6 +87,19 @@
                     <!-- Right: Auth Buttons & Notifications -->
                     <div class="uda-nav-right">
                         @if (Auth::check())
+                            @php
+                                // Reversed role terminology (see ROLE_TERMINOLOGY.md):
+                                //   DB 'user' => UI "Admin", DB 'admin' => UI "User".
+                                $roleBadge = match (Auth::user()->role) {
+                                    'super_admin' => ['label' => 'Super Admin', 'class' => 'role-badge--super'],
+                                    'user'        => ['label' => 'Admin',       'class' => 'role-badge--admin'],
+                                    default       => ['label' => 'User',        'class' => 'role-badge--user'],
+                                };
+                            @endphp
+                            <span class="role-badge {{ $roleBadge['class'] }}" title="Account type: {{ $roleBadge['label'] }}">
+                                <span class="role-badge__dot"></span>
+                                {{ $roleBadge['label'] }}
+                            </span>
                             @include('components.notification-tray')
                             <a href="{{route('logout')}}" class="uda-btn uda-btn-primary">Logout</a>
                         @else
