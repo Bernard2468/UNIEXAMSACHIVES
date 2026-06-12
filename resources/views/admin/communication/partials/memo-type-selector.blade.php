@@ -93,7 +93,7 @@
     .mtype-radio input:focus-visible { box-shadow:0 0 0 3px rgba(26,74,155,.18); outline:none; }
 
     .mtype-text {
-        font-size:13.5px; font-weight:600; color:#475569;
+        font-size:14.5px; font-weight:600; color:#475569;
         border-bottom:1px dashed #cbd5e1; line-height:1.3;
         transition:color .15s ease, border-color .15s ease;
     }
@@ -103,22 +103,25 @@
     /* ── hover/focus popover (matches the reference card) ── */
     .mtype-pop {
         position:absolute; bottom:calc(100% + 12px); left:50%; transform:translateX(-50%);
-        width:262px; max-width:80vw;
-        background:#1f2430; color:#e7eaf0; border-radius:14px; padding:14px 16px;
+        width:288px; max-width:82vw;
+        background:#1f2430; color:#e7eaf0; border-radius:14px; padding:16px 18px;
         box-shadow:0 18px 42px rgba(15,23,42,.34), 0 4px 12px rgba(15,23,42,.24);
         text-align:left; z-index:60;
         opacity:0; visibility:hidden; pointer-events:none;
         transition:opacity .16s ease, visibility .16s;
     }
+    /* Show on hover, and on keyboard focus only (:focus-visible) — a mouse click
+       on a radio does NOT match :focus-visible, so the tooltip never sticks open
+       after the pointer leaves. */
     .mtype-wrap:hover .mtype-pop,
-    .mtype-wrap:focus-within .mtype-pop { opacity:1; visibility:visible; pointer-events:auto; }
+    .mtype-wrap:has(input:focus-visible) .mtype-pop { opacity:1; visibility:visible; pointer-events:auto; }
 
     .mtype-pop-tag {
-        display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.6px;
+        display:inline-block; font-size:11px; font-weight:800; letter-spacing:.6px;
         text-transform:uppercase; color:#fff; padding:3px 11px; border-radius:20px; margin-bottom:9px;
     }
-    .mtype-pop-title { display:block; font-size:14px; font-weight:800; color:#fff; margin-bottom:5px; }
-    .mtype-pop-desc  { display:block; font-size:12px; line-height:1.55; color:#aeb6c6; }
+    .mtype-pop-title { display:block; font-size:15.5px; font-weight:800; color:#fff; margin-bottom:6px; }
+    .mtype-pop-desc  { display:block; font-size:13.5px; line-height:1.6; color:#b6bdcc; }
 
     .mtype-pop-arrow {
         position:absolute; top:100%; left:50%; transform:translateX(-50%);

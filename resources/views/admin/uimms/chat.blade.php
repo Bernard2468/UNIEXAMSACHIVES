@@ -122,20 +122,6 @@
                                             @endif
                                         @endif
                                     </div>
-
-                                    {{-- Approve & Unlock Form — only for memos whose type maps to a form.
-                                         Decoupled from memo_status: this never completes/archives the memo. --}}
-                                    @if($memo->hasLinkedForms() && $memo->memo_status !== 'archived')
-                                        @if($memo->isFormUnlocked())
-                                            <span class="btn btn-sm btn-success disabled" title="Form already unlocked for the originator" style="margin-left:6px;">
-                                                <i class="icofont-unlock"></i> Form Unlocked
-                                            </span>
-                                        @elseif($canManageMemo)
-                                            <button class="btn btn-sm" onclick="confirmApproveForm()" style="margin-left:6px;background:#1a4a9b;color:#fff;border:none;">
-                                                <i class="icofont-unlock"></i> Approve &amp; Unlock Form
-                                            </button>
-                                        @endif
-                                    @endif
                                     </div>
                                 </div>
                             </div>
@@ -159,6 +145,76 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- ===== APPROVER ACTION BANNER (assignee/approver, before unlock) ===== --}}
+                        @php
+                            $showApproverCta = $memo->hasLinkedForms() && $canManageMemo && !$memo->isFormUnlocked()
+                                && !in_array($memo->memo_status, ['completed', 'archived', 'suspended']);
+                            $initiatorName = trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? '')) ?: 'The originator';
+                        @endphp
+                        @if($showApproverCta)
+                        <div class="approver-cta">
+                            <span class="approver-cta-badge"><i class="icofont-shield-alt"></i> Approval needed</span>
+                            <div class="approver-cta-main">
+                                <div class="approver-cta-title">This request is waiting on you</div>
+                                <div class="approver-cta-text">
+                                    <strong>{{ $initiatorName }}</strong> submitted a
+                                    <strong>{{ ucfirst($memo->memo_category) }}</strong> request. Approving unlocks
+                                    @if(count($linkedForms) === 1)
+                                        the <strong>{{ $linkedForms[0]->title }}</strong> form
+                                    @else
+                                        the matching form
+                                    @endif
+                                    so they can proceed.
+                                </div>
+                            </div>
+                            <button type="button" class="approver-cta-jump" onclick="goToApproveButton()">
+                                <i class="icofont-unlock"></i> Approve &amp; Unlock
+                                <i class="icofont-arrow-down approver-cta-arrow"></i>
+                            </button>
+                        </div>
+                        <style>
+                            .approver-cta{
+                                display:flex; align-items:center; gap:16px;
+                                background:linear-gradient(135deg,#fff7ed,#fffbeb);
+                                border:1px solid #fed7aa; border-left:5px solid #f59e0b;
+                                border-radius:14px; padding:16px 18px; margin:0 0 18px;
+                                box-shadow:0 6px 18px rgba(245,158,11,.10);
+                            }
+                            .approver-cta-badge{
+                                flex:0 0 auto; display:inline-flex; align-items:center; gap:6px;
+                                background:#f59e0b; color:#fff; font-size:11px; font-weight:800;
+                                letter-spacing:.4px; text-transform:uppercase; padding:6px 12px; border-radius:20px;
+                                animation:approverPulse 2s infinite;
+                            }
+                            @keyframes approverPulse{
+                                0%{ box-shadow:0 0 0 0 rgba(245,158,11,.45); }
+                                70%{ box-shadow:0 0 0 10px rgba(245,158,11,0); }
+                                100%{ box-shadow:0 0 0 0 rgba(245,158,11,0); }
+                            }
+                            .approver-cta-main{ flex:1 1 auto; min-width:0; }
+                            .approver-cta-title{ font-weight:800; color:#92400e; font-size:15.5px; margin-bottom:3px; }
+                            .approver-cta-text{ color:#a16207; font-size:13.5px; line-height:1.55; }
+                            .approver-cta-jump{
+                                flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
+                                background:#1a4a9b; color:#fff; border:none; border-radius:10px;
+                                font-weight:700; font-size:13.5px; padding:10px 18px; cursor:pointer;
+                                box-shadow:0 4px 12px rgba(26,74,155,.28); transition:background .15s, transform .15s;
+                            }
+                            .approver-cta-jump:hover{ background:#143a7c; transform:translateY(-1px); }
+                            .approver-cta-arrow{ font-size:14px; opacity:.85; }
+                            @media (max-width:640px){
+                                .approver-cta{ flex-wrap:wrap; }
+                                .approver-cta-jump{ width:100%; justify-content:center; }
+                            }
+                            /* brief highlight when the banner sends focus to the composer button */
+                            .composer-approve-btn.cab-pulse{ animation:cabPulse 1.1s ease 2; }
+                            @keyframes cabPulse{
+                                0%{ box-shadow:0 0 0 0 rgba(26,74,155,.55); }
+                                100%{ box-shadow:0 0 0 14px rgba(26,74,155,0); }
+                            }
+                        </style>
+                        @endif
 
                         {{-- ===== PROCEED-TO-FORM BANNER (originator only, after approval) ===== --}}
                         @if($memo->isFormUnlocked() && $memo->created_by == auth()->id() && count($linkedForms))
@@ -540,7 +596,28 @@
                             <i class="icofont-user"></i>
                             Comment-to
                         </button>
-                        
+
+                        {{-- Approve & Unlock Form — sits at the right of the reply controls.
+                             Only the assignee/approver of a form-linked, not-yet-unlocked memo sees it. --}}
+                        @if($memo->hasLinkedForms() && $canManageMemo && !$memo->isFormUnlocked() && $memo->memo_status !== 'archived')
+                            <button type="button" class="composer-approve-btn" onclick="confirmApproveForm()"
+                                    title="Approve this request and unlock the form for the originator">
+                                <i class="icofont-unlock"></i> Approve &amp; Unlock Form
+                            </button>
+                            <style>
+                                .composer-approve-btn{
+                                    display:inline-flex; align-items:center; gap:7px; margin-left:auto;
+                                    background:#1a4a9b; color:#fff; border:none; border-radius:20px;
+                                    font-size:0.85rem; font-weight:700; padding:8px 16px; cursor:pointer;
+                                    box-shadow:0 2px 8px rgba(26,74,155,.28);
+                                    transition:background .15s ease, transform .15s ease, box-shadow .15s ease;
+                                }
+                                .composer-approve-btn:hover{ background:#143a7c; transform:translateY(-1px); box-shadow:0 4px 14px rgba(26,74,155,.34); }
+                                .composer-approve-btn i{ font-size:0.95rem; }
+                                @media (max-width:600px){ .composer-approve-btn{ margin-left:0; } }
+                            </style>
+                        @endif
+
                         <!-- Inline Recipients Selector (hidden by default) -->
                         <div class="inline-recipients-selector" id="inline-recipients-selector" style="display: none;">
                             <div class="recipients-dropdown">
@@ -3897,6 +3974,20 @@ function bookmarkMemo() {
         console.error('Error bookmarking memo:', error);
         alert('Error adding memo to Keep in View. Please try again.');
     });
+}
+
+// Awareness banner → guide the approver to the Approve button in the reply bar.
+function goToApproveButton() {
+    const btn = document.querySelector('.composer-approve-btn');
+    if (!btn) {
+        // Composer hidden (e.g. status changed) — fall back to approving directly.
+        confirmApproveForm();
+        return;
+    }
+    const target = document.querySelector('.chat-input-container') || btn;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    btn.classList.add('cab-pulse');
+    setTimeout(function () { btn.classList.remove('cab-pulse'); }, 2300);
 }
 
 // Approve & unlock the linked form for the originator
