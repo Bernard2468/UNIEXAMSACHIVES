@@ -638,6 +638,30 @@
                                             font-size: 0.7rem;
                                         }
 
+                                        /* "Approval needed" tag on memos awaiting this user's approval */
+                                        .approval-needed-pill {
+                                            display: inline-flex;
+                                            align-items: center;
+                                            gap: 5px;
+                                            margin: 2px 0 6px;
+                                            padding: 4px 11px;
+                                            border-radius: 20px;
+                                            background: linear-gradient(135deg, #f59e0b, #f97316);
+                                            color: #fff;
+                                            font-size: 0.72rem;
+                                            font-weight: 800;
+                                            letter-spacing: 0.3px;
+                                            text-transform: uppercase;
+                                            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.32);
+                                            animation: approvalPillPulse 2s infinite;
+                                        }
+                                        .approval-needed-pill i { font-size: 0.82rem; }
+                                        @keyframes approvalPillPulse {
+                                            0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45); }
+                                            70%  { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+                                            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                                        }
+
                                         /* Text-based Refresh Button Styling */
                                         .responsive-btn {
                                             display: flex;
@@ -1139,6 +1163,7 @@
                                                                                 </div>
                                                                             </div>
                                                                         </div>
+                                                                        ${memo.awaiting_my_approval ? `<div class="approval-needed-pill"><i class="icofont-shield-alt"></i> Approval needed</div>` : ''}
                                                                         <div class="memo-subject">${memo.subject}</div>
                                                                         <div class="memo-preview">${memo.message ? memo.message.substring(0, 120) : 'No content'}...</div>
                                                                         <div class="memo-footer">

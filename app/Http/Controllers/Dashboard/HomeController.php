@@ -1210,6 +1210,13 @@ class HomeController extends Controller
                     'attachments' => $memo->attachments,
                     'is_bookmarked' => $isBookmarked,
                     'has_new_activity' => $hasNewActivity,
+                    // True when THIS user is the assignee of a form-linked memo
+                    // that hasn't been unlocked yet — drives the list "Approval
+                    // needed" tag. Cheap: no extra query (uses loaded columns).
+                    'awaiting_my_approval' => $memo->hasLinkedForms()
+                        && ! $memo->isFormUnlocked()
+                        && (int) $memo->current_assignee_id === (int) $userId
+                        && ($memo->memo_status ?? 'pending') === 'pending',
                 ];
             });
 
@@ -1833,20 +1840,47 @@ class HomeController extends Controller
             'attachments' => [],
         ]);
 
-        // Create notifications for all new assignees
-        $assignerName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+        // Create notifications for all new assignees. A form-linked memo that
+        // hasn't been unlocked yet gets an action-oriented "approval needed"
+        // notification so the assignee knows they must approve to unlock the
+        // originator's form; everything else keeps the generic assignment note.
+        $assignerName  = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+        $needsApproval = $memo->hasLinkedForms() && ! $memo->isFormUnlocked();
+        $approvalType  = $needsApproval && $memo->memo_category ? ucfirst($memo->memo_category) : '';
+        $initiatorName = $needsApproval
+            ? (trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? '')) ?: 'the originator')
+            : '';
+
         foreach ($assignees as $assignee) {
-            Notification::create([
-                'user_id' => $assignee->id,
-                'type' => 'memo_assigned',
-                'title' => 'Memo Assigned to You',
-                'message' => $assignerName . ' assigned a memo to you: ' . $memo->subject,
-                'url' => route('dashboard.uimms.chat', $memo->id),
-                'data' => [
-                    'memo_id' => $memo->id,
-                    'assigned_by' => $assignerName,
-                ]
-            ]);
+            if ($needsApproval) {
+                Notification::create([
+                    'user_id'  => $assignee->id,
+                    'actor_id' => $userId,
+                    'type'     => 'memo_approval_needed',
+                    'category' => Notification::CATEGORY_MEMO,
+                    'title'    => '⚡ Approval needed to unlock a form',
+                    'message'  => trim($assignerName . ' assigned you a ' . $approvalType . ' request from ' . $initiatorName . '. Approve it to unlock their form: ' . $memo->subject),
+                    'url'      => route('dashboard.uimms.chat', $memo->id),
+                    'data'     => [
+                        'memo_id'           => $memo->id,
+                        'assigned_by'       => $assignerName,
+                        'memo_category'     => $memo->memo_category,
+                        'awaiting_approval' => true,
+                    ],
+                ]);
+            } else {
+                Notification::create([
+                    'user_id' => $assignee->id,
+                    'type' => 'memo_assigned',
+                    'title' => 'Memo Assigned to You',
+                    'message' => $assignerName . ' assigned a memo to you: ' . $memo->subject,
+                    'url' => route('dashboard.uimms.chat', $memo->id),
+                    'data' => [
+                        'memo_id' => $memo->id,
+                        'assigned_by' => $assignerName,
+                    ]
+                ]);
+            }
         }
 
         // Send email notifications
