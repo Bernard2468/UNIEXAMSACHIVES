@@ -177,6 +177,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/uimms/chat/{memo}', [HomeController::class, 'memoChat'])->name('dashboard.uimms.chat');
     Route::post('/dashboard/uimms/chat/{memo}/message', [HomeController::class, 'sendChatMessage'])->name('dashboard.uimms.chat.message');
     Route::post('/dashboard/uimms/chat/{memo}/assign', [HomeController::class, 'assignMemo'])->name('dashboard.uimms.chat.assign');
+    Route::post('/dashboard/uimms/chat/{memo}/forward-through', [HomeController::class, 'forwardThroughMemo'])->name('dashboard.uimms.chat.forward-through');
     Route::post('/dashboard/uimms/chat/{memo}/status', [HomeController::class, 'updateMemoStatus'])->name('dashboard.uimms.chat.status');
     Route::post('/dashboard/uimms/chat/{memo}/approve-form', [HomeController::class, 'approveFormAccess'])->name('dashboard.uimms.chat.approve-form');
     Route::post('/dashboard/uimms/bulk-archive-completed', [HomeController::class, 'bulkArchiveCompleted'])->name('dashboard.uimms.bulkArchiveCompleted');

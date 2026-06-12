@@ -1730,6 +1730,170 @@ class HomeController extends Controller
     }
 
     /**
+     * "Through" forward: the intermediary releases the memo to its real recipients.
+     *
+     * Recipients are LOCKED to what the sender originally addressed (selected_users / cc_users);
+     * the intermediary may only add a remark. This materialises the held recipient rows,
+     * emails them, makes the To recipients active participants and flips through_status
+     * to 'forwarded'. Until this runs, the recipients never saw the memo at all.
+     */
+    public function forwardThroughMemo(Request $request, EmailCampaign $memo)
+    {
+        $userId = Auth::id();
+
+        // Only the named intermediary, and only while it is still awaiting forwarding.
+        if ($memo->through_status !== 'pending' || (int) $memo->through_user_id !== (int) $userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the Through person can forward this memo, and only while it is awaiting forwarding.',
+            ], 403);
+        }
+
+        $request->validate([
+            'message' => 'nullable|string|max:5000',
+        ]);
+
+        // Recipients are locked to the sender's original addressing.
+        $toIds = collect($memo->selected_users ?? [])->map('intval')
+            ->reject(fn ($id) => $id === (int) $userId)->unique()->values()->all();
+        $ccIds = collect($memo->cc_users ?? [])->map('intval')
+            ->reject(fn ($id) => $id === (int) $userId || in_array($id, $toIds, true))->unique()->values()->all();
+
+        $toUsers = $toIds ? User::where('is_approve', true)->whereIn('id', $toIds)->get() : collect();
+        $ccUsers = $ccIds ? User::where('is_approve', true)->whereIn('id', $ccIds)->get() : collect();
+
+        if ($toUsers->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'There are no valid recipients to forward this memo to.',
+            ], 422);
+        }
+
+        $resendService = new ResendMailService();
+
+        // Materialise the primary recipients + make them active participants.
+        // assignToMultiple keeps the intermediary (assigner) active and sets the
+        // recipients as the current holders; new rows default to recipient_role 'to'.
+        $memo->assignToMultiple($toUsers->pluck('id')->toArray(), $userId, null);
+
+        foreach ($toUsers as $user) {
+            $this->sendMemoEmailTo($memo, $user, $resendService, $memo->subject, 'to');
+        }
+
+        // Materialise + email the held Cc recipients (deferred until forward).
+        foreach ($ccUsers as $ccUser) {
+            EmailCampaignRecipient::firstOrCreate([
+                'comm_campaign_id' => $memo->id,
+                'user_id' => $ccUser->id,
+                'recipient_role' => 'cc',
+            ], [
+                'status' => 'pending',
+                'is_active_participant' => false,
+            ]);
+            $this->sendMemoEmailTo($memo, $ccUser, $resendService, '[Cc] ' . $memo->subject, 'cc');
+        }
+
+        // Flip state + record the hand-off.
+        $memo->update(['through_status' => 'forwarded']);
+        $memo->addToWorkflowHistory('through_forwarded', $userId, $toUsers->pluck('id')->implode(','));
+
+        // Post a chat note (visible to the now-active recipients).
+        $names = $toUsers->map(fn ($u) => $u->first_name . ' ' . $u->last_name)->implode(', ');
+        $note = '<em>➡️ Forwarded to ' . e($names) . ' by ' . e(Auth::user()->first_name . ' ' . Auth::user()->last_name) . ' (Through)</em>';
+        if ($request->filled('message')) {
+            $note .= "<div style='margin:8px 0;border-top:1px solid rgba(0,0,0,0.1);width:100%;'></div>" . nl2br(e($request->message));
+        }
+        MemoReply::create([
+            'campaign_id' => $memo->id,
+            'user_id' => $userId,
+            'message' => $note,
+            'attachments' => [],
+        ]);
+
+        // Notify the recipients.
+        $forwarderName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
+        foreach ($toUsers as $recipient) {
+            Notification::create([
+                'user_id' => $recipient->id,
+                'type' => 'memo_assigned',
+                'title' => 'Memo forwarded to you',
+                'message' => $forwarderName . ' forwarded a memo to you: ' . $memo->subject,
+                'url' => route('dashboard.uimms.chat', $memo->id),
+                'data' => [
+                    'memo_id' => $memo->id,
+                    'forwarded_by' => $forwarderName,
+                    'through' => true,
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Memo forwarded to ' . $toUsers->count() . ' recipient(s).',
+        ]);
+    }
+
+    /**
+     * Send a single memo email via Resend and update that recipient row's status.
+     * Shared by the Through-forward flow.
+     */
+    private function sendMemoEmailTo(EmailCampaign $campaign, User $user, ResendMailService $resendService, string $subject, string $role = 'to'): void
+    {
+        try {
+            $htmlContent = view('mails.campaign_simple', [
+                'campaign' => $campaign,
+                'user' => $user,
+                'subject' => $subject,
+                'message' => $campaign->message,
+            ])->render();
+
+            $attachments = [];
+            if ($campaign->attachments && is_array($campaign->attachments)) {
+                foreach ($campaign->attachments as $attachment) {
+                    $filePath = storage_path('app/public/' . $attachment['path']);
+                    if (file_exists($filePath)) {
+                        $fileContent = file_get_contents($filePath);
+                        if ($fileContent !== false) {
+                            $attachments[] = [
+                                'filename' => $attachment['name'],
+                                'content' => base64_encode($fileContent),
+                                'type' => $attachment['type'] ?? mime_content_type($filePath),
+                            ];
+                        }
+                    }
+                }
+            }
+
+            $fromName = $campaign->creator ? trim($campaign->creator->first_name . ' ' . $campaign->creator->last_name) : (config('mail.from.name') ?: 'CUG');
+            $result = $resendService->sendEmail(
+                $user->email,
+                $subject,
+                $htmlContent,
+                config('mail.from.address'),
+                $attachments,
+                0,
+                $fromName
+            );
+
+            EmailCampaignRecipient::where('comm_campaign_id', $campaign->id)
+                ->where('user_id', $user->id)
+                ->where('recipient_role', $role)
+                ->update([
+                    'status' => $result['success'] ? 'sent' : 'failed',
+                    'sent_at' => $result['success'] ? now() : null,
+                    'error_message' => $result['success'] ? null : ('ResendMailService error: ' . ($result['error'] ?? 'Unknown error')),
+                ]);
+
+            usleep(300000);
+        } catch (\Exception $e) {
+            EmailCampaignRecipient::where('comm_campaign_id', $campaign->id)
+                ->where('user_id', $user->id)
+                ->where('recipient_role', $role)
+                ->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Update memo status (complete, suspend, archive)
      */
     public function updateMemoStatus(Request $request, EmailCampaign $memo)

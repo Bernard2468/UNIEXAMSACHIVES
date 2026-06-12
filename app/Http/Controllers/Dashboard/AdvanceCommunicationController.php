@@ -10,6 +10,7 @@ use App\Models\EmailCampaignRecipient;
 use App\Models\User;
 use App\Models\Committee;
 use App\Models\SystemLetterhead;
+use App\Models\Notification;
 use App\Services\ResendMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -142,6 +143,24 @@ class AdvanceCommunicationController extends Controller
             'letterhead' => 'nullable|string|exists:system_letterheads,slug',
             'cc_users' => 'nullable|array',
             'cc_users.*' => 'exists:users,id',
+            // "Through" routing intermediary — only valid in "selected" mode and must not
+            // overlap the To / Cc lists. Everything else stays unchanged when it is absent.
+            'through_user_id' => ['nullable', 'integer', 'exists:users,id', function ($attribute, $value, $fail) use ($request) {
+                if (!$value) {
+                    return;
+                }
+                if ($request->input('recipient_type') !== 'selected') {
+                    $fail('A Through person can only be set when sending to selected users.');
+                    return;
+                }
+                $selected = collect($request->input('selected_users', []))->map('intval');
+                if ($selected->contains((int) $value)) {
+                    $fail('The Through person cannot also be a primary recipient.');
+                }
+                if (collect($request->input('cc_users', []))->map('intval')->contains((int) $value)) {
+                    $fail('The Through person cannot also be a Cc recipient.');
+                }
+            }],
             'send_immediately' => 'boolean',
             'scheduled_at' => $isDraft ? 'nullable|date' : 'nullable|required_if:send_immediately,false|date|after:now',
         ]);
@@ -173,6 +192,12 @@ class AdvanceCommunicationController extends Controller
         $ccUserIds = array_values(array_diff($ccUserIds, $primaryIds));
         $ccUsers = $ccUserIds ? User::whereIn('id', $ccUserIds)->get() : collect();
 
+        // "Through" intermediary (validated above). When set, the memo is delivered
+        // only to this person first; the To/Cc lists are held until they forward it.
+        $throughUser = $request->filled('through_user_id') && $request->input('recipient_type') === 'selected'
+            ? User::where('is_approve', true)->find((int) $request->input('through_user_id'))
+            : null;
+
         // Create campaign
         $campaign = EmailCampaign::create([
             'subject' => $request->subject,
@@ -188,12 +213,27 @@ class AdvanceCommunicationController extends Controller
             'letterhead' => $request->letterhead ?: null,
             'cc_users' => $ccUserIds ?: null,
             'memo_category' => $request->input('memo_category') ?: null,
+            // Through routing: when present, the memo is held with the intermediary.
+            'through_user_id' => $throughUser?->id,
+            'through_status' => $throughUser ? 'pending' : null,
+            'current_assignee_id' => $throughUser?->id,
+            'original_sender_id' => $throughUser ? auth()->id() : null,
+            'memo_status' => $throughUser ? 'pending' : null,
         ]);
 
         // If this is a draft, save and return immediately - NO EMAIL PROCESSING
         if ($isDraft) {
             return redirect()->route('admin.communication.index')
                             ->with('success', 'Memo saved as draft successfully!');
+        }
+
+        // THROUGH ROUTING: deliver to the intermediary only; recipients wait for forward.
+        if ($throughUser) {
+            $this->deliverToThrough($campaign, $throughUser);
+
+            return redirect()->route('admin.communication.index')
+                            ->with('success', "Memo routed to {$throughUser->first_name} {$throughUser->last_name} for review. The recipient(s) will receive it once it is forwarded.")
+                            ->with('memo_delivered', true);
         }
 
         // ONLY EXECUTE EMAIL SENDING LOGIC FOR NON-DRAFT CAMPAIGNS
@@ -531,6 +571,17 @@ class AdvanceCommunicationController extends Controller
 
         if ($campaign->status !== 'draft' && $campaign->status !== 'scheduled') {
             return redirect()->back()->with('error', 'Memo cannot be sent in current status.');
+        }
+
+        // Through-routed memo: deliver to the intermediary only; recipients wait for forward.
+        if ($campaign->through_user_id && $campaign->through_status === 'pending') {
+            $throughUser = User::where('is_approve', true)->find($campaign->through_user_id);
+            if ($throughUser) {
+                $this->deliverToThrough($campaign, $throughUser);
+
+                return redirect()->back()
+                    ->with('success', "Memo routed to {$throughUser->first_name} {$throughUser->last_name} for review. The recipient(s) will receive it once it is forwarded.");
+            }
         }
 
         // Determine recipients based on campaign settings using helper method
@@ -945,6 +996,24 @@ class AdvanceCommunicationController extends Controller
             'letterhead' => 'nullable|string|exists:system_letterheads,slug',
             'cc_users' => 'nullable|array',
             'cc_users.*' => 'exists:users,id',
+            // "Through" routing intermediary — only valid in "selected" mode and must not
+            // overlap the To / Cc lists. Everything else stays unchanged when it is absent.
+            'through_user_id' => ['nullable', 'integer', 'exists:users,id', function ($attribute, $value, $fail) use ($request) {
+                if (!$value) {
+                    return;
+                }
+                if ($request->input('recipient_type') !== 'selected') {
+                    $fail('A Through person can only be set when sending to selected users.');
+                    return;
+                }
+                $selected = collect($request->input('selected_users', []))->map('intval');
+                if ($selected->contains((int) $value)) {
+                    $fail('The Through person cannot also be a primary recipient.');
+                }
+                if (collect($request->input('cc_users', []))->map('intval')->contains((int) $value)) {
+                    $fail('The Through person cannot also be a Cc recipient.');
+                }
+            }],
         ]);
 
         if ($validator->fails()) {
@@ -974,6 +1043,12 @@ class AdvanceCommunicationController extends Controller
         $ccUserIds = array_values(array_diff($ccUserIds, $primaryIds));
         $ccUsers = $ccUserIds ? User::whereIn('id', $ccUserIds)->get() : collect();
 
+        // "Through" intermediary (validated above). When set, the memo is delivered
+        // only to this person first; the To/Cc lists are held until they forward it.
+        $throughUser = $request->filled('through_user_id') && $request->input('recipient_type') === 'selected'
+            ? User::where('is_approve', true)->find((int) $request->input('through_user_id'))
+            : null;
+
         // Create campaign
         $campaign = EmailCampaign::create([
             'subject' => $request->subject,
@@ -989,12 +1064,27 @@ class AdvanceCommunicationController extends Controller
             'letterhead' => $request->letterhead ?: null,
             'cc_users' => $ccUserIds ?: null,
             'memo_category' => $request->input('memo_category') ?: null,
+            // Through routing: when present, the memo is held with the intermediary.
+            'through_user_id' => $throughUser?->id,
+            'through_status' => $throughUser ? 'pending' : null,
+            'current_assignee_id' => $throughUser?->id,
+            'original_sender_id' => $throughUser ? auth()->id() : null,
+            'memo_status' => $throughUser ? 'pending' : null,
         ]);
 
         // If this is a draft, save and return immediately - NO EMAIL PROCESSING
         if ($isDraft) {
             return redirect()->route('admin.communication-admin.index')
                             ->with('success', 'Memo saved as draft successfully!');
+        }
+
+        // THROUGH ROUTING: deliver to the intermediary only; recipients wait for forward.
+        if ($throughUser) {
+            $this->deliverToThrough($campaign, $throughUser);
+
+            return redirect()->route('admin.communication-admin.index')
+                            ->with('success', "Memo routed to {$throughUser->first_name} {$throughUser->last_name} for review. The recipient(s) will receive it once it is forwarded.")
+                            ->with('memo_delivered', true);
         }
 
         // Create primary recipient records
@@ -1485,6 +1575,17 @@ class AdvanceCommunicationController extends Controller
             return redirect()->back()->with('error', 'Memo cannot be sent in current status.');
         }
 
+        // Through-routed memo: deliver to the intermediary only; recipients wait for forward.
+        if ($campaign->through_user_id && $campaign->through_status === 'pending') {
+            $throughUser = User::where('is_approve', true)->find($campaign->through_user_id);
+            if ($throughUser) {
+                $this->deliverToThrough($campaign, $throughUser);
+
+                return redirect()->back()
+                    ->with('success', "Memo routed to {$throughUser->first_name} {$throughUser->last_name} for review. The recipient(s) will receive it once it is forwarded.");
+            }
+        }
+
         $recipientUsers = $this->getRecipientsByType($campaign->recipient_type, $campaign->selected_users);
 
         // Ensure primary recipient records exist (create if draft or missing)
@@ -1738,6 +1839,109 @@ class AdvanceCommunicationController extends Controller
             ->get();
 
         return response()->json($users);
+    }
+
+    /**
+     * Through-routing delivery: only the intermediary gets a recipient row + email now.
+     * The real recipients (selected_users) and any Cc are held on the campaign and
+     * materialised later when the intermediary forwards the memo from the chat
+     * (see HomeController::forwardThroughMemo).
+     */
+    private function deliverToThrough(EmailCampaign $campaign, User $throughUser): void
+    {
+        // The intermediary becomes the sole recipient + active participant for now.
+        EmailCampaignRecipient::firstOrCreate([
+            'comm_campaign_id' => $campaign->id,
+            'user_id' => $throughUser->id,
+            'recipient_role' => 'through',
+        ], [
+            'status' => 'pending',
+            'is_active_participant' => true,
+            'assigned_at' => now(),
+            'last_activity_at' => now(),
+        ]);
+
+        $resendService = new ResendMailService();
+        $subject = '[Through – Action Required] ' . $campaign->subject;
+        $sent = 0;
+        $failed = 0;
+
+        try {
+            $htmlContent = view('mails.campaign_simple', [
+                'campaign' => $campaign,
+                'user' => $throughUser,
+                'subject' => $subject,
+                'message' => $campaign->message,
+            ])->render();
+
+            $attachments = [];
+            if ($campaign->attachments && is_array($campaign->attachments)) {
+                foreach ($campaign->attachments as $attachment) {
+                    $filePath = storage_path('app/public/' . $attachment['path']);
+                    if (file_exists($filePath)) {
+                        $fileContent = file_get_contents($filePath);
+                        if ($fileContent !== false) {
+                            $attachments[] = [
+                                'filename' => $attachment['name'],
+                                'content' => base64_encode($fileContent),
+                                'type' => $attachment['type'] ?? mime_content_type($filePath),
+                            ];
+                        }
+                    }
+                }
+            }
+
+            $fromName = $campaign->creator ? trim($campaign->creator->first_name . ' ' . $campaign->creator->last_name) : (config('mail.from.name') ?: 'CUG');
+            $result = $resendService->sendEmail(
+                $throughUser->email,
+                $subject,
+                $htmlContent,
+                config('mail.from.address'),
+                $attachments,
+                0,
+                $fromName
+            );
+
+            EmailCampaignRecipient::where('comm_campaign_id', $campaign->id)
+                ->where('user_id', $throughUser->id)
+                ->where('recipient_role', 'through')
+                ->update([
+                    'status' => $result['success'] ? 'sent' : 'failed',
+                    'sent_at' => $result['success'] ? now() : null,
+                    'error_message' => $result['success'] ? null : ('ResendMailService error: ' . ($result['error'] ?? 'Unknown error')),
+                ]);
+
+            $result['success'] ? $sent++ : $failed++;
+        } catch (Exception $e) {
+            EmailCampaignRecipient::where('comm_campaign_id', $campaign->id)
+                ->where('user_id', $throughUser->id)
+                ->where('recipient_role', 'through')
+                ->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
+            $failed++;
+        }
+
+        // In-app notification so the intermediary sees the action item immediately.
+        Notification::create([
+            'user_id' => $throughUser->id,
+            'type' => 'memo_through_pending',
+            'title' => 'Memo awaiting your forward',
+            'message' => (auth()->user()->first_name ?? 'Someone') . ' routed a memo through you: ' . $campaign->subject,
+            'url' => route('dashboard.uimms.chat', $campaign->id),
+            'data' => [
+                'memo_id' => $campaign->id,
+                'through' => true,
+            ],
+        ]);
+
+        $campaign->addToWorkflowHistory('through_pending', auth()->id(), $throughUser->id);
+
+        $campaign->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+            'sent_count' => $sent,
+            'failed_count' => $failed,
+            'total_recipients' => is_array($campaign->selected_users) ? count($campaign->selected_users) : 0,
+        ]);
     }
 
     /**

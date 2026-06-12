@@ -63,7 +63,18 @@
                                         $canManageMemo = $isCurrentAssignee || $isActiveParticipant;
                                     @endphp
                                     
-                                    @if(!in_array($memo->memo_status, ['completed', 'archived']) && $canManageMemo)
+                                    @if($memo->isThroughPending())
+                                        {{-- While held with the intermediary, the only routing action is "Forward". --}}
+                                        @if((int) $memo->through_user_id === (int) $userId)
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showForwardThroughModal()">
+                                                <i class="icofont-paper-plane"></i> Forward
+                                            </button>
+                                        @else
+                                            <span class="btn btn-sm btn-outline-primary disabled" title="Awaiting forwarding by the Through person">
+                                                <i class="icofont-clock-time"></i> Awaiting forward
+                                            </span>
+                                        @endif
+                                    @elseif(!in_array($memo->memo_status, ['completed', 'archived']) && $canManageMemo)
                                         <button class="btn btn-sm btn-outline-primary" onclick="showAssignModal()">
                                             <i class="icofont-user"></i> Minute - To
                                         </button>
@@ -145,6 +156,70 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- ===== THROUGH ROUTING BANNER ===== --}}
+                        @if($memo->hasThrough())
+                            @php
+                                $through = $memo->throughUser;
+                                $throughName = $through ? trim($through->first_name.' '.$through->last_name) : 'the intermediary';
+                                $isThroughPerson = (int) $memo->through_user_id === (int) auth()->id();
+                                $throughToNames = !empty($memo->selected_users)
+                                    ? \App\Models\User::whereIn('id', $memo->selected_users)->get()
+                                        ->map(fn($u) => $u->first_name.' '.$u->last_name)->implode(', ')
+                                    : '';
+                            @endphp
+
+                            @if($memo->isThroughPending() && $isThroughPerson)
+                                <div class="through-cta through-cta--action">
+                                    <span class="through-cta-badge"><i class="icofont-share-alt"></i> Through you</span>
+                                    <div class="through-cta-main">
+                                        <div class="through-cta-title">This memo is waiting for you to forward it</div>
+                                        <div class="through-cta-text">
+                                            Addressed to <strong>{{ $throughToNames ?: 'the intended recipient(s)' }}</strong>, routed through you.
+                                            Review it, add a minute if needed, then forward it &mdash; they only receive it after you forward.
+                                        </div>
+                                    </div>
+                                    <button type="button" class="through-cta-btn" onclick="showForwardThroughModal()">
+                                        <i class="icofont-paper-plane"></i> Forward to Recipient(s)
+                                    </button>
+                                </div>
+                            @elseif($memo->isThroughPending())
+                                <div class="through-cta through-cta--wait">
+                                    <span class="through-cta-badge through-cta-badge--wait"><i class="icofont-clock-time"></i> Through</span>
+                                    <div class="through-cta-main">
+                                        <div class="through-cta-title">Awaiting forwarding by {{ $throughName }}</div>
+                                        <div class="through-cta-text">
+                                            Routed through <strong>{{ $throughName }}</strong>. The addressed recipient(s) receive it once {{ $throughName }} forwards it.
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="through-cta through-cta--done">
+                                    <span class="through-cta-badge through-cta-badge--done"><i class="icofont-check-circled"></i> Through</span>
+                                    <div class="through-cta-main">
+                                        <div class="through-cta-text">
+                                            Routed through <strong>{{ $throughName }}</strong> &mdash; forwarded to the addressed recipient(s).
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <style>
+                                .through-cta{ display:flex; align-items:center; gap:16px; border-radius:14px; padding:14px 18px; margin:0 0 18px; }
+                                .through-cta--action{ background:linear-gradient(135deg,#eff6ff,#f0f9ff); border:1px solid #bfdbfe; box-shadow:0 6px 18px rgba(37,99,235,.10); }
+                                .through-cta--wait{ background:linear-gradient(135deg,#fff7ed,#fffbeb); border:1px solid #fed7aa; }
+                                .through-cta--done{ background:#f0fdf4; border:1px solid #bbf7d0; }
+                                .through-cta-badge{ flex:0 0 auto; display:inline-flex; align-items:center; gap:6px; background:#2563eb; color:#fff; font-size:11px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; padding:6px 12px; border-radius:20px; }
+                                .through-cta-badge--wait{ background:#f59e0b; }
+                                .through-cta-badge--done{ background:#16a34a; }
+                                .through-cta-main{ flex:1 1 auto; min-width:0; }
+                                .through-cta-title{ font-weight:800; color:#0f172a; font-size:15px; margin-bottom:2px; }
+                                .through-cta-text{ color:#475569; font-size:13px; line-height:1.5; }
+                                .through-cta-btn{ flex:0 0 auto; display:inline-flex; align-items:center; gap:8px; background:#2563eb; color:#fff; border:0; border-radius:10px; padding:10px 16px; font-weight:700; font-size:13px; cursor:pointer; transition:background .15s; }
+                                .through-cta-btn:hover{ background:#1d4ed8; }
+                                @media (max-width:640px){ .through-cta{ flex-direction:column; align-items:stretch; text-align:left; } }
+                            </style>
+                        @endif
 
                         {{-- ===== APPROVER ACTION BANNER (assignee/approver, before unlock) ===== --}}
                         @php
@@ -283,6 +358,11 @@
                             $letterheadUrl    = $letterheadRecord?->image_url;
                             $ccRecipients = $memo->ccRecipients->load('user');
                             $toRecipients = $memo->recipients->filter(fn($r) => $r->recipient_role === 'to');
+                            // A Through memo still awaiting forward has no 'to' rows yet — fall
+                            // back to the addressed (held) recipients so the header reads correctly.
+                            $throughAddressees = ($memo->hasThrough() && $toRecipients->isEmpty() && !empty($memo->selected_users))
+                                ? \App\Models\User::whereIn('id', $memo->selected_users)->get()
+                                : collect();
                             $isCC = $memo->recipients->where('user_id', auth()->id())->where('recipient_role', 'cc')->isNotEmpty();
                         @endphp
 
@@ -339,11 +419,43 @@
                                                     <span class="fht-overflow">+{{ $toRecipients->count() - 5 }} more</span>
                                                 @endif
                                                 @if($toRecipients->isEmpty())
-                                                    <span class="text-muted">All registered users</span>
+                                                    @if($throughAddressees->isNotEmpty())
+                                                        @foreach($throughAddressees->take(5) as $au)
+                                                            <span class="fht-person">
+                                                                <img src="{{ $au->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                                     alt="{{ $au->first_name }}" class="fht-avatar">
+                                                                {{ $au->first_name }} {{ $au->last_name }}
+                                                            </span>
+                                                        @endforeach
+                                                        @if($throughAddressees->count() > 5)
+                                                            <span class="fht-overflow">+{{ $throughAddressees->count() - 5 }} more</span>
+                                                        @endif
+                                                    @else
+                                                        <span class="text-muted">All registered users</span>
+                                                    @endif
                                                 @endif
                                             </span>
                                         </td>
                                     </tr>
+                                    @if($memo->hasThrough())
+                                    <tr>
+                                        <td class="fht-label">Through:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-recipients">
+                                                <span class="fht-person">
+                                                    <img src="{{ $memo->throughUser?->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                         alt="through" class="fht-avatar">
+                                                    {{ $memo->throughUser ? $memo->throughUser->first_name . ' ' . $memo->throughUser->last_name : '—' }}
+                                                </span>
+                                                @if($memo->isThroughPending())
+                                                    <span class="fht-overflow" style="background:#fef3c7;color:#92400e;">awaiting forward</span>
+                                                @else
+                                                    <span class="fht-overflow" style="background:#dcfce7;color:#166534;">forwarded</span>
+                                                @endif
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endif
                                     @if($ccRecipients->isNotEmpty())
                                     <tr>
                                         <td class="fht-label">Cc:</td>
@@ -840,6 +952,44 @@
         </div>
     </div>
 </div>
+
+{{-- Forward (Through) Modal --}}
+@if($memo->hasThrough())
+<div class="modal fade" id="forwardThroughModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="icofont-paper-plane"></i> Forward Memo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="forward-through-form">
+                @csrf
+                <div class="modal-body">
+                    <p class="text-muted" style="font-size:13px;">
+                        This forwards the memo to the recipient(s) it was originally addressed to
+                        @php
+                            $fwdNames = !empty($memo->selected_users)
+                                ? \App\Models\User::whereIn('id', $memo->selected_users)->get()
+                                    ->map(fn($u) => $u->first_name.' '.$u->last_name)->implode(', ')
+                                : '';
+                        @endphp
+                        @if($fwdNames)<strong>{{ $fwdNames }}</strong>@else the intended recipient(s) @endif.
+                        They receive it now; you remain part of the conversation.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label">Minute / Remark (Optional)</label>
+                        <textarea name="message" class="form-control" rows="3" placeholder="Add a note for the recipient(s)..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="icofont-paper-plane"></i> Forward Now</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Suspend Modal --}}
 <div class="modal fade" id="suspendModal" tabindex="-1">
@@ -3966,6 +4116,45 @@ document.getElementById('assign-form').addEventListener('submit', function(e) {
         alert('Error assigning memo. Please try again.');
     });
 });
+
+// ===== Through forward =====
+function showForwardThroughModal() {
+    const el = document.getElementById('forwardThroughModal');
+    if (el) new bootstrap.Modal(el).show();
+}
+
+const forwardThroughForm = document.getElementById('forward-through-form');
+if (forwardThroughForm) {
+    forwardThroughForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        fetch(`/dashboard/uimms/chat/${memoId}/forward-through`, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('forwardThroughModal'));
+                if (modal) modal.hide();
+                location.reload();
+            } else {
+                if (submitBtn) submitBtn.disabled = false;
+                alert(data.message || 'Error forwarding memo. Please try again.');
+            }
+        })
+        .catch(error => {
+            if (submitBtn) submitBtn.disabled = false;
+            console.error('Error forwarding memo:', error);
+            alert('Error forwarding memo. Please try again.');
+        });
+    });
+}
 
 // Suspend functions
 function showSuspendModal() {

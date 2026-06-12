@@ -30,6 +30,9 @@ class EmailCampaign extends Model
         'reference',
         'letterhead',
         'cc_users',
+        // "Through" routing (intermediary who must forward before recipients receive it)
+        'through_user_id',
+        'through_status',
         // UIMMS fields
         'memo_status',
         'current_assignee_id',
@@ -93,6 +96,32 @@ class EmailCampaign extends Model
     public function originalSender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'original_sender_id');
+    }
+
+    /**
+     * The intermediary this memo is routed through, if any.
+     */
+    public function throughUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'through_user_id');
+    }
+
+    /** Whether this memo is routed through an intermediary. */
+    public function hasThrough(): bool
+    {
+        return $this->through_user_id !== null;
+    }
+
+    /** Whether the intermediary has not yet forwarded the memo to its recipients. */
+    public function isThroughPending(): bool
+    {
+        return $this->through_status === 'pending';
+    }
+
+    /** The "through" recipient row (the intermediary), if materialised. */
+    public function throughRecipients(): HasMany
+    {
+        return $this->hasMany(EmailCampaignRecipient::class, 'comm_campaign_id')->where('recipient_role', 'through');
     }
 
     public function recipients(): HasMany

@@ -94,7 +94,11 @@
       "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\); if \\($php\\) { & php -l app/Http/Controllers/Dashboard/HomeController.php; & php -l routes/web.php } else { \"php not on PATH\" })",
       "Bash(command -v sqlite3)",
       "Bash(sqlite3 database/database.sqlite \"SELECT id, file_path, file_type, file_size FROM system_documentation LIMIT 20;\")",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\); if \\($php\\) { Write-Output \"PHP: $\\($php.Source\\)\"; php -v } else { Write-Output \"php not on PATH\" })",
+      "PowerShell($found = @\\(\\); foreach \\($root in @\\(\"C:\\\\xampp\",\"C:\\\\laragon\",\"C:\\\\php\",\"$env:USERPROFILE\\\\.config\\\\herd\",\"$env:LOCALAPPDATA\\\\Herd\",\"C:\\\\tools\"\\)\\) { if \\(Test-Path $root\\) { $found += Get-ChildItem -Path $root -Recurse -Filter php.exe -ErrorAction SilentlyContinue -Depth 4 | Select-Object -ExpandProperty FullName } }; if \\($found.Count -eq 0\\) { Write-Output \"none found in common roots\" } else { $found })",
+      "PowerShell($found = @\\(\\); foreach \\($root in @\\(\"$env:USERPROFILE\\\\scoop\",\"C:\\\\ProgramData\\\\ComposerSetup\",\"$env:LOCALAPPDATA\\\\Programs\",\"$env:APPDATA\\\\Herd\",\"C:\\\\Program Files\\\\Herd\",\"C:\\\\wamp64\",\"C:\\\\wamp\"\\)\\) { if \\(Test-Path $root\\) { $found += Get-ChildItem -Path $root -Recurse -Filter php.exe -ErrorAction SilentlyContinue -Depth 5 | Select-Object -ExpandProperty FullName } }; if \\($found.Count -eq 0\\) { Write-Output \"still none\" } else { $found | Select-Object -First 10 })",
+      "PowerShell(cmd /c \"where php 2>nul\"; $cands = @\\(\"$env:LOCALAPPDATA\\\\Herd\\\\bin\\\\php.bat\",\"$env:USERPROFILE\\\\.config\\\\herd\\\\bin\\\\php.bat\",\"$env:USERPROFILE\\\\scoop\\\\shims\\\\php.exe\",\"$env:LOCALAPPDATA\\\\Herd\\\\resources\\\\php\"\\); foreach \\($c in $cands\\) { if \\(Test-Path $c\\) { Write-Output \"FOUND: $c\" } }; Get-ChildItem \"$env:LOCALAPPDATA\\\\Herd\" -ErrorAction SilentlyContinue -Recurse -Filter php.exe -Depth 6 | Select-Object -First 3 -ExpandProperty FullName)"
     ],
     "deny": [],
     "additionalDirectories": [

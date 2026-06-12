@@ -466,6 +466,82 @@
                                                 </div>
                                                 {{-- ===== END CC SECTION ===== --}}
 
+                                                {{-- ===== THROUGH SECTION (route via an intermediary) ===== --}}
+                                                {{-- Only meaningful when sending to selected user(s); shown/hidden by syncThroughVisibility(). --}}
+                                                <div id="through-form-group" class="cc-form-group mt-3" style="display:none;">
+                                                    <div class="cc-section-header">
+                                                        <span class="cc-section-label">
+                                                            <i class="icofont-share-alt"></i> Through: (Route via an intermediary)
+                                                        </span>
+                                                        <p class="cc-section-desc">
+                                                            Optional. The memo goes to this person <strong>first</strong>. The selected recipient(s) and any Cc
+                                                            only receive it after this person reviews and forwards it &mdash; e.g. <em>To: Vice-Chancellor, Through: Pro Vice-Chancellor</em>.
+                                                        </p>
+                                                    </div>
+                                                    <div class="cc-toggle-wrap">
+                                                        <button type="button" id="through-toggle-btn" class="cc-toggle-btn" onclick="toggleThroughSection()">
+                                                            <i class="icofont-plus-circle"></i> Set a Through Person
+                                                        </button>
+                                                        <span id="through-count-badge" class="cc-count-badge" style="display:none;"></span>
+                                                        <button type="button" id="through-clear-btn" class="btn btn-sm btn-outline-secondary" style="display:none;" onclick="clearThrough()">
+                                                            <i class="icofont-close-circled"></i> Clear
+                                                        </button>
+                                                    </div>
+
+                                                    <div id="through-section" class="cc-section" style="display:none;">
+                                                        <div class="user-selector-header">
+                                                            <div class="search-container">
+                                                                <div class="search-input-wrapper">
+                                                                    <i class="icofont-search search-icon"></i>
+                                                                    <input type="text" id="through-search"
+                                                                           placeholder="Search by name or email..."
+                                                                           class="search-input" onkeyup="filterThroughList()">
+                                                                </div>
+                                                            </div>
+                                                            <div class="user-stats">
+                                                                <div class="stats-info">Pick <strong>one</strong> person to route through</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="user-list-container">
+                                                            <div class="user-list" id="through-user-list">
+                                                                @foreach($users as $user)
+                                                                    <label class="user-item through-user-item {{ old('through_user_id') == $user->id ? 'is-selected' : '' }}"
+                                                                           data-user-id="{{ $user->id }}"
+                                                                           data-name="{{ $user->first_name }} {{ $user->last_name }}"
+                                                                           data-search="{{ strtolower($user->first_name.' '.$user->last_name.' '.$user->email) }}">
+                                                                        <div class="user-avatar">
+                                                                            @if($user->profile_picture)
+                                                                                <img src="{{ asset('profile_pictures/' . $user->profile_picture) }}" alt="{{ $user->first_name }}" class="avatar-img">
+                                                                            @else
+                                                                                <div class="avatar-placeholder">
+                                                                                    {{ strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)) }}
+                                                                                </div>
+                                                                            @endif
+                                                                        </div>
+                                                                        <div class="user-info">
+                                                                            <div class="user-name">
+                                                                                <span>{{ $user->first_name }} {{ $user->last_name }}</span>
+                                                                                @if($user->position)
+                                                                                    <span class="name-separator">|</span>
+                                                                                    <span class="position-badge-small"><i class="fas fa-briefcase"></i> {{ $user->position->name }}</span>
+                                                                                @endif
+                                                                            </div>
+                                                                            <div class="user-email">{{ $user->email }}</div>
+                                                                        </div>
+                                                                        <div class="user-select-checkbox">
+                                                                            <input type="radio" name="through_user_id" value="{{ $user->id }}"
+                                                                                   class="through-radio"
+                                                                                   {{ old('through_user_id') == $user->id ? 'checked' : '' }}
+                                                                                   onchange="updateThroughSelection()">
+                                                                        </div>
+                                                                    </label>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {{-- ===== END THROUGH SECTION ===== --}}
+
                                                 <!-- Staff Category Cards -->
                                                 <div class="staff-category-section">
                                                     <h6 class="section-title">Staff Categories</h6>
@@ -734,6 +810,12 @@
 .cc-toggle-btn:hover { background:#eef3ff; }
 .cc-count-badge { background:#1a4a9b; color:#fff; border-radius:20px; padding:3px 12px; font-size:12px; font-weight:700; }
 .cc-section { border:1px solid #e2e8f0; border-radius:10px; padding:14px; background:#fafbff; margin-top:8px; }
+
+/* ===== THROUGH SECTION ===== */
+.through-user-item { cursor:pointer; }
+.through-user-item.is-selected { border:2px solid #1a4a9b !important; background:#eef3ff; border-radius:8px; }
+.through-radio { width:18px; height:18px; cursor:pointer; accent-color:#1a4a9b; }
+#through-clear-btn { padding:6px 12px; display:inline-flex; align-items:center; gap:4px; }
 
 /* ===== COMMITTEES COLLAPSE ===== */
 .committees-toggle-btn { width:100%; display:flex; align-items:center; justify-content:space-between; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:14px; font-weight:700; color:#1e293b; transition:background 0.18s, border-color 0.18s; text-align:left; }
@@ -2849,8 +2931,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 modalRecipientsPreview.textContent = categoryLabels[recipientType.value] || recipientType.value;
             }
         }
+
+        // Note when the memo is being routed through an intermediary first.
+        const throughChecked = document.querySelector('.through-radio:checked');
+        if (throughChecked && recipientType && recipientType.value === 'selected') {
+            const tname = throughChecked.closest('.through-user-item')?.getAttribute('data-name') || 'an intermediary';
+            modalRecipientsPreview.textContent += ' — through ' + tname + ' first';
+        }
     }
-    
+
     sendMemoBtn.addEventListener('click', function(e) {
         e.preventDefault();
         updateModalPreview();
@@ -3021,6 +3110,17 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('cc-section').style.display = 'block';
         document.getElementById('cc-toggle-btn').innerHTML = '<i class="icofont-minus-circle"></i> Hide Cc';
     }
+
+    /* ===== THROUGH ===== */
+    document.querySelectorAll('input[name="recipient_type"]').forEach(function (radio) {
+        radio.addEventListener('change', syncThroughVisibility);
+    });
+    syncThroughVisibility();
+    updateThroughSelection();
+    if (document.querySelector('.through-radio:checked')) {
+        document.getElementById('through-section').style.display = 'block';
+        document.getElementById('through-toggle-btn').innerHTML = '<i class="icofont-minus-circle"></i> Hide Through';
+    }
 });
 
 /* ===== CC ===== */
@@ -3046,6 +3146,50 @@ function updateCcCount() {
 }
 function selectAllCc() { document.querySelectorAll('.cc-checkbox').forEach(cb => cb.checked = true); updateCcCount(); }
 function clearAllCc() { document.querySelectorAll('.cc-checkbox').forEach(cb => cb.checked = false); updateCcCount(); }
+
+/* ===== THROUGH ===== */
+function syncThroughVisibility() {
+    const sel = document.querySelector('input[name="recipient_type"]:checked');
+    const isSelected = sel && sel.value === 'selected';
+    const group = document.getElementById('through-form-group');
+    if (!group) return;
+    group.style.display = isSelected ? 'block' : 'none';
+    if (!isSelected) clearThrough();
+}
+function toggleThroughSection() {
+    const sec = document.getElementById('through-section');
+    const btn = document.getElementById('through-toggle-btn');
+    const open = sec.style.display !== 'none';
+    sec.style.display = open ? 'none' : 'block';
+    btn.innerHTML = open ? '<i class="icofont-plus-circle"></i> Set a Through Person' : '<i class="icofont-minus-circle"></i> Hide Through';
+}
+function filterThroughList() {
+    const q = document.getElementById('through-search').value.toLowerCase();
+    document.querySelectorAll('.through-user-item').forEach(function (item) {
+        item.style.display = item.getAttribute('data-search').includes(q) ? '' : 'none';
+    });
+}
+function updateThroughSelection() {
+    const checked = document.querySelector('.through-radio:checked');
+    document.querySelectorAll('.through-user-item').forEach(i => i.classList.remove('is-selected'));
+    const badge = document.getElementById('through-count-badge');
+    const clearBtn = document.getElementById('through-clear-btn');
+    if (!badge || !clearBtn) return;
+    if (checked) {
+        const item = checked.closest('.through-user-item');
+        if (item) item.classList.add('is-selected');
+        badge.textContent = 'Through: ' + (item ? item.getAttribute('data-name') : 'Selected');
+        badge.style.display = 'inline-block';
+        clearBtn.style.display = 'inline-flex';
+    } else {
+        badge.style.display = 'none';
+        clearBtn.style.display = 'none';
+    }
+}
+function clearThrough() {
+    document.querySelectorAll('.through-radio').forEach(r => r.checked = false);
+    updateThroughSelection();
+}
 
 /* ===== COMMITTEES COLLAPSE ===== */
 function toggleCommittees() {
