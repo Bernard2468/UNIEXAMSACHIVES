@@ -480,9 +480,14 @@
                                                         <span class="attachment-size">{{ number_format($attachment['size'] / 1024, 1) }} KB</span>
                                                     </div>
                                                     <div class="attachment-actions">
-                                                        <a href="{{ route('dashboard.uimms.chat.attachment.view', ['memo' => $memo->id, 'index' => $index]) }}"
+                                                        <a href="javascript:void(0)"
                                                            class="attachment-view"
-                                                           target="_blank"
+                                                           data-view-url="{{ route('dashboard.uimms.chat.attachment.view', ['memo' => $memo->id, 'index' => $index]) }}"
+                                                           data-download-url="{{ route('dashboard.uimms.chat.attachment.download', ['memo' => $memo->id, 'index' => $index]) }}"
+                                                           data-name="{{ $attachment['name'] }}"
+                                                           data-size="{{ number_format(($attachment['size'] ?? 0) / 1024, 1) }} KB"
+                                                           data-mime="{{ $attachment['type'] ?? '' }}"
+                                                           onclick="openChatAttachment(this)"
                                                            title="View {{ $attachment['name'] }}">
                                                             <i class="icofont-eye"></i>
                                                         </a>
@@ -566,18 +571,31 @@
                                                         @endphp
                                                         
                                                         @if($isImage)
-                                                            {{-- Image Attachment - Show preview --}}
-                                                            <div class="attachment-image-wrapper" onclick="downloadImage('{{ route('dashboard.uimms.chat.reply.attachment.download', ['reply' => $message->id, 'index' => $index]) }}', '{{ $attachment['name'] }}')">
-                                                                <img src="{{ route('dashboard.uimms.chat.reply.attachment.view', ['reply' => $message->id, 'index' => $index]) }}" 
+                                                            {{-- Image Attachment - click to view in the attachment modal --}}
+                                                            <div class="attachment-image-wrapper"
+                                                                 data-view-url="{{ route('dashboard.uimms.chat.reply.attachment.view', ['reply' => $message->id, 'index' => $index]) }}"
+                                                                 data-download-url="{{ route('dashboard.uimms.chat.reply.attachment.download', ['reply' => $message->id, 'index' => $index]) }}"
+                                                                 data-name="{{ $attachment['name'] }}"
+                                                                 data-size="{{ $fileSize }}"
+                                                                 data-mime="{{ $attachment['type'] ?? '' }}"
+                                                                 onclick="openChatAttachment(this)">
+                                                                <img src="{{ route('dashboard.uimms.chat.reply.attachment.view', ['reply' => $message->id, 'index' => $index]) }}"
                                                                      alt="{{ $attachment['name'] }}"
                                                                      class="attachment-image">
                                                                 <div class="image-overlay">
-                                                                    <i class="icofont-download"></i>
+                                                                    <i class="icofont-eye"></i>
                                                                 </div>
                                                             </div>
                                                         @else
-                                                            {{-- File Attachment - Show file card --}}
-                                                            <div class="attachment-file-card">
+                                                            {{-- File Attachment - click card to view in modal, button to download --}}
+                                                            <div class="attachment-file-card"
+                                                                 style="cursor: pointer;"
+                                                                 data-view-url="{{ route('dashboard.uimms.chat.reply.attachment.view', ['reply' => $message->id, 'index' => $index]) }}"
+                                                                 data-download-url="{{ route('dashboard.uimms.chat.reply.attachment.download', ['reply' => $message->id, 'index' => $index]) }}"
+                                                                 data-name="{{ $attachment['name'] }}"
+                                                                 data-size="{{ $fileSize }}"
+                                                                 data-mime="{{ $attachment['type'] ?? '' }}"
+                                                                 onclick="openChatAttachment(this)">
                                                                 <div class="file-icon">
                                                                     @if($isPdf)
                                                                         <i class="icofont-file-pdf"></i>
@@ -593,9 +611,10 @@
                                                                     <div class="file-name">{{ $attachment['name'] }}</div>
                                                                     <div class="file-size">{{ $fileSize }}</div>
                                                                 </div>
-                                                                <a href="{{ route('dashboard.uimms.chat.reply.attachment.download', ['reply' => $message->id, 'index' => $index]) }}" 
+                                                                <a href="{{ route('dashboard.uimms.chat.reply.attachment.download', ['reply' => $message->id, 'index' => $index]) }}"
                                                                    class="file-download-btn"
-                                                                   title="Download">
+                                                                   title="Download"
+                                                                   onclick="event.stopPropagation();">
                                                                     <i class="icofont-download"></i>
                                                                 </a>
                                                             </div>
@@ -3536,18 +3555,31 @@ function addMessageToChat(message) {
             
             if (isImage) {
                 attachmentsHtml += `
-                    <div class="attachment-image-wrapper" onclick="downloadImage('/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/download', '${attachment.name}')">
+                    <div class="attachment-image-wrapper"
+                         data-view-url="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/view"
+                         data-download-url="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/download"
+                         data-name="${escAttr(attachment.name)}"
+                         data-size="${escAttr(fileSize)}"
+                         data-mime="${escAttr(attachment.type || '')}"
+                         onclick="openChatAttachment(this)">
                         <img src="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/view" 
                              alt="${attachment.name}"
                              class="attachment-image">
                         <div class="image-overlay">
-                            <i class="icofont-download"></i>
+                            <i class="icofont-eye"></i>
                         </div>
                     </div>
                 `;
             } else {
                 attachmentsHtml += `
-                    <div class="attachment-file-card">
+                    <div class="attachment-file-card"
+                         style="cursor:pointer;"
+                         data-view-url="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/view"
+                         data-download-url="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/download"
+                         data-name="${escAttr(attachment.name)}"
+                         data-size="${escAttr(fileSize)}"
+                         data-mime="${escAttr(attachment.type || '')}"
+                         onclick="openChatAttachment(this)">
                         <div class="file-icon">
                             ${isPdf ? '<i class="icofont-file-pdf"></i>' : 
                               isWord ? '<i class="icofont-file-document"></i>' :
@@ -3559,7 +3591,7 @@ function addMessageToChat(message) {
                             <div class="file-size">${fileSize}</div>
                         </div>
                         <a href="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/download" 
-                           class="file-download-btn" title="Download">
+                           class="file-download-btn" title="Download" onclick="event.stopPropagation();">
                             <i class="icofont-download"></i>
                         </a>
                     </div>
@@ -3703,18 +3735,31 @@ function addNewMessageToChat(message) {
             
             if (isImage) {
                 attachmentsHtml += `
-                    <div class="attachment-image-wrapper" onclick="downloadImage('/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/download', '${attachment.name}')">
+                    <div class="attachment-image-wrapper"
+                         data-view-url="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/view"
+                         data-download-url="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/download"
+                         data-name="${escAttr(attachment.name)}"
+                         data-size="${escAttr(fileSize)}"
+                         data-mime="${escAttr(attachment.type || '')}"
+                         onclick="openChatAttachment(this)">
                         <img src="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/view" 
                              alt="${attachment.name}"
                              class="attachment-image">
                         <div class="image-overlay">
-                            <i class="icofont-download"></i>
+                            <i class="icofont-eye"></i>
                         </div>
                     </div>
                 `;
             } else {
                 attachmentsHtml += `
-                    <div class="attachment-file-card">
+                    <div class="attachment-file-card"
+                         style="cursor:pointer;"
+                         data-view-url="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/view"
+                         data-download-url="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/download"
+                         data-name="${escAttr(attachment.name)}"
+                         data-size="${escAttr(fileSize)}"
+                         data-mime="${escAttr(attachment.type || '')}"
+                         onclick="openChatAttachment(this)">
                         <div class="file-icon">
                             ${isPdf ? '<i class="icofont-file-pdf"></i>' : 
                               isWord ? '<i class="icofont-file-document"></i>' :
@@ -3726,7 +3771,7 @@ function addNewMessageToChat(message) {
                             <div class="file-size">${fileSize}</div>
                         </div>
                         <a href="/dashboard/uimms/chat/reply/${message.id}/attachment/${index}/download" 
-                           class="file-download-btn" title="Download">
+                           class="file-download-btn" title="Download" onclick="event.stopPropagation();">
                             <i class="icofont-download"></i>
                         </a>
                     </div>
@@ -4220,6 +4265,36 @@ function playNotificationSound() {
 }
 
 // Download image function
+// Open a chat attachment (image / PDF / document) in the shared attachment-viewer
+// modal — the same premium modal used on the Forms page. The tile carries the
+// inline "view" URL and the "download" URL on data-* attributes; the modal previews
+// the view URL (images in <img>, PDFs in <iframe>) and its Download button uses the
+// download URL. Falls back to opening the view URL in a new tab if the modal is absent.
+function openChatAttachment(el) {
+    const item = {
+        url:         el.dataset.viewUrl,
+        downloadUrl: el.dataset.downloadUrl,
+        name:        el.dataset.name,
+        size:        el.dataset.size,
+        mime:        el.dataset.mime,
+    };
+    if (window.attachmentViewer && item.url) {
+        window.attachmentViewer.openOne(item);
+    } else if (item.url) {
+        window.open(item.url, '_blank');
+    }
+}
+
+// Escape a value for safe use inside an HTML attribute (filenames may contain quotes).
+function escAttr(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function downloadImage(downloadUrl, fileName) {
     console.log('Download function called with:', downloadUrl, fileName);
     

@@ -6,7 +6,11 @@
 
     Exposed JS API (called from any "View" button on the page):
         window.attachmentViewer.open(items, startIndex = 0)
-            items = [{ url, name, size, mime, stage? }, ...]
+            items = [{ url, name, size, mime, stage?, downloadUrl? }, ...]
+            - url:         used for the inline preview (img/iframe). ?inline=1 is appended.
+            - downloadUrl: OPTIONAL. If the preview and download are served by different
+                           endpoints (e.g. the memo chat's .../view vs .../download routes),
+                           set this to the download URL. Falls back to `url` when omitted.
         window.attachmentViewer.openOne(item)
         window.attachmentViewer.close()
 
@@ -343,7 +347,7 @@
         iconEl.className = 'att-viewer__icon att-viewer__icon--' + kind;
         iconEl.innerHTML = iconSvg(kind);
 
-        downloadA.href = item.url;
+        downloadA.href = item.downloadUrl || item.url;
         downloadA.setAttribute('download', item.name || '');
 
         // Reset body
@@ -380,7 +384,7 @@
             '  </div>' +
             '  <h4>' + (msg || 'Preview not available') + '</h4>' +
             '  <p>This file type can\'t be displayed in the browser. Download it to view on your device.</p>' +
-            '  <a href="' + item.url + '" download class="att-viewer__btn att-viewer__btn--download" style="display:inline-flex;">' +
+            '  <a href="' + (item.downloadUrl || item.url) + '" download class="att-viewer__btn att-viewer__btn--download" style="display:inline-flex;">' +
             '    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
             '    <span>Download file</span>' +
             '  </a>' +
