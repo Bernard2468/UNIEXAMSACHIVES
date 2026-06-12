@@ -177,7 +177,7 @@
                             .approver-cta{
                                 display:flex; align-items:center; gap:16px;
                                 background:linear-gradient(135deg,#fff7ed,#fffbeb);
-                                border:1px solid #fed7aa; border-left:5px solid #f59e0b;
+                                border:1px solid #fed7aa;
                                 border-radius:14px; padding:16px 18px; margin:0 0 18px;
                                 box-shadow:0 6px 18px rgba(245,158,11,.10);
                             }
@@ -233,20 +233,42 @@
                                     @foreach($linkedForms as $lf)
                                         <a class="pfb-btn" href="{{ route('admin.forms.compose', $lf->slug) }}?source_campaign={{ $memo->id }}">
                                             <i class="icofont-paper"></i> {{ $lf->title }}
+                                            <i class="icofont-simple-right pfb-btn-arrow"></i>
                                         </a>
                                     @endforeach
                                 </div>
                             </div>
                         </div>
                         <style>
-                            .proceed-form-banner{display:flex;gap:14px;align-items:flex-start;background:linear-gradient(135deg,#e8f5e9,#f1f8f4);border:1px solid #b7e1c1;border-left:5px solid #2e7d32;border-radius:12px;padding:16px 18px;margin:0 0 18px;}
-                            .pfb-icon{flex:0 0 auto;font-size:26px;color:#2e7d32;line-height:1;}
-                            .pfb-title{font-weight:800;color:#1b5e20;font-size:15px;}
-                            .pfb-text{color:#33691e;font-size:13px;margin:2px 0 10px;}
-                            .pfb-meta{color:#558b2f;}
-                            .pfb-actions{display:flex;flex-wrap:wrap;gap:8px;}
-                            .pfb-btn{display:inline-flex;align-items:center;gap:6px;background:#2e7d32;color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:8px 14px;border-radius:8px;transition:background .18s ease;}
-                            .pfb-btn:hover{background:#1b5e20;color:#fff;}
+                            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+                            .proceed-form-banner{
+                                font-family:'Outfit',sans-serif;
+                                display:flex; gap:16px; align-items:flex-start;
+                                background:#ffffff;
+                                border:1px solid #e8eaf0;
+                                border-radius:16px; padding:20px 22px; margin:0 0 18px;
+                                box-shadow:0 10px 30px rgba(16,24,40,.06), 0 2px 6px rgba(16,24,40,.04);
+                            }
+                            .proceed-form-banner *{ font-family:'Outfit',sans-serif; }
+                            .pfb-icon{
+                                flex:0 0 auto; width:42px; height:42px; border-radius:12px;
+                                display:flex; align-items:center; justify-content:center;
+                                background:#eef3ff; color:#1a4a9b; font-size:21px;
+                            }
+                            .pfb-title{ font-weight:700; color:#0f172a; font-size:16px; letter-spacing:-.01em; }
+                            .pfb-text{ color:#667085; font-size:13.5px; line-height:1.55; margin:3px 0 14px; font-weight:400; }
+                            .pfb-meta{ color:#98a2b3; }
+                            .pfb-actions{ display:flex; flex-wrap:wrap; gap:10px; }
+                            .pfb-btn{
+                                display:inline-flex; align-items:center; gap:8px;
+                                background:#1a4a9b; color:#fff; text-decoration:none;
+                                font-weight:600; font-size:13.5px; padding:10px 18px; border-radius:10px;
+                                box-shadow:0 4px 12px rgba(26,74,155,.22);
+                                transition:background .18s ease, transform .18s ease, box-shadow .18s ease;
+                            }
+                            .pfb-btn:hover{ background:#143a7c; color:#fff; transform:translateY(-1px); box-shadow:0 6px 16px rgba(26,74,155,.28); }
+                            .pfb-btn i{ font-size:14px; }
+                            .pfb-btn-arrow{ opacity:.8; margin-left:-2px; }
                         </style>
                         @endif
 
