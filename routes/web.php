@@ -268,6 +268,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/system-documentation/manage/{id}/preview',[\App\Http\Controllers\Dashboard\AdminSystemDocumentationController::class, 'preview'])->name('dashboard.system-documentation.manage.preview');
     Route::get('/dashboard/system-documentation/manage/{id}/download',[\App\Http\Controllers\Dashboard\AdminSystemDocumentationController::class, 'download'])->name('dashboard.system-documentation.manage.download');
 
+    #user manual (regular users - view only)
+    Route::get('/dashboard/user-manual',[\App\Http\Controllers\Dashboard\UserManualController::class, 'index'])->name('dashboard.user-manual');
+    Route::get('/dashboard/user-manual/{id}/preview',[\App\Http\Controllers\Dashboard\UserManualController::class, 'preview'])->name('dashboard.user-manual.preview');
+    Route::get('/dashboard/user-manual/{id}/download',[\App\Http\Controllers\Dashboard\UserManualController::class, 'download'])->name('dashboard.user-manual.download');
+
+    #user manual (admin users - manage) - Only accessible to non-employee users (admins)
+    Route::get('/dashboard/user-manual/manage',[\App\Http\Controllers\Dashboard\AdminUserManualController::class, 'index'])->name('dashboard.user-manual.manage');
+    Route::post('/dashboard/user-manual/manage',[\App\Http\Controllers\Dashboard\AdminUserManualController::class, 'store'])->name('dashboard.user-manual.manage.store');
+    Route::put('/dashboard/user-manual/manage/{id}',[\App\Http\Controllers\Dashboard\AdminUserManualController::class, 'update'])->name('dashboard.user-manual.manage.update');
+    Route::delete('/dashboard/user-manual/manage/{id}',[\App\Http\Controllers\Dashboard\AdminUserManualController::class, 'destroy'])->name('dashboard.user-manual.manage.destroy');
+    Route::get('/dashboard/user-manual/manage/{id}/preview',[\App\Http\Controllers\Dashboard\AdminUserManualController::class, 'preview'])->name('dashboard.user-manual.manage.preview');
+    Route::get('/dashboard/user-manual/manage/{id}/download',[\App\Http\Controllers\Dashboard\AdminUserManualController::class, 'download'])->name('dashboard.user-manual.manage.download');
+
     #users — institutional-admin only. These are sensitive operations (create,
     # approve, delete, change email, change organization/position which drives
     # Forms leadership/VC routing). Gated server-side, not just hidden in the UI,

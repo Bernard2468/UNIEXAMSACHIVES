@@ -466,6 +466,26 @@
                                 University Policies</a>
                         </li>
                     @endunless
+
+                    @unless(auth()->user()->is_admin)
+                        <li>
+                            <a class="{{ request()->routeIs('dashboard.user-manual.manage') ? 'active' : '' }}" href="{{route('dashboard.user-manual.manage')}}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                                User Manual</a>
+                        </li>
+                    @else
+                        <li>
+                            <a class="{{ request()->routeIs('dashboard.user-manual') ? 'active' : '' }}" href="{{route('dashboard.user-manual')}}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                                User Manual</a>
+                        </li>
+                    @endunless
                 @endauth
                 <li>
                     <a class="{{ request()->routeIs('dashboard.settings') ? 'active' : '' }}" href="{{route('dashboard.settings')}}">
