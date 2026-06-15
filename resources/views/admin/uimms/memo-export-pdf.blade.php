@@ -35,19 +35,19 @@
 
         /* ── Meta block (Ref / Date / From / To …) ── */
         .meta { width: 100%; border-collapse: collapse; margin-top: 14px; }
-        .meta td { padding: 3px 0; vertical-align: top; }
+        .meta td { padding: 4px 0; vertical-align: top; }
         .meta .k {
-            width: 96px;
+            width: 92px;
             text-transform: uppercase;
             font-size: 8pt;
             letter-spacing: 0.11em;
             color: #6b7280;
             font-weight: bold;
-            padding-top: 4px;
+            padding-top: 3px;
             white-space: nowrap;
         }
         .meta .v       { color: #111827; font-size: 10.5pt; line-height: 1.5; }
-        .meta .subject { font-weight: bold; font-size: 12pt; color: #16335b; letter-spacing: 0.01em; }
+        .meta .subject { font-weight: bold; color: #16335b; }
         .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
 
         /* ── Section heading (consistent everywhere) ── */
@@ -69,7 +69,7 @@
         .body table th { background: #16335b; color: #fff; padding: 8px 10px; text-align: left; font-weight: bold; border: 1px solid #16335b; }
         .body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; }
 
-        /* ── Correspondence (chat thread) ── */
+        /* ── Minutes (people who minuted on the memo) ── */
         .msg { margin-bottom: 15px; padding-left: 13px; border-left: 2px solid #d8dee7; }
         .msg .who  { font-weight: bold; font-size: 10pt; color: #16335b; }
         .msg .when { font-size: 8.5pt; color: #9ca3af; margin-left: 8px; }
@@ -165,23 +165,24 @@
 
     $memoRef = $memo->reference ?? ('MEMO/' . str_pad($memo->id, 4, '0', STR_PAD_LEFT));
 
-    // Compact, box-free renderer for a single processed attachment.
-    $renderAttachment = function (array $att) {
+    // Inline renderer. Documents converted to annexes are NOT shown here — they are
+    // enumerated once in the Enclosures list and appended at the back. Only genuine
+    // inline content (images, short text) renders inline; a non-converted or missing
+    // file gets a one-line note so it is never silently dropped.
+    $renderInline = function (array $att) {
         switch ($att['type'] ?? '') {
             case 'image':
-                return '<div class="att-image"><img src="' . $att['data'] . '" alt="' . e($att['name']) . '">'
-                     . '<div class="att-cap">' . e($att['name']) . '</div></div>';
+                return '<div class="att-image"><img src="' . $att['data'] . '" alt="' . e($att['name']) . '"></div>';
             case 'text':
                 return '<div class="att-text">' . $att['text'] . '</div>';
             case 'annex':
-                return '<div class="clip">&#128206; <span class="nm">' . e($att['name']) . '</span>'
-                     . ($att['size'] ? ' <span class="sz">(' . e($att['size']) . ')</span>' : '')
-                     . ' <span class="tag">&middot; Annexure ' . (int) ($att['annex_number'] ?? 0) . '</span></div>';
+                return ''; // listed in Enclosures and appended as a full annex
             case 'missing':
                 return '<div class="clip">&#9888; <span class="nm">' . e($att['name']) . '</span> &mdash; file not found on server</div>';
-            default:
+            default: // 'file' — a document that could not be converted/appended
                 return '<div class="clip">&#128206; <span class="nm">' . e($att['name']) . '</span>'
-                     . ($att['size'] ? ' <span class="sz">(' . e($att['size']) . ')</span>' : '') . '</div>';
+                     . ($att['size'] ? ' <span class="sz">(' . e($att['size']) . ')</span>' : '')
+                     . ' <span class="sz">&mdash; available in the system</span></div>';
         }
     };
 @endphp
@@ -210,20 +211,18 @@
         <tr>
             <td class="k">Ref</td>
             <td class="v">{{ $memoRef }}</td>
-            <td class="k" style="width:60px;">Date</td>
-            <td class="v" style="text-align:right;">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</td>
         </tr>
-    </table>
-    <table class="meta" style="margin-top:2px;">
+        <tr>
+            <td class="k">Date</td>
+            <td class="v">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</td>
+        </tr>
         <tr>
             <td class="k">From</td>
             <td class="v">@if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}</td>
         </tr>
         <tr>
             <td class="k">To</td>
-            <td class="v">
-                @forelse($displayToNames as $name){{ $name }}@if(!$loop->last); @endif @empty All Recipients @endforelse
-            </td>
+            <td class="v">@forelse($displayToNames as $name){{ $name }}@if(!$loop->last); @endif @empty All Recipients @endforelse</td>
         </tr>
         @if($throughName)
         <tr>
@@ -251,21 +250,19 @@
         {!! $memo->message ?? '' !!}
     </div>
 
-    {{-- ══ MEMO-LEVEL ATTACHMENTS (images/text inline; documents are listed under Enclosures) ══ --}}
+    {{-- ══ MEMO-LEVEL ATTACHMENTS (inline content only; documents live under Enclosures) ══ --}}
     @php
-        $memoInline = array_filter($processedAttachments, fn($a) => in_array($a['type'] ?? '', ['image', 'text', 'missing'], true));
-        $memoClips  = array_filter($processedAttachments, fn($a) => in_array($a['type'] ?? '', ['annex', 'file'], true));
+        $memoInline = array_filter($processedAttachments, fn($a) => ($a['type'] ?? '') !== 'annex');
     @endphp
-    @if(!empty($memoInline) || !empty($memoClips))
+    @if(!empty($memoInline))
         <div class="sec">Attachments</div>
-        @foreach($memoInline as $att){!! $renderAttachment($att) !!}@endforeach
-        @foreach($memoClips as $att){!! $renderAttachment($att) !!}@endforeach
+        @foreach($memoInline as $att){!! $renderInline($att) !!}@endforeach
     @endif
 
-    {{-- ══ CORRESPONDENCE (chat thread) ══ --}}
-    <div class="sec">Correspondence</div>
+    {{-- ══ MINUTES (officials who minuted on this memo — text only; files are in Enclosures) ══ --}}
+    <div class="sec">Minutes</div>
     @if(empty($processedReplies))
-        <p class="empty-note">No messages have been exchanged in this memo thread.</p>
+        <p class="empty-note">No minutes have been recorded on this memo.</p>
     @else
         @foreach($processedReplies as $item)
         <div class="msg">
@@ -273,9 +270,8 @@
             @if($item['message'])
                 <div class="text">{!! $item['message'] !!}</div>
             @endif
-            @if(!empty($item['attachments']))
-                @foreach($item['attachments'] as $att){!! $renderAttachment($att) !!}@endforeach
-            @endif
+            @php $minInline = array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex'); @endphp
+            @foreach($minInline as $att){!! $renderInline($att) !!}@endforeach
         </div>
         @endforeach
     @endif
