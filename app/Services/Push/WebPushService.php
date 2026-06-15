@@ -89,11 +89,17 @@ class WebPushService
         }
     }
 
-    /** Useful for the subscribe flow to send a "you're connected" test push. */
-    public function sendTest(PushSubscription $sub, string $title = 'Notifications enabled', string $body = 'You will now receive updates from UDTS.'): void
+    /**
+     * Send a "you're connected" test push and REPORT the provider's response.
+     * Returns ['ok' => bool, 'status' => ?int, 'reason' => ?string] so callers
+     * (e.g. push:diagnose) can see whether the push service actually accepted
+     * the message — a 201 means accepted, 403 = bad/stale VAPID key, 404/410 =
+     * dead endpoint (auto-pruned here, same as the main delivery path).
+     */
+    public function sendTest(PushSubscription $sub, string $title = 'Notifications enabled', string $body = 'You will now receive updates from UDTS.'): array
     {
         if (!$this->isConfigured()) {
-            return;
+            return ['ok' => false, 'status' => null, 'reason' => 'web push not configured'];
         }
         try {
             $client = $this->makeClient();
@@ -103,14 +109,29 @@ class WebPushService
                 'authToken'       => $sub->auth_key,
                 'contentEncoding' => $sub->content_encoding ?: 'aesgcm',
             ]);
-            $client->sendOneNotification($subscription, json_encode([
+            $report = $client->sendOneNotification($subscription, json_encode([
                 'title' => $title,
                 'body'  => $body,
                 'url'   => route('home'),
                 'tag'   => 'udts-test-' . $sub->id,
             ]));
+
+            $status = $report->getResponse()?->getStatusCode();
+            $reason = $report->getReason();
+
+            if ($report->isSuccess()) {
+                $sub->forceFill(['last_used_at' => now()])->save();
+                return ['ok' => true, 'status' => $status, 'reason' => null];
+            }
+
+            Log::warning('WebPush test send rejected', ['sub_id' => $sub->id, 'status' => $status, 'reason' => $reason]);
+            if (in_array($status, [404, 410], true)) {
+                $sub->delete();
+            }
+            return ['ok' => false, 'status' => $status, 'reason' => $reason];
         } catch (\Throwable $e) {
             Log::warning('WebPush test send failed', ['err' => $e->getMessage()]);
+            return ['ok' => false, 'status' => null, 'reason' => $e->getMessage()];
         }
     }
 

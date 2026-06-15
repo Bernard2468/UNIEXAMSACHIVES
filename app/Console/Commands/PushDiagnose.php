@@ -82,10 +82,19 @@ class PushDiagnose extends Command
                 return self::SUCCESS;
             }
             foreach ($subs as $sub) {
-                $push->sendTest($sub, 'Test push', 'If you can see this, push delivery is working.');
-                $this->line("  → dispatched test push to subscription #{$sub->id}");
+                $res    = $push->sendTest($sub, 'Test push', 'If you can see this, push delivery is working.');
+                $status = $res['status'] ?? '—';
+                if ($res['ok']) {
+                    $this->info("  → subscription #{$sub->id}: ACCEPTED by push service (HTTP {$status}). It should appear on the device.");
+                } else {
+                    $this->error("  → subscription #{$sub->id}: REJECTED (HTTP {$status}) — {$res['reason']}");
+                }
             }
-            $this->info('Done. Check the device(s). If nothing arrives, watch storage/logs for "WebPush" warnings (likely a 403 = stale VAPID key, or 410 = dead endpoint).');
+            $this->newLine();
+            $this->line('Interpreting the result:');
+            $this->line('  • ACCEPTED (201) but nothing shows  → browser/OS side: browser fully closed, OS notifications off for the browser, or Focus Assist / Do Not Disturb on.');
+            $this->line('  • REJECTED 403                       → VAPID key mismatch (server key ≠ the key the device subscribed with). User must re-subscribe.');
+            $this->line('  • REJECTED 404/410                   → dead endpoint (now auto-pruned). User must re-subscribe.');
         }
 
         return self::SUCCESS;
