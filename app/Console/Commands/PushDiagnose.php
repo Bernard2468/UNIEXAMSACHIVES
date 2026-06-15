@@ -53,12 +53,19 @@ class PushDiagnose extends Command
 
         if ($rows->isNotEmpty()) {
             $this->table(
-                ['User ID', 'Name', 'push_enabled', 'Devices', 'Last used'],
+                ['User ID', 'User', 'push_enabled', 'Devices', 'Last used'],
                 $rows->map(function ($r) {
                     $u = User::find($r->user_id);
+                    // The users table uses first_name/last_name (no `name` column),
+                    // so build a label from those, falling back to email.
+                    $name = $u ? trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) : '';
+                    $label = $u
+                        ? ($name !== '' ? $name : ($u->email ?? ('user #' . $r->user_id)))
+                        : '✗ MISSING (no user row)';
+
                     return [
                         $r->user_id,
-                        $u?->name ?? '(deleted user)',
+                        $label,
                         $u ? (($u->push_enabled ?? true) ? 'yes' : 'NO (toggled off)') : '-',
                         $r->devices,
                         $r->last_used ?: 'never',
