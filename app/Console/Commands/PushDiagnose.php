@@ -28,11 +28,17 @@ class PushDiagnose extends Command
         $pub  = (string) config('services.webpush.vapid_public_key');
         $priv = (string) config('services.webpush.vapid_private_key');
 
+        $libInstalled = class_exists(\Minishlink\WebPush\WebPush::class);
+
         $this->info('Web Push configuration');
+        $this->line('  Library (minishlink/web-push): ' . ($libInstalled ? 'INSTALLED' : 'MISSING — no pushes can be sent'));
         $this->line('  VAPID public key : ' . ($pub !== '' ? substr($pub, 0, 12) . '… (' . strlen($pub) . ' chars)' : 'MISSING'));
         $this->line('  VAPID private key: ' . ($priv !== '' ? 'set (' . strlen($priv) . ' chars)' : 'MISSING'));
         $this->line('  Subject          : ' . config('services.webpush.vapid_subject'));
 
+        if (!$libInstalled) {
+            $this->error('minishlink/web-push is NOT loadable. Run `composer require minishlink/web-push` and COMMIT composer.json + composer.lock so deploys stop removing it.');
+        }
         if ($pub === '' || $priv === '') {
             $this->error('VAPID keys are not fully configured — no pushes will be sent. Set them in .env and run `php artisan config:cache`.');
         }
