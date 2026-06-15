@@ -363,6 +363,12 @@
                             $throughAddressees = ($memo->hasThrough() && $toRecipients->isEmpty() && !empty($memo->selected_users))
                                 ? \App\Models\User::whereIn('id', $memo->selected_users)->get()
                                 : collect();
+                            // Held Cc list: while a Through memo is awaiting forward the real Cc rows
+                            // don't exist yet, so fall back to the declared cc_users so the Through
+                            // person (and everyone) can see who was copied.
+                            $ccAddressees = ($memo->hasThrough() && $ccRecipients->isEmpty() && !empty($memo->cc_users))
+                                ? \App\Models\User::whereIn('id', $memo->cc_users)->get()
+                                : collect();
                             $isCC = $memo->recipients->where('user_id', auth()->id())->where('recipient_role', 'cc')->isNotEmpty();
                         @endphp
 
@@ -456,18 +462,28 @@
                                         </td>
                                     </tr>
                                     @endif
-                                    @if($ccRecipients->isNotEmpty())
+                                    @if($ccRecipients->isNotEmpty() || $ccAddressees->isNotEmpty())
                                     <tr>
                                         <td class="fht-label">Cc:</td>
                                         <td class="fht-value" colspan="3">
                                             <span class="fht-recipients">
-                                                @foreach($ccRecipients as $ccR)
-                                                    <span class="fht-person fht-cc-person">
-                                                        <img src="{{ $ccR->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                             alt="{{ $ccR->user->first_name }}" class="fht-avatar">
-                                                        {{ $ccR->user->first_name }} {{ $ccR->user->last_name }}
-                                                    </span>
-                                                @endforeach
+                                                @if($ccRecipients->isNotEmpty())
+                                                    @foreach($ccRecipients as $ccR)
+                                                        <span class="fht-person fht-cc-person">
+                                                            <img src="{{ $ccR->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                                 alt="{{ $ccR->user->first_name }}" class="fht-avatar">
+                                                            {{ $ccR->user->first_name }} {{ $ccR->user->last_name }}
+                                                        </span>
+                                                    @endforeach
+                                                @else
+                                                    @foreach($ccAddressees as $ccU)
+                                                        <span class="fht-person fht-cc-person">
+                                                            <img src="{{ $ccU->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                                 alt="{{ $ccU->first_name }}" class="fht-avatar">
+                                                            {{ $ccU->first_name }} {{ $ccU->last_name }}
+                                                        </span>
+                                                    @endforeach
+                                                @endif
                                             </span>
                                         </td>
                                     </tr>
@@ -534,18 +550,49 @@
                                         </span>
                                     </div>
 
+                                    {{-- Through row (plain mode) --}}
+                                    @if($memo->hasThrough())
+                                    <div class="memo-detail-item-inline">
+                                        <label>Through:</label>
+                                        <span class="memo-assignee">
+                                            @if($memo->throughUser)
+                                                <img src="{{ $memo->throughUser->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                     alt="{{ $memo->throughUser->first_name }}" class="assignee-avatar">
+                                                {{ $memo->throughUser->first_name }} {{ $memo->throughUser->last_name }}
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                            @if($memo->isThroughPending())
+                                                <span class="text-muted">(awaiting forward)</span>
+                                            @else
+                                                <span class="text-muted">(forwarded)</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    @endif
+
                                     {{-- CC row (plain mode) --}}
-                                    @if($ccRecipients->isNotEmpty())
+                                    @if($ccRecipients->isNotEmpty() || $ccAddressees->isNotEmpty())
                                     <div class="memo-detail-item-inline cc-inline-row">
                                         <label>Cc:</label>
                                         <span class="cc-inline-list">
-                                            @foreach($ccRecipients as $ccR)
-                                                <span class="cc-chip">
-                                                    <img src="{{ $ccR->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                         alt="{{ $ccR->user->first_name }}" class="cc-chip-avatar">
-                                                    {{ $ccR->user->first_name }} {{ $ccR->user->last_name }}
-                                                </span>
-                                            @endforeach
+                                            @if($ccRecipients->isNotEmpty())
+                                                @foreach($ccRecipients as $ccR)
+                                                    <span class="cc-chip">
+                                                        <img src="{{ $ccR->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                             alt="{{ $ccR->user->first_name }}" class="cc-chip-avatar">
+                                                        {{ $ccR->user->first_name }} {{ $ccR->user->last_name }}
+                                                    </span>
+                                                @endforeach
+                                            @else
+                                                @foreach($ccAddressees as $ccU)
+                                                    <span class="cc-chip">
+                                                        <img src="{{ $ccU->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                             alt="{{ $ccU->first_name }}" class="cc-chip-avatar">
+                                                        {{ $ccU->first_name }} {{ $ccU->last_name }}
+                                                    </span>
+                                                @endforeach
+                                            @endif
                                         </span>
                                     </div>
                                     @endif

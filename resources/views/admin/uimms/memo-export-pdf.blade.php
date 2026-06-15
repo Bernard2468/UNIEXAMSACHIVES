@@ -215,10 +215,40 @@
 <body>
 
 @php
-    $displayTo = $toRecipients->isNotEmpty()
-        ? $toRecipients
-        : $memo->recipients->filter(fn($r) => ($r->recipient_role ?? 'to') !== 'cc');
-    $displayCc = $ccRecipients;
+    // Name helper (handles null user / missing names).
+    $personName = function ($u) {
+        if (!$u) return 'Unknown';
+        $n = trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? ''));
+        return $n !== '' ? $n : ($u->name ?? $u->email ?? 'Unknown');
+    };
+
+    // While a Through memo is awaiting forward, the real To/Cc rows don't exist yet —
+    // fall back to the addressed (held) lists so the printout still reads correctly.
+    $throughToHeld = ($memo->hasThrough() && $toRecipients->isEmpty() && !empty($memo->selected_users))
+        ? \App\Models\User::whereIn('id', $memo->selected_users)->get()
+        : collect();
+    $throughCcHeld = ($memo->hasThrough() && $ccRecipients->isEmpty() && !empty($memo->cc_users))
+        ? \App\Models\User::whereIn('id', $memo->cc_users)->get()
+        : collect();
+
+    if ($throughToHeld->isNotEmpty()) {
+        $displayToNames = $throughToHeld->map($personName);
+    } elseif ($toRecipients->isNotEmpty()) {
+        $displayToNames = $toRecipients->map(fn($r) => $personName($r->user));
+    } else {
+        // Exclude the intermediary ('through') and Cc rows from the "To" line.
+        $displayToNames = $memo->recipients
+            ->filter(fn($r) => !in_array($r->recipient_role ?? 'to', ['cc', 'through'], true))
+            ->map(fn($r) => $personName($r->user));
+    }
+
+    $displayCcNames = $throughCcHeld->isNotEmpty()
+        ? $throughCcHeld->map($personName)
+        : $ccRecipients->map(fn($r) => $personName($r->user));
+
+    $throughName = $memo->hasThrough()
+        ? ($memo->throughUser ? $personName($memo->throughUser) : '—')
+        : null;
 
     $creatorName = trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? ''));
     if (!$creatorName) $creatorName = $memo->creator->name ?? 'N/A';
@@ -294,28 +324,29 @@
             <td class="fh-label">To</td>
             <td class="fh-colon">:</td>
             <td class="fh-value">
-                @forelse($displayTo as $r)
-                    @php
-                        $rName = trim(($r->user->first_name ?? '') . ' ' . ($r->user->last_name ?? ''));
-                        if (!$rName) $rName = $r->user->name ?? $r->email ?? 'Unknown';
-                    @endphp
-                    {{ $rName }}@if(!$loop->last); @endif
+                @forelse($displayToNames as $name)
+                    {{ $name }}@if(!$loop->last); @endif
                 @empty
                     All Recipients
                 @endforelse
             </td>
         </tr>
-        @if($displayCc->isNotEmpty())
+        @if($throughName)
+        <tr>
+            <td class="fh-label">Through</td>
+            <td class="fh-colon">:</td>
+            <td class="fh-value">
+                {{ $throughName }}@if($memo->isThroughPending()) &nbsp;(awaiting forward)@else &nbsp;(forwarded)@endif
+            </td>
+        </tr>
+        @endif
+        @if($displayCcNames->isNotEmpty())
         <tr>
             <td class="fh-label">Cc</td>
             <td class="fh-colon">:</td>
             <td class="fh-value">
-                @foreach($displayCc as $r)
-                    @php
-                        $ccName = trim(($r->user->first_name ?? '') . ' ' . ($r->user->last_name ?? ''));
-                        if (!$ccName) $ccName = $r->user->name ?? $r->email ?? 'Unknown';
-                    @endphp
-                    {{ $ccName }}@if(!$loop->last); @endif
+                @foreach($displayCcNames as $name)
+                    {{ $name }}@if(!$loop->last); @endif
                 @endforeach
             </td>
         </tr>
