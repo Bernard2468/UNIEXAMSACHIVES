@@ -1495,21 +1495,46 @@ class HomeController extends Controller
             return $pdf->stream($filename);
         }
 
-        // Merge the memo PDF with each converted attachment into one file. On any
-        // failure, fall back to streaming the memo PDF alone so export never breaks.
-        $memoTmp = null;
+        // Merge the memo PDF with a branded divider sheet + the converted document for
+        // each annex, in order. On any failure, fall back to streaming the memo PDF
+        // alone so export never breaks.
+        $memoRef   = $memo->reference ?? ('MEMO/' . str_pad($memo->id, 4, '0', STR_PAD_LEFT));
+        $tempFiles = [];   // files we created here and must clean up (NOT the cached annex PDFs)
         try {
             $tmpDir = storage_path('app/adobe-tmp');
             if (!is_dir($tmpDir)) {
                 @mkdir($tmpDir, 0775, true);
             }
+
             $memoTmp = $tmpDir . '/memo-' . $memo->id . '-' . uniqid() . '.pdf';
             file_put_contents($memoTmp, $pdf->output());
+            $tempFiles[] = $memoTmp;
 
-            $paths  = array_merge([$memoTmp], array_column($annexes, 'path'));
-            $merged = $adobe->combine($paths);
+            // Build the merge order: [ memo, divider 1, annex 1, divider 2, annex 2, … ]
+            $mergeOrder = [$memoTmp];
+            foreach ($annexes as $annex) {
+                $divider = Pdf::loadView('admin.uimms.annex-divider', [
+                    'number'           => $annex['number'],
+                    'name'             => $annex['name'],
+                    'label'            => $annex['label'],
+                    'memoRef'          => $memoRef,
+                    'letterheadBase64' => $letterheadBase64,
+                    'hasLetterhead'    => (bool) $letterheadRecord,
+                ])->setPaper('a4', 'portrait');
 
-            @unlink($memoTmp);
+                $divTmp = $tmpDir . '/annex-' . $memo->id . '-' . $annex['number'] . '-' . uniqid() . '.pdf';
+                file_put_contents($divTmp, $divider->output());
+                $tempFiles[]  = $divTmp;
+
+                $mergeOrder[] = $divTmp;
+                $mergeOrder[] = $annex['path'];
+            }
+
+            $merged = $adobe->combine($mergeOrder);
+
+            foreach ($tempFiles as $t) {
+                @unlink($t);
+            }
 
             return response($merged, 200, [
                 'Content-Type'        => 'application/pdf',
@@ -1517,8 +1542,10 @@ class HomeController extends Controller
             ]);
         } catch (\Throwable $e) {
             \Log::error('Memo export merge failed for memo ' . $memo->id . ': ' . $e->getMessage());
-            if ($memoTmp && file_exists($memoTmp)) {
-                @unlink($memoTmp);
+            foreach ($tempFiles as $t) {
+                if (file_exists($t)) {
+                    @unlink($t);
+                }
             }
             return $pdf->stream($filename);
         }

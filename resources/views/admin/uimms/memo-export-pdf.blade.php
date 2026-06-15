@@ -8,9 +8,9 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: DejaVu Sans, Arial, sans-serif;
+            font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
             font-size: 11pt;
-            color: #1a1a1a;
+            color: #1f2937;
             background: #fff;
         }
 
@@ -19,196 +19,106 @@
         .letterhead-img  { width: 100%; height: auto; display: block; }
 
         /* ── Page wrapper ── */
-        .page-body { padding: 24px 40px 40px 40px; }
+        .page-body { padding: 20px 46px 40px 46px; }
 
-        /* ── Formal header table ── */
-        .formal-header { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
-        .formal-header td {
-            padding: 6px 8px;
-            vertical-align: top;
-            font-size: 10.5pt;
-            border-bottom: 1px solid #e5e5e5;
+        /* ── Masthead ── */
+        .masthead { text-align: center; padding: 14px 0 4px; }
+        .masthead .title {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #16335b;
+            letter-spacing: 0.42em;
+            text-indent: 0.42em; /* re-centre after trailing letter-spacing */
         }
-        .fh-label         { font-weight: bold; color: #374151; width: 90px; white-space: nowrap; }
-        .fh-colon         { width: 10px; color: #374151; font-weight: bold; }
-        .fh-value         { color: #111827; }
-        .fh-subject-value { color: #111827; font-weight: bold; font-size: 11pt; }
+        .rule-strong { border: none; border-top: 2px solid #16335b; margin: 10px 0 1px; }
+        .rule-hair   { border: none; border-top: 0.6px solid #c7d0db; margin: 0; }
 
-        /* ── Divider ── */
-        .formal-divider { border: none; border-top: 2.5px solid #1e3a5f; margin: 18px 0 20px 0; }
-        .section-divider { border: none; border-top: 1.5px solid #d1d5db; margin: 28px 0 20px 0; }
+        /* ── Meta block (Ref / Date / From / To …) ── */
+        .meta { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        .meta td { padding: 3px 0; vertical-align: top; }
+        .meta .k {
+            width: 96px;
+            text-transform: uppercase;
+            font-size: 8pt;
+            letter-spacing: 0.11em;
+            color: #6b7280;
+            font-weight: bold;
+            padding-top: 4px;
+            white-space: nowrap;
+        }
+        .meta .v       { color: #111827; font-size: 10.5pt; line-height: 1.5; }
+        .meta .subject { font-weight: bold; font-size: 12pt; color: #16335b; letter-spacing: 0.01em; }
+        .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
+
+        /* ── Section heading (consistent everywhere) ── */
+        .sec {
+            font-size: 8.5pt;
+            font-weight: bold;
+            color: #16335b;
+            text-transform: uppercase;
+            letter-spacing: 0.13em;
+            border-bottom: 1px solid #16335b;
+            padding-bottom: 4px;
+            margin: 26px 0 14px;
+        }
 
         /* ── Memo body ── */
-        .memo-body          { line-height: 1.7; font-size: 11pt; color: #111827; text-align: justify; }
-        .memo-body p        { margin-bottom: 10px; }
-        .memo-body table    { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 10.5pt; }
-        .memo-body table th { background: #1e3a5f; color: #fff; padding: 8px 10px; text-align: left; font-weight: bold; border: 1px solid #1e3a5f; }
-        .memo-body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; }
+        .body          { font-size: 11pt; line-height: 1.75; color: #1f2937; text-align: justify; }
+        .body p        { margin-bottom: 10px; }
+        .body table    { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 10.5pt; }
+        .body table th { background: #16335b; color: #fff; padding: 8px 10px; text-align: left; font-weight: bold; border: 1px solid #16335b; }
+        .body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; }
 
-        /* ── Section heading ── */
-        .section-heading {
-            font-size: 9.5pt;
-            font-weight: bold;
-            color: #1e3a5f;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            margin-bottom: 14px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #1e3a5f;
-        }
+        /* ── Correspondence (chat thread) ── */
+        .msg { margin-bottom: 15px; padding-left: 13px; border-left: 2px solid #d8dee7; }
+        .msg .who  { font-weight: bold; font-size: 10pt; color: #16335b; }
+        .msg .when { font-size: 8.5pt; color: #9ca3af; margin-left: 8px; }
+        .msg .text { font-size: 10.5pt; line-height: 1.6; color: #1f2937; margin-top: 3px; }
+        .msg .text p { margin-bottom: 6px; }
+        .empty-note { font-size: 10pt; color: #9ca3af; font-style: italic; }
 
-        /* ── Attachments ── */
-        .attachments-section { margin-top: 28px; }
-        .attachment-item {
-            margin-bottom: 18px;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .attachment-header {
-            background: #f3f4f6;
-            padding: 7px 12px;
-            font-size: 9.5pt;
+        /* ── Inline attachments (compact, no boxes) ── */
+        .att-image { text-align: center; margin: 12px 0; }
+        .att-image img { max-width: 88%; max-height: 360px; border: 1px solid #e5e7eb; }
+        .att-cap { font-size: 8pt; color: #9ca3af; margin-top: 4px; }
+        .att-text {
+            font-family: 'DejaVu Sans Mono', 'Courier New', monospace;
+            font-size: 8.5pt;
             color: #374151;
-        }
-        .attachment-name { font-weight: bold; color: #111827; }
-        .attachment-size { color: #6b7280; font-size: 8.5pt; }
-        .attachment-body { padding: 10px 12px; }
-        .attachment-image {
-            max-width: 100%;
-            max-height: 400px;
-            display: block;
-        }
-        .attachment-text {
-            font-family: DejaVu Sans Mono, Courier New, monospace;
-            font-size: 9pt;
-            color: #1f2937;
+            background: #f8fafc;
+            border-left: 2px solid #d8dee7;
+            padding: 9px 11px;
             white-space: pre-wrap;
             word-break: break-word;
-            line-height: 1.5;
-            background: #f9fafb;
-            padding: 8px;
-            border: 1px solid #e5e7eb;
+            line-height: 1.55;
+            margin: 9px 0;
         }
-        .attachment-pdf-text {
-            font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 9.5pt;
-            color: #1f2937;
-            white-space: pre-wrap;
-            word-break: break-word;
-            line-height: 1.65;
-            background: #fffdf5;
-            padding: 10px 12px;
-            border: 1px solid #fde68a;
-        }
-        .attachment-unavailable {
-            font-size: 9.5pt;
-            color: #6b7280;
-            font-style: italic;
-            padding: 4px 0;
-        }
-        .merged-ref-note {
-            font-size: 9.5pt;
-            color: #166534;
-            background: #f0fdf4;
-            border-left: 3px solid #22c55e;
-            padding: 6px 10px;
-            margin-top: 4px;
-        }
-        .appended-section {
-            margin-top: 32px;
-            padding: 14px 18px;
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            border-radius: 4px;
-        }
-        .appended-section-title {
-            font-size: 10pt;
-            font-weight: bold;
-            color: #92400e;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        .appended-list {
-            font-size: 9.5pt;
-            color: #1f2937;
-            margin: 0;
-            padding-left: 20px;
-        }
-        .appended-list li { margin-bottom: 4px; }
-        .pdf-label {
-            font-size: 9.5pt;
-            color: #1e40af;
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
-        /* ── Formatted Word / HTML document content ── */
-        .doc-html-content {
-            font-family: DejaVu Sans, Arial, sans-serif;
-            font-size: 10.5pt;
-            line-height: 1.7;
-            color: #111827;
-            padding: 8px 4px;
-        }
-        .doc-html-content p     { margin-bottom: 8px; }
-        .doc-html-content h1    { font-size: 15pt; font-weight: bold; margin: 10px 0 6px; color: #1e3a5f; }
-        .doc-html-content h2    { font-size: 13pt; font-weight: bold; margin: 10px 0 6px; color: #1e3a5f; }
-        .doc-html-content h3    { font-size: 11.5pt; font-weight: bold; margin: 8px 0 4px; color: #374151; }
-        .doc-html-content h4,
-        .doc-html-content h5,
-        .doc-html-content h6    { font-size: 10.5pt; font-weight: bold; margin: 6px 0 4px; }
-        .doc-html-content b,
-        .doc-html-content strong { font-weight: bold; }
-        .doc-html-content i,
-        .doc-html-content em     { font-style: italic; }
-        .doc-html-content u      { text-decoration: underline; }
-        .doc-html-content ul,
-        .doc-html-content ol     { margin: 6px 0 6px 20px; }
-        .doc-html-content li     { margin-bottom: 3px; }
-        .doc-html-content table  { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10pt; }
-        .doc-html-content th     { background: #1e3a5f; color: #fff; padding: 6px 8px; font-weight: bold; border: 1px solid #1e3a5f; text-align: left; }
-        .doc-html-content td     { padding: 5px 8px; border: 1px solid #c8d3df; vertical-align: top; }
-        .doc-html-content tr:nth-child(even) td { background: #f8fafc; }
+        .clip { font-size: 9pt; color: #6b7280; margin: 4px 0; line-height: 1.5; }
+        .clip .nm  { color: #374151; font-weight: bold; }
+        .clip .sz  { color: #9ca3af; font-size: 8.5pt; }
+        .clip .tag { color: #16335b; font-weight: bold; }
 
-        /* ── Chat thread ── */
-        .chat-section { margin-top: 32px; }
-        .chat-message {
-            margin-bottom: 20px;
-            border: 1px solid #dbeafe;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .chat-message-header {
-            background: #eff6ff;
-            padding: 8px 14px;
-            border-bottom: 1px solid #dbeafe;
-        }
-        .chat-sender { font-weight: bold; font-size: 10pt; color: #1e3a5f; }
-        .chat-time   { font-size: 8.5pt; color: #6b7280; margin-left: 10px; }
-        .chat-message-body {
-            padding: 10px 14px;
-            font-size: 10.5pt;
-            line-height: 1.65;
-            color: #111827;
-        }
-        .chat-message-body p { margin-bottom: 8px; }
-        .chat-attachments    { padding: 0 14px 12px 14px; }
-        .chat-attach-heading { font-size: 8.5pt; font-weight: bold; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.04em; }
+        /* ── Enclosures list ── */
+        .encl { width: 100%; border-collapse: collapse; margin-top: 4px; }
+        .encl td { padding: 7px 0; border-bottom: 1px solid #eef1f4; font-size: 10pt; vertical-align: middle; }
+        .encl .no { width: 30px; color: #9ca3af; font-weight: bold; font-size: 9pt; }
+        .encl .nm { color: #111827; }
+        .encl .sz { color: #9ca3af; font-size: 8.5pt; }
+        .encl .ax { width: 96px; text-align: right; color: #16335b; font-size: 8pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.07em; }
 
-        /* ── No-letterhead header banner ── */
-        .plain-header-banner  { background: #1e3a5f; color: #fff; padding: 18px 40px 14px 40px; margin-bottom: 0; }
-        .plain-header-title   { font-size: 16pt; font-weight: bold; letter-spacing: 0.03em; }
-        .plain-header-sub     { font-size: 9.5pt; opacity: 0.85; margin-top: 3px; }
+        /* ── No-letterhead masthead banner ── */
+        .plain-banner { padding: 6px 0 0; text-align: center; }
+        .plain-banner .org { font-size: 9pt; color: #6b7280; letter-spacing: 0.18em; text-transform: uppercase; }
 
         /* ── Footer ── */
-        .pdf-footer {
-            margin-top: 40px;
+        .foot {
+            margin-top: 34px;
             border-top: 1px solid #e5e7eb;
-            padding-top: 10px;
-            font-size: 8.5pt;
-            color: #9ca3af;
+            padding-top: 9px;
+            font-size: 8pt;
+            color: #b0b7c0;
             text-align: center;
+            letter-spacing: 0.05em;
         }
     </style>
 </head>
@@ -236,7 +146,6 @@
     } elseif ($toRecipients->isNotEmpty()) {
         $displayToNames = $toRecipients->map(fn($r) => $personName($r->user));
     } else {
-        // Exclude the intermediary ('through') and Cc rows from the "To" line.
         $displayToNames = $memo->recipients
             ->filter(fn($r) => !in_array($r->recipient_role ?? 'to', ['cc', 'through'], true))
             ->map(fn($r) => $personName($r->user));
@@ -252,42 +161,28 @@
 
     $creatorName = trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? ''));
     if (!$creatorName) $creatorName = $memo->creator->name ?? 'N/A';
-
-    // Formal memo "From": lead with the sender's office/position, then name.
     $creatorPosition = optional($memo->creator->position)->name;
 
-    // Helper: render a single processed attachment entry
-    $renderAttachment = function(array $att) {
-        $out = '';
-        $out .= '<div class="attachment-item">';
-        $out .= '<div class="attachment-header">';
-        $out .= '<span class="attachment-name">' . e($att['name']) . '</span>';
-        if ($att['size']) $out .= '&nbsp;<span class="attachment-size">(' . e($att['size']) . ')</span>';
-        $out .= '</div>';
-        $out .= '<div class="attachment-body">';
+    $memoRef = $memo->reference ?? ('MEMO/' . str_pad($memo->id, 4, '0', STR_PAD_LEFT));
 
+    // Compact, box-free renderer for a single processed attachment.
+    $renderAttachment = function (array $att) {
         switch ($att['type'] ?? '') {
             case 'image':
-                $out .= '<img src="' . $att['data'] . '" class="attachment-image" alt="' . e($att['name']) . '">';
-                break;
+                return '<div class="att-image"><img src="' . $att['data'] . '" alt="' . e($att['name']) . '">'
+                     . '<div class="att-cap">' . e($att['name']) . '</div></div>';
             case 'text':
-                $out .= '<div class="attachment-text">' . $att['text'] . '</div>';
-                break;
-            case 'missing':
-                $out .= '<div class="attachment-unavailable">&#9888; File not found on server: ' . e($att['name']) . '</div>';
-                break;
+                return '<div class="att-text">' . $att['text'] . '</div>';
             case 'annex':
-                // Document was converted to PDF and appended at the end of this export.
-                $out .= '<div class="merged-ref-note">&#128206; Full document appended as <strong>Annex ' . (int) ($att['annex_number'] ?? 0) . '</strong> at the end of this export.</div>';
-                break;
+                return '<div class="clip">&#128206; <span class="nm">' . e($att['name']) . '</span>'
+                     . ($att['size'] ? ' <span class="sz">(' . e($att['size']) . ')</span>' : '')
+                     . ' <span class="tag">&middot; Annexure ' . (int) ($att['annex_number'] ?? 0) . '</span></div>';
+            case 'missing':
+                return '<div class="clip">&#9888; <span class="nm">' . e($att['name']) . '</span> &mdash; file not found on server</div>';
             default:
-                // PDF, Word and any other document that could not be converted: listed by
-                // name only (header above shows the filename).
-                $out .= '<div class="attachment-unavailable">&#128206; Document attached &mdash; open the original file in the system to view its contents.</div>';
+                return '<div class="clip">&#128206; <span class="nm">' . e($att['name']) . '</span>'
+                     . ($att['size'] ? ' <span class="sz">(' . e($att['size']) . ')</span>' : '') . '</div>';
         }
-
-        $out .= '</div></div>';
-        return $out;
     };
 @endphp
 
@@ -296,154 +191,112 @@
     <div class="letterhead-band">
         <img src="{{ $letterheadBase64 }}" class="letterhead-img" alt="Letterhead">
     </div>
-@else
-    <div class="plain-header-banner">
-        <div class="plain-header-title">INTERNAL MEMO</div>
-        <div class="plain-header-sub">University Internal Memo Management System (UIMMS)</div>
-    </div>
 @endif
 
 <div class="page-body">
 
-    {{-- ══ FORMAL HEADER TABLE ══ --}}
-    <table class="formal-header">
+    {{-- ══ MASTHEAD ══ --}}
+    <div class="masthead">
+        @unless($hasLetterhead && $letterheadBase64)
+            <div class="plain-banner"><div class="org">University Internal Memo Management System</div></div>
+        @endunless
+        <div class="title">INTERNAL MEMORANDUM</div>
+    </div>
+    <hr class="rule-strong">
+    <hr class="rule-hair">
+
+    {{-- ══ META BLOCK ══ --}}
+    <table class="meta">
         <tr>
-            <td class="fh-label">Ref</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">{{ $memo->reference ?? ('MEMO/' . str_pad($memo->id, 4, '0', STR_PAD_LEFT)) }}</td>
+            <td class="k">Ref</td>
+            <td class="v">{{ $memoRef }}</td>
+            <td class="k" style="width:60px;">Date</td>
+            <td class="v" style="text-align:right;">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</td>
+        </tr>
+    </table>
+    <table class="meta" style="margin-top:2px;">
+        <tr>
+            <td class="k">From</td>
+            <td class="v">@if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}</td>
         </tr>
         <tr>
-            <td class="fh-label">Date</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</td>
-        </tr>
-        <tr>
-            <td class="fh-label">From</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">
-                @if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}
-            </td>
-        </tr>
-        <tr>
-            <td class="fh-label">To</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">
-                @forelse($displayToNames as $name)
-                    {{ $name }}@if(!$loop->last); @endif
-                @empty
-                    All Recipients
-                @endforelse
+            <td class="k">To</td>
+            <td class="v">
+                @forelse($displayToNames as $name){{ $name }}@if(!$loop->last); @endif @empty All Recipients @endforelse
             </td>
         </tr>
         @if($throughName)
         <tr>
-            <td class="fh-label">Through</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">
-                {{ $throughName }}@if($memo->isThroughPending()) &nbsp;(awaiting forward)@else &nbsp;(forwarded)@endif
-            </td>
+            <td class="k">Through</td>
+            <td class="v">{{ $throughName }} <span class="muted">@if($memo->isThroughPending())(awaiting forward)@else(forwarded)@endif</span></td>
         </tr>
         @endif
         @if($displayCcNames->isNotEmpty())
         <tr>
-            <td class="fh-label">Cc</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-value">
-                @foreach($displayCcNames as $name)
-                    {{ $name }}@if(!$loop->last); @endif
-                @endforeach
-            </td>
+            <td class="k">Cc</td>
+            <td class="v">@foreach($displayCcNames as $name){{ $name }}@if(!$loop->last); @endif @endforeach</td>
         </tr>
         @endif
         <tr>
-            <td class="fh-label">Subject</td>
-            <td class="fh-colon">:</td>
-            <td class="fh-subject-value">{{ strtoupper($memo->subject ?? '') }}</td>
+            <td class="k">Subject</td>
+            <td class="v subject">{{ strtoupper($memo->subject ?? '') }}</td>
         </tr>
     </table>
 
-    <hr class="formal-divider">
+    <hr class="rule-hair" style="margin-top:14px;">
 
     {{-- ══ MEMO BODY ══ --}}
-    <div class="section-heading">Memo Content</div>
-    <div class="memo-body">
+    <div class="sec">Memorandum</div>
+    <div class="body">
         {!! $memo->message ?? '' !!}
     </div>
 
-    {{-- ══ MEMO-LEVEL ATTACHMENTS ══ --}}
-    @if(!empty($processedAttachments))
-    <div class="attachments-section">
-        <div class="section-heading" style="margin-top:22px;">
-            Memo Attachments ({{ count($processedAttachments) }})
-        </div>
-        @foreach($processedAttachments as $att)
-            {!! $renderAttachment($att) !!}
-        @endforeach
-    </div>
+    {{-- ══ MEMO-LEVEL ATTACHMENTS (images/text inline; documents are listed under Enclosures) ══ --}}
+    @php
+        $memoInline = array_filter($processedAttachments, fn($a) => in_array($a['type'] ?? '', ['image', 'text', 'missing'], true));
+        $memoClips  = array_filter($processedAttachments, fn($a) => in_array($a['type'] ?? '', ['annex', 'file'], true));
+    @endphp
+    @if(!empty($memoInline) || !empty($memoClips))
+        <div class="sec">Attachments</div>
+        @foreach($memoInline as $att){!! $renderAttachment($att) !!}@endforeach
+        @foreach($memoClips as $att){!! $renderAttachment($att) !!}@endforeach
     @endif
 
-    {{-- ══ CHAT THREAD ══ --}}
-    <hr class="section-divider">
-    <div class="chat-section">
-        <div class="section-heading">
-            Chat Thread &mdash; {{ count($processedReplies) }} {{ count($processedReplies) === 1 ? 'Message' : 'Messages' }}
+    {{-- ══ CORRESPONDENCE (chat thread) ══ --}}
+    <div class="sec">Correspondence</div>
+    @if(empty($processedReplies))
+        <p class="empty-note">No messages have been exchanged in this memo thread.</p>
+    @else
+        @foreach($processedReplies as $item)
+        <div class="msg">
+            <div><span class="who">{{ $item['sender'] }}</span><span class="when">{{ $item['sent_at'] }}</span></div>
+            @if($item['message'])
+                <div class="text">{!! $item['message'] !!}</div>
+            @endif
+            @if(!empty($item['attachments']))
+                @foreach($item['attachments'] as $att){!! $renderAttachment($att) !!}@endforeach
+            @endif
         </div>
+        @endforeach
+    @endif
 
-        @if(empty($processedReplies))
-            <p style="font-size:10pt; color:#6b7280; font-style:italic;">No chat messages have been sent in this memo thread.</p>
-        @else
-            @foreach($processedReplies as $item)
-            <div class="chat-message">
-                <div class="chat-message-header">
-                    <span class="chat-sender">{{ $item['sender'] }}</span>
-                    <span class="chat-time">{{ $item['sent_at'] }}</span>
-                </div>
-
-                @if($item['message'])
-                <div class="chat-message-body">
-                    {!! $item['message'] !!}
-                </div>
-                @endif
-
-                @if(!empty($item['attachments']))
-                <div class="chat-attachments">
-                    <div class="chat-attach-heading">
-                        Attachments ({{ count($item['attachments']) }})
-                    </div>
-                    @foreach($item['attachments'] as $att)
-                        {!! $renderAttachment($att) !!}
-                    @endforeach
-                </div>
-                @endif
-            </div>
-            @endforeach
-        @endif
-    </div>
-
-    {{-- ══ ANNEXES INDEX (documents merged in after this page) ══ --}}
+    {{-- ══ ENCLOSURES (formal index of every appended document) ══ --}}
     @if(!empty($annexes))
-    <div class="appended-section">
-        <div class="appended-section-title">Annexes &mdash; Appended Documents</div>
-        <ol class="appended-list">
-            @foreach($annexes as $annex)
-                <li>
-                    <strong>Annex {{ $annex['number'] }}:</strong> {{ $annex['name'] }}
-                    @if(!empty($annex['label']))
-                        <span style="color:#6b7280;">&mdash; {{ $annex['label'] }}</span>
-                    @endif
-                </li>
-            @endforeach
-        </ol>
-        <div style="font-size:8.5pt; color:#92400e; margin-top:8px;">
-            The full content of each document listed above is attached on the following pages, in order.
-        </div>
-    </div>
+    <div class="sec">Enclosures</div>
+    <table class="encl">
+        @foreach($annexes as $annex)
+        <tr>
+            <td class="no">{{ str_pad($annex['number'], 2, '0', STR_PAD_LEFT) }}</td>
+            <td class="nm">{{ $annex['name'] }}@if(!empty($annex['label']))<span class="sz"> &mdash; {{ $annex['label'] }}</span>@endif</td>
+            <td class="ax">Annexure {{ $annex['number'] }}</td>
+        </tr>
+        @endforeach
+    </table>
     @endif
 
     {{-- ══ FOOTER ══ --}}
-    <div class="pdf-footer">
-        Generated by UIMMS &bull; {{ now()->format('d M Y, H:i') }} &bull; Confidential
-        &bull; Memo Ref: {{ $memo->reference ?? $memo->id }}
+    <div class="foot">
+        {{ $memoRef }} &bull; Generated {{ now()->format('d M Y, H:i') }} &bull; Confidential
     </div>
 
 </div>
