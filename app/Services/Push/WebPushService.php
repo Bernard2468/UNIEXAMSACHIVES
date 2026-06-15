@@ -109,10 +109,13 @@ class WebPushService
                 'authToken'       => $sub->auth_key,
                 'contentEncoding' => $sub->content_encoding ?: 'aesgcm',
             ]);
+            // Use a guarded URL so a missing/renamed route can never throw here
+            // (this app's home is the `dashboard` route, not `home`).
+            $url = \Illuminate\Support\Facades\Route::has('dashboard') ? route('dashboard') : url('/');
             $report = $client->sendOneNotification($subscription, json_encode([
                 'title' => $title,
                 'body'  => $body,
-                'url'   => route('home'),
+                'url'   => $url,
                 'tag'   => 'udts-test-' . $sub->id,
             ]));
 
