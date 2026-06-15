@@ -197,15 +197,12 @@
 
 <div class="page-body">
 
-    {{-- ══ MASTHEAD ══ --}}
-    <div class="masthead">
-        @unless($hasLetterhead && $letterheadBase64)
-            <div class="plain-banner"><div class="org">University Internal Memo Management System</div></div>
-        @endunless
-        <div class="title">INTERNAL MEMORANDUM</div>
-    </div>
-    <hr class="rule-strong">
-    <hr class="rule-hair">
+    {{-- No masthead: the letterhead already carries the "Internal Memorandum" title.
+         Without a letterhead, a slim system label stands in so the memo isn't headerless. --}}
+    @unless($hasLetterhead && $letterheadBase64)
+        <div class="plain-banner"><div class="org">University Internal Memo Management System</div></div>
+        <hr class="rule-hair">
+    @endunless
 
     {{-- ══ META BLOCK ══ --}}
     <table class="meta">
