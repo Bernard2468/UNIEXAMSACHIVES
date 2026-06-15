@@ -1,138 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $subject }}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #007bff;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #007bff;
-            margin-bottom: 10px;
-        }
-        .subject {
-            color: #495057;
-            font-size: 18px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-        .content {
-            margin-bottom: 30px;
-        }
-        .message {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-left: 4px solid #007bff;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-        .message p { margin: 0 0 12px 0; }
-        .message ul { margin: 12px 0; padding-left: 20px; }
-        .message ol { margin: 12px 0; padding-left: 20px; }
-        .message h1, .message h2, .message h3 { margin: 16px 0 8px 0; }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
-            color: #6c757d;
-            font-size: 14px;
-        }
-        .attachments {
-            background-color: #fff3cd;
-            padding: 15px;
-            border-left: 4px solid #ffc107;
-            margin: 20px 0;
-            border-radius: 5px;
-        }
-        .attachment-item {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            padding: 10px;
-            background-color: #ffffff;
-            border-radius: 3px;
-        }
-        .attachment-icon {
-            margin-right: 10px;
-            color: #6c757d;
-        }
-        .attachment-details { flex: 1; }
-        .attachment-name { font-weight: 600; color: #495057; }
-        .attachment-size { font-size: 12px; color: #6c757d; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">University Advanced Communication System</div>
-            <div class="subject">{{ $subject }}</div>
-        </div>
-        
-        <div class="content">
-            <p>Dear <strong>{{ $user->first_name }} {{ $user->last_name }}</strong>,</p>
-            
-            <p>You have received an important message from the University Advanced Communication System.</p>
-            
-            <div class="message">
-                {!! $message !!}
-            </div>
-            
-            @if($campaign->attachments && count($campaign->attachments) > 0)
-                <div class="attachments">
-                    <strong>📎 Attachments:</strong>
-                    @foreach($campaign->attachments as $attachment)
-                        <div class="attachment-item">
-                            <div class="attachment-icon">
-                                @if(str_contains($attachment['type'], 'pdf'))
-                                    📄
-                                @elseif(str_contains($attachment['type'], 'image'))
-                                    🖼️
-                                @elseif(str_contains($attachment['type'], 'zip'))
-                                    📦
-                                @else
-                                    📎
-                                @endif
-                            </div>
-                            <div class="attachment-details">
-                                <div class="attachment-name">{{ $attachment['name'] }}</div>
-                                <div class="attachment-size">{{ number_format($attachment['size'] / 1024, 1) }} KB</div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
+@extends('mails.layouts.cug')
+
+@php
+    // Tailor the framing to the kind of memo, driven by the subject prefix the
+    // controllers set ("[Cc] ...", "[Through – Action Required] ...").
+    $isCc      = str_starts_with($subject, '[Cc]');
+    $isThrough = str_starts_with($subject, '[Through');
+
+    $headline = $isThrough ? 'A memo needs your review.'
+              : ($isCc     ? 'You have been copied on a memo.'
+                           : 'You have a new memo.');
+
+    $eyebrowAction = $isThrough ? 'Action required'
+                   : ($isCc     ? 'For your information'
+                                : 'New memo');
+
+    $intro = $isThrough
+        ? 'A memo has been routed through you. Please review it and forward it to the intended recipient(s) from the portal.'
+        : ($isCc
+            ? 'You have been copied on the following memo for your information.'
+            : 'You have received a memo through the University communication system. The details are below.');
+
+    $senderName = $campaign->creator
+        ? trim(($campaign->creator->first_name ?? '') . ' ' . ($campaign->creator->last_name ?? ''))
+        : 'University Communication';
+    $attachmentCount = (is_array($campaign->attachments ?? null)) ? count($campaign->attachments) : 0;
+@endphp
+
+@section('title', $subject)
+
+@section('content')
+    <!-- Primary card -->
+    <div class="card">
+        <div class="eyebrow">{{ $campaign->reference ?? 'Memo' }} · {{ $eyebrowAction }}</div>
+        <h1 class="headline">{{ $headline }}</h1>
+        <p class="subline">{{ optional($campaign->created_at)->format('M j, Y') ?? now()->format('M j, Y') }}</p>
+
+        <hr class="divider">
+
+        <table class="kv">
+            <tr>
+                <td class="k">Reference</td>
+                <td class="v">{{ $campaign->reference ?? '—' }}</td>
+            </tr>
+            <tr>
+                <td class="k">From</td>
+                <td class="v">{{ $senderName ?: 'University Communication' }}</td>
+            </tr>
+            <tr>
+                <td class="k">To</td>
+                <td class="v">{{ trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: ($user->email ?? '—') }}</td>
+            </tr>
+            @if($attachmentCount > 0)
+                <tr>
+                    <td class="k">Attachments</td>
+                    <td class="v">{{ $attachmentCount }} file{{ $attachmentCount > 1 ? 's' : '' }}</td>
+                </tr>
             @endif
-            
-            <p>If you have any questions about this message, please contact our support team.</p>
-        </div>
-        
-        <div class="footer">
-            <p>This is an automated message from the University Advanced Communication System.</p>
-                                        <p>Please do not reply to this memo.</p>
-            <p>&copy; {{ date('Y') }} University Advanced Communication System. All rights reserved.</p>
-        </div>
+        </table>
     </div>
-</body>
-</html>
+
+    <!-- Content card -->
+    <div class="card">
+        <h2 class="section-title">Hello {{ $user->first_name ?? 'there' }},</h2>
+        <p class="section-sub">{{ $intro }}</p>
+
+        <div class="quoted">
+            <div class="quoted-label">Subject</div>
+            <div class="quoted-body">{{ $subject }}</div>
+        </div>
+
+        <div class="memo-body">
+            {!! $message !!}
+        </div>
+
+        @if($attachmentCount > 0)
+            <div class="attach">
+                <div class="attach-title">📎 {{ $attachmentCount }} Attachment{{ $attachmentCount > 1 ? 's' : '' }}</div>
+                @foreach($campaign->attachments as $attachment)
+                    <div class="attach-item">
+                        {{ $attachment['name'] ?? 'Attachment' }}
+                        @if(isset($attachment['size']))<span class="sz"> · {{ number_format($attachment['size'] / 1024, 1) }} KB</span>@endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        @if(!empty($campaign->id))
+            <div class="cta-wrap" style="margin-top:18px;">
+                <a href="{{ route('dashboard.uimms.chat', $campaign->id) }}" class="cta">Open memo &rarr;</a>
+            </div>
+        @endif
+    </div>
+@endsection
+
+@section('footnote')
+    You're receiving this email because a memo was sent to you<br>
+    through the University's communication system.
+@endsection
