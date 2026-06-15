@@ -12,7 +12,17 @@
  * for pages under that subpath.
  */
 
-const SW_VERSION = 'udts-sw-v1';
+const SW_VERSION = 'udts-sw-v2';
+
+// Decode a base64url VAPID key into the Uint8Array the Push API expects.
+function urlBase64ToUint8Array(b64) {
+    const padding = '='.repeat((4 - (b64.length % 4)) % 4);
+    const base64 = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    const arr = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+    return arr;
+}
 
 self.addEventListener('install', (event) => {
     // Skip waiting → next page load gets the new SW without an extra refresh.
@@ -116,23 +126,46 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('pushsubscriptionchange', (event) => {
     event.waitUntil((async () => {
         try {
-            // The new subscription is provided by the browser; resubscribe and
-            // send the new endpoint to our backend. The applicationServerKey
-            // is recovered from the old subscription if available.
-            const oldSubscription = event.oldSubscription;
+            // Recover the applicationServerKey: prefer the old subscription's
+            // key; if the browser didn't hand us one, fetch the current VAPID
+            // public key from the backend and decode it. Without a key the
+            // re-subscribe silently produces an unusable subscription.
+            let appServerKey = event.oldSubscription && event.oldSubscription.options
+                ? event.oldSubscription.options.applicationServerKey
+                : null;
+
+            if (!appServerKey) {
+                try {
+                    const cfg = await fetch('/dashboard/push/config', { credentials: 'include' }).then(r => r.json());
+                    if (cfg && cfg.vapid_public_key) {
+                        appServerKey = urlBase64ToUint8Array(cfg.vapid_public_key);
+                    }
+                } catch (e) { /* fall through — handled below */ }
+            }
+            if (!appServerKey) return;
+
             const newSubscription = await self.registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: oldSubscription && oldSubscription.options.applicationServerKey,
+                applicationServerKey: appServerKey,
             });
 
+            // Post the shape the controller validates ({endpoint, keys, ...}).
+            // CSRF is exempted for this route (it's auth-protected), so this
+            // succeeds where the previous tokenless POST got a 419.
+            const json = newSubscription.toJSON();
             await fetch('/dashboard/push/subscribe', {
                 method: 'POST',
                 credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newSubscription.toJSON()),
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    endpoint:        json.endpoint,
+                    keys:            json.keys,
+                    contentEncoding: (newSubscription.options && newSubscription.options.applicationServerKey) ? 'aes128gcm' : 'aesgcm',
+                }),
             });
         } catch (e) {
-            // No retry — the next page load will re-register a fresh subscription.
+            // Best-effort. The on-load self-heal in push-subscriber.blade.php
+            // re-registers on the user's next visit if this ever fails.
         }
     })());
 });

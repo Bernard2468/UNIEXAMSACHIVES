@@ -28,6 +28,15 @@ return Application::configure(basePath: dirname(__DIR__))
             // Fixes "[Toast] 0 server-rendered toast(s)" after form actions.
             \App\Http\Middleware\PreserveFlashOnAjax::class,
         ]);
+
+        // The push subscribe endpoint is called from the service worker
+        // (pushsubscriptionchange) and from the on-load self-heal, neither of
+        // which can reliably attach a CSRF token. It is still protected by the
+        // `auth` middleware + the user_id constraint inside the controller, so
+        // exempting it from CSRF is safe and is what keeps push self-healing.
+        $middleware->validateCsrfTokens(except: [
+            'dashboard/push/subscribe',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

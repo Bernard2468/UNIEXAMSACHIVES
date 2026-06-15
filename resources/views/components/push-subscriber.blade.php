@@ -91,21 +91,33 @@
             });
         }
 
-        const json = sub.toJSON();
-        const res = await fetch('/dashboard/push/subscribe', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-            body: JSON.stringify({
-                endpoint:        json.endpoint,
-                keys:            json.keys,
-                contentEncoding: (sub.options && sub.options.applicationServerKey) ? 'aes128gcm' : 'aesgcm',
-            }),
-        });
-
+        const res = await postSubscription(sub);
         if (!res.ok) return { ok: false, reason: 'server_' + res.status };
         await refresh();
         return { ok: true };
+    }
+
+    // Idempotent POST of a browser PushSubscription to the backend. Shared by
+    // the opt-in flow AND the on-load self-heal. The server only fires the
+    // "Notifications enabled" test push when the row is newly created, so
+    // calling this on every page load is silent for already-known devices.
+    async function postSubscription(sub) {
+        const json = sub.toJSON();
+        try {
+            const res = await fetch('/dashboard/push/subscribe', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    endpoint:        json.endpoint,
+                    keys:            json.keys,
+                    contentEncoding: (sub.options && sub.options.applicationServerKey) ? 'aes128gcm' : 'aesgcm',
+                }),
+            });
+            return { ok: res.ok, status: res.status };
+        } catch (e) {
+            return { ok: false, status: 0 };
+        }
     }
 
     async function unsubscribe() {
@@ -137,11 +149,30 @@
         return window.udtsPush.state;
     }
 
-    // Register the SW once on first load so a returning user with permission
-    // already granted is ready to receive pushes without clicking anything.
+    // SELF-HEAL: re-sync the browser's existing subscription to the server on
+    // every load. This is what makes push "persistent" the way big systems do
+    // it — if the server ever dropped the row (provider 410, redeploy, key
+    // change, DB reset), the browser still holds the subscription and we
+    // silently re-register it here. We only re-POST an EXISTING subscription;
+    // we never auto-create one (that would resurrect a subscription the user
+    // deliberately turned off, since opting out leaves Notification.permission
+    // === 'granted').
+    async function syncExisting() {
+        if (!SUPPORTED) return window.udtsPush.state;
+        try {
+            const reg = await getRegistration();
+            if (Notification.permission === 'granted') {
+                const sub = reg ? await reg.pushManager.getSubscription() : null;
+                if (sub) await postSubscription(sub);
+            }
+        } catch (e) { /* non-fatal — degrade silently */ }
+        return refresh();
+    }
+    window.udtsPush.sync = syncExisting;
+
     document.addEventListener('DOMContentLoaded', () => {
         if (!SUPPORTED) return;
-        getRegistration().then(() => refresh()).catch(() => {});
+        syncExisting().catch(() => {});
     });
 })();
 </script>

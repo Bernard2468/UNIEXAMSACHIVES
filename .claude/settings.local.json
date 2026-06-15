@@ -103,7 +103,11 @@
       "Bash(git --no-pager grep -n \"communication\" -- routes/web.php)",
       "Bash(git --no-pager diff HEAD~5 HEAD -- resources/views/admin/communication/create.blade.php)",
       "Bash(git --no-pager grep -nE \"MemoAssignedNotification|MemoAssignmentSuccess|MemoUrgencyReminder|SendCampaignEmail::dispatch|new CampaignEmail\" -- \"*.php\")",
-      "Bash(php -v)"
+      "Bash(php -v)",
+      "Bash(php -l app/Console/Commands/PushDiagnose.php)",
+      "Bash(php -l app/Http/Controllers/Dashboard/PushSubscriptionController.php)",
+      "Bash(php -l bootstrap/app.php)",
+      "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\).Source; if \\($php\\) { \"php: $php\"; php -l app/Console/Commands/PushDiagnose.php; php -l app/Http/Controllers/Dashboard/PushSubscriptionController.php; php -l bootstrap/app.php } else { \"php not found on PATH\" })"
     ],
     "deny": [],
     "additionalDirectories": [

@@ -54,15 +54,25 @@ class PushSubscriptionController extends Controller
             ]
         );
 
-        // Make sure the user's per-account toggle is on after they opt-in.
-        $user = Auth::user();
-        if (!($user->push_enabled ?? true)) {
-            $user->forceFill(['push_enabled' => true])->save();
+        // Only treat this as a fresh opt-in when the row is genuinely new — i.e.
+        // first time on this device, or a self-heal recreating a row the server
+        // had lost. Routine re-syncs on page load hit an existing row, so they
+        // must NOT re-enable a per-account toggle the user turned off, nor fire
+        // another "Notifications enabled" test push on every navigation.
+        if ($sub->wasRecentlyCreated) {
+            $user = Auth::user();
+            if (!($user->push_enabled ?? true)) {
+                $user->forceFill(['push_enabled' => true])->save();
+            }
+
+            $push->sendTest($sub);
         }
 
-        $push->sendTest($sub);
-
-        return response()->json(['ok' => true, 'subscription_id' => $sub->id]);
+        return response()->json([
+            'ok'              => true,
+            'subscription_id' => $sub->id,
+            'created'         => $sub->wasRecentlyCreated,
+        ]);
     }
 
     /**
