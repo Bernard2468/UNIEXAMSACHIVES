@@ -17,7 +17,9 @@ use Illuminate\Console\Command;
  */
 class PushDiagnose extends Command
 {
-    protected $signature = 'push:diagnose {--test= : Send a real test push to every device of this user id}';
+    protected $signature = 'push:diagnose
+        {--test= : Send a real test push to every device of this user id}
+        {--prune : Delete orphaned subscriptions whose user no longer exists}';
 
     protected $description = 'Report Web Push config + per-user subscription health, optionally send a test push.';
 
@@ -35,6 +37,12 @@ class PushDiagnose extends Command
             $this->error('VAPID keys are not fully configured — no pushes will be sent. Set them in .env and run `php artisan config:cache`.');
         }
         $this->newLine();
+
+        if ($this->option('prune')) {
+            $deleted = PushSubscription::whereNotIn('user_id', User::query()->select('id'))->delete();
+            $this->warn("Pruned {$deleted} orphaned subscription(s) (user no longer exists).");
+            $this->newLine();
+        }
 
         $total = PushSubscription::count();
         $this->info("Subscriptions on file: {$total}");
