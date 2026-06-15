@@ -232,6 +232,81 @@
 
 <style>
 /* Old notification styles removed - now using notification-tray component */
+
+/* ===== ROLE BADGE (Admin / User / Super Admin) =====
+   Inlined here (not in css/style.css) so the badge is styled the instant the
+   header renders — same approach as the notification-tray component. The base
+   rule below sets NO background/colour; those come only from the --admin /
+   --user / --super modifiers. When this lived in the large, un-cache-busted
+   style.css it would render as raw unstyled text whenever that file was stale
+   or still loading, which is what made the badge intermittently show as text. */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 11px;
+  margin-right: 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  border: 1px solid transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.role-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+/* Admin (DB 'user') — light gold */
+.role-badge--admin {
+  background: #fbf3da;
+  color: #92710f;
+  border-color: #efdca5;
+}
+/* User (DB 'admin') — soft slate */
+.role-badge--user {
+  background: #eef1f6;
+  color: #475569;
+  border-color: #dde3ec;
+}
+/* Super Admin — soft violet */
+.role-badge--super {
+  background: #f3eefe;
+  color: #6d28d9;
+  border-color: #e4d9fb;
+}
+/* Dark header support */
+.is_dark .role-badge--admin {
+  background: rgba(202, 158, 30, 0.16);
+  color: #e8c45f;
+  border-color: rgba(202, 158, 30, 0.35);
+}
+.is_dark .role-badge--user {
+  background: rgba(148, 163, 184, 0.16);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+.is_dark .role-badge--super {
+  background: rgba(124, 58, 237, 0.18);
+  color: #c4b5fd;
+  border-color: rgba(124, 58, 237, 0.4);
+}
+@media (max-width: 575px) {
+  .role-badge {
+    margin-right: 8px;
+    padding: 0 9px;
+    height: 24px;
+    font-size: 11px;
+  }
+}
+
 .uda-clock-bar {
     width: 100%;
     background: linear-gradient(90deg, #fbfcf9 0%, #fffaf4 50%, #fff8ef 100%);
