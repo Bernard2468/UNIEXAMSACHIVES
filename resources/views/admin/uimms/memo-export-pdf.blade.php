@@ -35,7 +35,9 @@
 
         /* ── Meta block (Ref / Date / From / To …) ── */
         .meta { width: 100%; border-collapse: collapse; margin-top: 14px; }
-        .meta td { padding: 4px 0; vertical-align: top; }
+        /* Centre label + value on one shared line so the small 8pt label and the
+           larger 10.5pt value never drift apart, regardless of font-size. */
+        .meta td { padding: 5px 0; vertical-align: middle; line-height: 1.35; }
         .meta .k {
             width: 92px;
             text-transform: uppercase;
@@ -43,10 +45,9 @@
             letter-spacing: 0.11em;
             color: #6b7280;
             font-weight: bold;
-            padding-top: 3px;
             white-space: nowrap;
         }
-        .meta .v       { color: #111827; font-size: 10.5pt; line-height: 1.5; }
+        .meta .v       { color: #111827; font-size: 10.5pt; }
         .meta .subject { font-weight: bold; color: #16335b; }
         .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
 
@@ -259,19 +260,26 @@
         @foreach($memoInline as $att){!! $renderInline($att) !!}@endforeach
     @endif
 
-    {{-- ══ MINUTES (officials who minuted on this memo — text only; files are in Enclosures) ══ --}}
+    {{-- ══ MINUTES (officials who minuted on this memo — text/content only; files are in Enclosures) ══ --}}
+    @php
+        // Show a minute only if it carries an actual remark or inline content. A minute
+        // that was just a document upload (now listed under Enclosures) would otherwise
+        // render as an empty, name-only entry — so skip those entirely.
+        $hasRemark = fn ($item) => trim(strip_tags($item['message'] ?? '')) !== '';
+        $hasInline = fn ($item) => !empty(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex'));
+        $renderableMinutes = array_values(array_filter($processedReplies, fn ($item) => $hasRemark($item) || $hasInline($item)));
+    @endphp
     <div class="sec">Minutes</div>
-    @if(empty($processedReplies))
+    @if(empty($renderableMinutes))
         <p class="empty-note">No minutes have been recorded on this memo.</p>
     @else
-        @foreach($processedReplies as $item)
+        @foreach($renderableMinutes as $item)
         <div class="msg">
             <div><span class="who">{{ $item['sender'] }}</span><span class="when">{{ $item['sent_at'] }}</span></div>
-            @if($item['message'])
+            @if($hasRemark($item))
                 <div class="text">{!! $item['message'] !!}</div>
             @endif
-            @php $minInline = array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex'); @endphp
-            @foreach($minInline as $att){!! $renderInline($att) !!}@endforeach
+            @foreach(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex') as $att){!! $renderInline($att) !!}@endforeach
         </div>
         @endforeach
     @endif
