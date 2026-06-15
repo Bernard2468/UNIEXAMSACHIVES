@@ -32,7 +32,7 @@
                                     </a>
                                     
                                     <div class="header-separator"></div>
-                                    <a href="{{ route('dashboard.uimms.chat.export-pdf', $memo->id) }}" target="_blank" class="responsive-btn export-btn" style="text-decoration:none;">
+                                    <a href="{{ route('dashboard.uimms.chat.export-pdf', $memo->id) }}" target="_blank" id="exportPrintBtn" class="responsive-btn export-btn" style="text-decoration:none;">
                                         <div class="svgWrapper">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="svgIcon">
                                                 <path stroke="#fff" stroke-width="2" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -5154,6 +5154,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+{{-- Export & Print: full-screen "preparing" overlay --}}
+<div id="export-loading-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:11000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:12px; padding:28px 34px; max-width:380px; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,0.25);">
+        <i class="icofont-spinner-alt icofont-spin" style="font-size:38px; color:#28a745;"></i>
+        <div style="font-size:15px; font-weight:600; color:#1e293b; margin-top:14px;">Preparing your export…</div>
+        <div style="font-size:12.5px; color:#64748b; margin-top:6px; line-height:1.5;">
+            Converting and merging attachments. Memos with several documents may take up to a minute — the PDF opens in a new tab when ready.
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var exportBtn = document.getElementById('exportPrintBtn');
+    var overlay   = document.getElementById('export-loading-overlay');
+    if (!exportBtn || !overlay) return;
+
+    var hideTimer = null;
+    function hideOverlay() {
+        overlay.style.display = 'none';
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    }
+
+    exportBtn.addEventListener('click', function () {
+        // The PDF opens in a new tab; show feedback on this page while it generates.
+        overlay.style.display = 'flex';
+        // Safety net: auto-hide after 90s in case focus never returns.
+        hideTimer = setTimeout(hideOverlay, 90000);
+    });
+
+    // Hide once the user comes back to this tab (export tab has opened/finished).
+    window.addEventListener('focus', hideOverlay);
+})();
 </script>
 
 @endsection

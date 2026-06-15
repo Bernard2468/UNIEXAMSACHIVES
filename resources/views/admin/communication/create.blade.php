@@ -256,8 +256,8 @@
                                                     <i class="icofont-attachment"></i> Attachments
                                                 </label>
                                                 <div class="file-upload-area">
-                                                    <input type="file" id="attachments" name="attachments[]" 
-                                                           multiple accept=".pdf,.doc,.docx,.txt,.jpg,.png,.gif,.zip"
+                                                    <input type="file" id="attachments" name="attachments[]"
+                                                           multiple accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.csv,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.zip"
                                                            class="file-input">
                                                     <div class="file-upload-display">
                                                         <div class="file-upload-icon">

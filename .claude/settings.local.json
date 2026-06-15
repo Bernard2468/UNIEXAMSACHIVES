@@ -109,7 +109,10 @@
       "Bash(php -l bootstrap/app.php)",
       "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\).Source; if \\($php\\) { \"php: $php\"; php -l app/Console/Commands/PushDiagnose.php; php -l app/Http/Controllers/Dashboard/PushSubscriptionController.php; php -l bootstrap/app.php } else { \"php not found on PATH\" })",
       "Bash(git fetch *)",
-      "Bash(git rev-list *)"
+      "Bash(git rev-list *)",
+      "WebFetch(domain:developer.adobe.com)",
+      "WebSearch",
+      "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\).Source; if \\($php\\) { Write-Output \"PHP: $php\"; foreach \\($f in @\\(\"app/Services/Pdf/AdobePdfService.php\",\"app/Http/Controllers/Dashboard/HomeController.php\",\"app/Http/Controllers/Dashboard/AdvanceCommunicationController.php\",\"config/services.php\"\\)\\) { & $php -l $f } } else { Write-Output \"php not found on PATH\" })"
     ],
     "deny": [],
     "additionalDirectories": [

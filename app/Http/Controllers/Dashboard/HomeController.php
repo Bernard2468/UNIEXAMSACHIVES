@@ -302,7 +302,7 @@ class HomeController extends Controller
         $request->validate([
             'message' => 'required|string|max:5000',
             'attachments' => 'nullable|array|max:5',
-            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,txt,jpg,jpeg,png,gif',
+            'attachments.*' => 'file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif',
         ]);
 
         $attachments = [];
@@ -1362,11 +1362,20 @@ class HomeController extends Controller
         $letterheadRecord = \App\Models\SystemLetterhead::findBySlug($memo->letterhead ?? null);
         $letterheadUrl    = $letterheadRecord?->image_url;
 
+        // ── Adobe-backed annex pipeline ──
+        // Images and plain text are rendered inline (below). PDF / Word / Excel /
+        // PowerPoint attachments are converted to PDF (via Adobe PDF Services) and
+        // appended as full-fidelity "annexes" at the end of the export, then merged
+        // into one file. $annexes collects them in document order; $annexNo numbers
+        // them so the inline reference matches the appended page. When Adobe is not
+        // configured (or a file can't be converted) the attachment degrades to a
+        // name-only listing — the export still works.
+        $adobe   = app(\App\Services\Pdf\AdobePdfService::class);
+        $annexes = [];
+        $annexNo = 0;
+
         // ── Shared attachment processor (used for both memo and reply attachments) ──
-        // Only images are rendered inline in the export. PDF / Word / other documents are
-        // listed by name only — embedding their content requires external converter
-        // libraries (FPDI / PhpWord / pdfparser) that aren't available on this host.
-        $processAttachment = function (array $attachment, int $index, string $sourceLabel): array {
+        $processAttachment = function (array $attachment, int $index, string $sourceLabel) use ($adobe, &$annexes, &$annexNo): array {
             $filePath = storage_path('app/public/' . ($attachment['path'] ?? ''));
             $mime     = $attachment['type'] ?? '';
             $name     = $attachment['name'] ?? 'attachment';
@@ -1395,9 +1404,24 @@ class HomeController extends Controller
                 $entry['text'] = htmlspecialchars(file_get_contents($filePath));
 
             } else {
-                // PDF, Word, and any other document type: listed by name only, no inline
-                // content. Content extraction/conversion was removed (no converter libs).
+                // PDF / Word / Excel / PowerPoint: convert (if needed) and append as an
+                // annex. Falls back to a name-only listing if Adobe is unavailable or
+                // the file type can't be converted.
                 $entry['type'] = 'file';
+                if ($adobe->enabled()) {
+                    $pdfPath = $adobe->ensurePdf($filePath, $mime, $name);
+                    if ($pdfPath) {
+                        $annexNo++;
+                        $annexes[] = [
+                            'number' => $annexNo,
+                            'label'  => $sourceLabel,
+                            'name'   => $name,
+                            'path'   => $pdfPath,
+                        ];
+                        $entry['type']         = 'annex';
+                        $entry['annex_number'] = $annexNo;
+                    }
+                }
             }
 
             return $entry;
@@ -1461,11 +1485,43 @@ class HomeController extends Controller
             'hasLetterhead'        => (bool) $letterheadRecord,
             'processedAttachments' => $processedAttachments,
             'processedReplies'     => $processedReplies,
+            'annexes'              => $annexes,
             'toRecipients'         => $memo->toRecipients,
             'ccRecipients'         => $memo->ccRecipients,
         ])->setPaper('a4', 'portrait');
 
-        return $pdf->stream($filename);
+        // No convertible document attachments → stream the memo PDF as generated.
+        if (empty($annexes)) {
+            return $pdf->stream($filename);
+        }
+
+        // Merge the memo PDF with each converted attachment into one file. On any
+        // failure, fall back to streaming the memo PDF alone so export never breaks.
+        $memoTmp = null;
+        try {
+            $tmpDir = storage_path('app/adobe-tmp');
+            if (!is_dir($tmpDir)) {
+                @mkdir($tmpDir, 0775, true);
+            }
+            $memoTmp = $tmpDir . '/memo-' . $memo->id . '-' . uniqid() . '.pdf';
+            file_put_contents($memoTmp, $pdf->output());
+
+            $paths  = array_merge([$memoTmp], array_column($annexes, 'path'));
+            $merged = $adobe->combine($paths);
+
+            @unlink($memoTmp);
+
+            return response($merged, 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Memo export merge failed for memo ' . $memo->id . ': ' . $e->getMessage());
+            if ($memoTmp && file_exists($memoTmp)) {
+                @unlink($memoTmp);
+            }
+            return $pdf->stream($filename);
+        }
     }
 
     /**
@@ -1501,7 +1557,7 @@ class HomeController extends Controller
         $request->validate([
             'message'            => 'nullable|string|max:5000',
             'attachments'        => 'nullable|array|max:5',
-            'attachments.*'      => 'file|max:10240|mimes:pdf,doc,docx,txt,jpg,jpeg,png,gif',
+            'attachments.*'      => 'file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif',
             'reply_mode'         => 'required|in:all,specific',
             'specific_recipients'=> 'nullable|string',
         ]);

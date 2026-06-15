@@ -139,7 +139,7 @@ class AdvanceCommunicationController extends Controller
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
             'memo_category' => 'nullable|in:promotion,procurement,leave,other',
-            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,png,gif,zip',
+            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
             'letterhead' => 'nullable|string|exists:system_letterheads,slug',
             'cc_users' => 'nullable|array',
             'cc_users.*' => 'exists:users,id',
@@ -483,7 +483,7 @@ class AdvanceCommunicationController extends Controller
             }],
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
-            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,png,gif,zip',
+            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
         ]);
 
         if ($validator->fails()) {
@@ -990,7 +990,7 @@ class AdvanceCommunicationController extends Controller
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
             'memo_category' => 'nullable|in:promotion,procurement,leave,other',
-            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,png,gif,zip',
+            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
             'send_immediately' => 'boolean',
             'scheduled_at' => $isDraft ? 'nullable|date' : 'nullable|required_if:send_immediately,false|date|after:now',
             'letterhead' => 'nullable|string|exists:system_letterheads,slug',
@@ -1321,7 +1321,7 @@ class AdvanceCommunicationController extends Controller
             }],
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
-            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,jpg,png,gif,zip',
+            'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
             'send_immediately' => 'boolean',
             'scheduled_at' => $isDraft ? 'nullable|date' : 'nullable|required_if:send_immediately,false|date|after:now',
         ]);

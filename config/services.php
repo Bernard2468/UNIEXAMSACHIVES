@@ -80,4 +80,20 @@ return [
         'vapid_private_key' => env('VAPID_PRIVATE_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Adobe PDF Services — memo export attachment rendering
+    |--------------------------------------------------------------------------
+    | OAuth Server-to-Server credentials from https://developer.adobe.com/console.
+    | Used by App\Services\Pdf\AdobePdfService to convert Word/Excel/PowerPoint
+    | memo attachments into PDF and merge them into the exported memo PDF. When
+    | client_id / client_secret are blank the export silently falls back to
+    | listing those attachments by name only (no Adobe calls are made).
+    */
+    'adobe_pdf' => [
+        'client_id'     => env('ADOBE_PDF_CLIENT_ID'),
+        'client_secret' => env('ADOBE_PDF_CLIENT_SECRET'),
+        'org_id'        => env('ADOBE_PDF_ORG_ID'),
+    ],
+
 ];

@@ -276,9 +276,13 @@
             case 'missing':
                 $out .= '<div class="attachment-unavailable">&#9888; File not found on server: ' . e($att['name']) . '</div>';
                 break;
+            case 'annex':
+                // Document was converted to PDF and appended at the end of this export.
+                $out .= '<div class="merged-ref-note">&#128206; Full document appended as <strong>Annex ' . (int) ($att['annex_number'] ?? 0) . '</strong> at the end of this export.</div>';
+                break;
             default:
-                // PDF, Word and any other document: listed by name only (header above shows
-                // the filename). Inline content rendering needs converter libs not available here.
+                // PDF, Word and any other document that could not be converted: listed by
+                // name only (header above shows the filename).
                 $out .= '<div class="attachment-unavailable">&#128206; Document attached &mdash; open the original file in the system to view its contents.</div>';
         }
 
@@ -415,6 +419,26 @@
             @endforeach
         @endif
     </div>
+
+    {{-- ══ ANNEXES INDEX (documents merged in after this page) ══ --}}
+    @if(!empty($annexes))
+    <div class="appended-section">
+        <div class="appended-section-title">Annexes &mdash; Appended Documents</div>
+        <ol class="appended-list">
+            @foreach($annexes as $annex)
+                <li>
+                    <strong>Annex {{ $annex['number'] }}:</strong> {{ $annex['name'] }}
+                    @if(!empty($annex['label']))
+                        <span style="color:#6b7280;">&mdash; {{ $annex['label'] }}</span>
+                    @endif
+                </li>
+            @endforeach
+        </ol>
+        <div style="font-size:8.5pt; color:#92400e; margin-top:8px;">
+            The full content of each document listed above is attached on the following pages, in order.
+        </div>
+    </div>
+    @endif
 
     {{-- ══ FOOTER ══ --}}
     <div class="pdf-footer">
