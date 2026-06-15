@@ -107,7 +107,9 @@
       "Bash(php -l app/Console/Commands/PushDiagnose.php)",
       "Bash(php -l app/Http/Controllers/Dashboard/PushSubscriptionController.php)",
       "Bash(php -l bootstrap/app.php)",
-      "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\).Source; if \\($php\\) { \"php: $php\"; php -l app/Console/Commands/PushDiagnose.php; php -l app/Http/Controllers/Dashboard/PushSubscriptionController.php; php -l bootstrap/app.php } else { \"php not found on PATH\" })"
+      "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\).Source; if \\($php\\) { \"php: $php\"; php -l app/Console/Commands/PushDiagnose.php; php -l app/Http/Controllers/Dashboard/PushSubscriptionController.php; php -l bootstrap/app.php } else { \"php not found on PATH\" })",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)"
     ],
     "deny": [],
     "additionalDirectories": [
