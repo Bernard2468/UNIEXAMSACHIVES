@@ -147,7 +147,7 @@
         {{-- ── Bottom bar ── --}}
         <div class="ft-bar">
             <span class="ft-bar__copy">
-                &copy; {{ date('Y') }} Metascholar Consult LTD. All rights reserved.
+                &copy; {{ date('Y') }} UTDS. All rights reserved.
             </span>
             <span class="ft-bar__sep" aria-hidden="true"></span>
             <span class="ft-bar__dev">
