@@ -290,15 +290,27 @@
     width: 64px; height: 50px;
     filter: drop-shadow(0 3px 6px rgba(15,23,42,0.10));
 }
+/* Small, modern lock indicator centered on the folder face — sits clear of the
+   bottom-right owner avatar so the two never overlap. */
 .ico.folder .lock-badge {
-    position:absolute;
-    right: 2px; bottom: 2px;
-    width: 18px; height: 18px;
+    position: absolute;
+    top: 56%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 17px; height: 17px;
     border-radius: 50%;
-    background:#0f172a; color:#fbbf24;
-    display:flex; align-items:center; justify-content:center;
-    font-size: 9px;
-    border: 2px solid #fff;
+    background: rgba(15, 23, 42, 0.72);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    color: #fcd34d;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.30), inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    pointer-events: none;
+    z-index: 2;
+}
+/* Override the 48px file-icon glyph size so the lock stays extra-small but crisp. */
+.ico.folder .lock-badge i {
+    font-size: 8px;
+    line-height: 1;
 }
 
 /* ===== Shared-with-me: modern owner avatar badge ===== */
