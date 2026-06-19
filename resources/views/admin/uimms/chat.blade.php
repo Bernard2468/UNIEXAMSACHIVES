@@ -223,7 +223,7 @@
 
                         {{-- ===== APPROVER ACTION BANNER (assignee/approver, before unlock) ===== --}}
                         @php
-                            $showApproverCta = $memo->hasLinkedForms() && $canManageMemo && !$memo->isFormUnlocked()
+                            $showApproverCta = $memo->hasLinkedForms() && $memo->canApproveForm($userId) && !$memo->isFormUnlocked()
                                 && !in_array($memo->memo_status, ['completed', 'archived', 'suspended']);
                             $initiatorName = trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? '')) ?: 'The originator';
                         @endphp
@@ -804,8 +804,9 @@
                         </button>
 
                         {{-- Approve & Unlock Form — sits at the right of the reply controls.
-                             Only the assignee/approver of a form-linked, not-yet-unlocked memo sees it. --}}
-                        @if($memo->hasLinkedForms() && $canManageMemo && !$memo->isFormUnlocked() && $memo->memo_status !== 'archived')
+                             Only the recipient/approver of a form-linked, not-yet-unlocked memo sees it.
+                             The Through intermediary is excluded (canApproveForm) — they forward, not approve. --}}
+                        @if($memo->hasLinkedForms() && $memo->canApproveForm($userId) && !$memo->isFormUnlocked() && $memo->memo_status !== 'archived')
                             <button type="button" class="composer-approve-btn" onclick="confirmApproveForm()"
                                     title="Approve this request and unlock the form for the originator">
                                 <i class="icofont-unlock"></i> Approve &amp; Unlock Form

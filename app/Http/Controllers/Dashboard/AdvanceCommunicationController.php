@@ -126,17 +126,34 @@ class AdvanceCommunicationController extends Controller
             $request->merge(['memo_category' => null]);
         }
 
+        // A "form-request" memo (its category maps to one or more forms in
+        // config/memo_forms.php — promotion/procurement/leave) must be addressed to
+        // exactly ONE recipient: the approver. Everyone else who should see it goes
+        // on Cc. General/Other memos keep multi-recipient behaviour.
+        $formRequestCategories = collect(config('memo_forms.categories', []))
+            ->filter(fn ($c) => !empty($c['forms'] ?? []))
+            ->keys()
+            ->all();
+        $isFormRequest = in_array($request->input('memo_category'), $formRequestCategories, true);
+
         $validator = Validator::make($request->all(), [
             'subject' => 'required|string|max:500',
             'message' => 'required|string',
-            'recipient_type' => ['required', function ($attribute, $value, $fail) {
+            'recipient_type' => ['required', function ($attribute, $value, $fail) use ($isFormRequest) {
                 $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching'];
                 // Also allow committee_* format
                 if (!in_array($value, $validTypes) && !str_starts_with($value, 'committee_')) {
                     $fail('Invalid recipient type selected.');
                 }
+                if ($isFormRequest && $value !== 'selected') {
+                    $fail('A form request must be addressed to a single selected recipient.');
+                }
             }],
-            'selected_users' => 'required_if:recipient_type,selected|array',
+            'selected_users' => ['required_if:recipient_type,selected', 'array', function ($attribute, $value, $fail) use ($isFormRequest) {
+                if ($isFormRequest && count((array) $value) !== 1) {
+                    $fail('A Promotion, Procurement or Leave request must be addressed to exactly one recipient — use Cc for anyone else who should see it.');
+                }
+            }],
             'selected_users.*' => 'exists:users,id',
             'memo_category' => 'nullable|in:promotion,procurement,leave,other',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
@@ -978,16 +995,33 @@ class AdvanceCommunicationController extends Controller
             $request->merge(['memo_category' => null]);
         }
 
+        // A "form-request" memo (its category maps to one or more forms in
+        // config/memo_forms.php — promotion/procurement/leave) must be addressed to
+        // exactly ONE recipient: the approver. Everyone else who should see it goes
+        // on Cc. General/Other memos keep multi-recipient behaviour.
+        $formRequestCategories = collect(config('memo_forms.categories', []))
+            ->filter(fn ($c) => !empty($c['forms'] ?? []))
+            ->keys()
+            ->all();
+        $isFormRequest = in_array($request->input('memo_category'), $formRequestCategories, true);
+
         $validator = Validator::make($request->all(), [
             'subject' => 'required|string|max:500',
             'message' => 'required|string',
-            'recipient_type' => ['required', function ($attribute, $value, $fail) {
+            'recipient_type' => ['required', function ($attribute, $value, $fail) use ($isFormRequest) {
                 $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching'];
                 if (!in_array($value, $validTypes) && !str_starts_with($value, 'committee_')) {
                     $fail('Invalid recipient type selected.');
                 }
+                if ($isFormRequest && $value !== 'selected') {
+                    $fail('A form request must be addressed to a single selected recipient.');
+                }
             }],
-            'selected_users' => 'required_if:recipient_type,selected|array',
+            'selected_users' => ['required_if:recipient_type,selected', 'array', function ($attribute, $value, $fail) use ($isFormRequest) {
+                if ($isFormRequest && count((array) $value) !== 1) {
+                    $fail('A Promotion, Procurement or Leave request must be addressed to exactly one recipient — use Cc for anyone else who should see it.');
+                }
+            }],
             'selected_users.*' => 'exists:users,id',
             'memo_category' => 'nullable|in:promotion,procurement,leave,other',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',

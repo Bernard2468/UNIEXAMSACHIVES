@@ -1213,9 +1213,12 @@ class HomeController extends Controller
                     // True when THIS user is the assignee of a form-linked memo
                     // that hasn't been unlocked yet — drives the list "Approval
                     // needed" tag. Cheap: no extra query (uses loaded columns).
+                    // Excludes the Through intermediary: they can forward but never
+                    // approve, so the tag must not appear for them.
                     'awaiting_my_approval' => $memo->hasLinkedForms()
                         && ! $memo->isFormUnlocked()
                         && (int) $memo->current_assignee_id === (int) $userId
+                        && (int) $memo->through_user_id !== (int) $userId
                         && ($memo->memo_status ?? 'pending') === 'pending',
                 ];
             });
@@ -2091,8 +2094,18 @@ class HomeController extends Controller
             ], 409);
         }
 
-        $canManageMemo = ($memo->current_assignee_id == $userId) || $memo->isActiveParticipant($userId);
-        if (!$canManageMemo) {
+        // The Through intermediary forwards/minutes the memo but must never be the
+        // one to approve the requester's form — only the actual recipient can. Guard
+        // explicitly so the message is specific (before forwarding they are the current
+        // assignee; after forwarding they remain an active participant).
+        if ($memo->through_user_id && (int) $memo->through_user_id === (int) $userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'As the Through person you can forward this request, but only the recipient it was addressed to can approve and unlock the form.',
+            ], 403);
+        }
+
+        if (!$memo->canApproveForm($userId)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only the current assignee or active participants can approve this memo.',

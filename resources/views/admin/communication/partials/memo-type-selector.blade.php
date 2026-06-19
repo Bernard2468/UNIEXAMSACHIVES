@@ -60,7 +60,9 @@
         @foreach($mtOptions as $val => $opt)
             <span class="mtype-wrap">
                 <label class="mtype-radio">
-                    <input type="radio" name="memo_category" value="{{ $val }}" {{ $mtSelected === $val ? 'checked' : '' }}>
+                    <input type="radio" name="memo_category" value="{{ $val }}"
+                           data-form-request="{{ !empty(config('memo_forms.categories.'.$val.'.forms')) ? '1' : '0' }}"
+                           {{ $mtSelected === $val ? 'checked' : '' }}>
                     <span class="mtype-text">{{ $opt['label'] }}</span>
                 </label>
                 <span class="mtype-pop" role="tooltip">

@@ -436,6 +436,22 @@ class EmailCampaign extends Model
     }
 
     /**
+     * Who may Approve & Unlock this memo's form. The Through intermediary is
+     * excluded on purpose: they forward/minute the memo, but only the actual
+     * recipient (current assignee / active participant) may approve — both
+     * before forwarding (when the intermediary is the current assignee) and
+     * after (when they remain an active participant).
+     */
+    public function canApproveForm($userId): bool
+    {
+        if ($this->through_user_id && (int) $this->through_user_id === (int) $userId) {
+            return false;
+        }
+
+        return ((int) $this->current_assignee_id === (int) $userId) || $this->isActiveParticipant($userId);
+    }
+
+    /**
      * Record that an approver has unlocked the linked form. Decoupled from
      * memo_status on purpose — approval here never changes the conversation's
      * completed/archived state.

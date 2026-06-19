@@ -311,6 +311,12 @@
                                                     </div>
                                                 </div>
 
+                                        {{-- Shown only for form-request memo types (Promotion/Procurement/Leave). --}}
+                                        <div id="form-request-hint" style="display:none;margin:10px 0;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;color:#1e3a8a;font-size:13px;line-height:1.5;">
+                                            <i class="icofont-info-circle"></i>
+                                            This is a <strong>form request</strong> — address it to <strong>exactly one</strong> recipient (the approver). Add anyone else who should see it as <strong>Cc</strong>, and optionally route it <strong>Through</strong> someone first.
+                                        </div>
+
                                         <div id="user-selector" class="user-selector" style="display: none;">
                                             <div class="user-selector-header">
                                                 <div class="search-container">
@@ -2509,8 +2515,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // User selection handling
     userCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
+            // Form-request memos (Promotion/Procurement/Leave) allow exactly one
+            // recipient — picking another replaces the previous selection.
+            if (typeof isFormRequestType === 'function' && isFormRequestType() && this.checked) {
+                userCheckboxes.forEach(cb => { if (cb !== this) cb.checked = false; });
+            }
             updateSelectedCount();
             updatePreview();
+            if (typeof syncThroughVisibility === 'function') syncThroughVisibility();
         });
         
         // Also add click event to the user item for better UX
@@ -3121,6 +3133,12 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('through-section').style.display = 'block';
         document.getElementById('through-toggle-btn').innerHTML = '<i class="icofont-minus-circle"></i> Hide Through';
     }
+
+    /* ===== FORM-REQUEST MODE (single-recipient lock for Promotion/Procurement/Leave) ===== */
+    document.querySelectorAll('input[name="memo_category"]').forEach(function (radio) {
+        radio.addEventListener('change', applyFormRequestMode);
+    });
+    applyFormRequestMode(); // restore the locked state on load (covers old() after a validation error)
 });
 
 /* ===== CC ===== */
@@ -3153,8 +3171,15 @@ function syncThroughVisibility() {
     const isSelected = sel && sel.value === 'selected';
     const group = document.getElementById('through-form-group');
     if (!group) return;
-    group.style.display = isSelected ? 'block' : 'none';
-    if (!isSelected) clearThrough();
+
+    // In form-request mode the Through person can only be chosen AFTER the single
+    // recipient is selected — you route the request through someone to that one person.
+    const formMode = typeof isFormRequestType === 'function' && isFormRequestType();
+    const oneToChosen = document.querySelectorAll('.user-checkbox:checked').length === 1;
+    const show = isSelected && (!formMode || oneToChosen);
+
+    group.style.display = show ? 'block' : 'none';
+    if (!show) clearThrough();
 }
 function toggleThroughSection() {
     const sec = document.getElementById('through-section');
@@ -3189,6 +3214,57 @@ function updateThroughSelection() {
 function clearThrough() {
     document.querySelectorAll('.through-radio').forEach(r => r.checked = false);
     updateThroughSelection();
+}
+
+/* ===== FORM-REQUEST MODE (single-recipient lock) ===== */
+// Promotion / Procurement / Leave memos lead to a form and must be addressed to
+// exactly ONE recipient (the approver). When such a type is picked we force
+// "Selected" mode, hide the bulk recipient options, allow only one To person,
+// and reveal Through only once that one recipient is chosen. Cc stays unlimited.
+function isFormRequestType() {
+    const sel = document.querySelector('input[name="memo_category"]:checked');
+    return !!(sel && sel.getAttribute('data-form-request') === '1');
+}
+
+function enforceSingleRecipient() {
+    const checked = document.querySelectorAll('.user-checkbox:checked');
+    // Keep only the last one checked; uncheck the rest.
+    for (let i = 0; i < checked.length - 1; i++) {
+        checked[i].checked = false;
+    }
+}
+
+function applyFormRequestMode() {
+    const formMode = isFormRequestType();
+    const allCard    = document.getElementById('all_users') ? document.getElementById('all_users').closest('.option-card') : null;
+    const staffSec   = document.querySelector('.staff-category-section');
+    const committees = document.querySelector('.committees-section');
+    const hint       = document.getElementById('form-request-hint');
+
+    if (formMode) {
+        // Force "Selected Users" — a form request goes to a single approver.
+        const selRadio = document.getElementById('selected_users');
+        if (selRadio && !selRadio.checked) {
+            selRadio.checked = true;
+            selRadio.dispatchEvent(new Event('change'));
+        }
+        if (allCard)    allCard.style.display = 'none';
+        if (staffSec)   staffSec.style.display = 'none';
+        if (committees) committees.style.display = 'none';
+        if (hint)       hint.style.display = 'block';
+
+        // Collapse any pre-existing multi-selection down to one, then refresh counts.
+        enforceSingleRecipient();
+        const survivor = document.querySelector('.user-checkbox:checked');
+        if (survivor) survivor.dispatchEvent(new Event('change'));
+    } else {
+        if (allCard)    allCard.style.display = '';
+        if (staffSec)   staffSec.style.display = '';
+        if (committees) committees.style.display = '';
+        if (hint)       hint.style.display = 'none';
+    }
+
+    syncThroughVisibility();
 }
 
 /* ===== COMMITTEES COLLAPSE ===== */
