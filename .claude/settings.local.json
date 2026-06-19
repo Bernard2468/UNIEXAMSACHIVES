@@ -114,7 +114,8 @@
       "WebSearch",
       "PowerShell($php = \\(Get-Command php -ErrorAction SilentlyContinue\\).Source; if \\($php\\) { Write-Output \"PHP: $php\"; foreach \\($f in @\\(\"app/Services/Pdf/AdobePdfService.php\",\"app/Http/Controllers/Dashboard/HomeController.php\",\"app/Http/Controllers/Dashboard/AdvanceCommunicationController.php\",\"config/services.php\"\\)\\) { & $php -l $f } } else { Write-Output \"php not found on PATH\" })",
       "Bash(grep -n 'function storeReply\\\\|function sendReply\\\\|function reply\\\\|'\\\\''message'\\\\'' =>\\\\|\"message\" =>\\\\|->load\\(\\\\|reply->user\\\\|$reply' app/Http/Controllers/Dashboard/HomeController.php)",
-      "Bash(grep -n 'currentUserId\\\\|senderId\\\\|!= $currentUserId\\\\|reply-to-indicator' resources/views/admin/uimms/chat.blade.php)"
+      "Bash(grep -n 'currentUserId\\\\|senderId\\\\|!= $currentUserId\\\\|reply-to-indicator' resources/views/admin/uimms/chat.blade.php)",
+      "Bash(python -)"
     ],
     "deny": [],
     "additionalDirectories": [

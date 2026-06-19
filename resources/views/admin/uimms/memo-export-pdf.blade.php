@@ -274,7 +274,9 @@
         <div class="msg">
             <div><span class="who">{{ $item['sender'] }}</span><span class="when">{{ $item['sent_at'] }}</span></div>
             @if($hasRemark($item))
-                <div class="text">{!! $item['message'] !!}</div>
+                {{-- Message is pre-sanitised for print (icons/pills stripped to clean
+                     minute text); nl2br restores the meaningful line breaks. --}}
+                <div class="text">{!! nl2br($item['message']) !!}</div>
             @endif
             @foreach(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex') as $att){!! $renderInline($att) !!}@endforeach
         </div>

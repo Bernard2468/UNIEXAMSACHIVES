@@ -1438,6 +1438,35 @@ class HomeController extends Controller
             }
         }
 
+        // ── Normalise a chat note for the print/export ──
+        // Chat minutes are stored as on-screen HTML: icons8 <img> icons and
+        // flexbox "pills" (the forward tag, the THROUGH badge, etc.). None of
+        // that survives dompdf — external images don't load and the pills space
+        // their parts with CSS `gap`, not real spaces, so once the styling is
+        // gone the words fuse and any appended remark gets buried. This flattens
+        // a note into clean, formal minute text: drop the icons, keep meaningful
+        // line breaks, re-introduce a space at every tag boundary so nothing
+        // fuses, and keep only light emphasis (bold/italic).
+        $sanitizeMinuteForPdf = function (?string $html): string {
+            $html = (string) $html;
+            // Icons / avatars never render in the PDF.
+            $html = preg_replace('/<img\b[^>]*>/i', '', $html);
+            // Preserve breaks that carried meaning on screen (the divider <div>,
+            // explicit <br>, paragraphs) as real newlines.
+            $html = preg_replace('#<br\s*/?>#i', "\n", $html);
+            $html = preg_replace('#</(div|p)>#i', "\n", $html);
+            // Pills separated their parts with `gap`, not whitespace — add a
+            // space at each tag boundary so "Bernard"+"Through"+"Nana" don't fuse.
+            $html = preg_replace('/>\s*</', '> <', $html);
+            // Flatten to text + light emphasis only (no colours, no flexbox).
+            $html = strip_tags($html, '<strong><b><em><i>');
+            // Tidy whitespace and collapse blank lines.
+            $html = preg_replace('/[ \t]+/', ' ', $html);
+            $html = preg_replace('/ *\n */', "\n", $html);
+            $html = preg_replace('/\n{2,}/', "\n", $html);
+            return trim($html);
+        };
+
         // ── Process every reply and its attachments ──
         $processedReplies = [];
         foreach ($memo->replies->sortBy('created_at') as $reply) {
@@ -1455,7 +1484,7 @@ class HomeController extends Controller
                 'id'          => $reply->id,
                 'sender'      => $senderName,
                 'sent_at'     => $reply->created_at ? $reply->created_at->format('d M Y, H:i') : '',
-                'message'     => $reply->message ?? '',
+                'message'     => $sanitizeMinuteForPdf($reply->message ?? ''),
                 'attachments' => $replyAttachments,
             ];
         }
