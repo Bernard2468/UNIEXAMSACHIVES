@@ -314,7 +314,7 @@
                                         {{-- Shown only for form-request memo types (Promotion/Procurement/Leave). --}}
                                         <div id="form-request-hint" style="display:none;margin:10px 0;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;color:#1e3a8a;font-size:13px;line-height:1.5;">
                                             <i class="icofont-info-circle"></i>
-                                            This is a <strong>form request</strong> — address it to <strong>exactly one</strong> recipient (the approver). Add anyone else who should see it as <strong>Cc</strong>, and optionally route it <strong>Through</strong> someone first.
+                                            This is a <strong>form request</strong> — address it to <strong>exactly one</strong> recipient (the approver). Add anyone else who should see it as <strong>Cc</strong>, and optionally route it <strong>Through</strong> someone or an office if necessary.
                                         </div>
 
                                         <div id="user-selector" class="user-selector" style="display: none;">
