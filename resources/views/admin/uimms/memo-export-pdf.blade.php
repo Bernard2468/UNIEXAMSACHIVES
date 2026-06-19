@@ -70,12 +70,34 @@
         .body table th { background: #16335b; color: #fff; padding: 8px 10px; text-align: left; font-weight: bold; border: 1px solid #16335b; }
         .body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; }
 
-        /* ── Minutes (people who minuted on the memo) ── */
-        .msg { margin-bottom: 15px; padding-left: 13px; border-left: 2px solid #d8dee7; }
+        /* ── Minutes (officials who minuted on this memo) ── */
+        .msg { margin: 0 0 16px; }
+        .msg + .msg { border-top: 1px solid #eef1f4; padding-top: 14px; }
+        .msg-head { margin-bottom: 2px; }
         .msg .who  { font-weight: bold; font-size: 10pt; color: #16335b; }
-        .msg .when { font-size: 8.5pt; color: #9ca3af; margin-left: 8px; }
-        .msg .text { font-size: 10.5pt; line-height: 1.6; color: #1f2937; margin-top: 3px; }
-        .msg .text p { margin-bottom: 6px; }
+        .msg .when { font-size: 8.5pt; color: #9ca3af; margin-left: 9px; }
+
+        /* System action / routing event (forwarded · assigned · created · status) */
+        .msg .event { font-size: 9.5pt; color: #5a6a82; line-height: 1.5; margin-top: 4px; }
+        .msg .event .ev-dot {
+            display: inline-block; width: 5px; height: 5px;
+            background: #9aa7bb; border-radius: 50%;
+            vertical-align: middle; margin: 0 8px 2px 2px;
+        }
+
+        /* A person's own words — quoted minute with a navy accent rail */
+        .msg .remark {
+            margin-top: 8px;
+            padding: 9px 14px;
+            background: #f6f9fc;
+            border-left: 3px solid #16335b;
+            font-size: 10.5pt; line-height: 1.62; color: #1f2937;
+        }
+        .msg .remark .rk-tag {
+            display: block;
+            font-size: 7pt; font-weight: bold; letter-spacing: 0.13em;
+            text-transform: uppercase; color: #9aa7bb; margin-bottom: 4px;
+        }
         .empty-note { font-size: 10pt; color: #9ca3af; font-style: italic; }
 
         /* ── Inline attachments (compact, no boxes) ── */
@@ -179,9 +201,9 @@
             case 'annex':
                 return ''; // listed in Enclosures and appended as a full annex
             case 'missing':
-                return '<div class="clip">&#9888; <span class="nm">' . e($att['name']) . '</span> &mdash; file not found on server</div>';
+                return '<div class="clip"><span class="nm">' . e($att['name']) . '</span> &mdash; file not found on server</div>';
             default: // 'file' — a document that could not be converted/appended
-                return '<div class="clip">&#128206; <span class="nm">' . e($att['name']) . '</span>'
+                return '<div class="clip"><span class="nm">' . e($att['name']) . '</span>'
                      . ($att['size'] ? ' <span class="sz">(' . e($att['size']) . ')</span>' : '')
                      . ' <span class="sz">&mdash; available in the system</span></div>';
         }
@@ -259,12 +281,14 @@
 
     {{-- ══ MINUTES (officials who minuted on this memo — text/content only; files are in Enclosures) ══ --}}
     @php
-        // Show a minute only if it carries an actual remark or inline content. A minute
-        // that was just a document upload (now listed under Enclosures) would otherwise
-        // render as an empty, name-only entry — so skip those entirely.
-        $hasRemark = fn ($item) => trim(strip_tags($item['message'] ?? '')) !== '';
+        // Each minute is pre-resolved in the controller into an `event` (a system
+        // action — forwarded / assigned / created / status change) and/or a
+        // `comment` (a person's own words). Icons, emoji and chat-only pills are
+        // already stripped. Show a minute only if it carries an event, a comment,
+        // or inline content — name-only upload rows (now under Enclosures) are skipped.
         $hasInline = fn ($item) => !empty(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex'));
-        $renderableMinutes = array_values(array_filter($processedReplies, fn ($item) => $hasRemark($item) || $hasInline($item)));
+        $hasContent = fn ($item) => !empty($item['event']) || !empty($item['comment']) || $hasInline($item);
+        $renderableMinutes = array_values(array_filter($processedReplies, $hasContent));
     @endphp
     <div class="sec">Minutes</div>
     @if(empty($renderableMinutes))
@@ -272,12 +296,19 @@
     @else
         @foreach($renderableMinutes as $item)
         <div class="msg">
-            <div><span class="who">{{ $item['sender'] }}</span><span class="when">{{ $item['sent_at'] }}</span></div>
-            @if($hasRemark($item))
-                {{-- Message is pre-sanitised for print (icons/pills stripped to clean
-                     minute text); nl2br restores the meaningful line breaks. --}}
-                <div class="text">{!! nl2br($item['message']) !!}</div>
+            <div class="msg-head"><span class="who">{{ $item['sender'] }}</span><span class="when">{{ $item['sent_at'] }}</span></div>
+
+            @if(!empty($item['event']))
+                {{-- System action / routing event --}}
+                <div class="event"><span class="ev-dot"></span>{!! nl2br($item['event']) !!}</div>
             @endif
+
+            @if(!empty($item['comment']))
+                {{-- A person's own words. Labelled "Comment" only when it accompanies
+                     an action, so a forwarder's remark is unmistakably theirs. --}}
+                <div class="remark">@if(!empty($item['event']))<span class="rk-tag">Comment</span>@endif{!! nl2br($item['comment']) !!}</div>
+            @endif
+
             @foreach(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex') as $att){!! $renderInline($att) !!}@endforeach
         </div>
         @endforeach

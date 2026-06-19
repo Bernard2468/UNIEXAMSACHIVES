@@ -165,7 +165,7 @@ class FormSubmissionController extends Controller
                 \App\Models\MemoReply::create([
                     'campaign_id' => $sourceCampaign->id,
                     'user_id'     => Auth::id(),
-                    'message'     => '<img src="https://img.icons8.com/plasticine/50/task.png" alt="Form" style="width:18px;height:18px;vertical-align:-3px;margin-right:4px;"><em>' . e($definition->title()) . ' (' . e($submission->reference) . ') was created from this memo.</em>',
+                    'message'     => \App\Models\MemoReply::PDF_ACTION_MARKER . '<img src="https://img.icons8.com/plasticine/50/task.png" alt="Form" style="width:18px;height:18px;vertical-align:-3px;margin-right:4px;"><em>' . e($definition->title()) . ' (' . e($submission->reference) . ') was created from this memo.</em>',
                     'attachments' => [],
                 ]);
             } catch (\Throwable $e) {
