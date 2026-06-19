@@ -2112,17 +2112,8 @@ class HomeController extends Controller
 
         // Loop-closing side effects are best-effort: a failure here must never
         // undo the approval the approver just performed.
-        try {
-            MemoReply::create([
-                'campaign_id' => $memo->id,
-                'user_id'     => $userId,
-                'message'     => '✅ <em>Request approved — the originator may now proceed to fill the ' . e($formLabel) . '.</em>',
-                'attachments' => [],
-            ]);
-        } catch (\Throwable $e) {
-            \Log::warning('approveFormAccess: system reply failed: ' . $e->getMessage());
-        }
-
+        // NOTE: the approval is intentionally NOT posted as a chat reply — the
+        // requester is informed via the notification below, not in the memo chat.
         try {
             $actor = Auth::user();
             $actorName = trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? ''));
