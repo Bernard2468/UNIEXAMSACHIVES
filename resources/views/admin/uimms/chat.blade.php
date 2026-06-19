@@ -692,10 +692,12 @@
                                                         <span class="reply-to-indicator">to {{ implode(', ', $recipientNames) }}</span>
                                                     @elseif($message->reply_mode === 'all')
                                                         @php
-                                                            // Check if there are only 2 participants - if so, show specific person instead of "All"
-                                                            $currentUserId = auth()->id();
-                                                            $otherParticipants = $memo->active_participants->filter(function($participant) use ($currentUserId) {
-                                                                return $participant['user']['id'] != $currentUserId;
+                                                            // 2-person memo: show the recipient's name instead of "All".
+                                                            // Computed relative to the message SENDER (not the viewer) so the
+                                                            // tag reads the same for everyone and never shows "X to X".
+                                                            $senderId = $message->user_id;
+                                                            $otherParticipants = $memo->active_participants->filter(function($participant) use ($senderId) {
+                                                                return $participant['user']['id'] != $senderId;
                                                             });
                                                         @endphp
                                                         @if($memo->active_participants->count() <= 2 && $otherParticipants->count() == 1)
@@ -3723,12 +3725,14 @@ function addMessageToChat(message) {
             replyModeDisplay = `<span class="reply-to-indicator">to Specific</span>`;
         }
     } else if (message.reply_mode === 'all') {
-        // Check if there are only 2 participants - if so, show specific person instead of "All"
-        const currentUserId = {{ Auth::id() }};
-        const otherParticipants = memoParticipants.filter(participant => 
-            participant.user && participant.user.id !== currentUserId
+        // 2-person memo: show the recipient's name instead of "All".
+        // Relative to the message SENDER (not the viewer) so the tag is the
+        // same for everyone and never shows "X to X".
+        const senderId = message.user_id;
+        const otherParticipants = memoParticipants.filter(participant =>
+            participant.user && participant.user.id !== senderId
         );
-        
+
         if (memoParticipants.length <= 2 && otherParticipants.length === 1) {
             // Only 2 people total, show the other person's name
             const otherPerson = otherParticipants[0];
@@ -3904,11 +3908,14 @@ function addNewMessageToChat(message) {
             replyModeDisplay = `<span class="reply-to-indicator">to Specific</span>`;
         }
     } else if (message.reply_mode === 'all') {
-        // Check if there are only 2 participants - if so, show specific person instead of "All"
-        const otherParticipants = memoParticipants.filter(participant => 
-            participant.user && participant.user.id !== currentUserId
+        // 2-person memo: show the recipient's name instead of "All".
+        // Relative to the message SENDER (not the viewer) so the tag is the
+        // same for everyone and never shows "X to X".
+        const senderId = message.user_id;
+        const otherParticipants = memoParticipants.filter(participant =>
+            participant.user && participant.user.id !== senderId
         );
-        
+
         if (memoParticipants.length <= 2 && otherParticipants.length === 1) {
             // Only 2 people total, show the other person's name
             const otherPerson = otherParticipants[0];
