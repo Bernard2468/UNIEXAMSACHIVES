@@ -358,6 +358,7 @@
                 'title' => $file->file_title,
                 'date' => $date,
                 'ext' => $ext,
+                'own' => $file->user_id === auth()->id(),
                 'view' => asset($file->document_file),
                 'download' => route('download.file', $file->id),
                 'edit' => route('files.edit', $file->id),
@@ -373,6 +374,7 @@
                 'title' => $exam->course_title . ' (' . $exam->course_code . ')',
                 'date' => $date,
                 'ext' => $ext,
+                'own' => $exam->user_id === auth()->id(),
                 'view' => asset($exam->exam_document),
                 'download' => route('download.exam', $exam->id),
                 'edit' => route('exams.edit', $exam->id),
@@ -494,6 +496,7 @@
                             data-download-url="{{ $it->download }}"
                             data-edit-url="{{ $it->edit }}"
                             data-remove-url="{{ $it->remove }}"
+                            data-can-edit="{{ $it->own ? '1' : '0' }}"
                             data-name="{{ $displayName }}"
                             title="{{ $displayName }}.{{ $it->ext }}">
                             <button type="button" class="kebab" aria-label="More"><i class="fas fa-ellipsis-vertical"></i></button>
@@ -519,8 +522,10 @@
     <a href="#" data-action="view" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-eye" style="width:14px; color:#64748b;"></i> Open / View</a>
     <a href="#" data-action="download" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-download" style="width:14px; color:#64748b;"></i> Download</a>
     <a href="#" data-action="edit" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-pen" style="width:14px; color:#64748b;"></i> Edit details</a>
-    <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+    @if($isOwner)
+    <div data-ctx-remove-sep style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
     <button type="button" data-action="remove" style="display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; background:transparent; border:none; text-align:left; font-size:13.5px; font-weight:500; color:#dc2626; border-radius:7px; cursor:pointer; font-family:inherit;"><i class="fas fa-folder-minus" style="width:14px;"></i> Remove from folder</button>
+    @endif
 </div>
 
 
@@ -1025,9 +1030,14 @@
 
     // --- Context menu ---
     const ctx = document.getElementById('folderCtx');
+    const ctxEditAction = ctx.querySelector('[data-action="edit"]');
     let active = null;
     function openCtx(x, y, tile) {
         active = tile;
+        // "Edit details" edits the underlying file/exam record, so only the
+        // item's owner may see it. Viewers (and editors who don't own the item)
+        // get view/download only.
+        if (ctxEditAction) ctxEditAction.style.display = tile.dataset.canEdit === '1' ? '' : 'none';
         ctx.style.left = Math.min(x, window.innerWidth - 220) + 'px';
         ctx.style.top = Math.min(y, window.innerHeight - 220) + 'px';
         ctx.style.display = 'block';

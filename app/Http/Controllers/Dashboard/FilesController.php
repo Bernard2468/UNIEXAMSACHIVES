@@ -65,6 +65,8 @@ class FilesController extends Controller
 
     public function edit(File $file)
     {
+        $this->authorizeManage($file);
+
         return view('admin.file_form', [
             'file' => $file,
         ]);
@@ -79,6 +81,7 @@ class FilesController extends Controller
         ]);
 
         $file = File::findOrFail($id);
+        $this->authorizeManage($file);
 
         $user = Auth::user();
         $validatedData['depositor_name'] = trim($user->first_name . ' ' . $user->last_name);
@@ -153,9 +156,24 @@ class FilesController extends Controller
 
     public function destroy(File $file)
     {
+        $this->authorizeManage($file);
+
         $file->delete();
 
         return redirect()->back()->with('success', 'File deleted successfully');
+    }
+
+    /**
+     * Write guard for a File record. Only the file's owner (or a super admin)
+     * may edit or delete it. Folder sharing — viewer OR editor — grants
+     * view/download access only, never write access to the underlying file.
+     */
+    private function authorizeManage(File $file): void
+    {
+        $user = Auth::user();
+        if (!$user || ($file->user_id !== $user->id && !$user->isSuperAdmin())) {
+            abort(403, 'You do not have permission to modify this file.');
+        }
     }
 
     public function downloadFile(File $file)

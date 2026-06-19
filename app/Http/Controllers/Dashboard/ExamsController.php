@@ -64,6 +64,8 @@ class ExamsController extends Controller
 
     public function edit(Exam $exam)
     {
+        $this->authorizeManage($exam);
+
         return view('admin.deposition_form', [
             'exam' => $exam,
             'departments' => Department::all(),
@@ -73,6 +75,8 @@ class ExamsController extends Controller
 
     public function update(Request $request, Exam $exam)
     {
+        $this->authorizeManage($exam);
+
         $validatedData = $request->validate([
             'student_id' => 'required',
             'course_code' => 'required|string',
@@ -210,6 +214,8 @@ class ExamsController extends Controller
 
     public function destroy(Exam $exam)
     {
+        $this->authorizeManage($exam);
+
         $exam->delete();
 
         return redirect()->back()->with('success', 'Document deleted successfully');
@@ -217,9 +223,24 @@ class ExamsController extends Controller
 
     public function delete(Exam $exam)
     {
+        $this->authorizeManage($exam);
+
         $exam->delete();
 
         return redirect()->route('dashboard.upload.document')->with('success', 'Document deleted successfully');
+    }
+
+    /**
+     * Write guard for an Exam record. Only the exam's owner (or a super admin)
+     * may edit or delete it. Folder sharing — viewer OR editor — grants
+     * view/download access only, never write access to the underlying exam.
+     */
+    private function authorizeManage(Exam $exam): void
+    {
+        $user = Auth::user();
+        if (!$user || ($exam->user_id !== $user->id && !$user->isSuperAdmin())) {
+            abort(403, 'You do not have permission to modify this document.');
+        }
     }
 
     public function filter(Request $request)
