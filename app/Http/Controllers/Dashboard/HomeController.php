@@ -1460,47 +1460,11 @@ class HomeController extends Controller
             $html = preg_replace('/>\s*</', '> <', $html);
             // Flatten to text + light emphasis only (no colours, no flexbox).
             $html = strip_tags($html, '<strong><b><em><i>');
-            // Emoji / pictographs render as empty boxes in DejaVu Sans — the chat
-            // keeps them, the print drops them so minutes read as clean prose.
-            $html = preg_replace(
-                '/[\x{1F000}-\x{1FAFF}\x{2190}-\x{21FF}\x{2300}-\x{23FF}\x{25A0}-\x{27BF}\x{2B00}-\x{2BFF}\x{FE0F}\x{200D}]/u',
-                '',
-                $html
-            );
             // Tidy whitespace and collapse blank lines.
             $html = preg_replace('/[ \t]+/', ' ', $html);
             $html = preg_replace('/ *\n */', "\n", $html);
             $html = preg_replace('/\n{2,}/', "\n", $html);
             return trim($html);
-        };
-
-        // ── Resolve a stored note into a printable minute ──
-        // A note is either a SYSTEM ACTION (forwarded / assigned / created /
-        // status change — flagged with PDF_ACTION_MARKER) or a person's own
-        // words. Action notes may carry a user comment after PDF_REMARK_MARKER.
-        // We return: ['event' => action text|null, 'comment' => user words|null].
-        $resolveMinute = function (?string $raw) use ($sanitizeMinuteForPdf): array {
-            $raw      = (string) $raw;
-            $isAction = str_contains($raw, \App\Models\MemoReply::PDF_ACTION_MARKER);
-            [$bodyRaw, $commentRaw] = array_pad(
-                explode(\App\Models\MemoReply::PDF_REMARK_MARKER, $raw, 2),
-                2,
-                null
-            );
-
-            $body    = $sanitizeMinuteForPdf($bodyRaw);
-            $comment = $commentRaw !== null ? $sanitizeMinuteForPdf($commentRaw) : '';
-
-            if ($isAction) {
-                return [
-                    'event'   => $body !== '' ? $body : null,
-                    'comment' => $comment !== '' ? $comment : null,
-                ];
-            }
-
-            // Not a system action: the whole note is the person's own minute.
-            $words = trim($body . ($comment !== '' ? "\n" . $comment : ''));
-            return ['event' => null, 'comment' => $words !== '' ? $words : null];
         };
 
         // ── Process every reply and its attachments ──
@@ -1516,14 +1480,11 @@ class HomeController extends Controller
                 }
             }
 
-            $minute = $resolveMinute($reply->message ?? '');
-
             $processedReplies[] = [
                 'id'          => $reply->id,
                 'sender'      => $senderName,
                 'sent_at'     => $reply->created_at ? $reply->created_at->format('d M Y, H:i') : '',
-                'event'       => $minute['event'],
-                'comment'     => $minute['comment'],
+                'message'     => $sanitizeMinuteForPdf($reply->message ?? ''),
                 'attachments' => $replyAttachments,
             ];
         }
@@ -1797,10 +1758,9 @@ class HomeController extends Controller
             $assigneeNames = implode(', ', $assigneeNamesList) . ', and ' . $lastName;
         }
         
-        $assignmentMessage = MemoReply::PDF_ACTION_MARKER . "<em>📋 Memo Assigned by " . Auth::user()->first_name . " " . Auth::user()->last_name . " to " . $assigneeNames . "</em>";
+        $assignmentMessage = "<em>📋 Memo Assigned by " . Auth::user()->first_name . " " . Auth::user()->last_name . " to " . $assigneeNames . "</em>";
         if ($request->message) {
-            $assignmentMessage .= "<div style='margin: 8px 0; border-top: 1px solid rgba(0,0,0,0.1); width: 100%;'></div>"
-                . MemoReply::PDF_REMARK_MARKER . nl2br(e($request->message));
+            $assignmentMessage .= "<div style='margin: 8px 0; border-top: 1px solid rgba(0,0,0,0.1); width: 100%;'></div>" . nl2br(e($request->message));
         }
         
         MemoReply::create([
@@ -1958,18 +1918,16 @@ class HomeController extends Controller
         $names = $toUsers->map(fn ($u) => $u->first_name . ' ' . $u->last_name)->implode(', ');
         $forwarderName = Auth::user()->first_name . ' ' . Auth::user()->last_name;
         $forwardIcon = 'https://img.icons8.com/external-soft-fill-juicy-fish/50/external-forward-envelopes-and-mail-soft-fill-soft-fill-juicy-fish.png';
-        $note = MemoReply::PDF_ACTION_MARKER
-            . '<span style="display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;font-size:13px;font-weight:600;color:#1e3a8a;line-height:1.4;">'
+        $note = '<span style="display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;font-size:13px;font-weight:600;color:#1e3a8a;line-height:1.4;">'
             . '<img src="' . $forwardIcon . '" alt="Forwarded" style="width:18px;height:18px;flex:0 0 auto;">'
             . 'Memo forwarded to <strong style="font-weight:700;">' . e($names) . '</strong>'
             . '<span style="display:inline-flex;align-items:center;gap:6px;">'
-            .     '<span style="background:#2563eb;color:#fff;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 9px;border-radius:10px;">through</span>'
+            .     '<span style="background:#2563eb;color:#fff;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 9px;border-radius:10px;">Through</span>'
             .     '<strong style="font-weight:700;">' . e($forwarderName) . '</strong>'
             . '</span>'
             . '</span>';
         if ($request->filled('message')) {
-            $note .= "<div style='margin:10px 0 6px;border-top:1px solid rgba(0,0,0,0.08);width:100%;'></div>"
-                . MemoReply::PDF_REMARK_MARKER . nl2br(e($request->message));
+            $note .= "<div style='margin:10px 0 6px;border-top:1px solid rgba(0,0,0,0.08);width:100%;'></div>" . nl2br(e($request->message));
         }
         MemoReply::create([
             'campaign_id' => $memo->id,
@@ -2111,11 +2069,10 @@ class HomeController extends Controller
 
         // Send a system message about status change
         $statusMessages = [
-            'completed' => MemoReply::PDF_ACTION_MARKER . '✅ <em>Memo marked as completed</em>',
-            'suspended' => MemoReply::PDF_ACTION_MARKER . '⏸️ <em>Memo suspended</em>'
-                . ($request->reason ? MemoReply::PDF_REMARK_MARKER . 'Reason: ' . nl2br(e($request->reason)) : ''),
-            'unsuspended' => MemoReply::PDF_ACTION_MARKER . '▶️ <em>Memo unsuspended - conversation resumed</em>',
-            'archived' => MemoReply::PDF_ACTION_MARKER . '📦 <em>Memo archived</em>',
+            'completed' => '✅ <em>Memo marked as completed</em>',
+            'suspended' => '⏸️ <em>Memo suspended</em>' . ($request->reason ? "\n\nReason: " . $request->reason : ''),
+            'unsuspended' => '▶️ <em>Memo unsuspended - conversation resumed</em>',
+            'archived' => '📦 <em>Memo archived</em>',
         ];
 
         MemoReply::create([

@@ -10,18 +10,6 @@ class MemoReply extends Model
 {
     use HasFactory;
 
-    /**
-     * Invisible structure markers embedded in system-generated chat notes.
-     *
-     * They are HTML comments, so they render as nothing in the on-screen chat,
-     * but let the PDF/print pipeline (see HomeController@exportMemoPdf) tell a
-     * system ACTION (forwarded / assigned / created / status change) from a
-     * person's own words, and split an action's optional attached comment out
-     * so it can be rendered as a distinct "Comment" minute.
-     */
-    public const PDF_ACTION_MARKER = '<!--cug:action-->';
-    public const PDF_REMARK_MARKER = '<!--cug:remark-->';
-
     protected $fillable = [
         'campaign_id',
         'user_id',
