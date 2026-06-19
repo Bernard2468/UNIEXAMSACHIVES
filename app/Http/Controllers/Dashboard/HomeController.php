@@ -1880,11 +1880,18 @@ class HomeController extends Controller
         $memo->update(['through_status' => 'forwarded']);
         $memo->addToWorkflowHistory('through_forwarded', $userId, $toUsers->pluck('id')->implode(','));
 
-        // Post a chat note (visible to the now-active recipients).
+        // Post a chat note (visible to the now-active recipients). The bubble
+        // header already shows the forwarder + time, so the note only carries a
+        // clean routing tag — "Forwarded to {names} · Through" — not "(Through)".
         $names = $toUsers->map(fn ($u) => $u->first_name . ' ' . $u->last_name)->implode(', ');
-        $note = '<em>➡️ Forwarded to ' . e($names) . ' by ' . e(Auth::user()->first_name . ' ' . Auth::user()->last_name) . ' (Through)</em>';
+        $forwardIcon = 'https://img.icons8.com/external-soft-fill-juicy-fish/50/external-forward-envelopes-and-mail-soft-fill-soft-fill-juicy-fish.png';
+        $note = '<span style="display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;font-size:13px;font-weight:600;color:#1e3a8a;line-height:1.4;">'
+            . '<img src="' . $forwardIcon . '" alt="Forwarded" style="width:18px;height:18px;flex:0 0 auto;">'
+            . 'Memo forwarded to <strong style="font-weight:700;">' . e($names) . '</strong>'
+            . '<span style="background:#2563eb;color:#fff;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 9px;border-radius:10px;">Through</span>'
+            . '</span>';
         if ($request->filled('message')) {
-            $note .= "<div style='margin:8px 0;border-top:1px solid rgba(0,0,0,0.1);width:100%;'></div>" . nl2br(e($request->message));
+            $note .= "<div style='margin:10px 0 6px;border-top:1px solid rgba(0,0,0,0.08);width:100%;'></div>" . nl2br(e($request->message));
         }
         MemoReply::create([
             'campaign_id' => $memo->id,
