@@ -1599,8 +1599,16 @@ class HomeController extends Controller
         $isActiveParticipant = $memo->isActiveParticipant($userId);
         $isCreator = $memo->created_by === $userId;
         
-        // If creator, check if memo is assigned to someone else
-        $isAssignedToSomeoneElse = $isCreator && $memo->current_assignee_id && $memo->current_assignee_id != $userId;
+        // If creator, check if memo is assigned to someone else. Exception: the
+        // originator of a form-request memo regains chat access once the recipient
+        // approves & unlocks the form, so they can supply documents / answer
+        // follow-ups without being formally re-assigned. While it is still under
+        // review (not yet unlocked) the originator stays locked out as before.
+        $creatorRegainedAccess = $isCreator && $memo->hasLinkedForms() && $memo->isFormUnlocked();
+        $isAssignedToSomeoneElse = $isCreator
+            && $memo->current_assignee_id
+            && $memo->current_assignee_id != $userId
+            && ! $creatorRegainedAccess;
         
         if ($isAssignedToSomeoneElse) {
             return response()->json([
