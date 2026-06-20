@@ -920,6 +920,11 @@
                                         <h4>Memo Suspended</h4>
                                         <p>This memo has been <strong>suspended</strong> by <strong>{{ $suspendedByUser ? $suspendedByUser->first_name . ' ' . $suspendedByUser->last_name : 'Unknown user' }}</strong> and messaging is temporarily disabled.</p>
                                         <p class="blocked-subtitle">Only {{ $suspendedByUser ? $suspendedByUser->first_name . ' ' . $suspendedByUser->last_name : 'the user who suspended it' }} can unsuspend this memo to resume conversation</p>
+                                    @elseif($memo->hasLinkedForms() && $memo->created_by == $userId && !$memo->isFormUnlocked())
+                                        {{-- Form-request originator, still under review: the chat unlocks on approval, not on re-assignment. --}}
+                                        <h4>Request Awaiting Approval</h4>
+                                        <p>Your{{ $memo->memo_category ? ' ' . ucfirst($memo->memo_category) : '' }} request is currently with <strong>{{ $memo->currentAssignee ? $memo->currentAssignee->first_name . ' ' . $memo->currentAssignee->last_name : 'the recipient' }}</strong> for approval.</p>
+                                        <p class="blocked-subtitle">Once it is approved, the chat will unlock here so you can reply and attach documents.</p>
                                     @elseif($isAssignedToSomeoneElse)
                                         <h4>Memo Assigned</h4>
                                         <p>This memo has been assigned to <strong>{{ $memo->currentAssignee ? $memo->currentAssignee->first_name . ' ' . $memo->currentAssignee->last_name : 'another user' }}</strong>.</p>
