@@ -1100,6 +1100,10 @@
                 await fetch(`/dashboard/notifications/${id}/mark-read`, {
                     method: 'POST',
                     credentials: 'same-origin',
+                    // keepalive lets the request survive the immediate
+                    // window.location navigation that follows on click-through,
+                    // so the read flag is reliably persisted.
+                    keepalive: true,
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                         'Accept': 'application/json',
@@ -1138,7 +1142,12 @@
             // NOT bubble to the card click, hence the data-nt-action guard below.
             card.onclick = (e) => {
                 if (e.target.closest('[data-nt-action]')) return;
-                if (!item.is_read && item.id && item.type !== 'memo' && item.type !== 'memo_recipient') {
+                // Only EmailCampaignRecipient memo rows ('memo_recipient') are
+                // marked read server-side by the memo chat endpoint. Genuine
+                // Notification rows — including ones typed 'memo' (e.g. the
+                // "Request Approved — Proceed to Form" alert) — must be marked
+                // read here, otherwise their unread count never clears.
+                if (!item.is_read && item.id && item.type !== 'memo_recipient') {
                     ntMarkOneRead(item.id);
                 }
                 if (url !== '#') window.location.href = url;
@@ -1218,10 +1227,13 @@
                     const type    = row.getAttribute('data-nt-type');
                     const url     = row.getAttribute('data-nt-url');
                     const isRead  = row.classList.contains('is-read');
-                    // Memos are EmailCampaignRecipient rows, not notifications —
-                    // their /memos/show endpoint already marks them read server-side.
-                    // Don't waste a roundtrip on already-read items either.
-                    if (!isRead && id && type !== 'memo' && type !== 'memo_recipient') {
+                    // Only EmailCampaignRecipient memo rows ('memo_recipient') are
+                    // marked read server-side by the memo /show endpoint, so we skip
+                    // the roundtrip for those. Genuine Notification rows — including
+                    // ones typed 'memo' like "Request Approved — Proceed to Form" —
+                    // have a real notification id and MUST be marked read here, or
+                    // their unread count lingers even after the user opens them.
+                    if (!isRead && id && type !== 'memo_recipient') {
                         ntMarkOneRead(id);
                     }
                     if (url && url !== '#') window.location.href = url;
