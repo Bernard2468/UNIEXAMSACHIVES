@@ -20,6 +20,7 @@ class FormSubmission extends Model
         'status',
         'created_by',
         'source_campaign_id',
+        'source_memo_pdf_path',
         'current_stage',
         'current_assignee_id',
         'current_office_id',
@@ -73,6 +74,12 @@ class FormSubmission extends Model
     public function sourceCampaign()
     {
         return $this->belongsTo(EmailCampaign::class, 'source_campaign_id');
+    }
+
+    /** Whether this form was started from an approved memo. */
+    public function hasSourceMemo(): bool
+    {
+        return $this->source_campaign_id !== null;
     }
 
     public function signatures()

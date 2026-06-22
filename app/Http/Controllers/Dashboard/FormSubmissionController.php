@@ -158,6 +158,15 @@ class FormSubmissionController extends Controller
             sourceCampaignId: $sourceCampaign?->id,
         );
 
+        // Freeze a snapshot of the approved-memo PDF onto the form, so everyone
+        // in the trail (HODs, offices, signers) can later see exactly what was
+        // approved. Done BEFORE the loop note below so the snapshot reflects the
+        // memo as it was approved, not the "form created" note we add next.
+        // Best-effort — a failed snapshot leaves the form route to render live.
+        if ($sourceCampaign) {
+            $this->snapshotSourceMemo($submission, $sourceCampaign);
+        }
+
         // Close the loop: note on the originating memo that the form now exists.
         // Best-effort — never let a failed note abort the submission.
         if ($sourceCampaign) {
@@ -187,7 +196,7 @@ class FormSubmissionController extends Controller
     {
         $this->authorize('view', $submission);
 
-        $submission->load(['signatures.user', 'attachments.uploader', 'comments.user', 'creator', 'currentAssignee', 'currentOffice']);
+        $submission->load(['signatures.user', 'attachments.uploader', 'comments.user', 'creator', 'currentAssignee', 'currentOffice', 'sourceCampaign.formUnlocker']);
 
         $definition = $submission->definition();
         abort_unless($definition, 500, 'Form definition missing.');
@@ -473,7 +482,7 @@ class FormSubmissionController extends Controller
         $definition = $submission->definition();
         abort_unless($definition, 500);
 
-        $submission->load(['signatures.user', 'creator', 'comments.user', 'attachments']);
+        $submission->load(['signatures.user', 'creator', 'comments.user', 'attachments', 'sourceCampaign.formUnlocker']);
 
         $pdf = Pdf::loadView($definition->pdfView(), [
             'submission' => $submission,
@@ -486,6 +495,89 @@ class FormSubmissionController extends Controller
         $filename = strtoupper($submission->form_code) . '-' . $submission->reference . '.pdf';
 
         return $pdf->stream($filename);
+    }
+
+    /**
+     * The approved memo (print/export PDF) that authorised this form.
+     *
+     * Authorization rides on the FORM, not the memo: anyone who can view the
+     * submission (creator, current assignee, a prior signer, or a member of the
+     * office currently holding it) may open the approval — even though they are
+     * not participants in the originating memo. This is the whole point of the
+     * feature: HODs / offices / signers downstream can confirm the request was
+     * approved before the form was started.
+     *
+     * Serves the frozen snapshot captured at form creation when present;
+     * otherwise renders the memo live and backfills the snapshot for next time.
+     */
+    public function sourceMemoPdf(FormSubmission $submission)
+    {
+        $this->authorize('view', $submission);
+        abort_unless($submission->source_campaign_id, 404);
+
+        $disk     = Storage::disk('public');
+        $filename = 'Approved-Memo-' . $submission->reference . '.pdf';
+
+        // Prefer the frozen snapshot — "exactly what was approved".
+        if ($submission->source_memo_pdf_path && $disk->exists($submission->source_memo_pdf_path)) {
+            return response()->file($disk->path($submission->source_memo_pdf_path), [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            ]);
+        }
+
+        // Fallback: render live from the linked memo (older forms, or a snapshot
+        // that failed to generate at creation).
+        $memo = $submission->sourceCampaign;
+        abort_unless($memo, 404);
+
+        try {
+            $bytes = app(\App\Services\Memo\MemoExportService::class)->pdfBytes($memo);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Source-memo live render failed for form ' . $submission->id . ': ' . $e->getMessage());
+            abort(500, 'Unable to render the approved memo right now.');
+        }
+
+        // Backfill the snapshot so subsequent views are instant (best-effort).
+        $this->persistMemoSnapshot($submission, $bytes);
+
+        return response($bytes, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Render + store the approved-memo PDF as the form's frozen snapshot.
+     * Best-effort: any failure is logged and leaves source_memo_pdf_path null,
+     * so the form route falls back to a live render.
+     */
+    protected function snapshotSourceMemo(FormSubmission $submission, \App\Models\EmailCampaign $memo): void
+    {
+        try {
+            $bytes = app(\App\Services\Memo\MemoExportService::class)->pdfBytes($memo);
+            $this->persistMemoSnapshot($submission, $bytes);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Source-memo snapshot failed for form ' . $submission->id . ': ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Write the given PDF bytes to public storage and record the path on the
+     * submission. Persisted via a query-builder update (NOT save()) so it never
+     * touches form_submissions.updated_at — otherwise a lazy backfill triggered
+     * by merely viewing the approval would reset the form's staleness counter.
+     */
+    protected function persistMemoSnapshot(FormSubmission $submission, string $bytes): void
+    {
+        try {
+            $path = 'form-source-memos/' . $submission->id . '-' . \Illuminate\Support\Str::random(8) . '.pdf';
+            Storage::disk('public')->put($path, $bytes);
+            FormSubmission::where('id', $submission->id)->update(['source_memo_pdf_path' => $path]);
+            $submission->source_memo_pdf_path = $path;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Source-memo snapshot persist failed for form ' . $submission->id . ': ' . $e->getMessage());
+        }
     }
 
     // ===========================================================

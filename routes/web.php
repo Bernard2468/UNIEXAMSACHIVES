@@ -399,6 +399,7 @@ Route::middleware(['auth'])->group(function () {
             ->middleware('throttle:120,1')
             ->name('comment');
         Route::get('/submissions/{submission}/pdf',      [FormSubmissionController::class, 'downloadPdf'])->name('pdf');
+        Route::get('/submissions/{submission}/source-memo', [FormSubmissionController::class, 'sourceMemoPdf'])->name('source-memo');
         Route::get('/submissions/{submission}/attachments/{attachment}', [FormSubmissionController::class, 'downloadAttachment'])->name('attachment');
 
         Route::get('/offices/{officeSlug}/members',      [FormSubmissionController::class, 'officeMembers'])->name('office-members');

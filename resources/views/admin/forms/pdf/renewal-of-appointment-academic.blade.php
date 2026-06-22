@@ -231,6 +231,8 @@
         @if($submission->completed_at)<span><strong>Completed:</strong> {{ $submission->completed_at->format('d M Y, H:i') }}</span>@endif
     </div>
 
+    @include('admin.forms.pdf._auth-seal', ['submission' => $submission])
+
     {{-- ===== Top fields ===== --}}
     <table class="pf-top-fields">
         <tr>

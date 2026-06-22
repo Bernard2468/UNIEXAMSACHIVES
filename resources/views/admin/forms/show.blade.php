@@ -85,6 +85,52 @@
                             </div>
                         </div>
 
+                        {{-- ====== APPROVED-MEMO AUTHORISATION BADGE ======
+                             When this form was started from an approved memo, show a
+                             "verified" banner so everyone in the trail (HODs, offices,
+                             signers, commenters) can confirm the request was approved
+                             BEFORE the form was filled — and open that approval as a PDF.
+                             Visible to anyone who can view the form; the PDF itself is
+                             served by admin.forms.source-memo under the form's policy. --}}
+                        @if($submission->sourceCampaign)
+                            @php
+                                $srcMemo  = $submission->sourceCampaign;
+                                $approver = $srcMemo->formUnlocker;
+                                $approverName = $approver
+                                    ? trim(($approver->first_name ?? '') . ' ' . ($approver->last_name ?? '')) ?: ($approver->name ?? null)
+                                    : null;
+                            @endphp
+                            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+                                        background:linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 100%);
+                                        border:1px solid #a7f3d0;border-left:5px solid #059669;
+                                        border-radius:14px;padding:14px 18px;margin:4px 0 20px;
+                                        box-shadow:0 1px 3px rgba(5,150,105,.08);">
+                                <div style="flex:0 0 auto;width:40px;height:40px;border-radius:50%;
+                                            background:#059669;display:flex;align-items:center;justify-content:center;
+                                            box-shadow:0 2px 6px rgba(5,150,105,.35);">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </div>
+                                <div style="flex:1 1 240px;min-width:0;">
+                                    <div style="font-weight:700;color:#065f46;font-size:13.5px;letter-spacing:.2px;display:flex;align-items:center;gap:8px;">
+                                        Approved before filling
+                                        <span style="background:#059669;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:2px 7px;border-radius:20px;">Verified</span>
+                                    </div>
+                                    <div style="color:#047857;font-size:12.5px;margin-top:3px;line-height:1.5;">
+                                        Authorised by memo
+                                        <strong style="font-family:'JetBrains Mono',monospace;">{{ $srcMemo->reference ?? ('#' . $srcMemo->id) }}</strong>@if($approverName) · approved by <strong>{{ $approverName }}</strong>@endif@if($srcMemo->form_unlocked_at) · {{ $srcMemo->form_unlocked_at->format('d M Y') }}@endif
+                                    </div>
+                                </div>
+                                <a href="{{ route('admin.forms.source-memo', $submission->id) }}" target="_blank" rel="noopener"
+                                   style="flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;text-decoration:none;
+                                          background:#059669;color:#fff;font-weight:600;font-size:12.5px;
+                                          padding:9px 16px;border-radius:9px;box-shadow:0 2px 6px rgba(5,150,105,.3);transition:background .15s;"
+                                   onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                    View approval
+                                </a>
+                            </div>
+                        @endif
+
                         @include('admin.forms.partials.stage-stepper', [
                             'definition'      => $definition,
                             'currentStage'    => $currentStage,
