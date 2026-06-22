@@ -98,6 +98,17 @@ class FormStage
     }
 
     /**
+     * Internal Audit stage. Universities conventionally use green ink for
+     * audit, so this stage's recorded comment and signature render in green
+     * "audit ink" both on screen and in the PDF. Identified by the office it
+     * routes to, since the stage slug varies across forms ('audit' / 'auditor').
+     */
+    public function isInternalAudit(): bool
+    {
+        return $this->officeSlug === 'internal-audit';
+    }
+
+    /**
      * Stages where the requisitioner/forwarder picks the recipient at the
      * point of forwarding (no fixed downstream office configured on the
      * stage itself). Creator-pool stages don't qualify — the recipient is

@@ -290,6 +290,8 @@
                                             <div class="form-panel__body">
                                                 @include('admin.forms.partials.signature-pad', [
                                                     'savedSignature' => $savedSignature,
+                                                    // Internal Audit signs in green "audit ink".
+                                                    'inkColor'       => $currentStage->isInternalAudit() ? '#15803d' : '#111827',
                                                 ])
                                             </div>
                                         </div>

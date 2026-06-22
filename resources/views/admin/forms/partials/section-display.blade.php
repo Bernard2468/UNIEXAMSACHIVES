@@ -12,6 +12,10 @@
     use App\Models\FormAttachment;
     $sectionData = $sectionData ?? [];
 
+    // Internal Audit convention: their recorded comment renders in green
+    // "audit ink" (the signature is captured green at signing time).
+    $isAuditSection = method_exists($stage, 'isInternalAudit') && $stage->isInternalAudit();
+
     // Field groups that this stage's form definition wants rendered as a
     // single compact table (instead of one dl-row per field). Used for the
     // Promotion form's 14-indicator self-evaluation so downstream approvers
@@ -194,7 +198,7 @@
 
                 <div class="locked-fields__row" style="grid-column: span {{ $rowCol }};">
                     <dt>{{ $field->label }}</dt>
-                    <dd>
+                    <dd @if($isAuditSection) style="color:#15803d; font-weight:600;" @endif>
                         @switch($field->type)
                             @case(FormField::TYPE_CHECKBOX)
                                 {{ !empty($raw) ? 'Yes' : 'No' }}

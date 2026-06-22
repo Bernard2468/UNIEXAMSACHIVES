@@ -388,7 +388,8 @@
                 <td class="pf-item__num">&nbsp;</td>
                 <td>
                     <span class="pf-item__label">Inspection notes:</span>
-                    <div class="pf-item__value--grow" style="min-height: 26px;">{{ $auditorData['audit_comments'] }}</div>
+                    {{-- Internal Audit comment in green "audit ink". --}}
+                    <div class="pf-item__value--grow" style="min-height: 26px; color:#15803d; font-weight:bold;">{{ $auditorData['audit_comments'] }}</div>
                 </td>
             </tr></table>
         @endif

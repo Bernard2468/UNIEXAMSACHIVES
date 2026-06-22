@@ -16,6 +16,9 @@
 @php
     use Illuminate\Support\Facades\Auth;
     $savedSignature = $savedSignature ?? null;
+    // Pen colour for drawn / typed signatures. Defaults to near-black; the
+    // Internal Audit stage passes green so the auditor signs in "audit ink".
+    $inkColor = $inkColor ?? '#111827';
     $signerName = $signerName
         ?? trim((Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? ''));
 
@@ -32,7 +35,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Dancing+Script:wght@500;700&family=Great+Vibes&family=Sacramento&display=swap" rel="stylesheet">
 
-<div class="sigpad-wrapper" id="sigpadWrapper">
+<div class="sigpad-wrapper" id="sigpadWrapper" data-ink-color="{{ $inkColor }}">
 
     {{-- Saved signature (offered to both tabs) --}}
     @if($savedSignature && $savedSignature->image_url)
@@ -204,6 +207,9 @@
     const wrapper      = document.getElementById('sigpadWrapper');
     if (!wrapper) return;
 
+    // Pen colour (near-black by default; green for the Internal Audit stage).
+    const inkColor     = wrapper.dataset.inkColor || '#111827';
+
     const dataInput    = document.getElementById('signature_data_input');
     const reuseInput   = document.getElementById('reuse_saved_signature_input');
     const reuseChk     = document.getElementById('reuse_saved_signature_checkbox');
@@ -223,7 +229,7 @@
         ctx.scale(ratio, ratio);
         ctx.lineWidth   = 2;
         ctx.lineCap     = 'round';
-        ctx.strokeStyle = '#111827';
+        ctx.strokeStyle = inkColor;
         ctx.fillStyle   = '#fff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
@@ -312,7 +318,7 @@
         tctx.fillStyle = '#fff';
         tctx.fillRect(0, 0, cssW, cssH);
 
-        tctx.fillStyle    = '#111827';
+        tctx.fillStyle    = inkColor;
         tctx.textBaseline = 'middle';
         tctx.textAlign    = 'center';
 

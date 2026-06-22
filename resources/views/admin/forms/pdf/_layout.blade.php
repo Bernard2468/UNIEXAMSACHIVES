@@ -75,6 +75,8 @@
             $isSigned  = (bool) $signedSig;
             $data      = $submission->sectionData($stage->slug);
             $isOptionalSkipped = $stage->optional && !$isSigned;
+            // Internal Audit records its comment in green "audit ink".
+            $isAudit   = $stage->isInternalAudit();
         @endphp
 
         @if($isOptionalSkipped) @continue @endif
@@ -100,7 +102,7 @@
                                 <td>
                                     <div class="field {{ in_array($field->type, [FormField::TYPE_TEXTAREA], true) ? 'field--block' : '' }}">
                                         <span class="field__label">{{ $field->label }}:</span>
-                                        <span class="field__value">
+                                        <span class="field__value" @if($isAudit) style="color:#15803d; font-weight:bold;" @endif>
                                             @switch($field->type)
                                                 @case(FormField::TYPE_CHECKBOX)
                                                     {{ !empty($raw) ? '☑ Yes' : '☐ No' }}
