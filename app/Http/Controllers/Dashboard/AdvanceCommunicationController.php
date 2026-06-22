@@ -1954,18 +1954,10 @@ class AdvanceCommunicationController extends Controller
             $failed++;
         }
 
-        // In-app notification so the intermediary sees the action item immediately.
-        Notification::create([
-            'user_id' => $throughUser->id,
-            'type' => 'memo_through_pending',
-            'title' => 'Memo awaiting your forward',
-            'message' => (auth()->user()->first_name ?? 'Someone') . ' routed a memo through you: ' . $campaign->subject,
-            'url' => route('dashboard.uimms.chat', $campaign->id),
-            'data' => [
-                'memo_id' => $campaign->id,
-                'through' => true,
-            ],
-        ]);
+        // No separate "Memo awaiting your forward" notification: the through
+        // recipient row created during send already shows in the intermediary's
+        // tray, and recentMemos() labels it "Awaiting your forward" with an
+        // "Open & forward" action — one card, not two.
 
         $campaign->addToWorkflowHistory('through_pending', auth()->id(), $throughUser->id);
 

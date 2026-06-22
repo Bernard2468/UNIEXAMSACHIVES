@@ -226,10 +226,12 @@ class HomeController extends Controller
 
     public function recentMemos()
     {
+        $userId = Auth::id();
+
         // Same modern pattern as getNotifications — keep recently-read memos
         // visible so "Mark all as read" doesn't appear to wipe the tray.
         $recentMemos = EmailCampaignRecipient::with(['campaign.creator'])
-            ->where('user_id', Auth::id())
+            ->where('user_id', $userId)
             ->where(function ($q) {
                 $q->where('is_read', false)
                   ->orWhere('read_at', '>=', now()->subDays(7));
@@ -239,33 +241,90 @@ class HomeController extends Controller
             ->limit(15)
             ->get();
 
-        $memos = $recentMemos->map(function ($rm) {
-            $messagePreview = strip_tags($rm->campaign->message ?? '');
+        $memos = $recentMemos->map(function ($rm) use ($userId) {
+            $campaign = $rm->campaign;
+            $messagePreview = strip_tags($campaign->message ?? '');
             $messagePreview = \Str::limit($messagePreview, 100);
+
+            // Open the memo inside the UIMMS portal chat — that particular memo,
+            // where the recipient can read it and minute / archive / suspend /
+            // take action. uimms.chat is keyed by the memo/campaign id.
+            $chatUrl = route('dashboard.uimms.chat', $rm->comm_campaign_id);
+
+            // Contextual label + action so this SINGLE memo card tells the user
+            // what they have to do — this replaces the separate "Memo forwarded to
+            // you" / "awaiting your forward" / "approval needed" Notification rows
+            // we used to create alongside the memo (the duplicate-tray-card bug).
+            [$contextLabel, $contextStyle, $primaryAction] =
+                $this->memoCardContext($rm, $campaign, $userId, $chatUrl);
 
             return [
                 'id'             => $rm->id,
-                'subject'        => \Str::limit($rm->campaign->subject ?? 'Memo', 40),
+                'subject'        => \Str::limit($campaign->subject ?? 'Memo', 40),
                 'message'        => $messagePreview,
+                'context_label'  => $contextLabel,
+                'context_style'  => $contextStyle,
                 'created_at'     => $rm->created_at->diffForHumans(),
                 'created_at_iso' => $rm->created_at->toIso8601String(),
                 'bucket'         => $this->dateBucket($rm->created_at),
                 'is_read'        => (bool) $rm->is_read,
-                // Open the memo inside the UIMMS portal chat — that particular memo,
-                // where the recipient can read it and minute / archive / suspend /
-                // take action. (dashboard.memo.read is the legacy single-memo page.)
-                // Note: uimms.chat is keyed by the memo/campaign id, not the recipient id.
-                'url'            => route('dashboard.uimms.chat', $rm->comm_campaign_id),
-                'actor'          => $this->actorPayload($rm->campaign?->creator),
-                'actions'        => [
-                    ['label' => 'Open memo', 'url' => route('dashboard.uimms.chat', $rm->comm_campaign_id), 'style' => 'primary'],
-                ],
+                'url'            => $chatUrl,
+                'actor'          => $this->actorPayload($campaign?->creator),
+                'actions'        => [$primaryAction],
             ];
         });
 
         return response()->json([
             'memos' => $memos
         ]);
+    }
+
+    /**
+     * Derive the contextual eyebrow label, colour style, and primary action for a
+     * memo's tray card from the recipient's role + the memo's workflow state.
+     * Returns [label, style, action]. `style` is one of memo|action|urgent and
+     * maps to the eyebrow colour in the notification tray.
+     */
+    protected function memoCardContext(EmailCampaignRecipient $rm, ?EmailCampaign $campaign, int $userId, string $chatUrl): array
+    {
+        $openAction = ['label' => 'Open memo', 'url' => $chatUrl, 'style' => 'primary'];
+
+        if (!$campaign) {
+            return ['New memo', 'memo', $openAction];
+        }
+
+        // A form-linked memo that hasn't been unlocked yet and is sitting in THIS
+        // user's court is an action item: they must approve to unlock the form.
+        $approvalPending = method_exists($campaign, 'hasLinkedForms')
+            && $campaign->hasLinkedForms()
+            && method_exists($campaign, 'isFormUnlocked')
+            && ! $campaign->isFormUnlocked()
+            && (int) $campaign->current_assignee_id === (int) $userId;
+
+        // Through intermediary — still holding the memo, needs to forward it.
+        if ($rm->recipient_role === 'through') {
+            if ($campaign->through_status === 'pending') {
+                return ['Awaiting your forward', 'action',
+                    ['label' => 'Open & forward', 'url' => $chatUrl, 'style' => 'primary']];
+            }
+            return ['Routed through you', 'memo', $openAction];
+        }
+
+        if ($approvalPending) {
+            return ['Approval needed', 'urgent',
+                ['label' => 'Open to approve', 'url' => $chatUrl, 'style' => 'success']];
+        }
+
+        if ($rm->recipient_role === 'cc') {
+            return ['Cc’d to you', 'memo', $openAction];
+        }
+
+        // Reached you via a Through intermediary.
+        if (!empty($campaign->through_user_id)) {
+            return ['Forwarded to you', 'memo', $openAction];
+        }
+
+        return ['New memo', 'memo', $openAction];
     }
 
 
@@ -629,12 +688,20 @@ class HomeController extends Controller
         // Delete all notifications for the user
         Notification::forUser(Auth::id())->delete();
 
-        // Mark all memos as read so they don't show in the tray
+        // Empty the memo half of the tray too. recentMemos() keeps memos that were
+        // read within the last 7 days visible (so "Mark all as read" doesn't appear
+        // to wipe the tray) — but "Clear" is the explicit, confirmed wipe, so we
+        // backdate read_at PAST that 7-day window to make the cards disappear now.
+        // (comm_recipients.read_at only drives the tray window; the portal tracks
+        // its own "last read" via MemoUserRead, so this doesn't corrupt that.)
         EmailCampaignRecipient::where('user_id', Auth::id())
-            ->where('is_read', false)
+            ->where(function ($q) {
+                $q->where('is_read', false)
+                  ->orWhere('read_at', '>=', now()->subDays(7));
+            })
             ->update([
                 'is_read' => true,
-                'read_at' => now(),
+                'read_at' => now()->subDays(8),
             ]);
 
         return response()->json(['success' => true, 'message' => 'All notifications cleared']);
@@ -1568,48 +1635,12 @@ class HomeController extends Controller
             'attachments' => [],
         ]);
 
-        // Create notifications for all new assignees. A form-linked memo that
-        // hasn't been unlocked yet gets an action-oriented "approval needed"
-        // notification so the assignee knows they must approve to unlock the
-        // originator's form; everything else keeps the generic assignment note.
-        $assignerName  = Auth::user()->first_name . ' ' . Auth::user()->last_name;
-        $needsApproval = $memo->hasLinkedForms() && ! $memo->isFormUnlocked();
-        $approvalType  = $needsApproval && $memo->memo_category ? ucfirst($memo->memo_category) : '';
-        $initiatorName = $needsApproval
-            ? (trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? '')) ?: 'the originator')
-            : '';
-
-        foreach ($assignees as $assignee) {
-            if ($needsApproval) {
-                Notification::create([
-                    'user_id'  => $assignee->id,
-                    'actor_id' => $userId,
-                    'type'     => 'memo_approval_needed',
-                    'category' => Notification::CATEGORY_MEMO,
-                    'title'    => '⚡ Approval needed to unlock a form',
-                    'message'  => trim($assignerName . ' assigned you a ' . $approvalType . ' request from ' . $initiatorName . '. Approve it to unlock their form: ' . $memo->subject),
-                    'url'      => route('dashboard.uimms.chat', $memo->id),
-                    'data'     => [
-                        'memo_id'           => $memo->id,
-                        'assigned_by'       => $assignerName,
-                        'memo_category'     => $memo->memo_category,
-                        'awaiting_approval' => true,
-                    ],
-                ]);
-            } else {
-                Notification::create([
-                    'user_id' => $assignee->id,
-                    'type' => 'memo_assigned',
-                    'title' => 'Memo Assigned to You',
-                    'message' => $assignerName . ' assigned a memo to you: ' . $memo->subject,
-                    'url' => route('dashboard.uimms.chat', $memo->id),
-                    'data' => [
-                        'memo_id' => $memo->id,
-                        'assigned_by' => $assignerName,
-                    ]
-                ]);
-            }
-        }
+        // No separate in-app assignment notification: assignToMultiple() above
+        // (re)surfaces the memo as an unread card in each assignee's tray, and
+        // recentMemos() labels it "Approval needed" (form-linked, not yet
+        // unlocked) or "New memo" otherwise — so the assignee still sees exactly
+        // what they must do, on ONE card instead of a duplicate alert. Email
+        // notifications below are unchanged.
 
         // Send email notifications
         try {
@@ -1734,21 +1765,9 @@ class HomeController extends Controller
             'attachments' => [],
         ]);
 
-        // Notify the recipients.
-        foreach ($toUsers as $recipient) {
-            Notification::create([
-                'user_id' => $recipient->id,
-                'type' => 'memo_assigned',
-                'title' => 'Memo forwarded to you',
-                'message' => $forwarderName . ' forwarded a memo to you: ' . $memo->subject,
-                'url' => route('dashboard.uimms.chat', $memo->id),
-                'data' => [
-                    'memo_id' => $memo->id,
-                    'forwarded_by' => $forwarderName,
-                    'through' => true,
-                ],
-            ]);
-        }
+        // No separate "Memo forwarded to you" notification: assignToMultiple()
+        // above already (re)surfaces the memo as an unread card in each recipient's
+        // tray, and recentMemos() labels it "Forwarded to you". One card, not two.
 
         return response()->json([
             'success' => true,

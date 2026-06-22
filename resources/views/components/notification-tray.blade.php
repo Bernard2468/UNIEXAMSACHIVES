@@ -717,6 +717,36 @@
         .is_dark .nt-list-item-with-avatar.is-read .nt-list-item__title { color: #9ca3af; }
         .is_dark .nt-list-item-with-avatar.is-read .nt-list-item__msg   { color: #6b7280; }
         .nt-list-item__body { flex: 1; min-width: 0; }
+
+        /* Contextual eyebrow — the "what to do" tag on a single memo card
+           (Forwarded to you / Awaiting your forward / Approval needed). Replaces
+           the old duplicate notification rows. Colour by urgency:
+           memo = neutral, action = blue (needs you), urgent = amber (act now). */
+        .nt-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1;
+            padding: 3px 8px;
+            border-radius: 999px;
+            margin-bottom: 5px;
+        }
+        .nt-eyebrow::before {
+            content: '';
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .nt-eyebrow--memo   { background: #f1f5f9; color: #475569; }
+        .nt-eyebrow--action { background: #eff6ff; color: #1d4ed8; }
+        .nt-eyebrow--urgent { background: #fef3c7; color: #b45309; }
+        .is_dark .nt-eyebrow--memo   { background: rgba(148,163,184,0.18); color: #cbd5e1; }
+        .is_dark .nt-eyebrow--action { background: rgba(29,78,216,0.22);  color: #93c5fd; }
+        .is_dark .nt-eyebrow--urgent { background: rgba(180,83,9,0.22);   color: #fcd34d; }
         .nt-list-item__header-row {
             display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
             margin-bottom: 2px;
@@ -1046,6 +1076,15 @@
             return { today: 'Today', yesterday: 'Yesterday', earlier: 'Earlier' }[bucket] || 'Earlier';
         }
 
+        // Contextual eyebrow shown above a memo card's subject so the single card
+        // tells the user what to do (Forwarded to you / Awaiting your forward /
+        // Approval needed) — replacing the old duplicate notification rows.
+        function ntEyebrow(item) {
+            if (!item || !item.context_label) return '';
+            const style = (item.context_style || 'memo').toLowerCase();
+            return `<div class="nt-eyebrow nt-eyebrow--${NT_ESC(style)}">${NT_ESC(item.context_label)}</div>`;
+        }
+
         // ---------------- PUSH TOGGLE (browser notifications) ----------------
         async function ntRefreshPushButton() {
             const btn = document.getElementById('ntPushToggle');
@@ -1126,6 +1165,7 @@
                 : '';
 
             card.innerHTML = `
+                ${ntEyebrow(item)}
                 <div class="notification-carousel-card-header">
                     <div class="notification-carousel-card-title-row" style="gap:12px;">
                         ${ntRenderAvatar(item.actor, item.category)}
@@ -1199,6 +1239,7 @@
                              data-nt-url="${NT_ESC(url)}">
                             ${ntRenderAvatar(item.actor, item.category)}
                             <div class="nt-list-item__body">
+                                ${ntEyebrow(item)}
                                 <div class="nt-list-item__header-row">
                                     <div class="nt-list-item__title">${title}</div>
                                     <span class="nt-list-item__time">${NT_ESC(item.time || 'just now')}</span>
@@ -1278,7 +1319,10 @@
                                 category: 'memo',
                                 title: memo.subject,
                                 message: memo.message || '',
+                                context_label: memo.context_label || null,
+                                context_style: memo.context_style || 'memo',
                                 time: memo.created_at,
+                                created_at_iso: memo.created_at_iso || null,
                                 is_read: !!memo.is_read,
                                 is_new_since_seen: !memo.is_read,
                                 bucket: memo.bucket || 'earlier',
@@ -1363,7 +1407,10 @@
                                 category: 'memo',
                                 title: memo.subject,
                                 message: memo.message || '',
+                                context_label: memo.context_label || null,
+                                context_style: memo.context_style || 'memo',
                                 time: memo.created_at,
+                                created_at_iso: memo.created_at_iso || null,
                                 is_read: !!memo.is_read,
                                 is_new_since_seen: !memo.is_read,
                                 bucket: memo.bucket || 'earlier',

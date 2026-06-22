@@ -294,7 +294,10 @@ class EmailCampaign extends Model
         
         $assignedRecipients = [];
         
-        // Add all new assignees as active participants
+        // Add all new assignees as active participants. Resetting read-state on
+        // (re)assignment is deliberate: the memo's single tray card is now the
+        // ONLY in-app alert for an assignment (we no longer create a duplicate
+        // Notification), so it must resurface as unread/fresh for the assignee.
         foreach ($userIds as $userId) {
             $recipient = $this->recipients()->where('user_id', $userId)->first();
             if (!$recipient) {
@@ -304,12 +307,16 @@ class EmailCampaign extends Model
                     'is_active_participant' => true,
                     'assigned_at' => now(),
                     'last_activity_at' => now(),
+                    'is_read' => false,
+                    'read_at' => null,
                 ]);
             } else {
                 $recipient->update([
                     'is_active_participant' => true,
                     'assigned_at' => now(),
                     'last_activity_at' => now(),
+                    'is_read' => false,
+                    'read_at' => null,
                 ]);
             }
             $assignedRecipients[] = $recipient;
