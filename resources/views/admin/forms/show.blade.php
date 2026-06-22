@@ -99,6 +99,8 @@
                                 $approverName = $approver
                                     ? trim(($approver->first_name ?? '') . ' ' . ($approver->last_name ?? '')) ?: ($approver->name ?? null)
                                     : null;
+                                $memoRefLabel = $srcMemo->reference ?? ('#' . $srcMemo->id);
+                                $approvedDate = $srcMemo->form_unlocked_at ? $srcMemo->form_unlocked_at->format('d M Y') : null;
                             @endphp
                             <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;
                                         background:linear-gradient(135deg,#ecfdf5 0%,#f0fdf4 100%);
@@ -117,7 +119,9 @@
                                     </div>
                                     <div style="color:#047857;font-size:12.5px;margin-top:3px;line-height:1.5;">
                                         Authorised by memo
-                                        <strong style="font-family:'JetBrains Mono',monospace;">{{ $srcMemo->reference ?? ('#' . $srcMemo->id) }}</strong>@if($approverName) · approved by <strong>{{ $approverName }}</strong>@endif@if($srcMemo->form_unlocked_at) · {{ $srcMemo->form_unlocked_at->format('d M Y') }}@endif
+                                        <strong style="font-family:'JetBrains Mono',monospace;">{{ $memoRefLabel }}</strong>
+                                        @if($approverName) · approved by <strong>{{ $approverName }}</strong> @endif
+                                        @if($approvedDate) · {{ $approvedDate }} @endif
                                     </div>
                                 </div>
                                 <a href="{{ route('admin.forms.source-memo', $submission->id) }}" target="_blank" rel="noopener"

@@ -11,8 +11,13 @@
         $approverName = $approver
             ? trim(($approver->first_name ?? '') . ' ' . ($approver->last_name ?? '')) ?: ($approver->name ?? null)
             : null;
+        $memoRefLabel = $srcMemo->reference ?? ('#' . $srcMemo->id);
+        $approvedDate = $srcMemo->form_unlocked_at ? $srcMemo->form_unlocked_at->format('d M Y') : null;
     @endphp
     <div style="margin: 0 0 14px; padding: 7px 12px; background: #ecfdf5; border: 1px solid #a7f3d0; border-left: 4px solid #059669; border-radius: 4px; font-size: 10px; color: #065f46; line-height: 1.5;">
-        <strong style="color:#065f46;">&#10003; Authorised by approved memo {{ $srcMemo->reference ?? ('#' . $srcMemo->id) }}</strong><span style="display:inline-block; padding:1px 6px; border-radius:8px; font-size:8px; font-weight:bold; background:#059669; color:#fff; margin-left:4px; letter-spacing:0.4px;">APPROVED</span>@if($approverName) &nbsp;&middot;&nbsp; approved by {{ $approverName }}@endif@if($srcMemo->form_unlocked_at) &nbsp;&middot;&nbsp; {{ $srcMemo->form_unlocked_at->format('d M Y') }}@endif
+        <strong style="color:#065f46;">&#10003; Authorised by approved memo {{ $memoRefLabel }}</strong>
+        <span style="display:inline-block; padding:1px 6px; border-radius:8px; font-size:8px; font-weight:bold; background:#059669; color:#fff; margin-left:4px; letter-spacing:0.4px;">APPROVED</span>
+        @if($approverName) &nbsp;&middot;&nbsp; approved by {{ $approverName }} @endif
+        @if($approvedDate) &nbsp;&middot;&nbsp; {{ $approvedDate }} @endif
     </div>
 @endif
