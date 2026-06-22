@@ -80,13 +80,11 @@
                                     </div>
                                 </div>
                                 <a href="{{ route('admin.forms.source-memo', $submission->id) }}" target="_blank" rel="noopener"
-                                   style="flex:0 0 auto;display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+                                   style="flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;text-decoration:none;
                                           background:#059669;color:#fff;font-weight:600;font-size:12.5px;
-                                          padding:8px 16px 8px 9px;border-radius:10px;box-shadow:0 3px 8px rgba(5,150,105,.25);transition:background .15s;"
+                                          padding:8px 16px;border-radius:10px;box-shadow:0 3px 8px rgba(5,150,105,.25);transition:background .15s;"
                                    onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
-                                    <span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:#fff;border-radius:7px;box-shadow:0 1px 2px rgba(16,24,40,.12);">
-                                        <img src="/img/pdf.jpg" alt="PDF" style="width:16px;height:16px;object-fit:contain;display:block;">
-                                    </span>
+                                    <img src="/img/pdf.jpg" alt="PDF" style="width:24px;height:24px;object-fit:contain;display:block;">
                                     View approval
                                 </a>
                             </div>
