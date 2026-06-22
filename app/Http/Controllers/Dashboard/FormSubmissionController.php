@@ -482,7 +482,7 @@ class FormSubmissionController extends Controller
         $definition = $submission->definition();
         abort_unless($definition, 500);
 
-        $submission->load(['signatures.user', 'creator', 'comments.user', 'attachments', 'sourceCampaign.formUnlocker']);
+        $submission->load(['signatures.user', 'creator', 'comments.user', 'attachments']);
 
         $pdf = Pdf::loadView($definition->pdfView(), [
             'submission' => $submission,
