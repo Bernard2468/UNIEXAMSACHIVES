@@ -1179,7 +1179,7 @@
                                                     <span class="counter">{{$shared_folders_count}}</span>
 
                                                 </div>
-                                                <p>Shared With Me</p>
+                                                <p>Folders Shared With Me</p>
 
                                             </div>
                                         </div>
