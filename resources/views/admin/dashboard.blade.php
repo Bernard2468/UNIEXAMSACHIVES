@@ -1389,7 +1389,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__2.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconMemos }}" alt="Memos">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">
@@ -1407,7 +1407,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__3.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconShared }}" alt="Folders shared with me">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">
