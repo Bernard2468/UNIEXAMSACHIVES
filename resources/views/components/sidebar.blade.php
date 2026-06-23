@@ -450,19 +450,13 @@
                     @unless(auth()->user()->is_admin)
                         <li>
                             <a class="{{ request()->routeIs('dashboard.system-documentation.manage') ? 'active' : '' }}" href="{{route('dashboard.system-documentation.manage')}}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
-                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                </svg>
+                                <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782234044/911336ac-8bab-4e87-9781-0537c1f07f42.png" alt="University Policies" style="width: 22px; height: 22px; object-fit: contain; margin-right: 10px;">
                                 University Policies</a>
                         </li>
                     @else
                         <li>
                             <a class="{{ request()->routeIs('dashboard.system-documentation') ? 'active' : '' }}" href="{{route('dashboard.system-documentation')}}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 10px;">
-                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                </svg>
+                                <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782234044/911336ac-8bab-4e87-9781-0537c1f07f42.png" alt="University Policies" style="width: 22px; height: 22px; object-fit: contain; margin-right: 10px;">
                                 University Policies</a>
                         </li>
                     @endunless
