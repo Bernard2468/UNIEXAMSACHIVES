@@ -326,6 +326,10 @@
     $folderFiles = $folder->files;
     $folderExams = $folder->exams;
     $totalCount = $folderFiles->count() + $folderExams->count();
+    $iconFiles = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782226720/a0bc05b8-6e1d-4338-b9bd-189fe64f6c6b.png';
+    $iconExams = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782226060/1e7ab43a-082a-4fa2-bf5d-8cad70910469.png';
+    $iconCalendar = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782225885/ba1eed08-96d1-484a-aa27-da2bf660e15d.png';
+    $iconPassword = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782226976/d5ea208a-dc09-40e0-92d4-8194eff97801.png';
 
     // Smart "Back" target: prefer the page the user came from, but only if it's
     // on this app (prevents open-redirect via tampered ?from= values).
@@ -413,10 +417,10 @@
                     <p class="desc">{{ $folder->description }}</p>
                 @endif
                 <div class="meta">
-                    <span><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226720/a0bc05b8-6e1d-4338-b9bd-189fe64f6c6b.png" alt="" class="meta-icon-img" aria-hidden="true">{{ $folderFiles->count() }} {{ Str::plural('file', $folderFiles->count()) }}</span>
-                    <span><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226060/1e7ab43a-082a-4fa2-bf5d-8cad70910469.png" alt="" class="meta-icon-img" aria-hidden="true">{{ $folderExams->count() }} {{ Str::plural('exam', $folderExams->count()) }}</span>
-                    <span><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782225885/ba1eed08-96d1-484a-aa27-da2bf660e15d.png" alt="" class="meta-icon-img" aria-hidden="true">Created {{ $folder->created_at?->format('M j, Y') }}</span>
-                    @if($isLocked && $isOwner)<span><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226976/d5ea208a-dc09-40e0-92d4-8194eff97801.png" alt="" class="meta-icon-img" aria-hidden="true">Password protected</span>@endif
+                    <span><img src="{{ $iconFiles }}" alt="" class="meta-icon-img" aria-hidden="true">{{ $folderFiles->count() }} {{ Str::plural('file', $folderFiles->count()) }}</span>
+                    <span><img src="{{ $iconExams }}" alt="" class="meta-icon-img" aria-hidden="true">{{ $folderExams->count() }} {{ Str::plural('exam', $folderExams->count()) }}</span>
+                    <span><img src="{{ $iconCalendar }}" alt="" class="meta-icon-img" aria-hidden="true">Created {{ $folder->created_at?->format('M j, Y') }}</span>
+                    @if($isLocked && $isOwner)<span><img src="{{ $iconPassword }}" alt="" class="meta-icon-img" aria-hidden="true">Password protected</span>@endif
                     @if($isOwner && $folder->members->count() > 0)
                         <span><i class="fas fa-user-group" style="color:#0ea5e9;"></i>Shared with {{ $folder->members->count() }} {{ Str::plural('person', $folder->members->count()) }}</span>
                     @endif
@@ -573,11 +577,11 @@
 
         <nav class="mdrawer__seg" role="tablist">
             <button type="button" class="mb-tab active" data-add-tab="files" role="tab">
-                <i class="fas fa-file-lines"></i> Files
+                <img src="{{ $iconFiles }}" alt="" class="drawer-tab-icon" aria-hidden="true"> Files
                 <span class="mb-tab-badge">{{ $availableFiles->count() }}</span>
             </button>
             <button type="button" class="mb-tab" data-add-tab="exams" role="tab">
-                <i class="fas fa-clipboard-list"></i> Exams
+                <img src="{{ $iconExams }}" alt="" class="drawer-tab-icon" aria-hidden="true"> Exams
                 <span class="mb-tab-badge">{{ $availableExams->count() }}</span>
             </button>
             <span class="mdrawer__ind" id="addSegInd" aria-hidden="true"></span>
@@ -609,7 +613,7 @@
                         </label>
                     @empty
                         <div class="empty-box" style="grid-column:1/-1; padding:36px 8px;">
-                            <div class="ico-c"><i class="fas fa-file"></i></div>
+                            <div class="ico-c"><img src="{{ $iconFiles }}" alt="" class="drawer-empty-icon" aria-hidden="true"></div>
                             <h4>No files to add</h4>
                             <p>Upload files first, then add them here.</p>
                         </div>
@@ -632,7 +636,7 @@
                         </label>
                     @empty
                         <div class="empty-box" style="grid-column:1/-1; padding:36px 8px;">
-                            <div class="ico-c"><i class="fas fa-clipboard-list"></i></div>
+                            <div class="ico-c"><img src="{{ $iconExams }}" alt="" class="drawer-empty-icon" aria-hidden="true"></div>
                             <h4>No exams to add</h4>
                             <p>Upload exam documents first, then add them here.</p>
                         </div>
@@ -1115,6 +1119,15 @@ body.mdrawer-lock { overflow: hidden; }
     transition: color .18s ease;
 }
 .mdrawer__seg .mb-tab i { font-size: 13px; }
+.mdrawer__seg .mb-tab .drawer-tab-icon {
+    width: 20px; height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+.mdrawer .empty-box .ico-c .drawer-empty-icon {
+    width: 44px; height: 44px;
+    object-fit: contain;
+}
 .mdrawer__seg .mb-tab:hover { color: #475569; }
 .mdrawer__seg .mb-tab.active { color: #0284c7; }
 .mdrawer__seg .mb-tab-badge {
