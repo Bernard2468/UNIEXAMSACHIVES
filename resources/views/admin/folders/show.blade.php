@@ -99,6 +99,12 @@
         flex-wrap: wrap;
     }
     .folder-banner .meta span i { color: #94a3b8; margin-right: 5px; }
+    .folder-banner .meta span .meta-icon-img {
+        width: 14px; height: 14px;
+        margin-right: 5px;
+        vertical-align: -2px;
+        object-fit: contain;
+    }
     .folder-banner .actions {
         margin-left: auto;
         display:flex; gap:8px; flex-wrap: wrap;
@@ -409,7 +415,7 @@
                 <div class="meta">
                     <span><i class="fas fa-file-lines"></i>{{ $folderFiles->count() }} {{ Str::plural('file', $folderFiles->count()) }}</span>
                     <span><i class="fas fa-clipboard-list"></i>{{ $folderExams->count() }} {{ Str::plural('exam', $folderExams->count()) }}</span>
-                    <span><i class="fas fa-calendar"></i>Created {{ $folder->created_at?->format('M j, Y') }}</span>
+                    <span><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782225885/ba1eed08-96d1-484a-aa27-da2bf660e15d.png" alt="" class="meta-icon-img" aria-hidden="true">Created {{ $folder->created_at?->format('M j, Y') }}</span>
                     @if($isLocked && $isOwner)<span><i class="fas fa-shield-halved" style="color:#0ea5e9;"></i>Password protected</span>@endif
                     @if($isOwner && $folder->members->count() > 0)
                         <span><i class="fas fa-user-group" style="color:#0ea5e9;"></i>Shared with {{ $folder->members->count() }} {{ Str::plural('person', $folder->members->count()) }}</span>
