@@ -6,7 +6,7 @@
 @push('styles')
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     .folder-page-root {
@@ -956,18 +956,31 @@ body.mdrawer-lock { overflow: hidden; }
     box-shadow: -22px 0 50px rgba(15, 23, 42, 0.14);
     transform: translateX(100%);
     transition: transform .34s cubic-bezier(.22, .61, .36, 1);
-    /* Match the system sidebar typeface; render text crisply (this panel sits
-       outside .folder-page-root, so it must set its own font explicitly). */
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* A deliberate type pairing for this elevated surface:
+         Sora    → display / headlines (personality, modern)
+         Outfit  → controls (keeps parity with the system sidebar)
+         DM Sans → reading text (crisp, clear at small sizes)
+       Outfit stays in every fallback, so it degrades to the system face if a
+       webfont is slow. This panel renders outside .folder-page-root, so it must
+       declare its own fonts explicitly. */
+    --font-display: 'Sora', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-text: 'DM Sans', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
 }
 .mdrawer-backdrop.open .mdrawer { transform: translateX(0); }
 
-/* Inherit Outfit everywhere inside, but keep Font Awesome glyphs intact. */
-.mdrawer h3, .mdrawer p, .mdrawer span, .mdrawer label, .mdrawer a, .mdrawer div,
-.mdrawer button, .mdrawer select, .mdrawer input, .mdrawer textarea { font-family: inherit; }
+/* Type roles — base is the reading face (DM Sans); specific zones opt in to
+   the display (Sora) or control (Outfit) face. Font Awesome glyphs untouched. */
+.mdrawer h3, .mdrawer p, .mdrawer span, .mdrawer label, .mdrawer a, .mdrawer div { font-family: inherit; }
+.mdrawer button, .mdrawer select, .mdrawer input, .mdrawer textarea,
+.mdrawer .mb-tab-badge { font-family: var(--font-ui); }
+.mdrawer__title h3,
+.mdrawer .grp-add-title,
+.mdrawer .empty-box h4 { font-family: var(--font-display); }
 .mdrawer .fas, .mdrawer .far, .mdrawer .fab,
 .mdrawer [class^="fa-"], .mdrawer [class*=" fa-"] {
     font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
@@ -1028,7 +1041,7 @@ body.mdrawer-lock { overflow: hidden; }
     flex: 1 0 auto;
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     padding: 9px 12px 13px; border: none; background: transparent; cursor: pointer;
-    font-family: inherit; font-size: 13.5px; font-weight: 600; color: #94a3b8;
+    font-family: var(--font-ui); font-size: 13.5px; font-weight: 600; color: #94a3b8;
     border-radius: 9px 9px 0 0; white-space: nowrap;
     transition: color .18s ease;
 }
