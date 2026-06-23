@@ -228,6 +228,7 @@ Route::middleware(['auth'])->group(function () {
     # File Downloads
     Route::get('/download/exam/{exam}', [App\Http\Controllers\Dashboard\ExamsController::class, 'downloadExam'])->name('download.exam');
     Route::get('/download/answer-key/{exam}', [App\Http\Controllers\Dashboard\ExamsController::class, 'downloadAnswerKey'])->name('download.answer.key');
+    Route::get('/download/exam-bundle/{exam}', [App\Http\Controllers\Dashboard\ExamsController::class, 'downloadBundle'])->name('download.exam.bundle');
     Route::get('/download/file/{file}', [App\Http\Controllers\Dashboard\FilesController::class, 'downloadFile'])->name('download.file');
     
     # /storage/* file server.

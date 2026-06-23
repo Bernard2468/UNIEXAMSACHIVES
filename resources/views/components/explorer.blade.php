@@ -410,6 +410,28 @@
 .exp-tile:hover .kebab { display: flex; }
 .exp-tile .kebab:hover { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
 
+/* Answer-key badge — shown on exam tiles that have a key attached.
+   Always visible (not hover-gated) so users can spot keyed exams at a glance. */
+.exp-tile .key-badge {
+    position: absolute;
+    top: 6px; left: 6px;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(217,119,6,0.40);
+    z-index: 3;
+    transition: transform .15s, box-shadow .15s;
+}
+.exp-tile .key-badge:hover {
+    transform: scale(1.12);
+    box-shadow: 0 4px 10px rgba(217,119,6,0.55);
+}
+
 /* ============ CONTEXT MENU ============ */
 .exp-menu {
     position: fixed;
@@ -1014,10 +1036,16 @@
                             data-download-url="{{ $it['download_url'] }}"
                             data-edit-url="{{ $it['edit_url'] }}"
                             data-destroy-url="{{ $it['destroy_url'] }}"
+                            data-has-key="{{ !empty($it['has_key']) ? '1' : '0' }}"
+                            data-key-view-url="{{ $it['key_view_url'] ?? '' }}"
+                            data-bundle-url="{{ $it['bundle_download_url'] ?? '' }}"
                             data-name="{{ $displayName }}"
                             draggable="true"
                             title="{{ $displayName }}.{{ $ext }}">
                             <button type="button" class="kebab" aria-label="More"><i class="fas fa-ellipsis-vertical"></i></button>
+                            @if(!empty($it['has_key']))
+                                <button type="button" class="key-badge" aria-label="View answer key" title="Answer key attached — click to view"><i class="fas fa-key"></i></button>
+                            @endif
                             <div class="ico {{ $iconClass }}"><i class="fas {{ $iconFa }}"></i></div>
                             <div class="name">{{ $displayName }}</div>
                             <div class="sub">{{ strtoupper($ext) }} &middot; {{ $it['date'] }}</div>
@@ -1050,7 +1078,8 @@
 {{-- ===== CONTEXT MENU ===== --}}
 <div class="exp-menu" id="expContextMenu">
     <a href="#" data-action="view"><i class="fas fa-eye"></i> Open / View</a>
-    <a href="#" data-action="download"><i class="fas fa-download"></i> Download</a>
+    <a href="#" data-action="view-key" class="exp-key-item"><i class="fas fa-key"></i> View answer key</a>
+    <a href="#" data-action="download"><i class="fas fa-download"></i> <span class="exp-dl-label">Download</span></a>
     <div class="divider"></div>
     <a href="#" data-action="edit"><i class="fas fa-pen"></i> Edit details</a>
     <button type="button" data-action="delete" class="danger"><i class="fas fa-trash"></i> Delete</button>
@@ -1254,6 +1283,13 @@
     let activeTile = null;
     function openMenu(x, y, tile) {
         activeTile = tile;
+        // Adapt the menu to this tile: show the key actions only when a key
+        // exists, and label the download as a ZIP when it will bundle the key.
+        const hasKey = tile.getAttribute('data-has-key') === '1';
+        const keyItem = menu.querySelector('.exp-key-item');
+        if (keyItem) keyItem.style.display = hasKey ? '' : 'none';
+        const dlLabel = menu.querySelector('.exp-dl-label');
+        if (dlLabel) dlLabel.textContent = hasKey ? 'Download all (ZIP)' : 'Download';
         menu.style.left = Math.min(x, window.innerWidth - 220) + 'px';
         menu.style.top = Math.min(y, window.innerHeight - 220) + 'px';
         menu.classList.add('open');
@@ -1280,6 +1316,18 @@
                 openMenu(r.right + 4, r.bottom + 4, tile);
             });
         }
+        const keyBadge = tile.querySelector('.key-badge');
+        if (keyBadge) {
+            // Clicking the key opens the answer key in a new tab. Stop the event
+            // bubbling so the tile's dblclick / drag / select logic stays out of it.
+            keyBadge.addEventListener('mousedown', e => e.stopPropagation());
+            keyBadge.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                const keyUrl = tile.getAttribute('data-key-view-url');
+                if (keyUrl) window.open(keyUrl, '_blank');
+            });
+        }
     });
     document.addEventListener('click', e => {
         if (!menu.contains(e.target)) closeMenu();
@@ -1293,8 +1341,17 @@
             const action = btn.getAttribute('data-action');
             if (action === 'view') {
                 window.open(activeTile.getAttribute('data-view-url'), '_blank');
+            } else if (action === 'view-key') {
+                const keyUrl = activeTile.getAttribute('data-key-view-url');
+                if (keyUrl) window.open(keyUrl, '_blank');
             } else if (action === 'download') {
-                window.location.href = activeTile.getAttribute('data-download-url');
+                // When a key is attached, download the exam + key as one ZIP;
+                // otherwise fall back to the plain single-file download.
+                const hasKey = activeTile.getAttribute('data-has-key') === '1';
+                const bundleUrl = activeTile.getAttribute('data-bundle-url');
+                window.location.href = (hasKey && bundleUrl)
+                    ? bundleUrl
+                    : activeTile.getAttribute('data-download-url');
             } else if (action === 'edit') {
                 window.location.href = activeTile.getAttribute('data-edit-url');
             } else if (action === 'delete') {

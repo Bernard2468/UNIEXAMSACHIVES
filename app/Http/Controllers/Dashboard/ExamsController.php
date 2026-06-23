@@ -212,6 +212,57 @@ class ExamsController extends Controller
         return response()->download($filePath, $downloadName);
     }
 
+    /**
+     * Download the exam document and its answer key together as one ZIP.
+     *
+     * Defensive by design: if there is no key, the key file is missing, or the
+     * host has no ZipArchive extension, it transparently falls back to the plain
+     * single-file exam download rather than failing. Access rules mirror
+     * downloadExam() (owner, admin, or shared-folder member).
+     */
+    public function downloadBundle(Exam $exam)
+    {
+        $user = auth()->user();
+        $isOwner = $exam->user_id === $user->id;
+        $viaSharedFolder = $exam->folders()
+            ->whereHas('members', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })
+            ->exists();
+        if (!$isOwner && !$user->is_admin && !$viaSharedFolder) {
+            abort(403, 'You do not have access to this exam.');
+        }
+
+        $examPath = public_path($exam->exam_document);
+        if (!file_exists($examPath)) {
+            abort(404, 'File not found');
+        }
+
+        // No usable key, or no zip support on the host -> just hand back the exam.
+        $keyPath = $exam->answer_key ? public_path($exam->answer_key) : null;
+        if (!$keyPath || !file_exists($keyPath) || !class_exists(\ZipArchive::class)) {
+            return $this->downloadExam($exam);
+        }
+
+        $dateSlug = $exam->created_at ? $exam->created_at->format('Y-m-d') : now()->format('Y-m-d');
+        $base = preg_replace('/[^A-Za-z0-9._-]+/', '_', $exam->course_title . '_' . $exam->course_code . '_' . $dateSlug);
+        $base = trim($base, '_') ?: 'exam';
+
+        $examExt = pathinfo($exam->exam_document, PATHINFO_EXTENSION) ?: 'pdf';
+        $keyExt  = pathinfo($exam->answer_key, PATHINFO_EXTENSION) ?: 'pdf';
+
+        $tmpZip = tempnam(sys_get_temp_dir(), 'exambundle_');
+        $zip = new \ZipArchive();
+        if ($tmpZip === false || $zip->open($tmpZip, \ZipArchive::OVERWRITE) !== true) {
+            return $this->downloadExam($exam);
+        }
+        $zip->addFile($examPath, $base . '_Exam.' . $examExt);
+        $zip->addFile($keyPath, $base . '_Answer-Key.' . $keyExt);
+        $zip->close();
+
+        return response()->download($tmpZip, $base . '.zip')->deleteFileAfterSend(true);
+    }
+
     public function destroy(Exam $exam)
     {
         $this->authorizeManage($exam);
