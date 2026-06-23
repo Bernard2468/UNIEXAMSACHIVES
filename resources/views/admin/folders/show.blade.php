@@ -655,6 +655,9 @@
                             <input type="checkbox" name="exam_ids[]" value="{{ $e->id }}">
                             <span class="ai-ico {{ $ic['class'] }}"><i class="fas {{ $ic['glyph'] }}"></i></span>
                             <span class="ai-name">{{ $e->course_title }} ({{ $e->course_code }})</span>
+                            @if($e->answer_key)
+                                <span class="ai-key" title="Answer key attached"><img src="{{ $iconKey }}" alt="" aria-hidden="true"></span>
+                            @endif
                             <span class="ai-meta">{{ strtoupper($ic['ext']) }}</span>
                             <span class="ai-check"><i class="fas fa-check"></i></span>
                         </label>
@@ -1275,6 +1278,19 @@ body.mdrawer-lock { overflow: hidden; }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ai-list .ai-meta { font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9;
     padding: 3px 8px; border-radius: 5px; letter-spacing: .04em; flex-shrink: 0; }
+
+/* Answer-key marker on exam rows in the Add-items drawer — same plasticine key
+   icon as the tiles. Top-left badge in grid view, small inline icon in list view. */
+.ai-key {
+    position: absolute; top: 6px; left: 6px;
+    width: 22px; height: 22px; padding: 2px;
+    border-radius: 6px; background: #fff; border: 1px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.14);
+    z-index: 2;
+}
+.ai-key img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ai-list .ai-key { position: static; width: 20px; height: 20px; padding: 0; border: none; box-shadow: none; flex-shrink: 0; }
 
 .ai-noresult { padding: 26px 8px; text-align: center; color: #94a3b8; font-size: 13px; }
 
