@@ -22,6 +22,13 @@
     $emptyStateText = $emptyStateText ?? 'Documents you upload will appear here.';
     $sharedFolders = $sharedFolders ?? collect();
 
+    // "Add Exam" / "Add File" CTA — adapts to the kind of items this page lists.
+    // Hidden on folder-only listings (where $showItemsSection is false).
+    $isExamKind = ($itemKind === 'exam');
+    $addItemUrl = $addItemUrl ?? ($isExamKind ? route('dashboard.create') : route('dashboard.file.create'));
+    $addItemLabel = $addItemLabel ?? ($isExamKind ? 'Add Exam' : 'Add File');
+    $showAddItem = $showAddItem ?? $showItemsSection;
+
     // Shareable users for the "Share with people" section of the New Folder modal.
     // Mirrors compose-memo's selected-user picker: full list rendered server-side,
     // filtered client-side. Excludes the current user; only approved accounts.
@@ -877,8 +884,11 @@
                         <i class="fas fa-search"></i>
                         <input type="text" id="expSearchInput" placeholder="Search items by name...">
                     </div>
+                    @if($showAddItem)
+                        <a href="{{ $addItemUrl }}" class="exp-btn"><i class="fas fa-plus"></i> {{ $addItemLabel }}</a>
+                    @endif
                     @if($allowNewFolder)
-                        <button type="button" class="exp-btn" id="expNewFolderBtn"><i class="fas fa-folder-plus"></i> New Folder</button>
+                        <button type="button" class="exp-btn ghost" id="expNewFolderBtn"><i class="fas fa-folder-plus"></i> New Folder</button>
                     @endif
                     <a href="{{ route('dashboard.folders.index') }}" class="exp-btn ghost"><i class="fas fa-folder"></i> All Folders</a>
                 </div>
@@ -1058,6 +1068,9 @@
                     <div class="ico-circle"><i class="fas fa-folder-open"></i></div>
                     <h4>Nothing here yet</h4>
                     <p>{{ $emptyStateText }}</p>
+                    @if($showAddItem)
+                        <a href="{{ $addItemUrl }}" class="exp-btn" style="margin-top:18px;"><i class="fas fa-plus"></i> {{ $addItemLabel }}</a>
+                    @endif
                 </div>
             @endif
         </div>
