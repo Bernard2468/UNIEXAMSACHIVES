@@ -1480,7 +1480,6 @@
                                 </div>
                             </div>
                         @endauth
-                    @endauth
                 </div>
             </div>
 
