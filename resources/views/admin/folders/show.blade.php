@@ -432,7 +432,7 @@
                 @endif
                 @if($isOwner)
                     <button type="button" class="fbtn" id="openMembersModal">
-                        <i class="fas fa-user-group"></i> Members
+                        <i class="fas fa-share-nodes"></i> Share
                         @if($folder->members->count() > 0)
                             <span style="background:#0ea5e9; color:#fff; font-size:11px; padding:1px 7px; border-radius:100px; margin-left:2px;">{{ $folder->members->count() }}</span>
                         @endif
@@ -931,16 +931,153 @@
     display:flex; align-items:center; justify-content:center; font-size: 22px;
 }
 .link-empty p { font-size: 13px; color:#64748b; margin: 0 0 14px; line-height:1.5; }
+
+/* ============================================================
+   SHARE & ACCESS DRAWER  (replaces the old centered modal)
+   Right-anchored, full-height, segmented nav. Wraps the existing
+   panel / list / picker markup in a modern shell — same IDs, so
+   all behaviour is unchanged.
+   ============================================================ */
+body.mdrawer-lock { overflow: hidden; }
+
+.mdrawer-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    z-index: 9998;
+    opacity: 0; visibility: hidden;
+    transition: opacity .28s ease, visibility .28s ease;
+}
+.mdrawer-backdrop.open { opacity: 1; visibility: visible; }
+
+.mdrawer {
+    position: absolute; top: 0; right: 0; height: 100%;
+    width: 480px; max-width: 94vw;
+    background: #fff;
+    display: flex; flex-direction: column;
+    box-shadow: -28px 0 70px rgba(15, 23, 42, 0.22);
+    transform: translateX(100%);
+    transition: transform .34s cubic-bezier(.22, .61, .36, 1);
+    will-change: transform;
+}
+.mdrawer-backdrop.open .mdrawer { transform: translateX(0); }
+
+/* Header */
+.mdrawer__head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 20px 22px;
+    border-bottom: 1px solid #eef2f7;
+    flex-shrink: 0;
+}
+.mdrawer__title { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.mdrawer__ic {
+    width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 17px; box-shadow: 0 8px 18px rgba(14, 165, 233, 0.32);
+}
+.mdrawer__title h3 {
+    margin: 0; font-size: 17px; font-weight: 700;
+    letter-spacing: -0.015em; color: #0f172a; line-height: 1.2;
+}
+.mdrawer__title p {
+    margin: 3px 0 0; font-size: 12.5px; color: #94a3b8; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;
+}
+.mdrawer__close {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer;
+    font-size: 15px; display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.mdrawer__close:hover { background: #f1f5f9; color: #0f172a; }
+
+/* Password note */
+.mdrawer__note {
+    margin: 14px 22px 0;
+    display: flex; align-items: flex-start; gap: 9px;
+    background: #eff6ff; border: 1px solid #dbeafe; color: #1e40af;
+    border-radius: 11px; padding: 11px 13px;
+    font-size: 12.5px; line-height: 1.45; font-weight: 500;
+}
+.mdrawer__note i { color: #0ea5e9; margin-top: 1px; }
+
+/* Segmented nav — keeps the .mb-tab class the JS switcher targets */
+.mdrawer__seg {
+    display: flex; gap: 4px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #eef2f7;
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.mdrawer__seg::-webkit-scrollbar { display: none; }
+.mdrawer__seg .mb-tab {
+    flex: 1 0 auto;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 10px 12px; border: none; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 600; color: #94a3b8;
+    border-radius: 10px; white-space: nowrap;
+    transition: color .15s, background .15s;
+}
+.mdrawer__seg .mb-tab i { font-size: 13px; }
+.mdrawer__seg .mb-tab:hover { color: #475569; background: #f8fafc; }
+.mdrawer__seg .mb-tab.active { color: #0369a1; background: #eff6ff; box-shadow: none; }
+.mdrawer__seg .mb-tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 19px; padding: 0 6px; border-radius: 100px;
+    background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 700; line-height: 1;
+}
+.mdrawer__seg .mb-tab.active .mb-tab-badge { background: #bae6fd; color: #0369a1; }
+
+/* Body + footer */
+.mdrawer__body { flex: 1; overflow-y: auto; padding: 20px 22px 24px; }
+.mdrawer__body::-webkit-scrollbar { width: 9px; }
+.mdrawer__body::-webkit-scrollbar-track { background: #f8fafc; }
+.mdrawer__body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+.mdrawer__body::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.mdrawer__foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 13px 22px; border-top: 1px solid #eef2f7; flex-shrink: 0;
+}
+.mdrawer__foot .hint { font-size: 12px; color: #94a3b8; font-weight: 500; }
+.mdrawer__done {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: 10px; border: none; cursor: pointer;
+    background: #0ea5e9; color: #fff; font-family: inherit; font-size: 13px; font-weight: 600;
+    transition: background .15s, box-shadow .15s;
+}
+.mdrawer__done:hover { background: #0284c7; box-shadow: 0 6px 16px rgba(14, 165, 233, 0.30); }
+
+/* Reused panel markup, tuned for the roomier drawer */
+.mdrawer .mb-panel-hint { font-size: 12.5px; color: #64748b; line-height: 1.5; margin: 0 0 16px; }
+.mdrawer .members-list { max-height: none; }
+.mdrawer .member-row .info .name,
+.mdrawer .group-row .info .name { font-size: 14px; }
+.mdrawer .member-row .info .email { font-size: 12.5px; }
+
+@media (max-width: 520px) {
+    .mdrawer { width: 100%; max-width: 100%; }
+}
 </style>
 
-<div class="add-backdrop" id="membersModal">
-    <div class="add-modal" style="max-width: 560px;">
-        <h3><i class="fas fa-user-group"></i> Members of "{{ $folder->name }}"</h3>
+<div class="mdrawer-backdrop" id="membersModal">
+    <aside class="mdrawer" role="dialog" aria-modal="true" aria-label="Share and access">
+        <header class="mdrawer__head">
+            <div class="mdrawer__title">
+                <span class="mdrawer__ic"><i class="fas fa-share-nodes"></i></span>
+                <div style="min-width:0;">
+                    <h3>Share &amp; access</h3>
+                    <p>{{ $folder->name }}</p>
+                </div>
+            </div>
+            <button type="button" class="mdrawer__close" id="mdrawerClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        </header>
 
         @if($isLocked)
-            <div class="alert-pill" style="background:#eff6ff; border-color:#bfdbfe; color:#1e40af; font-size:12.5px; margin-bottom: 14px;">
-                <i class="fas fa-info-circle" style="color:#0ea5e9;"></i>
-                This folder has a password, but members you add bypass it — they access the folder directly.
+            <div class="mdrawer__note">
+                <i class="fas fa-shield-halved"></i>
+                <span>This folder is password-protected. Anyone you share with bypasses the password — sharing grants direct access.</span>
             </div>
         @endif
 
@@ -951,7 +1088,7 @@
             $defaultTab = $initialMemberCount > 0 ? 'members' : 'add';
         @endphp
 
-        <div class="mb-tabs" role="tablist">
+        <nav class="mdrawer__seg" role="tablist">
             <button type="button" class="mb-tab {{ $defaultTab === 'members' ? 'active' : '' }}" data-mb-tab="members" role="tab">
                 <i class="fas fa-user-check"></i> Members
                 <span class="mb-tab-badge" id="mbBadgeMembers">{{ $initialMemberCount }}</span>
@@ -967,11 +1104,13 @@
             <button type="button" class="mb-tab" data-mb-tab="link" role="tab">
                 <i class="fas fa-link"></i> Link
             </button>
-        </div>
+        </nav>
+
+        <div class="mdrawer__body">
 
         {{-- ============ TAB: CURRENT MEMBERS ============ --}}
         <div class="mb-panel {{ $defaultTab === 'members' ? 'active' : '' }}" id="mbPanelMembers" role="tabpanel">
-            <p class="mb-panel-hint">People with access to this folder. Change their permission or revoke access here.</p>
+            <p class="mb-panel-hint">Everyone with direct access. Adjust a role or remove someone.</p>
             <div class="members-list" id="membersList">
                 <div class="empty-box" style="padding: 24px 8px;">
                     <div class="ico-c" style="width:60px; height:60px; font-size:22px;"><i class="fas fa-user-plus"></i></div>
@@ -983,7 +1122,7 @@
 
         {{-- ============ TAB: ADD PEOPLE ============ --}}
         <div class="mb-panel {{ $defaultTab === 'add' ? 'active' : '' }}" id="mbPanelAdd" role="tabpanel">
-            <p class="mb-panel-hint">Tick the people you want to invite and pick their role. They'll get an in-app notification.</p>
+            <p class="mb-panel-hint">Select people and choose a role. Each one is notified instantly.</p>
 
             <div class="mp-picker">
                 <div class="mp-toolbar">
@@ -1060,7 +1199,7 @@
 
         {{-- ============ TAB: GROUPS ============ --}}
         <div class="mb-panel" id="mbPanelGroups" role="tabpanel">
-            <p class="mb-panel-hint">Share with a whole group. Membership updates automatically — people who join the group later get access, and those who leave lose it. (For a one-off exception, also add that person under <strong>Add</strong>.)</p>
+            <p class="mb-panel-hint">Share with an entire group. Access follows membership — joiners gain it, leavers lose it. For a one-off person, use <strong>Add</strong>.</p>
 
             <div class="members-list" id="folderGroupsList">
                 <div class="empty-box" style="padding: 24px 8px;">
@@ -1108,7 +1247,7 @@
         {{-- ============ TAB: LINK ============ --}}
         @php $joinUrl = $folder->share_token ? route('dashboard.folders.join', ['folder' => $folder->id, 'token' => $folder->share_token]) : ''; @endphp
         <div class="mb-panel link-panel" id="mbPanelLink" role="tabpanel">
-            <p class="mb-panel-hint">Create one link that lets you give access to several people at once. Whoever opens it (while signed in) joins as a <strong>Viewer</strong> and shows up in your members list. Reset or turn it off anytime.</p>
+            <p class="mb-panel-hint">Anyone with this link joins as a <strong>Viewer</strong> and appears under Members. Reset or turn it off anytime.</p>
 
             <div class="link-box" id="linkActive" style="{{ $folder->share_token ? '' : 'display:none;' }}">
                 <div class="link-row">
@@ -1129,10 +1268,13 @@
             </div>
         </div>
 
-        <div class="add-actions">
-            <button type="button" class="fbtn" onclick="document.getElementById('membersModal').classList.remove('open')">Done</button>
-        </div>
-    </div>
+        </div>{{-- /.mdrawer__body --}}
+
+        <footer class="mdrawer__foot">
+            <span class="hint">Changes are saved automatically</span>
+            <button type="button" class="mdrawer__done" id="mdrawerDone">Done</button>
+        </footer>
+    </aside>
 </div>
 @endif
 
@@ -1857,18 +1999,29 @@
     linkDisableBtn?.addEventListener('click', disableLink);
     linkCopyBtn?.addEventListener('click', copyLink);
 
+    function openMembersDrawer() {
+        membersModal.classList.add('open');
+        document.body.classList.add('mdrawer-lock');
+        loadMembers();
+        loadGroups();
+        // Only focus the picker search if the user is landing on the Add tab.
+        setTimeout(() => {
+            if (mbPanels.add?.classList.contains('active')) mpSearch?.focus();
+        }, 90);
+    }
+    function closeMembersDrawer() {
+        membersModal.classList.remove('open');
+        document.body.classList.remove('mdrawer-lock');
+    }
+
     if (membersBtn && membersModal) {
-        membersBtn.addEventListener('click', () => {
-            membersModal.classList.add('open');
-            loadMembers();
-            loadGroups();
-            // Only focus the picker search if the user is landing on the Add tab.
-            setTimeout(() => {
-                if (mbPanels.add?.classList.contains('active')) mpSearch?.focus();
-            }, 60);
-        });
-        membersModal.addEventListener('click', e => {
-            if (e.target === membersModal) membersModal.classList.remove('open');
+        membersBtn.addEventListener('click', openMembersDrawer);
+        // Click the dimmed area (outside the drawer panel) to dismiss.
+        membersModal.addEventListener('click', e => { if (e.target === membersModal) closeMembersDrawer(); });
+        document.getElementById('mdrawerClose')?.addEventListener('click', closeMembersDrawer);
+        document.getElementById('mdrawerDone')?.addEventListener('click', closeMembersDrawer);
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && membersModal.classList.contains('open')) closeMembersDrawer();
         });
     }
 })();
