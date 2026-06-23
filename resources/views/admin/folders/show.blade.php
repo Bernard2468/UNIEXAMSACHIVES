@@ -1124,7 +1124,7 @@ body.mdrawer-lock { overflow: hidden; }
         @if($isLocked)
             <div class="mdrawer__note">
                 <i class="fas fa-shield-halved"></i>
-                <span>This folder is password-protected. Anyone you share with bypasses the password — sharing grants direct access.</span>
+                <span>Password-protected folder. Shared users get direct access without entering the password.</span>
             </div>
         @endif
 
