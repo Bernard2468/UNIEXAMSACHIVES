@@ -1106,6 +1106,28 @@
                             <h4>Dashboard</h4>
                         </div>
 
+                        @push('styles')
+                        <style>
+                            /* Uniform counter cards: every card fills its column so cards of
+                               different label lengths stay the same height and wrapped rows
+                               don't stagger. Scoped to .counter-cards to avoid other rows. */
+                            .counter-cards > [class*="col-"]:not(.counter-section-title) {
+                                display: flex;
+                                margin-bottom: 24px;
+                            }
+                            .counter-cards .dashboard__single__counter {
+                                width: 100%;
+                                margin-bottom: 0;
+                            }
+                            /* keep the label area a consistent height (1-line vs 2-line labels) */
+                            .counter-cards .counter__content__wraper p {
+                                min-height: 40px;
+                                display: flex;
+                                align-items: center;
+                            }
+                        </style>
+                        @endpush
+
                         {{-- Payment renewal card: only for Admin (is_admin=0, they pay on behalf of the system). Hidden for Regular User (is_admin=1) and Super Admin. Logic matches super-admin roles page. --}}
                         @auth
                             @if(auth()->user()->is_admin == 0 && !auth()->user()->isSuperAdmin())
@@ -1115,7 +1137,7 @@
 
                         @auth
                             @if(auth()->user()->is_admin)
-                            <div class="row">
+                            <div class="row counter-cards">
                                 {{-- Personal stats — scoped to this user only --}}
                                 <div class="col-xl-4 col-lg-6 col-md-12 col-12">
                                     <div class="dashboard__single__counter">
@@ -1206,9 +1228,9 @@
                             </div>
                             @endif
                             @unless(auth()->user()->is_admin)
-                            <div class="row">
+                            <div class="row counter-cards">
                                 {{-- ===== System Overview — global stats the admin manages ===== --}}
-                                <div class="col-12">
+                                <div class="col-12 counter-section-title">
                                     <div class="dashboard__section__title" style="margin-bottom: 12px;">
                                         <h4>System Overview</h4>
                                     </div>
@@ -1287,7 +1309,7 @@
                                 </div>
 
                                 {{-- ===== My Account — personal to this admin ===== --}}
-                                <div class="col-12">
+                                <div class="col-12 counter-section-title">
                                     <div class="dashboard__section__title" style="margin: 18px 0 12px;">
                                         <h4>My Account</h4>
                                     </div>
@@ -1359,6 +1381,24 @@
 
                                                 </div>
                                                 <p>My Memos</p>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{-- Shared With Me --}}
+                                <div class="col-xl-3 col-lg-6 col-md-6 col-12">
+                                    <div class="dashboard__single__counter">
+                                        <div class="counterarea__text__wraper">
+                                            <div class="counter__img">
+                                                <img loading="lazy"  src="../img/counter/counter__3.png" alt="counter">
+                                            </div>
+                                            <div class="counter__content__wraper">
+                                                <div class="counter__number">
+                                                    <span class="counter">{{$shared_folders_count}}</span>
+
+                                                </div>
+                                                <p>Shared With Me</p>
 
                                             </div>
                                         </div>
