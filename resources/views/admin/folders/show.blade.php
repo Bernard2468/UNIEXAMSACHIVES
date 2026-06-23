@@ -413,7 +413,7 @@
                     <p class="desc">{{ $folder->description }}</p>
                 @endif
                 <div class="meta">
-                    <span><i class="fas fa-file-lines"></i>{{ $folderFiles->count() }} {{ Str::plural('file', $folderFiles->count()) }}</span>
+                    <span><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226720/a0bc05b8-6e1d-4338-b9bd-189fe64f6c6b.png" alt="" class="meta-icon-img" aria-hidden="true">{{ $folderFiles->count() }} {{ Str::plural('file', $folderFiles->count()) }}</span>
                     <span><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226060/1e7ab43a-082a-4fa2-bf5d-8cad70910469.png" alt="" class="meta-icon-img" aria-hidden="true">{{ $folderExams->count() }} {{ Str::plural('exam', $folderExams->count()) }}</span>
                     <span><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782225885/ba1eed08-96d1-484a-aa27-da2bf660e15d.png" alt="" class="meta-icon-img" aria-hidden="true">Created {{ $folder->created_at?->format('M j, Y') }}</span>
                     @if($isLocked && $isOwner)<span><i class="fas fa-shield-halved" style="color:#0ea5e9;"></i>Password protected</span>@endif
