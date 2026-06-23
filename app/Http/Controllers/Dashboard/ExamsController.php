@@ -59,7 +59,7 @@ class ExamsController extends Controller
         $validatedData['is_approve'] = true; // Auto-approve all uploads
 
         Exam::create($validatedData);
-        return redirect()->route('dashboard')->with('success', 'Exam Document deposited successfully.');
+        return redirect()->route('dashboard.all.exams')->with('success', 'Exam Document deposited successfully.');
     }
 
     public function edit(Exam $exam)
@@ -132,7 +132,7 @@ class ExamsController extends Controller
 
         $exam->update($validatedData);
 
-        return redirect()->route('dashboard')->with('success', 'Exam Document updated successfully.');
+        return redirect()->route('dashboard.all.exams')->with('success', 'Exam Document updated successfully.');
     }
 
     private function buildStoredFilename($uploadedFile): string

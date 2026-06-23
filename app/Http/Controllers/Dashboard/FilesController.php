@@ -36,7 +36,7 @@ class FilesController extends Controller
         $validatedData['document_id'] = random_int(1000000000, 9999999999);
         $validatedData['is_approve'] = true;
         File::create($validatedData);
-        return redirect()->route('dashboard')->with('success', 'File has been deposited successfully.');
+        return redirect()->route('dashboard.all.files')->with('success', 'File has been deposited successfully.');
     }
 
     private function buildStoredFilename($uploadedFile): string
@@ -103,7 +103,7 @@ class FilesController extends Controller
 
         $file->update($validatedData);
 
-        return redirect()->route('dashboard')
+        return redirect()->route('dashboard.all.files')
             ->with('success', 'File has been updated successfully.');
     }
 
