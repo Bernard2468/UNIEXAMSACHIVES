@@ -733,8 +733,7 @@
 .mp-av-fallback {
     width:100%; height:100%;
     display:flex; align-items:center; justify-content:center;
-    background: linear-gradient(135deg,#0ea5e9,#6366f1);
-    color:#fff; font-weight:700; font-size:13px;
+    background:#e0f2fe; color:#0284c7; font-weight:700; font-size:13px;
 }
 .mp-info { flex:1; min-width:0; }
 .mp-name {
@@ -942,8 +941,7 @@ body.mdrawer-lock { overflow: hidden; }
 
 .mdrawer-backdrop {
     position: fixed; inset: 0;
-    background: rgba(15, 23, 42, 0.45);
-    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    background: rgba(15, 23, 42, 0.42);
     z-index: 9998;
     opacity: 0; visibility: hidden;
     transition: opacity .28s ease, visibility .28s ease;
@@ -952,15 +950,28 @@ body.mdrawer-lock { overflow: hidden; }
 
 .mdrawer {
     position: absolute; top: 0; right: 0; height: 100%;
-    width: 480px; max-width: 94vw;
+    width: 460px; max-width: 94vw;
     background: #fff;
     display: flex; flex-direction: column;
-    box-shadow: -28px 0 70px rgba(15, 23, 42, 0.22);
+    box-shadow: -22px 0 50px rgba(15, 23, 42, 0.14);
     transform: translateX(100%);
     transition: transform .34s cubic-bezier(.22, .61, .36, 1);
-    will-change: transform;
+    /* Match the system sidebar typeface; render text crisply (this panel sits
+       outside .folder-page-root, so it must set its own font explicitly). */
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 .mdrawer-backdrop.open .mdrawer { transform: translateX(0); }
+
+/* Inherit Outfit everywhere inside, but keep Font Awesome glyphs intact. */
+.mdrawer h3, .mdrawer p, .mdrawer span, .mdrawer label, .mdrawer a, .mdrawer div,
+.mdrawer button, .mdrawer select, .mdrawer input, .mdrawer textarea { font-family: inherit; }
+.mdrawer .fas, .mdrawer .far, .mdrawer .fab,
+.mdrawer [class^="fa-"], .mdrawer [class*=" fa-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
+}
 
 /* Header */
 .mdrawer__head {
@@ -972,9 +983,9 @@ body.mdrawer-lock { overflow: hidden; }
 .mdrawer__title { display: flex; align-items: center; gap: 13px; min-width: 0; }
 .mdrawer__ic {
     width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
-    background: linear-gradient(135deg, #0ea5e9, #0284c7);
-    color: #fff; display: flex; align-items: center; justify-content: center;
-    font-size: 17px; box-shadow: 0 8px 18px rgba(14, 165, 233, 0.32);
+    background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
 }
 .mdrawer__title h3 {
     margin: 0; font-size: 17px; font-weight: 700;
@@ -1004,8 +1015,9 @@ body.mdrawer-lock { overflow: hidden; }
 
 /* Segmented nav — keeps the .mb-tab class the JS switcher targets */
 .mdrawer__seg {
-    display: flex; gap: 4px;
-    padding: 14px 18px;
+    position: relative;
+    display: flex; gap: 2px;
+    padding: 12px 14px 0;
     border-bottom: 1px solid #eef2f7;
     flex-shrink: 0;
     overflow-x: auto;
@@ -1015,20 +1027,30 @@ body.mdrawer-lock { overflow: hidden; }
 .mdrawer__seg .mb-tab {
     flex: 1 0 auto;
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    padding: 10px 12px; border: none; background: transparent; cursor: pointer;
-    font-family: inherit; font-size: 13px; font-weight: 600; color: #94a3b8;
-    border-radius: 10px; white-space: nowrap;
-    transition: color .15s, background .15s;
+    padding: 9px 12px 13px; border: none; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: 13.5px; font-weight: 600; color: #94a3b8;
+    border-radius: 9px 9px 0 0; white-space: nowrap;
+    transition: color .18s ease;
 }
 .mdrawer__seg .mb-tab i { font-size: 13px; }
-.mdrawer__seg .mb-tab:hover { color: #475569; background: #f8fafc; }
-.mdrawer__seg .mb-tab.active { color: #0369a1; background: #eff6ff; box-shadow: none; }
+.mdrawer__seg .mb-tab:hover { color: #475569; }
+.mdrawer__seg .mb-tab.active { color: #0284c7; }
 .mdrawer__seg .mb-tab-badge {
     display: inline-flex; align-items: center; justify-content: center;
     min-width: 20px; height: 19px; padding: 0 6px; border-radius: 100px;
-    background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 700; line-height: 1;
+    background: #f1f5f9; color: #64748b; font-size: 11px; font-weight: 700; line-height: 1;
+    transition: background .18s ease, color .18s ease;
 }
-.mdrawer__seg .mb-tab.active .mb-tab-badge { background: #bae6fd; color: #0369a1; }
+.mdrawer__seg .mb-tab.active .mb-tab-badge { background: #e0f2fe; color: #0284c7; }
+
+/* Sliding accent underline — positioned by JS to track the active tab. */
+.mdrawer__ind {
+    position: absolute; left: 0; bottom: 0;
+    height: 2.5px; width: 0;
+    background: #0ea5e9; border-radius: 3px 3px 0 0;
+    transition: left .28s cubic-bezier(.4, 0, .2, 1), width .28s cubic-bezier(.4, 0, .2, 1);
+    pointer-events: none;
+}
 
 /* Body + footer */
 .mdrawer__body { flex: 1; overflow-y: auto; padding: 20px 22px 24px; }
@@ -1058,6 +1080,18 @@ body.mdrawer-lock { overflow: hidden; }
 
 @media (max-width: 520px) {
     .mdrawer { width: 100%; max-width: 100%; }
+}
+/* Larger, comfortable reading on big monitors without ballooning anything. */
+@media (min-width: 1600px) {
+    .mdrawer { width: 520px; }
+    .mdrawer__title h3 { font-size: 18.5px; }
+    .mdrawer__title p { font-size: 13px; }
+    .mdrawer__seg .mb-tab { font-size: 14px; }
+    .mdrawer .mb-panel-hint { font-size: 13px; }
+    .mdrawer .member-row .info .name,
+    .mdrawer .group-row .info .name { font-size: 14.5px; }
+    .mdrawer .member-row .info .email,
+    .mdrawer .group-row .info .sub { font-size: 13px; }
 }
 </style>
 
@@ -1104,6 +1138,7 @@ body.mdrawer-lock { overflow: hidden; }
             <button type="button" class="mb-tab" data-mb-tab="link" role="tab">
                 <i class="fas fa-link"></i> Link
             </button>
+            <span class="mdrawer__ind" id="mbSegInd" aria-hidden="true"></span>
         </nav>
 
         <div class="mdrawer__body">
@@ -1457,6 +1492,18 @@ body.mdrawer-lock { overflow: hidden; }
     const mbBadgeMembers = document.getElementById('mbBadgeMembers');
     const mbBadgeAdd = document.getElementById('mbBadgeAdd');
 
+    // Slide the accent underline under the active tab (offset metrics share the
+    // tab's coordinate space, so it stays aligned even if the nav scrolls).
+    const mbSegInd = document.getElementById('mbSegInd');
+    function positionSegIndicator() {
+        if (!mbSegInd) return;
+        const nav = mbSegInd.parentElement;
+        const active = nav ? nav.querySelector('.mb-tab.active') : null;
+        if (!active) return;
+        mbSegInd.style.width = active.offsetWidth + 'px';
+        mbSegInd.style.left = active.offsetLeft + 'px';
+    }
+
     function switchMembersTab(name) {
         if (!mbPanels[name]) return;
         mbTabs.forEach(t => {
@@ -1465,10 +1512,14 @@ body.mdrawer-lock { overflow: hidden; }
         Object.keys(mbPanels).forEach(key => {
             mbPanels[key]?.classList.toggle('active', key === name);
         });
+        positionSegIndicator();
     }
     mbTabs.forEach(t => {
         t.addEventListener('click', () => switchMembersTab(t.getAttribute('data-mb-tab')));
     });
+    window.addEventListener('resize', positionSegIndicator);
+    // Re-align once the Outfit webfont finishes loading (tab widths shift).
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(positionSegIndicator);
 
     function setBadge(el, n) {
         if (el) el.textContent = String(Math.max(0, n));
@@ -2004,8 +2055,10 @@ body.mdrawer-lock { overflow: hidden; }
         document.body.classList.add('mdrawer-lock');
         loadMembers();
         loadGroups();
-        // Only focus the picker search if the user is landing on the Add tab.
+        // Position the underline once the panel is laid out, then focus search
+        // only if we're landing on the Add tab.
         setTimeout(() => {
+            positionSegIndicator();
             if (mbPanels.add?.classList.contains('active')) mpSearch?.focus();
         }, 90);
     }
