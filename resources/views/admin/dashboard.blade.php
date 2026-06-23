@@ -1117,7 +1117,7 @@
                             @if(auth()->user()->is_admin)
                             <div class="row">
                                 {{-- Personal stats — scoped to this user only --}}
-                                <div class="col-xl-6 col-lg-6 col-md-12 col-12">
+                                <div class="col-xl-4 col-lg-6 col-md-12 col-12">
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
@@ -1134,7 +1134,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-xl-6 col-lg-6 col-md-12 col-12">
+                                <div class="col-xl-4 col-lg-6 col-md-12 col-12">
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
@@ -1146,6 +1146,57 @@
 
                                                 </div>
                                                 <p>My Files</p>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-4 col-lg-6 col-md-12 col-12">
+                                    <div class="dashboard__single__counter">
+                                        <div class="counterarea__text__wraper">
+                                            <div class="counter__img">
+                                                <img loading="lazy"  src="../img/counter/counter__1.png" alt="counter">
+                                            </div>
+                                            <div class="counter__content__wraper">
+                                                <div class="counter__number">
+                                                    <span class="counter">{{$admin_total_folders}}</span>
+
+                                                </div>
+                                                <p>My Folders</p>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-4 col-lg-6 col-md-12 col-12">
+                                    <div class="dashboard__single__counter">
+                                        <div class="counterarea__text__wraper">
+                                            <div class="counter__img">
+                                                <img loading="lazy"  src="../img/counter/counter__2.png" alt="counter">
+                                            </div>
+                                            <div class="counter__content__wraper">
+                                                <div class="counter__number">
+                                                    <span class="counter">{{$shared_folders_count}}</span>
+
+                                                </div>
+                                                <p>Shared With Me</p>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xl-4 col-lg-6 col-md-12 col-12">
+                                    <div class="dashboard__single__counter">
+                                        <div class="counterarea__text__wraper">
+                                            <div class="counter__img">
+                                                <img loading="lazy"  src="../img/counter/counter__3.png" alt="counter">
+                                            </div>
+                                            <div class="counter__content__wraper">
+                                                <div class="counter__number">
+                                                    <span class="counter">{{$my_memos}}</span>
+
+                                                </div>
+                                                <p>My Memos</p>
 
                                             </div>
                                         </div>

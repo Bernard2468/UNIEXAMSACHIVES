@@ -32,23 +32,37 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class HomeController extends Controller
 {
     public function dashboard(){
+        $user = Auth::user();
+        $userId = $user->id;
         $currentTime = Carbon::now();
         $twentyFourHoursAgo = $currentTime->subHours(24);
         $dailyVisitCount = Visit::where('visited_at', '>=', $twentyFourHoursAgo)->count();
         $numberOfExamsToFetch = 2;
         $files = File::all();
         // Get user's committees/boards
-        $userCommittees = Auth::user()->committees()->with('users')->get();
-        
+        $userCommittees = $user->committees()->with('users')->get();
+
+        // Personal memo footprint: every memo this user is involved in
+        // (created, active participant, or recipient). This is intentionally a
+        // total — the sidebar's unreadMemosCount already covers "needs attention".
+        $myMemos = EmailCampaign::where(function ($query) use ($userId) {
+            $query->where('created_by', $userId)
+                ->orWhereHas('activeParticipants', fn ($q) => $q->where('user_id', $userId))
+                ->orWhereHas('recipients', fn ($q) => $q->where('user_id', $userId));
+        })->count();
+
         return view('admin.dashboard',[
             'total_papers' => Exam::count(),
             'total_users' => User::count(),
             'dailyVisits' => $dailyVisitCount,
             'totalVisits' => Visit::all()->count(),
-            'admin_total_papers' => Exam::where('user_id', Auth::user()->id)->count(),
-            'recentlyUploadedExams' => Exam::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->take($numberOfExamsToFetch)->get(),
+            'admin_total_papers' => Exam::where('user_id', $userId)->count(),
+            'recentlyUploadedExams' => Exam::where('user_id', $userId)->orderBy('created_at', 'desc')->take($numberOfExamsToFetch)->get(),
             'total_files' => $files->count(),
-            'admin_total_files' => File::where('user_id', Auth::user()->id)->count(),
+            'admin_total_files' => File::where('user_id', $userId)->count(),
+            'admin_total_folders' => Folder::where('user_id', $userId)->count(),
+            'shared_folders_count' => Folder::sharedWith($user)->count(),
+            'my_memos' => $myMemos,
             'userCommittees' => $userCommittees,
         ]);
     }
