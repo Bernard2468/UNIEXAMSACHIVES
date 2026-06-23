@@ -220,6 +220,19 @@
     }
     .ftile:hover .kebab { display:flex; }
     .ftile .kebab:hover { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+    /* Answer-key badge — same plasticine key icon used on the archive (Explorer) pages. */
+    .ftile .key-badge {
+        position:absolute; top:4px; left:4px;
+        width:28px; height:28px; padding:3px;
+        border-radius:8px;
+        background:#fff; border:1px solid #e2e8f0;
+        display:flex; align-items:center; justify-content:center;
+        cursor:pointer; z-index:3;
+        box-shadow:0 2px 6px rgba(15,23,42,0.16);
+        transition: transform .15s, box-shadow .15s;
+    }
+    .ftile .key-badge img { width:100%; height:100%; object-fit:contain; display:block; }
+    .ftile .key-badge:hover { transform: scale(1.12); box-shadow:0 4px 10px rgba(15,23,42,0.24); }
 
     .empty-box {
         text-align:center; padding: 48px 20px;
@@ -330,6 +343,7 @@
     $iconExams = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782226060/1e7ab43a-082a-4fa2-bf5d-8cad70910469.png';
     $iconCalendar = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782225885/ba1eed08-96d1-484a-aa27-da2bf660e15d.png';
     $iconPassword = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782226976/d5ea208a-dc09-40e0-92d4-8194eff97801.png';
+    $iconKey = 'https://img.icons8.com/plasticine/100/key-security.png';
 
     // Smart "Back" target: prefer the page the user came from, but only if it's
     // on this app (prevents open-redirect via tampered ?from= values).
@@ -387,6 +401,9 @@
                 'own' => $exam->user_id === auth()->id(),
                 'view' => asset($exam->exam_document),
                 'download' => route('download.exam', $exam->id),
+                'has_key' => !empty($exam->answer_key),
+                'key_view' => $exam->answer_key ? asset($exam->answer_key) : null,
+                'bundle' => route('download.exam.bundle', $exam->id),
                 'edit' => route('exams.edit', $exam->id),
                 'remove' => route('dashboard.folders.remove-exam', ['folder' => $folder->id, 'exam' => $exam->id]),
             ];
@@ -511,9 +528,15 @@
                             data-edit-url="{{ $it->edit }}"
                             data-remove-url="{{ $it->remove }}"
                             data-can-edit="{{ $it->own ? '1' : '0' }}"
+                            data-has-key="{{ !empty($it->has_key) ? '1' : '0' }}"
+                            data-key-view-url="{{ $it->key_view ?? '' }}"
+                            data-bundle-url="{{ $it->bundle ?? '' }}"
                             data-name="{{ $displayName }}"
                             title="{{ $displayName }}.{{ $it->ext }}">
                             <button type="button" class="kebab" aria-label="More"><i class="fas fa-ellipsis-vertical"></i></button>
+                            @if(!empty($it->has_key))
+                                <button type="button" class="key-badge" aria-label="View answer key" title="Answer key attached — click to view"><img src="{{ $iconKey }}" alt="" loading="lazy"></button>
+                            @endif
                             <div class="ico {{ $iconClass }}"><i class="fas {{ $iconFa }}"></i></div>
                             <div class="name">{{ $displayName }}</div>
                             <div class="sub">{{ strtoupper($it->ext) }} &middot; {{ ucfirst($it->kind) }}</div>
@@ -534,7 +557,8 @@
 {{-- ===== Context menu ===== --}}
 <div id="folderCtx" style="position:fixed; z-index:9999; min-width:200px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 10px 30px rgba(15,23,42,0.18); padding:6px; display:none;">
     <a href="#" data-action="view" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-eye" style="width:14px; color:#64748b;"></i> Open / View</a>
-    <a href="#" data-action="download" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-download" style="width:14px; color:#64748b;"></i> Download</a>
+    <a href="#" data-action="view-key" class="ctx-key-item" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-key" style="width:14px; color:#d97706;"></i> View answer key</a>
+    <a href="#" data-action="download" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-download" style="width:14px; color:#64748b;"></i> <span class="ctx-dl-label">Download</span></a>
     <a href="#" data-action="edit" style="display:flex; align-items:center; gap:10px; padding:10px 12px; font-size:13.5px; font-weight:500; color:#1e293b; border-radius:7px; text-decoration:none;"><i class="fas fa-pen" style="width:14px; color:#64748b;"></i> Edit details</a>
     @if($isOwner)
     <div data-ctx-remove-sep style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
@@ -1693,6 +1717,13 @@ body.mdrawer-lock { overflow: hidden; }
         // item's owner may see it. Viewers (and editors who don't own the item)
         // get view/download only.
         if (ctxEditAction) ctxEditAction.style.display = tile.dataset.canEdit === '1' ? '' : 'none';
+        // Key actions appear only for exams that have an answer key; the download
+        // then bundles exam + key into a ZIP.
+        const hasKey = tile.dataset.hasKey === '1';
+        const keyItem = ctx.querySelector('.ctx-key-item');
+        if (keyItem) keyItem.style.display = hasKey ? '' : 'none';
+        const dlLabel = ctx.querySelector('.ctx-dl-label');
+        if (dlLabel) dlLabel.textContent = hasKey ? 'Download all (ZIP)' : 'Download';
         ctx.style.left = Math.min(x, window.innerWidth - 220) + 'px';
         ctx.style.top = Math.min(y, window.innerHeight - 220) + 'px';
         ctx.style.display = 'block';
@@ -1708,6 +1739,15 @@ body.mdrawer-lock { overflow: hidden; }
             const r = k.getBoundingClientRect();
             openCtx(r.right + 4, r.bottom + 4, tile);
         });
+        const keyBadge = tile.querySelector('.key-badge');
+        if (keyBadge) {
+            keyBadge.addEventListener('mousedown', e => e.stopPropagation());
+            keyBadge.addEventListener('click', e => {
+                e.preventDefault(); e.stopPropagation();
+                const keyUrl = tile.getAttribute('data-key-view-url');
+                if (keyUrl) window.open(keyUrl, '_blank');
+            });
+        }
     });
     document.addEventListener('click', e => { if (!ctx.contains(e.target)) closeCtx(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCtx(); });
@@ -1770,7 +1810,12 @@ body.mdrawer-lock { overflow: hidden; }
             const tile = active;
             closeCtx();
             if (a === 'view') window.open(tile.getAttribute('data-view-url'), '_blank');
-            else if (a === 'download') window.location.href = tile.getAttribute('data-download-url');
+            else if (a === 'view-key') { const kUrl = tile.getAttribute('data-key-view-url'); if (kUrl) window.open(kUrl, '_blank'); }
+            else if (a === 'download') {
+                const hasKey = tile.getAttribute('data-has-key') === '1';
+                const bundleUrl = tile.getAttribute('data-bundle-url');
+                window.location.href = (hasKey && bundleUrl) ? bundleUrl : tile.getAttribute('data-download-url');
+            }
             else if (a === 'edit') window.location.href = tile.getAttribute('data-edit-url');
             else if (a === 'remove') {
                 if (!confirm('Remove "' + (tile.getAttribute('data-name') || 'this item') + '" from this folder?\nThe item itself will not be deleted.')) return;

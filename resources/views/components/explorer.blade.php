@@ -411,25 +411,26 @@
 .exp-tile .kebab:hover { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
 
 /* Answer-key badge — shown on exam tiles that have a key attached.
-   Always visible (not hover-gated) so users can spot keyed exams at a glance. */
+   Always visible (not hover-gated) so users can spot keyed exams at a glance.
+   Uses the shared plasticine key icon for consistency with the folder view. */
 .exp-tile .key-badge {
     position: absolute;
-    top: 6px; left: 6px;
-    width: 22px; height: 22px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #fff;
-    border: none;
+    top: 4px; left: 4px;
+    width: 28px; height: 28px;
+    padding: 3px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
     display: flex; align-items: center; justify-content: center;
-    font-size: 10px;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(217,119,6,0.40);
+    box-shadow: 0 2px 6px rgba(15,23,42,0.16);
     z-index: 3;
     transition: transform .15s, box-shadow .15s;
 }
+.exp-tile .key-badge img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .exp-tile .key-badge:hover {
     transform: scale(1.12);
-    box-shadow: 0 4px 10px rgba(217,119,6,0.55);
+    box-shadow: 0 4px 10px rgba(15,23,42,0.24);
 }
 
 /* ============ CONTEXT MENU ============ */
@@ -1044,7 +1045,7 @@
                             title="{{ $displayName }}.{{ $ext }}">
                             <button type="button" class="kebab" aria-label="More"><i class="fas fa-ellipsis-vertical"></i></button>
                             @if(!empty($it['has_key']))
-                                <button type="button" class="key-badge" aria-label="View answer key" title="Answer key attached — click to view"><i class="fas fa-key"></i></button>
+                                <button type="button" class="key-badge" aria-label="View answer key" title="Answer key attached — click to view"><img src="https://img.icons8.com/plasticine/100/key-security.png" alt="" loading="lazy"></button>
                             @endif
                             <div class="ico {{ $iconClass }}"><i class="fas {{ $iconFa }}"></i></div>
                             <div class="name">{{ $displayName }}</div>
