@@ -1125,8 +1125,21 @@
                                 display: flex;
                                 align-items: center;
                             }
+                            /* normalise icon size — the shared file/exam icons are large PNGs,
+                               so cap every counter icon to match the original ~55px artwork. */
+                            .counter-cards .counter__img img {
+                                width: 56px;
+                                height: 56px;
+                                object-fit: contain;
+                            }
                         </style>
                         @endpush
+
+                        {{-- Shared file/exam icons — same artwork used on the folder details page (admin/folders/show.blade.php) --}}
+                        @php
+                            $iconFiles = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782226720/a0bc05b8-6e1d-4338-b9bd-189fe64f6c6b.png';
+                            $iconExams = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782226060/1e7ab43a-082a-4fa2-bf5d-8cad70910469.png';
+                        @endphp
 
                         {{-- Payment renewal card: only for Admin (is_admin=0, they pay on behalf of the system). Hidden for Regular User (is_admin=1) and Super Admin. Logic matches super-admin roles page. --}}
                         @auth
@@ -1143,7 +1156,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__3.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconExams }}" alt="Exams">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">
@@ -1160,7 +1173,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__4.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconFiles }}" alt="Files">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">
@@ -1240,7 +1253,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__1.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconExams }}" alt="Exams">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">
@@ -1258,7 +1271,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__4.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconFiles }}" alt="Files">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">
@@ -1319,7 +1332,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__3.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconExams }}" alt="Exams">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">
@@ -1337,7 +1350,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__4.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconFiles }}" alt="Files">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">

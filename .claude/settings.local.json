@@ -117,7 +117,8 @@
       "Bash(grep -n 'currentUserId\\\\|senderId\\\\|!= $currentUserId\\\\|reply-to-indicator' resources/views/admin/uimms/chat.blade.php)",
       "Bash(python -)",
       "Bash(grep -rn 'item\\\\['\\\\''message'\\\\''\\\\]\\\\|item\\\\[\"message\"\\\\]\\\\|$item\\\\['\\\\''event'\\\\''\\\\]\\\\|$item\\\\['\\\\''comment'\\\\''\\\\]' resources/views/admin/uimms/)",
-      "Bash(php --version)"
+      "Bash(php --version)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; foreach \\($n in 1..4\\) { $p = \"c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\public\\\\img\\\\counter\\\\counter__$n.png\"; if \\(Test-Path $p\\) { $img = [System.Drawing.Image]::FromFile\\($p\\); \"counter__$n.png = $\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\) } })"
     ],
     "deny": [],
     "additionalDirectories": [
