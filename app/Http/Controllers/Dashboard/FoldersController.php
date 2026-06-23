@@ -2,30 +2,35 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Folders\Audiences\FolderAudience;
+use App\Folders\Audiences\FolderAudienceRegistry;
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\File;
 use App\Models\Folder;
+use App\Models\FolderGrant;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class FoldersController extends Controller
 {
     public function index()
     {
-        $folders = Folder::where('user_id', Auth::id())
+        $user = Auth::user();
+
+        $folders = Folder::where('user_id', $user->id)
             ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $sharedFolders = Auth::user()->sharedFolders()
-            ->withCount(['files', 'exams'])
-            ->with('user:id,first_name,last_name,email,profile_picture')
-            ->orderBy('folder_shares.created_at', 'desc')
-            ->get();
+        // Folders shared with me — directly OR via any group I'm a live member
+        // of — each annotated with my effective permission for the role chip.
+        $sharedFolders = Folder::sharedListingFor($user);
 
         return view('admin.folders.index', compact('folders', 'sharedFolders'));
     }
@@ -101,7 +106,21 @@ class FoldersController extends Controller
             $this->markFolderUnlockedNow($folder);
         }
 
-        $folder->load(['files', 'exams', 'members']);
+        $folder->load(['files', 'exams', 'members', 'grants']);
+
+        // Group/audience options for the owner's "Share with a group" picker.
+        // Built from the registry so new group types appear automatically.
+        $audienceTypes = [];
+        if ($isOwner) {
+            foreach (app(FolderAudienceRegistry::class)->all() as $aud) {
+                $audienceTypes[] = [
+                    'type' => $aud->type(),
+                    'label' => $aud->label(),
+                    'icon' => $aud->icon(),
+                    'options' => $aud->options()->values()->all(),
+                ];
+            }
+        }
 
         // "Available to add" lists are scoped to the current user's own
         // items only — you can only contribute your own uploads.
@@ -120,7 +139,7 @@ class FoldersController extends Controller
                 ->get();
         }
 
-        return view('admin.folders.show', compact('folder', 'availableFiles', 'availableExams', 'isOwner'));
+        return view('admin.folders.show', compact('folder', 'availableFiles', 'availableExams', 'isOwner', 'audienceTypes'));
     }
 
     public function edit(Folder $folder)
@@ -601,6 +620,246 @@ class FoldersController extends Controller
                 ];
             }),
         ]);
+    }
+
+    // =================================================================
+    //  GROUP / AUDIENCE GRANTS
+    // =================================================================
+
+    /**
+     * List the group grants on a folder. Owner only. JSON.
+     */
+    public function grants(Request $request, Folder $folder)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can view groups.');
+        }
+
+        $grants = $folder->grants()->orderBy('created_at', 'desc')->get();
+
+        return response()->json([
+            'ok' => true,
+            'grants' => $grants->map(fn (FolderGrant $g) => $this->grantView($g))->all(),
+        ]);
+    }
+
+    /**
+     * Share the folder with a whole group (department, staff category,
+     * committee, office, leadership pool, or everyone). Owner only.
+     * Membership is resolved live, so the grant follows people in and out of
+     * the group automatically.
+     */
+    public function addGrant(Request $request, Folder $folder)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can share with a group.');
+        }
+
+        $data = $request->validate([
+            'audience_type' => 'required|string|max:32',
+            'audience_value' => 'nullable|string|max:191',
+            'permission' => 'required|in:viewer,editor',
+        ]);
+
+        $registry = app(FolderAudienceRegistry::class);
+        $audience = $registry->get($data['audience_type']);
+        if (!$audience) {
+            return $this->jsonOrAbort($request, 422, 'Unknown group type.');
+        }
+
+        // Validate the value against the audience's own allowed options so a
+        // forged request cannot grant access to an arbitrary / non-existent
+        // group. ('' is the canonical value for the "everyone" audience.)
+        $value = (string) ($data['audience_value'] ?? '');
+        $allowed = $audience->options()->pluck('value')->map(fn ($v) => (string) $v)->all();
+        if (!in_array($value, $allowed, true)) {
+            return $this->jsonOrAbort($request, 422, 'That group is not available to share with.');
+        }
+
+        $grant = FolderGrant::updateOrCreate(
+            [
+                'folder_id' => $folder->id,
+                'audience_type' => $data['audience_type'],
+                'audience_value' => $value,
+            ],
+            [
+                'permission' => $data['permission'],
+                'shared_by' => Auth::id(),
+            ],
+        );
+
+        $this->notifyAudienceMembers($folder, $audience, $value, $data['permission']);
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'grant' => $this->grantView($grant)]);
+        }
+        return back()->with('success', 'Folder shared with ' . $audience->label() . '.');
+    }
+
+    /**
+     * Remove a group grant. Owner only. (People who joined via this group lose
+     * access immediately unless they also have a direct share or another group.)
+     */
+    public function removeGrant(Request $request, Folder $folder, FolderGrant $grant)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can remove groups.');
+        }
+        if ($grant->folder_id !== $folder->id) {
+            return $this->jsonOrAbort($request, 404, 'Group not found on this folder.');
+        }
+
+        $grant->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+        return back()->with('success', 'Group access removed.');
+    }
+
+    // =================================================================
+    //  SHAREABLE LINK
+    // =================================================================
+
+    /**
+     * Create or rotate the folder's "anyone with the link" token. Owner only.
+     * Rotating invalidates any previously-shared link without affecting members
+     * who already joined.
+     */
+    public function shareLink(Request $request, Folder $folder)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can manage the share link.');
+        }
+
+        $folder->share_token = Str::random(48);
+        $folder->share_token_created_at = now();
+        $folder->save();
+
+        $url = route('dashboard.folders.join', ['folder' => $folder->id, 'token' => $folder->share_token]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'url' => $url]);
+        }
+        return back()->with('success', 'Share link ready.');
+    }
+
+    /**
+     * Turn the share link off. Owner only. Existing members keep their access.
+     */
+    public function disableShareLink(Request $request, Folder $folder)
+    {
+        if (!$folder->isOwnedBy(Auth::user())) {
+            return $this->jsonOrAbort($request, 403, 'Only the folder owner can manage the share link.');
+        }
+
+        $folder->share_token = null;
+        $folder->share_token_created_at = null;
+        $folder->save();
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+        return back()->with('success', 'Share link disabled.');
+    }
+
+    /**
+     * Open a share link: enrol the logged-in user as a viewer (a real member
+     * row, so they stay visible/auditable) and send them into the folder.
+     * A wrong/disabled token 404s rather than revealing the folder exists.
+     */
+    public function joinViaLink(Request $request, Folder $folder, string $token)
+    {
+        if (empty($folder->share_token) || !hash_equals($folder->share_token, $token)) {
+            abort(404);
+        }
+
+        $user = Auth::user();
+
+        // Owner or someone who already has access just goes straight in.
+        if ($folder->isOwnedBy($user) || $folder->isAccessibleBy($user)) {
+            return redirect()->route('dashboard.folders.show', $folder);
+        }
+
+        $folder->members()->syncWithoutDetaching([
+            $user->id => ['permission' => 'viewer', 'shared_by' => $folder->user_id],
+        ]);
+
+        return redirect()->route('dashboard.folders.show', $folder)
+            ->with('success', 'You now have access to "' . $folder->name . '".');
+    }
+
+    /**
+     * Presentation shape for one group grant (label + icon + live member count).
+     */
+    private function grantView(FolderGrant $grant): array
+    {
+        $audience = app(FolderAudienceRegistry::class)->get($grant->audience_type);
+        $value = (string) $grant->audience_value;
+
+        $memberCount = null;
+        if ($audience) {
+            try {
+                $memberCount = $audience->membersQuery($value)->count();
+            } catch (\Throwable $e) {
+                $memberCount = null;
+            }
+        }
+
+        return [
+            'id' => $grant->id,
+            'type' => $grant->audience_type,
+            'type_label' => $audience ? $audience->label() : ucfirst($grant->audience_type),
+            'icon' => $audience ? $audience->icon() : 'fa-users',
+            'value' => $value,
+            'value_label' => $audience ? ($audience->valueLabel($value) ?? '—') : $value,
+            'permission' => $grant->permission,
+            'member_count' => $memberCount,
+        ];
+    }
+
+    /**
+     * Best-effort in-app notification to the current members of a group when a
+     * folder is first shared with it. Capped, and skipped for "everyone" so we
+     * never blast the whole institution. New members who join the group later
+     * simply find the folder under "Shared with me".
+     */
+    private function notifyAudienceMembers(Folder $folder, FolderAudience $audience, string $value, string $permission): void
+    {
+        if ($audience->type() === 'everyone') {
+            return;
+        }
+
+        try {
+            $ownerName = trim((Auth::user()->first_name ?? '') . ' ' . (Auth::user()->last_name ?? '')) ?: 'Someone';
+            $groupLabel = $audience->valueLabel($value) ?? $audience->label();
+
+            $members = $audience->membersQuery($value)
+                ->where('id', '!=', Auth::id())
+                ->limit(50)
+                ->get(['id']);
+
+            foreach ($members as $member) {
+                Notification::create([
+                    'user_id' => $member->id,
+                    'type' => 'folder_share',
+                    'title' => 'A folder was shared with your group',
+                    'message' => "{$ownerName} shared the folder \"{$folder->name}\" with {$groupLabel} as a " . ucfirst($permission) . '.',
+                    'url' => route('dashboard.folders.show', $folder),
+                    'is_read' => false,
+                    'data' => [
+                        'folder_id' => $folder->id,
+                        'folder_name' => $folder->name,
+                        'shared_by' => Auth::id(),
+                        'permission' => $permission,
+                        'audience_type' => $audience->type(),
+                        'audience_value' => $value,
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Folder group-share notification failed: ' . $e->getMessage());
+        }
     }
 
     private function sendShareNotification(Folder $folder, User $recipient, string $permission): void

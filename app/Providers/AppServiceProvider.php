@@ -15,6 +15,13 @@ use App\Forms\Definitions\PurchaseWorksAuthorizationForm;
 use App\Forms\Definitions\RenewalOfAppointmentForm;
 use App\Forms\Definitions\VehicleMaintenanceAllowanceForm;
 use App\Forms\FormRegistry;
+use App\Folders\Audiences\CommitteeAudience;
+use App\Folders\Audiences\DepartmentAudience;
+use App\Folders\Audiences\EveryoneAudience;
+use App\Folders\Audiences\FolderAudienceRegistry;
+use App\Folders\Audiences\LeadershipAudience;
+use App\Folders\Audiences\OfficeAudience;
+use App\Folders\Audiences\StaffCategoryAudience;
 use App\Models\Detail;
 use App\Models\Exam;
 use App\Models\File;
@@ -66,6 +73,22 @@ class AppServiceProvider extends ServiceProvider
             $registry->register(new NonAcademicRenewalOfAppointmentForm());
             $registry->register(new EmployeePersonalRecordsForm());
             $registry->register(new PromotionSeniorMembersNonTeachingForm());
+            return $registry;
+        });
+
+        // ===== Folders: registry of shareable group "audiences" =====
+        // Each audience resolves a group (department, staff category, committee,
+        // office, leadership pool, everyone) to its live membership. Adding a new
+        // way to share with a set of people = a new FolderAudience class
+        // registered here — no migration, no change to access checks.
+        $this->app->singleton(FolderAudienceRegistry::class, function () {
+            $registry = new FolderAudienceRegistry();
+            $registry->register(new DepartmentAudience());
+            $registry->register(new StaffCategoryAudience());
+            $registry->register(new CommitteeAudience());
+            $registry->register(new OfficeAudience());
+            $registry->register(new LeadershipAudience());
+            $registry->register(new EveryoneAudience());
             return $registry;
         });
     }

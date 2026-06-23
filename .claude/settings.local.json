@@ -116,7 +116,8 @@
       "Bash(grep -n 'function storeReply\\\\|function sendReply\\\\|function reply\\\\|'\\\\''message'\\\\'' =>\\\\|\"message\" =>\\\\|->load\\(\\\\|reply->user\\\\|$reply' app/Http/Controllers/Dashboard/HomeController.php)",
       "Bash(grep -n 'currentUserId\\\\|senderId\\\\|!= $currentUserId\\\\|reply-to-indicator' resources/views/admin/uimms/chat.blade.php)",
       "Bash(python -)",
-      "Bash(grep -rn 'item\\\\['\\\\''message'\\\\''\\\\]\\\\|item\\\\[\"message\"\\\\]\\\\|$item\\\\['\\\\''event'\\\\''\\\\]\\\\|$item\\\\['\\\\''comment'\\\\''\\\\]' resources/views/admin/uimms/)"
+      "Bash(grep -rn 'item\\\\['\\\\''message'\\\\''\\\\]\\\\|item\\\\[\"message\"\\\\]\\\\|$item\\\\['\\\\''event'\\\\''\\\\]\\\\|$item\\\\['\\\\''comment'\\\\''\\\\]' resources/views/admin/uimms/)",
+      "Bash(php --version)"
     ],
     "deny": [],
     "additionalDirectories": [

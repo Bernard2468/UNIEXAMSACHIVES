@@ -152,6 +152,17 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/dashboard/folders/{folder}/members/{user}', [FoldersController::class, 'unshare'])->name('dashboard.folders.unshare');
     Route::delete('/dashboard/folders/{folder}/leave', [FoldersController::class, 'leave'])->name('dashboard.folders.leave');
 
+    // Folder sharing (groups / audiences — share with a whole department, staff
+    // category, committee, office, leadership pool, or everyone)
+    Route::get('/dashboard/folders/{folder}/grants', [FoldersController::class, 'grants'])->name('dashboard.folders.grants');
+    Route::post('/dashboard/folders/{folder}/grants', [FoldersController::class, 'addGrant'])->name('dashboard.folders.grants.add');
+    Route::delete('/dashboard/folders/{folder}/grants/{grant}', [FoldersController::class, 'removeGrant'])->name('dashboard.folders.grants.remove');
+
+    // Folder sharing (revocable "anyone with the link" token)
+    Route::post('/dashboard/folders/{folder}/share-link', [FoldersController::class, 'shareLink'])->name('dashboard.folders.share-link');
+    Route::delete('/dashboard/folders/{folder}/share-link', [FoldersController::class, 'disableShareLink'])->name('dashboard.folders.share-link.disable');
+    Route::get('/dashboard/folders/{folder}/join/{token}', [FoldersController::class, 'joinViaLink'])->name('dashboard.folders.join');
+
     #memos (replaces legacy broadcast message)
     Route::get('/dashboard/message',[HomeController::class, 'message'])->name('dashboard.message');
     Route::get('/dashboard/memos/unread-count', [HomeController::class, 'unreadMemoCount'])->name('dashboard.memos.unreadCount');

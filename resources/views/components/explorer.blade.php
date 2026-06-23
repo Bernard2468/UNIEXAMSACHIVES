@@ -932,7 +932,9 @@
                             $ownerAvatar = ($owner && $owner->profile_picture)
                                 ? asset('profile_pictures/' . $owner->profile_picture)
                                 : null;
-                            $perm = $folder->pivot->permission ?? 'viewer';
+                            // Effective permission is annotated by the controller (direct share
+                            // vs. group grant — strongest wins). Group-shared folders have no pivot.
+                            $perm = $folder->effective_permission ?? 'viewer';
                             $folderShowUrl = route('dashboard.folders.show', $folder)
                                 . '?from=' . urlencode(url()->full());
                         @endphp

@@ -419,7 +419,7 @@
                             $ownerName = $folder->user
                                 ? (trim(($folder->user->first_name ?? '') . ' ' . ($folder->user->last_name ?? '')) ?: $folder->user->email)
                                 : 'Someone';
-                            $myPerm = optional($folder->members->firstWhere('id', auth()->id()))->pivot->permission ?? 'viewer';
+                            $myPerm = $folder->effectivePermissionFor(auth()->user()) ?? 'viewer';
                         @endphp
                         <span><i class="fas fa-user-group" style="color:#0ea5e9;"></i>Shared by {{ $ownerName }} · {{ ucfirst($myPerm) }}</span>
                     @endif
@@ -444,10 +444,14 @@
                         <button type="submit" class="fbtn danger"><i class="fas fa-trash"></i> Delete folder</button>
                     </form>
                 @else
-                    <form action="{{ route('dashboard.folders.leave', $folder) }}" method="POST" style="display:inline;" onsubmit="return confirm('Leave this folder? You will lose access to its contents.');">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="fbtn danger"><i class="fas fa-right-from-bracket"></i> Leave folder</button>
-                    </form>
+                    {{-- "Leave" only removes a direct share. Hide it for users whose
+                         access comes solely from a group — they can't leave a group here. --}}
+                    @if($folder->members->contains('id', auth()->id()))
+                        <form action="{{ route('dashboard.folders.leave', $folder) }}" method="POST" style="display:inline;" onsubmit="return confirm('Leave this folder? You will lose access to its contents.');">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="fbtn danger"><i class="fas fa-right-from-bracket"></i> Leave folder</button>
+                        </form>
+                    @endif
                 @endif
             </div>
         </div>
@@ -837,6 +841,96 @@
     cursor:pointer; padding: 0 2px; font-size: 12px;
 }
 .shared-chip button:hover { color:#dc2626; }
+
+/* ===== Groups tab: current grant rows ===== */
+.group-row {
+    display:flex; align-items:center; gap:12px;
+    padding: 10px 8px;
+    border-radius: 8px;
+    transition: background .12s;
+}
+.group-row:hover { background:#f8fafc; }
+.group-row .grp-ico {
+    width: 36px; height: 36px; border-radius: 9px;
+    flex-shrink: 0;
+    background:#eff6ff; color:#0369a1;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 15px;
+}
+.group-row .info { flex:1; min-width:0; }
+.group-row .info .name { font-size: 13.5px; font-weight: 600; color:#0f172a; }
+.group-row .info .sub { font-size: 12px; color:#64748b; }
+.group-row .info .sub .type-tag { color:#475569; font-weight:600; }
+.group-row select {
+    border: 1.5px solid #e2e8f0; border-radius: 8px;
+    padding: 6px 10px; font-size: 12.5px; font-weight: 500;
+    background:#fff; color:#0f172a;
+    cursor:pointer; font-family: inherit;
+}
+.group-row .remove-btn {
+    border: none; background: transparent;
+    color: #94a3b8;
+    width: 28px; height: 28px; border-radius: 6px;
+    cursor: pointer; transition: all .12s;
+    display:flex; align-items:center; justify-content:center;
+}
+.group-row .remove-btn:hover { background:#fef2f2; color:#dc2626; }
+
+/* ===== Groups tab: "add a group" composer ===== */
+.grp-add {
+    border: 1px solid #e2e8f0; border-radius: 12px;
+    background:#f8fafc;
+    padding: 14px;
+    margin-top: 14px;
+}
+.grp-add .grp-add-title {
+    font-size: 12px; font-weight: 700; color:#0f172a;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin: 0 0 10px;
+}
+.grp-add .grp-grid {
+    display:grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.grp-add label.grp-field { display:block; }
+.grp-add .grp-field-label {
+    font-size: 11.5px; font-weight: 600; color:#475569; margin-bottom: 5px; display:block;
+}
+.grp-add select {
+    width:100%;
+    border: 1.5px solid #e2e8f0; border-radius: 9px;
+    padding: 9px 11px; font-size: 13px; font-weight: 500;
+    background:#fff; color:#0f172a; cursor:pointer; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+}
+.grp-add select:focus { outline:none; border-color:#0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.12); }
+.grp-add select:disabled { background:#f1f5f9; color:#94a3b8; cursor:not-allowed; }
+.grp-add .grp-add-foot {
+    display:flex; align-items:center; justify-content:flex-end; gap:10px;
+    margin-top: 12px;
+}
+
+/* ===== Link tab ===== */
+.link-panel .link-box {
+    border: 1px solid #e2e8f0; border-radius: 12px;
+    background:#fff; padding: 14px;
+}
+.link-row { display:flex; gap:8px; align-items:center; }
+.link-row input {
+    flex:1; min-width:0;
+    border: 1.5px solid #e2e8f0; border-radius: 9px;
+    padding: 9px 11px; font-size: 12.5px;
+    background:#f8fafc; color:#475569; font-family: inherit;
+}
+.link-row input:focus { outline:none; border-color:#0ea5e9; }
+.link-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top: 12px; }
+.link-meta { font-size: 12px; color:#94a3b8; margin-top: 10px; }
+.link-empty { text-align:center; padding: 8px 4px 4px; }
+.link-empty .link-ico {
+    width:56px; height:56px; border-radius:16px; margin: 0 auto 12px;
+    background:#eff6ff; color:#0ea5e9;
+    display:flex; align-items:center; justify-content:center; font-size: 22px;
+}
+.link-empty p { font-size: 13px; color:#64748b; margin: 0 0 14px; line-height:1.5; }
 </style>
 
 <div class="add-backdrop" id="membersModal">
@@ -859,12 +953,19 @@
 
         <div class="mb-tabs" role="tablist">
             <button type="button" class="mb-tab {{ $defaultTab === 'members' ? 'active' : '' }}" data-mb-tab="members" role="tab">
-                <i class="fas fa-user-check"></i> Current members
+                <i class="fas fa-user-check"></i> Members
                 <span class="mb-tab-badge" id="mbBadgeMembers">{{ $initialMemberCount }}</span>
             </button>
             <button type="button" class="mb-tab {{ $defaultTab === 'add' ? 'active' : '' }}" data-mb-tab="add" role="tab">
-                <i class="fas fa-user-plus"></i> Add people
+                <i class="fas fa-user-plus"></i> Add
                 <span class="mb-tab-badge" id="mbBadgeAdd">{{ $invitableCount }}</span>
+            </button>
+            <button type="button" class="mb-tab" data-mb-tab="groups" role="tab">
+                <i class="fas fa-people-group"></i> Groups
+                <span class="mb-tab-badge" id="mbBadgeGroups">{{ $folder->grants->count() }}</span>
+            </button>
+            <button type="button" class="mb-tab" data-mb-tab="link" role="tab">
+                <i class="fas fa-link"></i> Link
             </button>
         </div>
 
@@ -954,6 +1055,77 @@
                         <button type="button" class="mp-action-btn primary" id="mpInviteBtn" disabled><i class="fas fa-user-plus"></i> Invite <span id="mpInviteCount">0</span></button>
                     </div>
                 @endif
+            </div>
+        </div>
+
+        {{-- ============ TAB: GROUPS ============ --}}
+        <div class="mb-panel" id="mbPanelGroups" role="tabpanel">
+            <p class="mb-panel-hint">Share with a whole group. Membership updates automatically — people who join the group later get access, and those who leave lose it. (For a one-off exception, also add that person under <strong>Add</strong>.)</p>
+
+            <div class="members-list" id="folderGroupsList">
+                <div class="empty-box" style="padding: 24px 8px;">
+                    <div class="ico-c" style="width:60px; height:60px; font-size:22px;"><i class="fas fa-people-group"></i></div>
+                    <h4>No groups yet</h4>
+                    <p>Use the picker below to share with a department, staff category, committee, office, leadership pool, or everyone.</p>
+                </div>
+            </div>
+
+            <div class="grp-add">
+                <div class="grp-add-title">Share with a group</div>
+                <div class="grp-grid">
+                    <label class="grp-field">
+                        <span class="grp-field-label">Group type</span>
+                        <select id="grpType">
+                            <option value="" selected disabled>Choose a type…</option>
+                            @foreach($audienceTypes as $at)
+                                <option value="{{ $at['type'] }}">{{ $at['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="grp-field">
+                        <span class="grp-field-label">Group</span>
+                        <select id="grpValue" disabled>
+                            <option value="" selected disabled>Select a type first…</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="grp-grid" style="margin-top:10px;">
+                    <label class="grp-field">
+                        <span class="grp-field-label">Permission</span>
+                        <select id="grpPerm">
+                            <option value="viewer" selected>Viewer — can open &amp; download</option>
+                            <option value="editor">Editor — can also add their own items</option>
+                        </select>
+                    </label>
+                    <div></div>
+                </div>
+                <div class="grp-add-foot">
+                    <button type="button" class="mp-action-btn primary" id="grpAddBtn" style="margin-left:0;" disabled><i class="fas fa-plus"></i> Share with group</button>
+                </div>
+            </div>
+        </div>
+
+        {{-- ============ TAB: LINK ============ --}}
+        @php $joinUrl = $folder->share_token ? route('dashboard.folders.join', ['folder' => $folder->id, 'token' => $folder->share_token]) : ''; @endphp
+        <div class="mb-panel link-panel" id="mbPanelLink" role="tabpanel">
+            <p class="mb-panel-hint">Create one link that lets you give access to several people at once. Whoever opens it (while signed in) joins as a <strong>Viewer</strong> and shows up in your members list. Reset or turn it off anytime.</p>
+
+            <div class="link-box" id="linkActive" style="{{ $folder->share_token ? '' : 'display:none;' }}">
+                <div class="link-row">
+                    <input type="text" id="linkUrl" readonly value="{{ $joinUrl }}" onclick="this.select()">
+                    <button type="button" class="mp-action-btn primary" id="linkCopyBtn" style="margin-left:0;"><i class="fas fa-copy"></i> Copy</button>
+                </div>
+                <div class="link-actions">
+                    <button type="button" class="mp-action-btn" id="linkResetBtn"><i class="fas fa-rotate"></i> Reset link</button>
+                    <button type="button" class="mp-action-btn" id="linkDisableBtn" style="color:#dc2626; border-color:#fecaca;"><i class="fas fa-link-slash"></i> Turn off link</button>
+                </div>
+                <div class="link-meta" id="linkMeta">{{ $folder->share_token_created_at ? 'Link active · created ' . $folder->share_token_created_at->diffForHumans() : 'Link active' }}</div>
+            </div>
+
+            <div class="link-empty" id="linkEmpty" style="{{ $folder->share_token ? 'display:none;' : '' }}">
+                <div class="link-ico"><i class="fas fa-link"></i></div>
+                <p>No share link yet. Create one to give access to several people at once — handy for a whole class or team.</p>
+                <button type="button" class="mp-action-btn primary" id="linkCreateBtn" style="margin-left:0;"><i class="fas fa-link"></i> Create share link</button>
             </div>
         </div>
 
@@ -1137,6 +1309,8 @@
     const mbPanels = {
         members: document.getElementById('mbPanelMembers'),
         add: document.getElementById('mbPanelAdd'),
+        groups: document.getElementById('mbPanelGroups'),
+        link: document.getElementById('mbPanelLink'),
     };
     const mbBadgeMembers = document.getElementById('mbBadgeMembers');
     const mbBadgeAdd = document.getElementById('mbBadgeAdd');
@@ -1412,10 +1586,282 @@
 
     mpInviteBtn?.addEventListener('click', inviteSelected);
 
+    // ===================================================================
+    //  GROUPS TAB — share with a whole department / category / committee /
+    //  office / leadership pool / everyone (owner only)
+    // ===================================================================
+    const AUDIENCE_TYPES = @json($audienceTypes ?? []);
+    const audienceMap = {};
+    (AUDIENCE_TYPES || []).forEach(t => { audienceMap[t.type] = t; });
+
+    const groupsList = document.getElementById('folderGroupsList');
+    const grpType = document.getElementById('grpType');
+    const grpValue = document.getElementById('grpValue');
+    const grpPerm = document.getElementById('grpPerm');
+    const grpAddBtn = document.getElementById('grpAddBtn');
+    const mbBadgeGroups = document.getElementById('mbBadgeGroups');
+
+    function renderGroups(grants) {
+        if (!groupsList) return;
+        const count = grants ? grants.length : 0;
+        setBadge(mbBadgeGroups, count);
+        if (count === 0) {
+            groupsList.innerHTML = '<div class="empty-box" style="padding:24px 8px;"><div class="ico-c" style="width:60px;height:60px;font-size:22px;"><i class="fas fa-people-group"></i></div><h4>No groups yet</h4><p>Use the picker below to share with a department, staff category, committee, office, leadership pool, or everyone.</p></div>';
+            return;
+        }
+        groupsList.innerHTML = grants.map(g => {
+            const n = g.member_count;
+            const memberTxt = (n === null || n === undefined) ? '' : (' · ' + n + ' ' + (n === 1 ? 'person' : 'people'));
+            return `
+            <div class="group-row" data-grant-id="${g.id}" data-type="${escapeHtml(g.type)}" data-value="${escapeHtml(g.value)}">
+                <div class="grp-ico"><i class="fas ${escapeHtml(g.icon)}"></i></div>
+                <div class="info">
+                    <div class="name">${escapeHtml(g.value_label)}</div>
+                    <div class="sub"><span class="type-tag">${escapeHtml(g.type_label)}</span>${escapeHtml(memberTxt)}</div>
+                </div>
+                <select class="group-perm" data-grant-id="${g.id}">
+                    <option value="viewer" ${g.permission === 'viewer' ? 'selected' : ''}>Viewer</option>
+                    <option value="editor" ${g.permission === 'editor' ? 'selected' : ''}>Editor</option>
+                </select>
+                <button type="button" class="remove-btn" data-grant-id="${g.id}" title="Remove group access"><i class="fas fa-xmark"></i></button>
+            </div>`;
+        }).join('');
+
+        groupsList.querySelectorAll('.group-perm').forEach(sel => {
+            sel.addEventListener('change', () => updateGrantPermission(sel.getAttribute('data-grant-id'), sel.value));
+        });
+        groupsList.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', () => removeGrant(btn.getAttribute('data-grant-id')));
+        });
+    }
+
+    async function loadGroups() {
+        if (!groupsList) return;
+        try {
+            const res = await fetch('{{ route("dashboard.folders.grants", $folder) }}', {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await res.json();
+            if (data.ok) renderGroups(data.grants);
+        } catch (e) { console.error('[groups] load failed:', e); }
+    }
+
+    function populateGroupValues() {
+        if (!grpType || !grpValue) return;
+        const def = audienceMap[grpType.value];
+        if (!def) {
+            grpValue.innerHTML = '<option value="" selected disabled>Select a type first…</option>';
+            grpValue.disabled = true;
+            updateGrpAddState();
+            return;
+        }
+        const opts = def.options || [];
+        grpValue.innerHTML = '';
+        if (opts.length === 1) {
+            // Value-less audience (e.g. "Everyone") — nothing to choose.
+            const o = opts[0];
+            const opt = document.createElement('option');
+            opt.value = o.value; opt.textContent = o.label; opt.selected = true;
+            grpValue.appendChild(opt);
+            grpValue.disabled = true;
+        } else if (opts.length === 0) {
+            grpValue.innerHTML = '<option value="" selected disabled>No ' + def.label.toLowerCase() + ' available</option>';
+            grpValue.disabled = true;
+        } else {
+            const ph = document.createElement('option');
+            ph.value = ''; ph.disabled = true; ph.selected = true;
+            ph.textContent = 'Select a ' + def.label.toLowerCase() + '…';
+            grpValue.appendChild(ph);
+            opts.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o.value; opt.textContent = o.label;
+                grpValue.appendChild(opt);
+            });
+            grpValue.disabled = false;
+        }
+        updateGrpAddState();
+    }
+
+    function updateGrpAddState() {
+        if (!grpAddBtn) return;
+        let ok = false;
+        if (grpType && grpType.value) {
+            const def = audienceMap[grpType.value];
+            if (def) {
+                const opts = def.options || [];
+                if (opts.length === 1) ok = true;
+                else {
+                    const sel = grpValue && grpValue.selectedOptions && grpValue.selectedOptions[0];
+                    ok = !!(sel && !sel.disabled);
+                }
+            }
+        }
+        grpAddBtn.disabled = !ok;
+    }
+
+    async function updateGrantPermission(grantId, permission) {
+        const row = groupsList.querySelector(`.group-row[data-grant-id="${grantId}"]`);
+        if (!row) return;
+        const type = row.getAttribute('data-type');
+        const value = row.getAttribute('data-value') || '';
+        try {
+            const res = await fetch('{{ route("dashboard.folders.grants.add", $folder) }}', {
+                method: 'POST', credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF,
+                    'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ audience_type: type, audience_value: value, permission }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) notify('Group permission updated', 'ok');
+            else notify(data.message || 'Could not update group', 'err');
+        } catch (e) { notify('Network error', 'err'); }
+    }
+
+    async function removeGrant(grantId) {
+        const row = groupsList.querySelector(`.group-row[data-grant-id="${grantId}"]`);
+        if (!row) return;
+        if (!confirm('Remove this group\'s access?\nPeople who only had access through this group will lose it.')) return;
+        row.style.transition = 'opacity .2s'; row.style.opacity = '0.4';
+        try {
+            const res = await fetch(`/dashboard/folders/${FOLDER_ID}/grants/${grantId}`, {
+                method: 'DELETE', credentials: 'same-origin',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                row.remove();
+                const remaining = groupsList.querySelectorAll('.group-row').length;
+                setBadge(mbBadgeGroups, remaining);
+                if (remaining === 0) renderGroups([]);
+                notify('Group access removed', 'ok');
+            } else {
+                row.style.opacity = '1';
+                notify(data.message || 'Could not remove group', 'err');
+            }
+        } catch (e) {
+            row.style.opacity = '1';
+            notify('Network error', 'err');
+        }
+    }
+
+    async function addGroup() {
+        if (!grpType || !grpType.value || !grpAddBtn) return;
+        const type = grpType.value;
+        const value = grpValue ? (grpValue.value || '') : '';
+        const permission = grpPerm ? grpPerm.value : 'viewer';
+        const original = grpAddBtn.innerHTML;
+        grpAddBtn.disabled = true;
+        grpAddBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sharing...';
+        try {
+            const res = await fetch('{{ route("dashboard.folders.grants.add", $folder) }}', {
+                method: 'POST', credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF,
+                    'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ audience_type: type, audience_value: value, permission }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) {
+                notify('Folder shared with group', 'ok');
+                grpType.value = '';
+                populateGroupValues();
+                if (grpPerm) grpPerm.value = 'viewer';
+                loadGroups();
+            } else {
+                notify(data.message || 'Could not share with group', 'err');
+            }
+        } catch (e) {
+            notify('Network error', 'err');
+        } finally {
+            grpAddBtn.innerHTML = original;
+            updateGrpAddState();
+        }
+    }
+
+    grpType?.addEventListener('change', populateGroupValues);
+    grpValue?.addEventListener('change', updateGrpAddState);
+    grpAddBtn?.addEventListener('click', addGroup);
+
+    // ===================================================================
+    //  LINK TAB — revocable "anyone with the link" sharing (owner only)
+    // ===================================================================
+    const linkActive = document.getElementById('linkActive');
+    const linkEmpty = document.getElementById('linkEmpty');
+    const linkUrl = document.getElementById('linkUrl');
+    const linkMeta = document.getElementById('linkMeta');
+    const linkCreateBtn = document.getElementById('linkCreateBtn');
+    const linkResetBtn = document.getElementById('linkResetBtn');
+    const linkDisableBtn = document.getElementById('linkDisableBtn');
+    const linkCopyBtn = document.getElementById('linkCopyBtn');
+
+    function showLinkActive(url) {
+        if (linkUrl) linkUrl.value = url;
+        if (linkActive) linkActive.style.display = '';
+        if (linkEmpty) linkEmpty.style.display = 'none';
+        if (linkMeta) linkMeta.textContent = 'Link active · just now';
+    }
+    function showLinkEmpty() {
+        if (linkActive) linkActive.style.display = 'none';
+        if (linkEmpty) linkEmpty.style.display = '';
+    }
+
+    async function createOrResetLink(isReset, btn) {
+        const original = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (isReset ? 'Resetting...' : 'Creating...'); }
+        try {
+            const res = await fetch('{{ route("dashboard.folders.share-link", $folder) }}', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok && data.url) { showLinkActive(data.url); notify(isReset ? 'Link reset' : 'Share link created', 'ok'); }
+            else notify(data.message || 'Could not create link', 'err');
+        } catch (e) { notify('Network error', 'err'); }
+        finally { if (btn) { btn.disabled = false; btn.innerHTML = original; } }
+    }
+
+    async function disableLink() {
+        if (!confirm('Turn off the share link?\nThe current link will stop working. People who already joined keep their access.')) return;
+        const original = linkDisableBtn ? linkDisableBtn.innerHTML : '';
+        if (linkDisableBtn) { linkDisableBtn.disabled = true; linkDisableBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Turning off...'; }
+        try {
+            const res = await fetch('{{ route("dashboard.folders.share-link", $folder) }}', {
+                method: 'DELETE', credentials: 'same-origin',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.ok) { showLinkEmpty(); notify('Share link turned off', 'ok'); }
+            else notify(data.message || 'Could not turn off link', 'err');
+        } catch (e) { notify('Network error', 'err'); }
+        finally { if (linkDisableBtn) { linkDisableBtn.disabled = false; linkDisableBtn.innerHTML = original; } }
+    }
+
+    function copyLink() {
+        if (!linkUrl) return;
+        linkUrl.select();
+        const done = () => notify('Link copied to clipboard', 'ok');
+        const fallback = () => { try { document.execCommand('copy'); done(); } catch (_) { notify('Press Ctrl+C to copy', 'err'); } };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(linkUrl.value).then(done).catch(fallback);
+        } else { fallback(); }
+    }
+
+    linkCreateBtn?.addEventListener('click', () => createOrResetLink(false, linkCreateBtn));
+    linkResetBtn?.addEventListener('click', () => {
+        if (confirm('Reset the link?\nThe old link will stop working immediately.')) createOrResetLink(true, linkResetBtn);
+    });
+    linkDisableBtn?.addEventListener('click', disableLink);
+    linkCopyBtn?.addEventListener('click', copyLink);
+
     if (membersBtn && membersModal) {
         membersBtn.addEventListener('click', () => {
             membersModal.classList.add('open');
             loadMembers();
+            loadGroups();
             // Only focus the picker search if the user is landing on the Add tab.
             setTimeout(() => {
                 if (mbPanels.add?.classList.contains('active')) mpSearch?.focus();

@@ -122,11 +122,7 @@ class FilesController extends Controller
             ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
-        $sharedFolders = Auth::user()->sharedFolders()
-            ->withCount(['files', 'exams'])
-            ->with('user:id,first_name,last_name,email,profile_picture')
-            ->orderBy('folder_shares.created_at', 'desc')
-            ->get();
+        $sharedFolders = Folder::sharedListingFor(Auth::user());
         return view('admin.all_files', compact('files', 'folders', 'sharedFolders'));
     }
 
@@ -146,11 +142,7 @@ class FilesController extends Controller
             ->withCount(['files', 'exams'])
             ->orderBy('created_at', 'desc')
             ->get();
-        $sharedFolders = Auth::user()->sharedFolders()
-            ->withCount(['files', 'exams'])
-            ->with('user:id,first_name,last_name,email,profile_picture')
-            ->orderBy('folder_shares.created_at', 'desc')
-            ->get();
+        $sharedFolders = Folder::sharedListingFor(Auth::user());
         return view('admin.all_files_list', compact('files', 'folders', 'sharedFolders'));
     }
 
