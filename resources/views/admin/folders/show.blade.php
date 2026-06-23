@@ -540,54 +540,117 @@
 
 
 {{-- ===== ADD ITEMS MODAL ===== --}}
-<div class="add-backdrop" id="addModal">
-    <div class="add-modal">
-        <h3><i class="fas fa-plus"></i> Add items to "{{ $folder->name }}"</h3>
-        <div class="add-tabs">
-            <button type="button" class="add-tab active" data-tab="files">Files ({{ $availableFiles->count() }})</button>
-            <button type="button" class="add-tab" data-tab="exams">Exams ({{ $availableExams->count() }})</button>
+@php
+    $aiIcon = function ($path) {
+        $ext = strtolower(pathinfo($path ?? '', PATHINFO_EXTENSION) ?: 'pdf');
+        $class = match (true) {
+            $ext === 'pdf' => 'pdf',
+            in_array($ext, ['doc', 'docx']) => 'doc',
+            in_array($ext, ['xls', 'xlsx', 'csv']) => 'xls',
+            in_array($ext, ['ppt', 'pptx']) => 'ppt',
+            in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'webp']) => 'img',
+            default => 'unk',
+        };
+        $glyph = match ($class) {
+            'pdf' => 'fa-file-pdf', 'doc' => 'fa-file-word', 'xls' => 'fa-file-excel',
+            'ppt' => 'fa-file-powerpoint', 'img' => 'fa-file-image', default => 'fa-file',
+        };
+        return ['ext' => $ext, 'class' => $class, 'glyph' => $glyph];
+    };
+@endphp
+<div class="mdrawer-backdrop" id="addModal">
+    <aside class="mdrawer" role="dialog" aria-modal="true" aria-label="Add items to folder">
+        <header class="mdrawer__head">
+            <div class="mdrawer__title">
+                <span class="mdrawer__ic"><i class="fas fa-plus"></i></span>
+                <div style="min-width:0;">
+                    <h3>Add to folder</h3>
+                    <p>{{ $folder->name }}</p>
+                </div>
+            </div>
+            <button type="button" class="mdrawer__close" id="addDrawerClose" aria-label="Close"><i class="fas fa-xmark"></i></button>
+        </header>
+
+        <nav class="mdrawer__seg" role="tablist">
+            <button type="button" class="mb-tab active" data-add-tab="files" role="tab">
+                <i class="fas fa-file-lines"></i> Files
+                <span class="mb-tab-badge">{{ $availableFiles->count() }}</span>
+            </button>
+            <button type="button" class="mb-tab" data-add-tab="exams" role="tab">
+                <i class="fas fa-clipboard-list"></i> Exams
+                <span class="mb-tab-badge">{{ $availableExams->count() }}</span>
+            </button>
+            <span class="mdrawer__ind" id="addSegInd" aria-hidden="true"></span>
+        </nav>
+
+        <div class="ai-toolbar">
+            <div class="ai-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="aiSearch" placeholder="Search by name…" autocomplete="off">
+            </div>
+            <div class="ai-view" role="group" aria-label="View mode">
+                <button type="button" data-view="grid" class="active" title="Grid view" aria-label="Grid view"><i class="fas fa-table-cells-large"></i></button>
+                <button type="button" data-view="list" title="List view" aria-label="List view"><i class="fas fa-list-ul"></i></button>
+            </div>
         </div>
 
-        <form id="addFilesForm" action="{{ route('dashboard.folders.add-files', $folder) }}" method="POST" data-pane="files">
-            @csrf
-            <div class="add-list">
-                @forelse($availableFiles as $f)
-                    @php $ext = strtoupper(pathinfo($f->document_file ?? '', PATHINFO_EXTENSION) ?: 'PDF'); @endphp
-                    <label class="add-row">
-                        <input type="checkbox" name="file_ids[]" value="{{ $f->id }}">
-                        <span class="name">{{ $f->file_title }}</span>
-                        <span class="ext">{{ $ext }}</span>
-                    </label>
-                @empty
-                    <div class="empty-box"><div class="ico-c"><i class="fas fa-file"></i></div><h4>No files available</h4><p>Upload more files to add them here.</p></div>
-                @endforelse
-            </div>
-            <div class="add-actions">
-                <button type="button" class="fbtn" onclick="document.getElementById('addModal').classList.remove('open')">Cancel</button>
-                <button type="submit" class="fbtn primary" @if($availableFiles->count() === 0) disabled @endif><i class="fas fa-check"></i> Add selected files</button>
-            </div>
-        </form>
+        <div class="mdrawer__body">
+            <form id="addFilesForm" action="{{ route('dashboard.folders.add-files', $folder) }}" method="POST" data-pane="files">
+                @csrf
+                <div class="ai-items ai-grid" id="aiListFiles" data-kind="files">
+                    @forelse($availableFiles as $f)
+                        @php $ic = $aiIcon($f->document_file); @endphp
+                        <label class="ai-item" data-search="{{ strtolower($f->file_title . ' ' . $ic['ext']) }}">
+                            <input type="checkbox" name="file_ids[]" value="{{ $f->id }}">
+                            <span class="ai-ico {{ $ic['class'] }}"><i class="fas {{ $ic['glyph'] }}"></i></span>
+                            <span class="ai-name">{{ $f->file_title }}</span>
+                            <span class="ai-meta">{{ strtoupper($ic['ext']) }}</span>
+                            <span class="ai-check"><i class="fas fa-check"></i></span>
+                        </label>
+                    @empty
+                        <div class="empty-box" style="grid-column:1/-1; padding:36px 8px;">
+                            <div class="ico-c"><i class="fas fa-file"></i></div>
+                            <h4>No files to add</h4>
+                            <p>Upload files first, then add them here.</p>
+                        </div>
+                    @endforelse
+                    <div class="ai-noresult" style="display:none; grid-column:1/-1;">No files match your search.</div>
+                </div>
+            </form>
 
-        <form id="addExamsForm" action="{{ route('dashboard.folders.add-exams', $folder) }}" method="POST" data-pane="exams" style="display:none;">
-            @csrf
-            <div class="add-list">
-                @forelse($availableExams as $e)
-                    @php $ext = strtoupper(pathinfo($e->exam_document ?? '', PATHINFO_EXTENSION) ?: 'PDF'); @endphp
-                    <label class="add-row">
-                        <input type="checkbox" name="exam_ids[]" value="{{ $e->id }}">
-                        <span class="name">{{ $e->course_title }} ({{ $e->course_code }})</span>
-                        <span class="ext">{{ $ext }}</span>
-                    </label>
-                @empty
-                    <div class="empty-box"><div class="ico-c"><i class="fas fa-clipboard-list"></i></div><h4>No exams available</h4><p>Upload more exam documents to add them here.</p></div>
-                @endforelse
+            <form id="addExamsForm" action="{{ route('dashboard.folders.add-exams', $folder) }}" method="POST" data-pane="exams" style="display:none;">
+                @csrf
+                <div class="ai-items ai-grid" id="aiListExams" data-kind="exams">
+                    @forelse($availableExams as $e)
+                        @php $ic = $aiIcon($e->exam_document); @endphp
+                        <label class="ai-item" data-search="{{ strtolower($e->course_title . ' ' . $e->course_code . ' ' . $ic['ext']) }}">
+                            <input type="checkbox" name="exam_ids[]" value="{{ $e->id }}">
+                            <span class="ai-ico {{ $ic['class'] }}"><i class="fas {{ $ic['glyph'] }}"></i></span>
+                            <span class="ai-name">{{ $e->course_title }} ({{ $e->course_code }})</span>
+                            <span class="ai-meta">{{ strtoupper($ic['ext']) }}</span>
+                            <span class="ai-check"><i class="fas fa-check"></i></span>
+                        </label>
+                    @empty
+                        <div class="empty-box" style="grid-column:1/-1; padding:36px 8px;">
+                            <div class="ico-c"><i class="fas fa-clipboard-list"></i></div>
+                            <h4>No exams to add</h4>
+                            <p>Upload exam documents first, then add them here.</p>
+                        </div>
+                    @endforelse
+                    <div class="ai-noresult" style="display:none; grid-column:1/-1;">No exams match your search.</div>
+                </div>
+            </form>
+        </div>
+
+        <footer class="mdrawer__foot">
+            <div class="ai-foot-left">
+                <button type="button" class="ai-link" data-ai-all>Select all</button>
+                <button type="button" class="ai-link" data-ai-clear>Clear</button>
+                <span class="ai-count"><b id="aiCount">0</b> selected</span>
             </div>
-            <div class="add-actions">
-                <button type="button" class="fbtn" onclick="document.getElementById('addModal').classList.remove('open')">Cancel</button>
-                <button type="submit" class="fbtn primary" @if($availableExams->count() === 0) disabled @endif><i class="fas fa-check"></i> Add selected exams</button>
-            </div>
-        </form>
-    </div>
+            <button type="submit" form="addFilesForm" class="mdrawer__done" id="aiSubmit" disabled><i class="fas fa-check"></i> Add</button>
+        </footer>
+    </aside>
 </div>
 
 @if($isOwner)
@@ -1097,6 +1160,99 @@ body.mdrawer-lock { overflow: hidden; }
 .mdrawer .group-row .info .name { font-size: 14px; }
 .mdrawer .member-row .info .email { font-size: 12.5px; }
 
+/* ============================================================
+   ADD-ITEMS DRAWER — Windows Explorer-style file/exam picker
+   (grid ⇄ list toggle; reuses the .mdrawer chrome + type system)
+   ============================================================ */
+.ai-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 22px 12px; flex-shrink: 0;
+}
+.ai-search { position: relative; flex: 1; display: flex; align-items: center; }
+.ai-search i { position: absolute; left: 12px; color: #94a3b8; font-size: 13px; pointer-events: none; }
+.ai-search input {
+    width: 100%; padding: 9px 12px 9px 33px;
+    border: 1px solid #e2e8f0; border-radius: 9px; background: #f8fafc;
+    font-size: 13px; color: #0f172a; outline: none;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.ai-search input:focus { border-color: #0ea5e9; background: #fff; box-shadow: 0 0 0 3px rgba(14,165,233,0.12); }
+.ai-view { display: flex; gap: 2px; background: #f1f5f9; border-radius: 9px; padding: 3px; flex-shrink: 0; }
+.ai-view button {
+    width: 34px; height: 30px; border: none; background: transparent; border-radius: 7px;
+    color: #94a3b8; cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s, box-shadow .15s;
+}
+.ai-view button:hover { color: #475569; }
+.ai-view button.active { background: #fff; color: #0284c7; box-shadow: 0 1px 2px rgba(15,23,42,0.10); }
+
+.ai-items.ai-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 8px; }
+.ai-items.ai-list { display: flex; flex-direction: column; gap: 2px; }
+
+.ai-item {
+    position: relative; display: flex; cursor: pointer; user-select: none;
+    border: 1.5px solid transparent; border-radius: 11px;
+    transition: background .12s, border-color .12s;
+}
+.ai-item input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.ai-check {
+    width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+    border: 2px solid #cbd5e1; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s, opacity .15s;
+}
+.ai-check i { font-size: 10px; color: #fff; opacity: 0; transition: opacity .12s; }
+.ai-item:hover .ai-check { border-color: #94a3b8; }
+.ai-item.selected .ai-check { background: #0ea5e9; border-color: #0ea5e9; }
+.ai-item.selected .ai-check i { opacity: 1; }
+
+/* File-type icon tints (match the folder-contents grid) */
+.ai-ico.pdf i { color: #ef4444; }
+.ai-ico.doc i { color: #2563eb; }
+.ai-ico.xls i { color: #16a34a; }
+.ai-ico.ppt i { color: #ea580c; }
+.ai-ico.img i { color: #a855f7; }
+.ai-ico.unk i { color: #64748b; }
+
+/* Grid mode */
+.ai-grid .ai-item { flex-direction: column; align-items: center; text-align: center; padding: 16px 8px 12px; }
+.ai-grid .ai-item:hover { background: #f8fafc; border-color: #e2e8f0; }
+.ai-grid .ai-item.selected { background: #eff6ff; border-color: #bae6fd; }
+.ai-grid .ai-ico { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+.ai-grid .ai-ico i { font-size: 38px; }
+.ai-grid .ai-name { font-size: 12.5px; font-weight: 500; color: #1e293b; line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+.ai-grid .ai-meta { font-size: 10.5px; font-weight: 600; color: #94a3b8; margin-top: 3px; letter-spacing: .04em; }
+.ai-grid .ai-check { position: absolute; top: 8px; right: 8px; opacity: 0; }
+.ai-grid .ai-item:hover .ai-check,
+.ai-grid .ai-item.selected .ai-check { opacity: 1; }
+
+/* List mode */
+.ai-list .ai-item { flex-direction: row; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 9px; }
+.ai-list .ai-item:hover { background: #f8fafc; }
+.ai-list .ai-item.selected { background: #eff6ff; }
+.ai-list .ai-ico { width: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ai-list .ai-ico i { font-size: 20px; }
+.ai-list .ai-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 500; color: #1e293b;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai-list .ai-meta { font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9;
+    padding: 3px 8px; border-radius: 5px; letter-spacing: .04em; flex-shrink: 0; }
+
+.ai-noresult { padding: 26px 8px; text-align: center; color: #94a3b8; font-size: 13px; }
+
+/* Footer selection cluster */
+.ai-foot-left { display: flex; align-items: center; gap: 6px; }
+.ai-link {
+    border: none; background: transparent; cursor: pointer;
+    font-family: var(--font-ui); font-size: 12.5px; font-weight: 600; color: #0284c7;
+    padding: 4px 6px; border-radius: 6px;
+}
+.ai-link:hover { background: #eff6ff; }
+.ai-foot-left .ai-count { font-size: 12px; color: #64748b; font-weight: 500; margin-left: 4px; }
+.ai-foot-left .ai-count b { color: #0284c7; font-weight: 700; }
+.mdrawer__done:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+
 @media (max-width: 520px) {
     .mdrawer { width: 100%; max-width: 100%; }
 }
@@ -1343,26 +1499,144 @@ body.mdrawer-lock { overflow: hidden; }
         || document.querySelector('input[name="_token"]')?.value
         || '{{ csrf_token() }}';
 
+    // ===================================================================
+    //  ADD-ITEMS DRAWER (Explorer-style grid/list picker)
+    // ===================================================================
     const openBtn = document.getElementById('openAddModal');
-    const modal = document.getElementById('addModal');
-    const tabs = document.querySelectorAll('.add-tab');
+    const addDrawer = document.getElementById('addModal');
+    const addTabs = addDrawer ? addDrawer.querySelectorAll('[data-add-tab]') : [];
     const filesForm = document.getElementById('addFilesForm');
     const examsForm = document.getElementById('addExamsForm');
+    const aiSearch = document.getElementById('aiSearch');
+    const aiViewBtns = addDrawer ? addDrawer.querySelectorAll('.ai-view button') : [];
+    const aiListFiles = document.getElementById('aiListFiles');
+    const aiListExams = document.getElementById('aiListExams');
+    const aiSubmit = document.getElementById('aiSubmit');
+    const aiCount = document.getElementById('aiCount');
+    const addSegInd = document.getElementById('addSegInd');
+    let aiActive = 'files';
 
-    if (openBtn && modal) {
-        openBtn.addEventListener('click', () => modal.classList.add('open'));
-        modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+    const aiActiveList = () => (aiActive === 'files' ? aiListFiles : aiListExams);
+
+    function positionAddIndicator() {
+        if (!addSegInd) return;
+        const nav = addSegInd.parentElement;
+        const active = nav ? nav.querySelector('.mb-tab.active') : null;
+        if (!active) return;
+        addSegInd.style.width = active.offsetWidth + 'px';
+        addSegInd.style.left = active.offsetLeft + 'px';
     }
 
-    tabs.forEach(t => {
-        t.addEventListener('click', () => {
-            tabs.forEach(x => x.classList.remove('active'));
-            t.classList.add('active');
-            const tab = t.getAttribute('data-tab');
-            filesForm.style.display = tab === 'files' ? '' : 'none';
-            examsForm.style.display = tab === 'exams' ? '' : 'none';
+    function aiUpdateCount() {
+        const list = aiActiveList();
+        const n = list ? list.querySelectorAll('input:checked').length : 0;
+        if (aiCount) aiCount.textContent = n;
+        if (aiSubmit) {
+            aiSubmit.disabled = n === 0;
+            const noun = aiActive === 'files' ? 'file' : 'exam';
+            aiSubmit.innerHTML = n === 0
+                ? '<i class="fas fa-check"></i> Add'
+                : '<i class="fas fa-check"></i> Add ' + n + ' ' + noun + (n === 1 ? '' : 's');
+        }
+    }
+
+    function aiFilter() {
+        const list = aiActiveList();
+        if (!list) return;
+        const q = (aiSearch ? aiSearch.value : '').toLowerCase().trim();
+        let visible = 0;
+        list.querySelectorAll('.ai-item').forEach(it => {
+            const match = q === '' || (it.getAttribute('data-search') || '').includes(q);
+            it.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        const nores = list.querySelector('.ai-noresult');
+        if (nores) nores.style.display = (visible === 0 && list.querySelectorAll('.ai-item').length > 0) ? '' : 'none';
+    }
+
+    function aiSwitch(kind) {
+        aiActive = kind;
+        addTabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-add-tab') === kind));
+        if (filesForm) filesForm.style.display = kind === 'files' ? '' : 'none';
+        if (examsForm) examsForm.style.display = kind === 'exams' ? '' : 'none';
+        if (aiSubmit) aiSubmit.setAttribute('form', kind === 'files' ? 'addFilesForm' : 'addExamsForm');
+        if (aiSearch) aiSearch.value = '';
+        aiFilter();
+        positionAddIndicator();
+        aiUpdateCount();
+    }
+
+    function aiSetView(view) {
+        aiViewBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-view') === view));
+        [aiListFiles, aiListExams].forEach(l => {
+            if (!l) return;
+            l.classList.toggle('ai-grid', view === 'grid');
+            l.classList.toggle('ai-list', view === 'list');
+        });
+        try { localStorage.setItem('folderAddView', view); } catch (e) {}
+    }
+
+    [aiListFiles, aiListExams].forEach(list => {
+        if (!list) return;
+        list.addEventListener('change', e => {
+            const cb = e.target.closest('input[type="checkbox"]');
+            if (!cb) return;
+            const item = cb.closest('.ai-item');
+            if (item) item.classList.toggle('selected', cb.checked);
+            aiUpdateCount();
         });
     });
+
+    document.querySelectorAll('[data-ai-all]').forEach(b => b.addEventListener('click', () => {
+        const list = aiActiveList();
+        if (!list) return;
+        list.querySelectorAll('.ai-item').forEach(it => {
+            if (it.style.display === 'none') return;
+            const cb = it.querySelector('input');
+            if (cb) cb.checked = true;
+            it.classList.add('selected');
+        });
+        aiUpdateCount();
+    }));
+    document.querySelectorAll('[data-ai-clear]').forEach(b => b.addEventListener('click', () => {
+        const list = aiActiveList();
+        if (!list) return;
+        list.querySelectorAll('.ai-item').forEach(it => {
+            const cb = it.querySelector('input');
+            if (cb) cb.checked = false;
+            it.classList.remove('selected');
+        });
+        aiUpdateCount();
+    }));
+
+    addTabs.forEach(t => t.addEventListener('click', () => aiSwitch(t.getAttribute('data-add-tab'))));
+    aiViewBtns.forEach(b => b.addEventListener('click', () => aiSetView(b.getAttribute('data-view'))));
+    aiSearch?.addEventListener('input', aiFilter);
+    window.addEventListener('resize', positionAddIndicator);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(positionAddIndicator);
+
+    function openAddDrawer() {
+        addDrawer.classList.add('open');
+        document.body.classList.add('mdrawer-lock');
+        setTimeout(positionAddIndicator, 90);
+    }
+    function closeAddDrawer() {
+        addDrawer.classList.remove('open');
+        document.body.classList.remove('mdrawer-lock');
+    }
+
+    if (openBtn && addDrawer) {
+        openBtn.addEventListener('click', openAddDrawer);
+        addDrawer.addEventListener('click', e => { if (e.target === addDrawer) closeAddDrawer(); });
+        document.getElementById('addDrawerClose')?.addEventListener('click', closeAddDrawer);
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && addDrawer.classList.contains('open')) closeAddDrawer();
+        });
+        let savedView = 'grid';
+        try { savedView = localStorage.getItem('folderAddView') || 'grid'; } catch (e) {}
+        aiSetView(savedView);
+        aiUpdateCount();
+    }
 
     // --- Toast helper ---
     const toast = document.getElementById('folderToast');
