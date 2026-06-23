@@ -1141,6 +1141,7 @@
                             $iconExams = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782226060/1e7ab43a-082a-4fa2-bf5d-8cad70910469.png';
                             $iconFolders = 'https://img.icons8.com/plasticine/100/opened-folder.png';
                             $iconShared = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1782233202/f28a2750-e037-4b80-88b0-8b89325af3ec.png';
+                            $iconMemos = 'https://res.cloudinary.com/dsypclqxk/image/upload/v1762943555/0f798328-ccf6-4f51-91b5-13873791d869.png';
                         @endphp
 
                         {{-- Payment renewal card: only for Admin (is_admin=0, they pay on behalf of the system). Hidden for Regular User (is_admin=1) and Super Admin. Logic matches super-admin roles page. --}}
@@ -1226,7 +1227,7 @@
                                     <div class="dashboard__single__counter">
                                         <div class="counterarea__text__wraper">
                                             <div class="counter__img">
-                                                <img loading="lazy"  src="../img/counter/counter__3.png" alt="counter">
+                                                <img loading="lazy"  src="{{ $iconMemos }}" alt="Memos">
                                             </div>
                                             <div class="counter__content__wraper">
                                                 <div class="counter__number">
