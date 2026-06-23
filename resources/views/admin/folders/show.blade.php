@@ -100,9 +100,9 @@
     }
     .folder-banner .meta span i { color: #94a3b8; margin-right: 5px; }
     .folder-banner .meta span .meta-icon-img {
-        width: 14px; height: 14px;
-        margin-right: 5px;
-        vertical-align: -2px;
+        width: 20px; height: 20px;
+        margin-right: 6px;
+        vertical-align: -4px;
         object-fit: contain;
     }
     .folder-banner .actions {
