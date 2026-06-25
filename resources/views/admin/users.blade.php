@@ -630,6 +630,88 @@
             font-size: 2rem;
         }
     }
+
+    /* ===== Users table actions: neat borderless icons + kebab on smaller desktops ===== */
+    .uactions { position: relative; display: inline-block; }
+    .uactions-toggle { display: none; }
+    .uactions-menu { display: flex; align-items: center; gap: 6px; }
+    .uactions-menu form { display: inline; margin: 0; }
+    .uact-label { display: none; }
+    .uact {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        color: #64748b;
+        font-size: 15px;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+    .uact:hover { background: #f1f5f9; }
+    .uact.approve { color: #2f8f63; }
+    .uact.disapprove { color: #c0392b; }
+    .uact.edit { color: #2563eb; }
+    .uact.delete { color: #c0392b; }
+
+    @media (max-width: 1599px) {
+        /* collapse the row into a 3-dot trigger + floating dropdown */
+        .uactions-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .uactions-toggle:hover { background: #f4f6fb; border-color: #cbd5e1; }
+        .uactions-toggle .more-icon { width: 18px; height: 18px; opacity: 0.6; }
+
+        .uactions-menu {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 2px;
+            width: 210px;
+            padding: 6px;
+            background: #fff;
+            border: 1px solid #e9edf4;
+            border-radius: 12px;
+            box-shadow: 0 14px 38px rgba(20, 30, 55, 0.18);
+        }
+        .uactions-menu.open { display: flex; }
+        .uactions-menu form { display: block; width: 100%; }
+
+        .uact {
+            width: 100%;
+            height: auto;
+            justify-content: flex-start;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 9px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #283041;
+        }
+        .uact > i { width: 20px; text-align: center; font-size: 15px; }
+        .uact.approve { color: #2f8f63; }
+        .uact.approve:hover { background: #e8f4ee; }
+        .uact.disapprove, .uact.delete { color: #c0392b; }
+        .uact.disapprove:hover, .uact.delete:hover { background: #fbecef; }
+        .uact.edit { color: #2563eb; }
+        .uact.edit:hover { background: #eaf1fe; }
+        .uact-label { display: inline; line-height: 1; }
+    }
 </style>
 @endpush
 
@@ -828,32 +910,41 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                                                        @if (!$user->is_approve)
-                                                        <form action="{{ route('users.approve', $user->id) }}" method="post" style="display: inline;">
-                                                            @csrf
-                                                            <button type="submit" class="action-btn approve" style="min-width:auto; padding:8px 12px;" title="Approve">
-                                                                <i class="fas fa-check"></i>
-                                                            </button>
-                                                        </form>
-                                                        @else
-                                                        <form action="{{ route('users.disapprove', $user->id) }}" method="post" style="display: inline;">
-                                                            @csrf
-                                                            <button type="submit" class="action-btn disapprove" style="min-width:auto; padding:8px 12px;" title="Disapprove">
-                                                                <i class="fas fa-thumbs-down"></i>
-                                                            </button>
-                                                        </form>
-                                                        @endif
-                                                        <button type="button" class="action-btn" style="min-width:auto; padding:8px 12px; background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" title="Edit Info (Email / Department / Staff Category / Position)" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}')">
-                                                            <i class="fas fa-user-edit"></i>
+                                                    <div class="uactions">
+                                                        <button type="button" class="uactions-toggle" title="Actions" aria-haspopup="true" aria-expanded="false" onclick="toggleUserActions(this, event)">
+                                                            <img src="https://img.icons8.com/glyph-neue/64/more.png" alt="Actions" class="more-icon">
                                                         </button>
-                                                        <form action="{{ route('users.destroy', $user->id) }}" method="post" style="display: inline;" id="delete-user-table-form-{{ $user->id }}">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="button" class="action-btn delete" style="min-width:auto; padding:8px 12px;" title="Delete" onclick="confirmDeleteUser({{ $user->id }}, '{{ $user->first_name }} {{ $user->last_name }}')">
-                                                                <i class="fas fa-trash"></i>
+                                                        <div class="uactions-menu">
+                                                            @if (!$user->is_approve)
+                                                            <form action="{{ route('users.approve', $user->id) }}" method="post">
+                                                                @csrf
+                                                                <button type="submit" class="uact approve" title="Approve">
+                                                                    <i class="fas fa-check"></i>
+                                                                    <span class="uact-label">Approve</span>
+                                                                </button>
+                                                            </form>
+                                                            @else
+                                                            <form action="{{ route('users.disapprove', $user->id) }}" method="post">
+                                                                @csrf
+                                                                <button type="submit" class="uact disapprove" title="Disapprove">
+                                                                    <i class="fas fa-thumbs-down"></i>
+                                                                    <span class="uact-label">Disapprove</span>
+                                                                </button>
+                                                            </form>
+                                                            @endif
+                                                            <button type="button" class="uact edit" title="Edit Info (Email / Department / Staff Category / Position)" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}')">
+                                                                <i class="fas fa-user-edit"></i>
+                                                                <span class="uact-label">Edit info</span>
                                                             </button>
-                                                        </form>
+                                                            <form action="{{ route('users.destroy', $user->id) }}" method="post" id="delete-user-table-form-{{ $user->id }}">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="button" class="uact delete" title="Delete" onclick="confirmDeleteUser({{ $user->id }}, '{{ $user->first_name }} {{ $user->last_name }}')">
+                                                                    <i class="fas fa-trash"></i>
+                                                                    <span class="uact-label">Delete</span>
+                                                                </button>
+                                                            </form>
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1512,6 +1603,65 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<script>
+/* ===== Users table actions kebab (portal to <body> so the table cannot clip it) ===== */
+function closeUserActions() {
+    document.querySelectorAll('.uactions-menu.open').forEach(function (m) {
+        m.classList.remove('open');
+        m.style.position = '';
+        m.style.top = '';
+        m.style.left = '';
+        if (m._home && m._home.cell) {
+            m._home.cell.appendChild(m);
+            if (m._home.toggle) { m._home.toggle.setAttribute('aria-expanded', 'false'); }
+        }
+    });
+}
+
+function toggleUserActions(btn, event) {
+    if (event) { event.stopPropagation(); }
+    var cell = btn.closest('.uactions');
+    var menu = btn._menu || (cell ? cell.querySelector('.uactions-menu') : null);
+    if (!menu) { return; }
+    btn._menu = menu;
+
+    var isOpen = menu.classList.contains('open');
+    closeUserActions();
+    if (isOpen) { return; }
+
+    if (!menu._home) { menu._home = { cell: cell, toggle: btn }; }
+
+    document.body.appendChild(menu);                     // portal out of the table
+    menu.style.position = 'fixed';
+    menu.classList.add('open');
+
+    var r = btn.getBoundingClientRect();
+    var mw = menu.offsetWidth || 210;
+    var mh = menu.offsetHeight || 0;
+    var left = r.right - mw;                             // right-align to the button
+    if (left < 8) { left = 8; }
+    var top = r.bottom + 6;
+    if (top + mh > window.innerHeight - 8) {             // no room below -> flip above
+        var above = r.top - 6 - mh;
+        top = (above < 8) ? 8 : above;
+    }
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    btn.setAttribute('aria-expanded', 'true');
+}
+
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('.uactions') && !e.target.closest('.uactions-menu')) {
+        closeUserActions();
+    }
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeUserActions(); }
+});
+window.addEventListener('scroll', closeUserActions, true);
+window.addEventListener('resize', closeUserActions);
 </script>
 
 @endsection
