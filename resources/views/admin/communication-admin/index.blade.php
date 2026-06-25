@@ -221,9 +221,9 @@
                                             <td class="created-date">{{ $campaign->created_at->format('M j, Y') }}</td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <a href="{{ route('admin.communication-admin.show', $campaign) }}" 
+                                                    <a href="{{ route('admin.communication-admin.show', $campaign) }}"
                                                        class="action-btn view-btn" title="View Details">
-                                                        <i class="icofont-eye"></i>
+                                                        <img src="https://img.icons8.com/fluency-systems-regular/48/visible--v1.png" alt="View details" class="view-icon">
                                                     </a>
                                                     
                                                     @if($campaign->status === 'sent')
@@ -794,7 +794,10 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.view-btn { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+.view-btn { background: transparent; box-shadow: none; }
+.view-btn:hover { background: transparent; transform: none; box-shadow: none; }
+.view-btn .view-icon { width: 20px; height: 20px; display: block; opacity: .7; transition: opacity 0.2s ease; }
+.view-btn:hover .view-icon { opacity: 1; }
 .edit-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
 .send-btn { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
 .delete-btn { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
