@@ -800,27 +800,16 @@
 .view-btn:hover .view-icon { opacity: 1; }
 .edit-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
 .send-btn { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-/* Delete — clean futuristic red ring (no gradient box) */
-.delete-btn {
-  background: #fff;
-  border: 1.5px solid #e7a3af;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px rgba(216, 58, 84, 0.06);
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-}
-.delete-btn .delete-icon { width: 18px; height: 18px; display: block; filter: brightness(0) saturate(100%) invert(33%) sepia(46%) saturate(2612%) hue-rotate(320deg) brightness(93%) contrast(95%); transition: filter 0.25s ease, transform 0.25s ease; }
-.delete-btn:hover {
-  background: #fff;
-  transform: translateY(-2px) scale(1.05);
-  border-color: #d83a54;
-  box-shadow: 0 0 0 4px rgba(216, 58, 84, 0.14), 0 8px 18px rgba(216, 58, 84, 0.25);
-}
-.delete-btn:hover .delete-icon { filter: brightness(0) saturate(100%) invert(24%) sepia(64%) saturate(3012%) hue-rotate(329deg) brightness(90%) contrast(96%); }
-/* Replies — plasticine icon, no box */
+/* Delete — clean borderless trash icon (no ring, no colour) */
+.delete-btn { background: transparent; border: none; box-shadow: none; }
+.delete-btn:hover { background: transparent; transform: none; box-shadow: none; }
+.delete-btn .delete-icon { width: 18px; height: 18px; display: block; filter: brightness(0); opacity: 0.7; transition: opacity 0.2s ease; }
+.delete-btn:hover .delete-icon { opacity: 1; }
+/* Replies — plasticine icon, no box, no scaling (stays crisp) */
 .replies-btn { background: transparent; box-shadow: none; }
-.replies-btn:hover { background: transparent; transform: translateY(-2px); box-shadow: none; }
-.replies-btn .replies-icon { width: 24px; height: 24px; display: block; transition: transform 0.2s ease; }
-.replies-btn:hover .replies-icon { transform: scale(1.08); }
+.replies-btn:hover { background: transparent; transform: none; box-shadow: none; }
+.replies-btn .replies-icon { width: 24px; height: 24px; display: block; transition: opacity 0.2s ease; }
+.replies-btn:hover .replies-icon { opacity: 0.85; }
 
 /* Memo Success Popup Styles */
 .memo-success-popup {
