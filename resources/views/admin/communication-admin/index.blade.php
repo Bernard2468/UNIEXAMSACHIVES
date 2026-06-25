@@ -227,9 +227,9 @@
                                                     </a>
                                                     
                                                     @if($campaign->status === 'sent')
-                                                        <a href="{{ route('admin.communication-admin.replies', $campaign) }}" 
+                                                        <a href="{{ route('admin.communication-admin.replies', $campaign) }}"
                                                            class="action-btn replies-btn" title="View Replies ({{ $campaign->replies_count }})">
-                                                            <i class="icofont-chat"></i>
+                                                            <img src="https://img.icons8.com/plasticine/100/messaging-.png" alt="View replies" class="replies-icon">
                                                         </a>
                                                     @endif
                                                     
@@ -816,7 +816,11 @@
   box-shadow: 0 0 0 4px rgba(216, 58, 84, 0.14), 0 8px 18px rgba(216, 58, 84, 0.25);
 }
 .delete-btn:hover .delete-icon { filter: brightness(0) saturate(100%) invert(24%) sepia(64%) saturate(3012%) hue-rotate(329deg) brightness(90%) contrast(96%); }
-.replies-btn { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+/* Replies — plasticine icon, no box */
+.replies-btn { background: transparent; box-shadow: none; }
+.replies-btn:hover { background: transparent; transform: translateY(-2px); box-shadow: none; }
+.replies-btn .replies-icon { width: 24px; height: 24px; display: block; transition: transform 0.2s ease; }
+.replies-btn:hover .replies-icon { transform: scale(1.08); }
 
 /* Memo Success Popup Styles */
 .memo-success-popup {
