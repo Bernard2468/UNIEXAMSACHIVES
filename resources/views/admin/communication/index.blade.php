@@ -257,7 +257,7 @@
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="button" class="action-btn delete-btn" title="Delete" onclick="confirmDeleteMemo({{ $campaign->id }})">
-                                                            <img src="https://img.icons8.com/dotty/80/trash.png" alt="Delete" class="delete-icon">
+                                                            <img src="https://img.icons8.com/fluency-systems-regular/48/delete-forever.png" alt="Delete" class="delete-icon">
                                                         </button>
                                                     </form>
                                                 </div>
@@ -803,7 +803,7 @@
 /* Delete — clean borderless trash icon (no ring, no colour) */
 .delete-btn { background: transparent; border: none; box-shadow: none; }
 .delete-btn:hover { background: transparent; transform: none; box-shadow: none; }
-.delete-btn .delete-icon { width: 18px; height: 18px; display: block; filter: brightness(0); opacity: 0.7; transition: opacity 0.2s ease; }
+.delete-btn .delete-icon { width: 20px; height: 20px; display: block; opacity: 0.7; transition: opacity 0.2s ease; }
 .delete-btn:hover .delete-icon { opacity: 1; }
 /* Replies — plasticine icon, no box, no scaling (stays crisp) */
 .replies-btn { background: transparent; box-shadow: none; }
