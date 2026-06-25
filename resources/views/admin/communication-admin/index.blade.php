@@ -808,14 +808,14 @@
   box-shadow: 0 0 0 3px rgba(216, 58, 84, 0.06);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
-.delete-btn .delete-icon { width: 18px; height: 18px; display: block; opacity: 0.8; transition: opacity 0.25s ease; }
+.delete-btn .delete-icon { width: 18px; height: 18px; display: block; filter: brightness(0) saturate(100%) invert(33%) sepia(46%) saturate(2612%) hue-rotate(320deg) brightness(93%) contrast(95%); transition: filter 0.25s ease, transform 0.25s ease; }
 .delete-btn:hover {
   background: #fff;
   transform: translateY(-2px) scale(1.05);
   border-color: #d83a54;
   box-shadow: 0 0 0 4px rgba(216, 58, 84, 0.14), 0 8px 18px rgba(216, 58, 84, 0.25);
 }
-.delete-btn:hover .delete-icon { opacity: 1; }
+.delete-btn:hover .delete-icon { filter: brightness(0) saturate(100%) invert(24%) sepia(64%) saturate(3012%) hue-rotate(329deg) brightness(90%) contrast(96%); }
 .replies-btn { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
 
 /* Memo Success Popup Styles */
