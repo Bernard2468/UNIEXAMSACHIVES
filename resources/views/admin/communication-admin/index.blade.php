@@ -204,16 +204,22 @@
                                             </td>
                                             <td class="created-date">{{ $campaign->created_at->format('M j, Y') }}</td>
                                             <td>
-                                                <div class="action-buttons">
+                                                <div class="actions-cell">
+                                                    <button type="button" class="actions-more-btn" title="Actions" aria-haspopup="true" aria-expanded="false" onclick="toggleActions(this, event)">
+                                                        <img src="https://img.icons8.com/glyph-neue/64/more.png" alt="Actions" class="more-icon">
+                                                    </button>
+                                                    <div class="action-buttons">
                                                     <a href="{{ route('admin.communication-admin.show', $campaign) }}"
                                                        class="action-btn view-btn" title="View Details">
                                                         <img src="https://img.icons8.com/fluency-systems-regular/48/visible--v1.png" alt="View details" class="view-icon">
+                                                        <span class="act-label">View details</span>
                                                     </a>
                                                     
                                                     @if($campaign->status === 'sent')
                                                         <a href="{{ route('admin.communication-admin.replies', $campaign) }}"
                                                            class="action-btn replies-btn" title="View Replies ({{ $campaign->replies_count }})">
                                                             <img src="https://img.icons8.com/sf-regular/48/messaging-.png" alt="View replies" class="replies-icon">
+                                                            <span class="act-label">View replies</span>
                                                         </a>
                                                     @endif
                                                     
@@ -221,6 +227,7 @@
                                                         <a href="{{ route('admin.communication-admin.edit', $campaign) }}" 
                                                            class="action-btn edit-btn" title="Edit">
                                                             <i class="icofont-edit"></i>
+                                                            <span class="act-label">Edit memo</span>
                                                         </a>
                                                     @endif
 
@@ -231,6 +238,7 @@
                                                             @csrf
                                                             <button type="submit" class="action-btn send-btn" title="Send Now">
                                                                 <i class="icofont-send-mail"></i>
+                                                                <span class="act-label">Send now</span>
                                                             </button>
                                                         </form>
                                                     @endif
@@ -242,8 +250,10 @@
                                                         @method('DELETE')
                                                         <button type="submit" class="action-btn delete-btn" title="Delete">
                                                             <img src="https://img.icons8.com/fluency-systems-regular/48/delete-forever.png" alt="Delete" class="delete-icon">
+                                                            <span class="act-label">Delete memo</span>
                                                         </button>
                                                     </form>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1232,6 +1242,79 @@
     justify-content: center;
   }
 }
+
+/* ===== Responsive actions: 3-dot kebab menu on smaller desktops (<1600px) ===== */
+.actions-cell { position: relative; display: inline-block; }
+.actions-more-btn { display: none; }
+.action-buttons { flex-wrap: nowrap; }
+.act-label { display: none; }
+
+@media (max-width: 1599px) {
+  /* hide the inline icon row, show the 3-dot trigger instead */
+  .actions-more-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid #e9edf4;
+    background: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .actions-more-btn:hover { background: #f4f6fb; border-color: #d8dee9; }
+  .actions-more-btn .more-icon { width: 18px; height: 18px; opacity: 0.6; }
+
+  /* the action row becomes a floating dropdown (fixed so the table's
+     overflow:auto cannot clip it; positioned in JS) */
+  .action-buttons {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    flex-direction: column;
+    gap: 2px;
+    width: 212px;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid #e9edf4;
+    border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(20, 30, 55, 0.18);
+  }
+  .action-buttons.open { display: flex; }
+
+  .action-buttons .action-btn {
+    width: 100%;
+    height: auto;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    color: #283041;
+    font-size: 13.5px;
+    font-weight: 600;
+    opacity: 1;
+  }
+  .action-buttons .action-btn:hover { background: #f4f6fb !important; }
+  .action-buttons form { width: 100% !important; display: block !important; margin: 0; }
+  .action-buttons .act-label { display: inline; line-height: 1; }
+
+  /* normalise the icon slot so the labels line up */
+  .action-buttons .action-btn > i { width: 20px; font-size: 17px; text-align: center; opacity: 0.85; }
+  .action-buttons .action-btn .view-icon,
+  .action-buttons .action-btn .replies-icon,
+  .action-buttons .action-btn .delete-icon { width: 19px; height: 19px; opacity: 0.85; }
+
+  /* affordance colours */
+  .action-buttons .send-btn { color: #1f7a4d; }
+  .action-buttons .send-btn:hover { background: #e8f4ee !important; }
+  .action-buttons .delete-btn { color: #c0392b; }
+  .action-buttons .delete-btn:hover { background: #fbecef !important; }
+}
 </style>
 
 <script>
@@ -1412,5 +1495,52 @@ style.textContent = `
 }
 `;
 document.head.appendChild(style);
+
+/* ===== Responsive actions kebab menu ===== */
+function closeAllActions() {
+    document.querySelectorAll('.action-buttons.open').forEach(function (m) {
+        m.classList.remove('open');
+        m.style.top = '';
+        m.style.left = '';
+        var cell = m.closest('.actions-cell');
+        if (cell) {
+            var t = cell.querySelector('.actions-more-btn');
+            if (t) { t.setAttribute('aria-expanded', 'false'); }
+        }
+    });
+}
+
+function toggleActions(btn, event) {
+    if (event) { event.stopPropagation(); }
+    var menu = btn.parentElement.querySelector('.action-buttons');
+    if (!menu) { return; }
+    var willOpen = !menu.classList.contains('open');
+    closeAllActions();
+    if (!willOpen) { return; }
+
+    menu.classList.add('open');                 // show so we can measure it
+    var r = btn.getBoundingClientRect();
+    var mw = menu.offsetWidth || 212;
+    var mh = menu.offsetHeight || 0;
+    var left = r.right - mw;
+    if (left < 8) { left = 8; }
+    var top = r.bottom + 6;
+    if (top + mh > window.innerHeight - 8) {     // not enough room below -> flip above
+        var above = r.top - 6 - mh;
+        top = (above < 8) ? 8 : above;
+    }
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    btn.setAttribute('aria-expanded', 'true');
+}
+
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('.actions-cell')) { closeAllActions(); }
+});
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeAllActions(); }
+});
+window.addEventListener('scroll', closeAllActions, true);
+window.addEventListener('resize', closeAllActions);
 </script>
 @endsection
