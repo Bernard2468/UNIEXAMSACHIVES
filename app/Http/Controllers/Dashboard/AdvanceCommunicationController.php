@@ -120,6 +120,14 @@ class AdvanceCommunicationController extends Controller
         // Determine if this is a draft or send action
         $isDraft = $request->input('action') === 'draft';
 
+        // "Schedule for Later": the compose form posts send_immediately=0 plus a
+        // future scheduled_at. Such a memo must be STORED now (status 'scheduled')
+        // and delivered later by the campaigns:send-scheduled command — it must
+        // NEVER be sent during this request. Immediate sends keep send_immediately=1.
+        $isScheduled = !$isDraft
+            && !$request->boolean('send_immediately')
+            && $request->filled('scheduled_at');
+
         // "General memo" submits an empty memo_category — treat it as null so the
         // nullable|in rule passes regardless of middleware config.
         if ($request->input('memo_category') === '') {
@@ -222,7 +230,7 @@ class AdvanceCommunicationController extends Controller
             'attachments' => $attachmentPaths,
             'recipient_type' => $request->recipient_type,
             'selected_users' => $request->recipient_type === 'selected' ? $recipientUsers->pluck('id')->toArray() : null,
-            'status' => $isDraft ? 'draft' : 'sending',
+            'status' => $isDraft ? 'draft' : ($isScheduled ? 'scheduled' : 'sending'),
             'scheduled_at' => $isDraft ? null : ($request->scheduled_at ?? now()),
             'total_recipients' => $recipientUsers->count(),
             'created_by' => auth()->id(),
@@ -242,6 +250,36 @@ class AdvanceCommunicationController extends Controller
         if ($isDraft) {
             return redirect()->route('admin.communication.index')
                             ->with('success', 'Memo saved as draft successfully!');
+        }
+
+        // SCHEDULED FOR LATER: fully prepare the memo but DO NOT send now. The
+        // campaigns:send-scheduled command delivers it once scheduled_at arrives.
+        // A Through-routed scheduled memo is deferred whole — the intermediary is
+        // not contacted until the scheduled time either (no recipient rows yet).
+        if ($isScheduled) {
+            if (!$throughUser) {
+                foreach ($recipientUsers as $user) {
+                    EmailCampaignRecipient::create([
+                        'comm_campaign_id' => $campaign->id,
+                        'user_id' => $user->id,
+                        'recipient_role' => 'to',
+                        'status' => 'pending',
+                    ]);
+                }
+                foreach ($ccUsers as $ccUser) {
+                    EmailCampaignRecipient::create([
+                        'comm_campaign_id' => $campaign->id,
+                        'user_id' => $ccUser->id,
+                        'recipient_role' => 'cc',
+                        'status' => 'pending',
+                    ]);
+                }
+            }
+
+            $when = $campaign->scheduled_at?->format('M j, Y \a\t g:i A') ?? 'the scheduled time';
+
+            return redirect()->route('admin.communication.index')
+                            ->with('success', "Memo scheduled — it will be sent automatically on {$when}.");
         }
 
         // THROUGH ROUTING: deliver to the intermediary only; recipients wait for forward.
@@ -989,6 +1027,13 @@ class AdvanceCommunicationController extends Controller
 
         $isDraft = $request->input('action') === 'draft';
 
+        // "Schedule for Later": store the memo as 'scheduled' and let the
+        // campaigns:send-scheduled command deliver it later — never send it in
+        // this request. Immediate sends always post send_immediately=1.
+        $isScheduled = !$isDraft
+            && !$request->boolean('send_immediately')
+            && $request->filled('scheduled_at');
+
         // "General memo" submits an empty memo_category — treat it as null so the
         // nullable|in rule passes regardless of middleware config.
         if ($request->input('memo_category') === '') {
@@ -1090,7 +1135,7 @@ class AdvanceCommunicationController extends Controller
             'attachments' => $attachmentPaths,
             'recipient_type' => $request->recipient_type,
             'selected_users' => $request->recipient_type === 'selected' ? $recipientUsers->pluck('id')->toArray() : null,
-            'status' => $isDraft ? 'draft' : 'sending',
+            'status' => $isDraft ? 'draft' : ($isScheduled ? 'scheduled' : 'sending'),
             'scheduled_at' => $isDraft ? null : ($request->scheduled_at ?? now()),
             'total_recipients' => $recipientUsers->count(),
             'created_by' => auth()->id(),
@@ -1110,6 +1155,35 @@ class AdvanceCommunicationController extends Controller
         if ($isDraft) {
             return redirect()->route('admin.communication-admin.index')
                             ->with('success', 'Memo saved as draft successfully!');
+        }
+
+        // SCHEDULED FOR LATER: prepare the memo but defer delivery to the
+        // campaigns:send-scheduled command. Through-routed scheduled memos are
+        // deferred whole (no recipient rows until the scheduled time).
+        if ($isScheduled) {
+            if (!$throughUser) {
+                foreach ($recipientUsers as $user) {
+                    EmailCampaignRecipient::create([
+                        'comm_campaign_id' => $campaign->id,
+                        'user_id' => $user->id,
+                        'recipient_role' => 'to',
+                        'status' => 'pending',
+                    ]);
+                }
+                foreach ($ccUsers as $ccUser) {
+                    EmailCampaignRecipient::create([
+                        'comm_campaign_id' => $campaign->id,
+                        'user_id' => $ccUser->id,
+                        'recipient_role' => 'cc',
+                        'status' => 'pending',
+                    ]);
+                }
+            }
+
+            $when = $campaign->scheduled_at?->format('M j, Y \a\t g:i A') ?? 'the scheduled time';
+
+            return redirect()->route('admin.communication-admin.index')
+                            ->with('success', "Memo scheduled — it will be sent automatically on {$when}.");
         }
 
         // THROUGH ROUTING: deliver to the intermediary only; recipients wait for forward.

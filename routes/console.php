@@ -52,6 +52,15 @@ Schedule::command('maintenance:process-scheduled')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Deliver "Schedule for Later" memos when their scheduled time arrives.
+// Compose → "Schedule for Later" stores them as status 'scheduled'; this
+// command sends each one once scheduled_at <= now.
+Schedule::command('campaigns:send-scheduled')
+    ->everyMinute()
+    ->name('send-scheduled-campaigns')
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // Forms workflow — email assignees about forms stuck in their queue.
 // Runs once daily; the command itself enforces a 48h per-form cooldown so
 // running it more often (e.g. hourly during testing) is safe.

@@ -118,7 +118,8 @@
       "Bash(python -)",
       "Bash(grep -rn 'item\\\\['\\\\''message'\\\\''\\\\]\\\\|item\\\\[\"message\"\\\\]\\\\|$item\\\\['\\\\''event'\\\\''\\\\]\\\\|$item\\\\['\\\\''comment'\\\\''\\\\]' resources/views/admin/uimms/)",
       "Bash(php --version)",
-      "PowerShell(Add-Type -AssemblyName System.Drawing; foreach \\($n in 1..4\\) { $p = \"c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\public\\\\img\\\\counter\\\\counter__$n.png\"; if \\(Test-Path $p\\) { $img = [System.Drawing.Image]::FromFile\\($p\\); \"counter__$n.png = $\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\) } })"
+      "PowerShell(Add-Type -AssemblyName System.Drawing; foreach \\($n in 1..4\\) { $p = \"c:\\\\Users\\\\FJ\\\\Desktop\\\\UNIEXAMSACHIVES\\\\public\\\\img\\\\counter\\\\counter__$n.png\"; if \\(Test-Path $p\\) { $img = [System.Drawing.Image]::FromFile\\($p\\); \"counter__$n.png = $\\($img.Width\\)x$\\($img.Height\\)\"; $img.Dispose\\(\\) } })",
+      "Bash(git --no-pager diff --stat)"
     ],
     "deny": [],
     "additionalDirectories": [
