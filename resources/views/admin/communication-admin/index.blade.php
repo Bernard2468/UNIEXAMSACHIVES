@@ -229,7 +229,7 @@
                                                     @if($campaign->status === 'sent')
                                                         <a href="{{ route('admin.communication-admin.replies', $campaign) }}"
                                                            class="action-btn replies-btn" title="View Replies ({{ $campaign->replies_count }})">
-                                                            <img src="https://img.icons8.com/plasticine/100/messaging-.png" alt="View replies" class="replies-icon">
+                                                            <img src="https://img.icons8.com/sf-regular/48/messaging-.png" alt="View replies" class="replies-icon">
                                                         </a>
                                                     @endif
                                                     
@@ -805,11 +805,11 @@
 .delete-btn:hover { background: transparent; transform: none; box-shadow: none; }
 .delete-btn .delete-icon { width: 20px; height: 20px; display: block; opacity: 0.7; transition: opacity 0.2s ease; }
 .delete-btn:hover .delete-icon { opacity: 1; }
-/* Replies — plasticine icon, no box, no scaling (stays crisp) */
+/* Replies — line icon, no box, no scaling (stays crisp) */
 .replies-btn { background: transparent; box-shadow: none; }
 .replies-btn:hover { background: transparent; transform: none; box-shadow: none; }
-.replies-btn .replies-icon { width: 24px; height: 24px; display: block; transition: opacity 0.2s ease; }
-.replies-btn:hover .replies-icon { opacity: 0.85; }
+.replies-btn .replies-icon { width: 20px; height: 20px; display: block; opacity: 0.7; transition: opacity 0.2s ease; }
+.replies-btn:hover .replies-icon { opacity: 1; }
 
 /* Memo Success Popup Styles */
 .memo-success-popup {
