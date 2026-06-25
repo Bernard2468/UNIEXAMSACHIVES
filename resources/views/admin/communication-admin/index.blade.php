@@ -1496,36 +1496,47 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-/* ===== Responsive actions kebab menu ===== */
+/* ===== Responsive actions kebab menu =====
+   The menu is "portalled" to <body> while open so the table's overflow:auto
+   (and any transformed ancestor that would trap position:fixed) cannot clip it.
+   It is moved back into its cell on close. */
 function closeAllActions() {
     document.querySelectorAll('.action-buttons.open').forEach(function (m) {
         m.classList.remove('open');
+        m.style.position = '';
         m.style.top = '';
         m.style.left = '';
-        var cell = m.closest('.actions-cell');
-        if (cell) {
-            var t = cell.querySelector('.actions-more-btn');
-            if (t) { t.setAttribute('aria-expanded', 'false'); }
+        if (m._home && m._home.cell) {
+            m._home.cell.appendChild(m);                 // put it back in the row
+            if (m._home.toggle) { m._home.toggle.setAttribute('aria-expanded', 'false'); }
         }
     });
 }
 
 function toggleActions(btn, event) {
     if (event) { event.stopPropagation(); }
-    var menu = btn.parentElement.querySelector('.action-buttons');
+    var cell = btn.closest('.actions-cell');
+    var menu = btn._menu || (cell ? cell.querySelector('.action-buttons') : null);
     if (!menu) { return; }
-    var willOpen = !menu.classList.contains('open');
-    closeAllActions();
-    if (!willOpen) { return; }
+    btn._menu = menu;
 
-    menu.classList.add('open');                 // show so we can measure it
+    var isOpen = menu.classList.contains('open');
+    closeAllActions();
+    if (isOpen) { return; }                              // it was open -> just toggle off
+
+    if (!menu._home) { menu._home = { cell: cell, toggle: btn }; }
+
+    document.body.appendChild(menu);                     // portal out of the table
+    menu.style.position = 'fixed';
+    menu.classList.add('open');                          // display:flex so we can measure
+
     var r = btn.getBoundingClientRect();
     var mw = menu.offsetWidth || 212;
     var mh = menu.offsetHeight || 0;
-    var left = r.right - mw;
+    var left = r.right - mw;                             // right-align to the button
     if (left < 8) { left = 8; }
     var top = r.bottom + 6;
-    if (top + mh > window.innerHeight - 8) {     // not enough room below -> flip above
+    if (top + mh > window.innerHeight - 8) {             // no room below -> flip above
         var above = r.top - 6 - mh;
         top = (above < 8) ? 8 : above;
     }
@@ -1535,7 +1546,9 @@ function toggleActions(btn, event) {
 }
 
 document.addEventListener('click', function (e) {
-    if (!e.target.closest('.actions-cell')) { closeAllActions(); }
+    if (!e.target.closest('.actions-cell') && !e.target.closest('.action-buttons')) {
+        closeAllActions();
+    }
 });
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { closeAllActions(); }
