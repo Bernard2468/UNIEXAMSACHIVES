@@ -417,11 +417,7 @@
 .memo-view .mv-hero {
     background: var(--surface); border: 1px solid var(--line);
     border-radius: var(--radius); padding: 28px; margin-bottom: 22px;
-    box-shadow: var(--shadow); position: relative; overflow: hidden;
-}
-.memo-view .mv-hero::before {
-    content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
-    background: var(--accent); opacity: .85;
+    box-shadow: var(--shadow);
 }
 .memo-view .mv-hero-grid { display: grid; grid-template-columns: 1fr minmax(230px, 300px); gap: 32px; align-items: start; }
 .memo-view .mv-hero-main { min-width: 0; }
