@@ -631,87 +631,67 @@
         }
     }
 
-    /* ===== Users table actions: neat borderless icons + kebab on smaller desktops ===== */
+    /* ===== Users table actions: 3-dot kebab menu (all screen sizes) ===== */
     .uactions { position: relative; display: inline-block; }
-    .uactions-toggle { display: none; }
-    .uactions-menu { display: flex; align-items: center; gap: 6px; }
-    .uactions-menu form { display: inline; margin: 0; }
-    .uact-label { display: none; }
-    .uact {
+
+    .uactions-toggle {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        width: 38px;
+        height: 38px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .uactions-toggle:hover { background: #f4f6fb; border-color: #cbd5e1; }
+    .uactions-toggle .more-icon { width: 18px; height: 18px; opacity: 0.6; }
+
+    /* the floating dropdown (portalled to <body> + positioned in JS) */
+    .uactions-menu {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        width: 210px;
+        padding: 6px;
+        background: #fff;
+        border: 1px solid #e9edf4;
+        border-radius: 12px;
+        box-shadow: 0 14px 38px rgba(20, 30, 55, 0.18);
+    }
+    .uactions-menu.open { display: flex; }
+    .uactions-menu form { display: block; width: 100%; margin: 0; }
+
+    .uact {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        gap: 12px;
+        padding: 10px 12px;
         border: none;
         background: transparent;
-        border-radius: 8px;
+        border-radius: 9px;
         cursor: pointer;
-        color: #64748b;
-        font-size: 15px;
+        color: #283041;
+        font-size: 13.5px;
+        font-weight: 600;
         text-decoration: none;
         transition: background 0.2s ease, color 0.2s ease;
     }
-    .uact:hover { background: #f1f5f9; }
+    .uact > i { width: 20px; text-align: center; font-size: 15px; }
+    .uact-label { display: inline; line-height: 1; }
     .uact.approve { color: #2f8f63; }
-    .uact.disapprove { color: #c0392b; }
+    .uact.approve:hover { background: #e8f4ee; }
+    .uact.disapprove, .uact.delete { color: #c0392b; }
+    .uact.disapprove:hover, .uact.delete:hover { background: #fbecef; }
     .uact.edit { color: #2563eb; }
-    .uact.delete { color: #c0392b; }
-
-    @media (max-width: 1599px) {
-        /* collapse the row into a 3-dot trigger + floating dropdown */
-        .uactions-toggle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 38px;
-            height: 38px;
-            border: 1px solid #e2e8f0;
-            background: #fff;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background 0.2s ease, border-color 0.2s ease;
-        }
-        .uactions-toggle:hover { background: #f4f6fb; border-color: #cbd5e1; }
-        .uactions-toggle .more-icon { width: 18px; height: 18px; opacity: 0.6; }
-
-        .uactions-menu {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 2px;
-            width: 210px;
-            padding: 6px;
-            background: #fff;
-            border: 1px solid #e9edf4;
-            border-radius: 12px;
-            box-shadow: 0 14px 38px rgba(20, 30, 55, 0.18);
-        }
-        .uactions-menu.open { display: flex; }
-        .uactions-menu form { display: block; width: 100%; }
-
-        .uact {
-            width: 100%;
-            height: auto;
-            justify-content: flex-start;
-            gap: 12px;
-            padding: 10px 12px;
-            border-radius: 9px;
-            font-size: 13.5px;
-            font-weight: 600;
-            color: #283041;
-        }
-        .uact > i { width: 20px; text-align: center; font-size: 15px; }
-        .uact.approve { color: #2f8f63; }
-        .uact.approve:hover { background: #e8f4ee; }
-        .uact.disapprove, .uact.delete { color: #c0392b; }
-        .uact.disapprove:hover, .uact.delete:hover { background: #fbecef; }
-        .uact.edit { color: #2563eb; }
-        .uact.edit:hover { background: #eaf1fe; }
-        .uact-label { display: inline; line-height: 1; }
-    }
+    .uact.edit:hover { background: #eaf1fe; }
 </style>
 @endpush
 
