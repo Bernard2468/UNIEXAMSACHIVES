@@ -8,18 +8,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
-/**
- * Delivers a prepared EmailCampaign without any HTTP / auth context, so the
- * campaigns:send-scheduled cron command can send "Schedule for Later" memos
- * when their time arrives.
- *
- * It is a faithful mirror of the synchronous "Send Immediately" path in
- * AdvanceCommunicationController (send() + deliverToThrough()): same
- * mails.campaign_simple template, same "[Cc]" subject prefix, same Through
- * handling and status finalisation. The controller's immediate-send code is
- * deliberately left untouched — if you change delivery behaviour there, mirror
- * it here too.
- */
 class CampaignDeliveryService
 {
     /**
