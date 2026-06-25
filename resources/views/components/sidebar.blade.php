@@ -214,15 +214,10 @@
                 @auth
                 @if(auth()->user()->is_admin)
                 <li>
-                    <a class="{{ request()->routeIs('dashboard.my.exams') ? 'active' : '' }}" href="{{route('dashboard.my.exams')}}">
+                    <a class="{{ request()->routeIs('dashboard.all.exams') ? 'active' : '' }}" href="{{route('dashboard.all.exams')}}">
                         <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762892670/exam_esftn0.png" alt="My Exams" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
                         My Exams</a><span class="dashboard__label">{{$myExamsCount}}</span>
                 </li>
-                    <li>
-                        <a class="{{ request()->routeIs('dashboard.upload.document') ? 'active' : '' }}" href="{{route('dashboard.upload.document')}}">
-                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762892811/exam_1_jho0sq.png" alt="All Exams Archive" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
-                            All Exams Archive</a><span class="dashboard__label">{{$allExamsCount}}</span>
-                    </li>
                 @endif
                 @endauth
                 @auth
@@ -263,15 +258,10 @@
                 @auth
                 @if(auth()->user()->is_admin)
                 <li>
-                    <a class="{{ request()->routeIs('dashboard.my.files') ? 'active' : '' }}" href="{{route('dashboard.my.files')}}">
+                    <a class="{{ request()->routeIs('dashboard.all.files') ? 'active' : '' }}" href="{{route('dashboard.all.files')}}">
                         <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762939971/approved_jjmla9.png" alt="My Files" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
                         My Files</a><span class="dashboard__label">{{$myFilesCount}}</span>
                 </li>
-                    <li>
-                        <a class="{{ request()->routeIs('dashboard.upload.file') ? 'active' : '' }}" href="{{route('dashboard.upload.file')}}">
-                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762939473/file_k1pnab.png" alt="All Files Archive" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
-                            All Files Archive</a><span class="dashboard__label">{{$allFilesCount}}</span>
-                    </li>
                     <li>
                         <a class="{{ request()->routeIs('dashboard.folders.*') ? 'active' : '' }}" href="{{route('dashboard.folders.index')}}">
                             <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762939707/folder_vta5tl.png" alt="My Folders" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
