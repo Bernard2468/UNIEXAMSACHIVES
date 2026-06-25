@@ -134,7 +134,7 @@
                         <div class="mp-cta">
                             <div class="mp-cta__text">
                                 <span class="mp-cta__heading">Want to update your information?</span>
-                                <span class="mp-cta__sub">Change your name, photo, department, or password in Profile Settings.</span>
+                                <span class="mp-cta__sub">Change your name, photo, or password in Profile Settings.</span>
                             </div>
                             <a href="{{ route('dashboard.settings') }}" class="mp-cta__btn">
                                 Go to Profile Settings
