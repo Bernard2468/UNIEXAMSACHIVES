@@ -188,7 +188,7 @@
                                             </td>
                                             <td>
                                                 <div class="email-title">
-                                                    <strong>{{ Str::limit($campaign->subject, 40) }}</strong>
+                                                    <strong class="subject-text" title="{{ $campaign->subject }}">{{ $campaign->subject }}</strong>
                                                     @if($campaign->attachments && count($campaign->attachments) > 0)
                                                         <i class="icofont-attachment attachment-icon" title="Has attachments"></i>
                                                     @endif
@@ -644,16 +644,30 @@
 .email-title {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-size: 15px;
   font-weight: 600;
   color: #1e293b;
+  max-width: 340px;
+}
+
+/* Keep lengthy subjects on one line — the detail page shows the full text */
+.email-title .subject-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .attachment-icon {
   color: #64748b;
   font-size: 16px;
   opacity: 0.7;
+  flex-shrink: 0;
+}
+
+@media (max-width: 991px) {
+  .email-title { max-width: 200px; }
 }
 
 /* Recipient Badge */
