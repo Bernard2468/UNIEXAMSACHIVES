@@ -195,27 +195,11 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <span class="recipient-badge">{{ $campaign->total_recipients }} users</span>
+                                                <span class="recipient-count">{{ $campaign->total_recipients }}<span class="unit">users</span></span>
                                             </td>
                                             <td>
                                                 <span class="email-status status-{{ $campaign->status }}">
-                                                    @switch($campaign->status)
-                                                        @case('draft')
-                                                            <i class="icofont-edit"></i> Draft
-                                                            @break
-                                                        @case('scheduled')
-                                                            <i class="icofont-clock-time"></i> Scheduled
-                                                            @break
-                                                        @case('sending')
-                                                            <i class="icofont-spinner"></i> Sending
-                                                            @break
-                                                        @case('sent')
-                                                            <i class="icofont-check-circled"></i> Sent
-                                                            @break
-                                                        @case('failed')
-                                                            <i class="icofont-close-circled"></i> Failed
-                                                            @break
-                                                    @endswitch
+                                                    <span class="status-dot"></span>{{ ucfirst($campaign->status) }}
                                                 </span>
                                             </td>
                                             <td class="created-date">{{ $campaign->created_at->format('M j, Y') }}</td>
@@ -685,41 +669,48 @@
 }
 
 /* Email Status */
+/* Status — flat glowing dot + text (no pill) */
 .email-status {
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: capitalize;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  padding: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: capitalize;
+  color: #1f2733;
 }
-
-.status-draft { 
-  background: linear-gradient(135deg, #64748b 0%, #475569 100%); 
-  color: white; 
+.email-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #94a3b8;
 }
+.status-draft .status-dot     { background: #64748b; box-shadow: 0 0 0 3px rgba(100,116,139,0.14); }
+.status-scheduled .status-dot { background: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.14); }
+.status-sending .status-dot   { background: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.16); animation: statusPulse 1.2s ease-in-out infinite; }
+.status-sent .status-dot      { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.16); }
+.status-failed .status-dot    { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.16); }
+@keyframes statusPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
-.status-scheduled { 
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
-  color: white; 
+/* Recipients — plain count, no pill */
+.recipient-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2733;
 }
-
-.status-sending { 
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); 
-  color: white; 
-}
-
-.status-sent { 
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-  color: white; 
-}
-
-.status-failed { 
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
-  color: white; 
+.recipient-count .unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
 }
 
 /* Progress Bar */
