@@ -324,40 +324,6 @@
 
                         <div class="form-group">
                             <div class="input-container">
-                                <select name="department_id" id="register-department" class="animated-input">
-                                    <option value="" disabled selected>Choose your Department/Faculty/Unit</option>
-                                    @foreach($departments as $department)
-                                        <option value="{{ $department->id }}">{{ $department->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="input-container">
-                                <select name="staff_category" id="register-staff-category" class="animated-input">
-                                    <option value="" disabled selected>Choose your Staff Category</option>
-                                    <option value="Junior Staff">Junior Staff</option>
-                                    <option value="Senior Staff">Senior Staff</option>
-                                    <option value="Senior Member (Non-Teaching)">Senior Member (Non-Teaching)</option>
-                                    <option value="Senior Member (Teaching)">Senior Member (Teaching)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="input-container">
-                                <select name="position_id" id="register-position" class="animated-input">
-                                    <option value="" selected>Choose your Position (Optional)</option>
-                                    @foreach($positions as $position)
-                                        <option value="{{ $position->id }}">{{ $position->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="input-container">
                                 <input type="password" name="password" id="register-password" class="animated-input" placeholder="Create a password" required>
                                 <button type="button" class="password-toggle" onclick="togglePassword('register-password')">
                                     <i class="icofont-eye"></i>

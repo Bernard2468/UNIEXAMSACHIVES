@@ -178,9 +178,6 @@ class PagesController extends Controller
             'last_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'department_id' => 'nullable|exists:departments,id',
-            'staff_category' => 'required|string|in:Junior Staff,Senior Staff,Senior Member (Non-Teaching),Senior Member (Teaching)',
-            'position_id' => 'nullable|exists:positions,id',
         ]);
 
         if (SystemSetting::get('restrict_email_domain', false)) {
@@ -200,9 +197,6 @@ class PagesController extends Controller
             'is_approve' => false,
             'password_changed' => false,
             'password' => Hash::make($validatedData['password']),
-            'department_id' => $validatedData['department_id'],
-            'staff_category' => $validatedData['staff_category'],
-            'position_id' => $validatedData['position_id'] ?? null,
             'email_verified_at' => null,
         ]);
 
