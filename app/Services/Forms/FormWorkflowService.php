@@ -232,6 +232,19 @@ class FormWorkflowService
                 return $this->completeSubmission($submission, $signer);
             }
 
+            // VC divert safety net: when the form branches to the VC office,
+            // any nextAssigneeId chosen on the page was picked for the *natural*
+            // next office (the Registrar's page shows the Director-of-Finance
+            // picker, not a VC picker), so it is NOT a member of the VC office.
+            // Drop it here and let the VC office resolve its own head — without
+            // this, resolveNextAssignee() would (correctly) reject the
+            // mismatched id with a 422 and the whole referral would fail.
+            if ($shouldReferToVc
+                && $nextStage->slug === 'vc'
+                && in_array('vc', $stage->branches, true)) {
+                $nextAssigneeId = null;
+            }
+
             // Creator pool — form returns to the applicant for re-confirmation
             // (e.g. the Renewal of Appointment form's declaration stage).
             if ($nextStage->isCreatorPool()) {

@@ -344,9 +344,26 @@
                                                 @endif
 
                                                 @if($vcOffice)
-                                                    <p style="margin: 12px 0 0; font-size: 0.78rem; color: #9ca3af; line-height: 1.5;">
-                                                        If you tick <strong>"Refer for VC's Approval"</strong> above, the form will be sent to the VC's Office instead. Otherwise it goes to the office shown here.
-                                                    </p>
+                                                    @php
+                                                        $vcMembers   = $vcOffice->users->where('pivot.is_active', true)->values();
+                                                        $vcRecipient = $vcMembers->where('pivot.is_head', true)->first() ?? $vcMembers->first();
+                                                        $vcRecipientName = $vcRecipient
+                                                            ? trim(($vcRecipient->first_name ?? '') . ' ' . ($vcRecipient->last_name ?? ''))
+                                                            : null;
+                                                    @endphp
+                                                    @if($vcRecipientName)
+                                                        <p style="margin: 12px 0 0; font-size: 0.78rem; color: #9ca3af; line-height: 1.5;">
+                                                            If you tick <strong>"Refer for VC's Approval"</strong> above, the form is sent to the VC's Office
+                                                            (<strong>{{ $vcRecipientName }}</strong>) first — once the VC approves it routes on to the office shown here.
+                                                            Leave it unticked to go straight to the office shown here.
+                                                        </p>
+                                                    @else
+                                                        <p style="margin: 12px 0 0; font-size: 0.78rem; color: #b45309; line-height: 1.5;">
+                                                            <strong>"Refer for VC's Approval"</strong> can't be used yet — the VC's Office has no active member.
+                                                            Ask an administrator to assign someone to the VC office before referring, otherwise the form
+                                                            cannot be forwarded.
+                                                        </p>
+                                                    @endif
                                                 @endif
                                             </div>
                                         </div>

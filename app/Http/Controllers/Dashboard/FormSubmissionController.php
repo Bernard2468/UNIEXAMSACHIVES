@@ -673,10 +673,16 @@ class FormSubmissionController extends Controller
         $referToVc = $thisStageData && $vcField && !empty($thisStageData[$vcField]);
 
         if ($referToVc && in_array('vc', $stage->branches, true)) {
-            $nextStage = $definition->stage('vc');
-        } else {
-            $nextStage = $definition->nextStageAfter($stage->slug, includeOptional: false);
+            // The form will divert to the VC office. The recipient picker on
+            // the page was built for the *natural* next stage (e.g. Director of
+            // Finance), so its next_assignee_id is not a VC-office member.
+            // Return null so the VC office resolves its own head instead of
+            // forwarding a mismatched id (which the workflow service rejects
+            // with a 422).
+            return null;
         }
+
+        $nextStage = $definition->nextStageAfter($stage->slug, includeOptional: false);
 
         if (!$nextStage) {
             return null;
