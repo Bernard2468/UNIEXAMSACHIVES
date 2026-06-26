@@ -1178,10 +1178,16 @@
                 ${ntRenderActions(item.actions)}
             `;
 
-            // Card-level click → open URL + mark read; inline action clicks should
-            // NOT bubble to the card click, hence the data-nt-action guard below.
+            // Card-level click → mark read + navigate. This fires for BOTH a click
+            // on the card body AND a click on an inline action button ("Open" etc.).
+            // Either way the notification must be marked read so its unread count
+            // clears — previously an action-button click bailed out early and left
+            // the notification unread, so the badge never updated. Inline action
+            // buttons are real <a> links that navigate themselves, so when one is
+            // clicked we mark read but do NOT also push window.location (that would
+            // override the button's own href).
             card.onclick = (e) => {
-                if (e.target.closest('[data-nt-action]')) return;
+                const isActionClick = !!e.target.closest('[data-nt-action]');
                 // Only EmailCampaignRecipient memo rows ('memo_recipient') are
                 // marked read server-side by the memo chat endpoint. Genuine
                 // Notification rows — including ones typed 'memo' (e.g. the
@@ -1190,7 +1196,7 @@
                 if (!item.is_read && item.id && item.type !== 'memo_recipient') {
                     ntMarkOneRead(item.id);
                 }
-                if (url !== '#') window.location.href = url;
+                if (!isActionClick && url !== '#') window.location.href = url;
             };
         }
 
@@ -1259,11 +1265,18 @@
                 renderGroup('yesterday', groups.yesterday) +
                 renderGroup('earlier', groups.earlier);
 
-            // Delegate click → mark-one-read + navigate. Inline action buttons
-            // (which have their own data-nt-action attr) handle navigation themselves.
+            // Delegate click → mark-one-read + navigate. This fires for BOTH a click
+            // on the row body AND a click on an inline action button (e.g. "Open"):
+            // either way the notification must be marked read so its unread count
+            // clears. Previously an action-button click bailed out early via the
+            // data-nt-action guard and never marked the notification read, so the
+            // badge count didn't update (unlike clicking the row body, which did).
+            // The only behavioral difference now is navigation: inline action
+            // buttons are real <a> links that navigate themselves, so the row must
+            // NOT also push window.location (that would override the button's href).
             listContainer.querySelectorAll('.nt-list-item-with-avatar').forEach(row => {
                 row.addEventListener('click', (e) => {
-                    if (e.target.closest('[data-nt-action]')) return;
+                    const isActionClick = !!e.target.closest('[data-nt-action]');
                     const id      = row.getAttribute('data-nt-id');
                     const type    = row.getAttribute('data-nt-type');
                     const url     = row.getAttribute('data-nt-url');
@@ -1277,7 +1290,9 @@
                     if (!isRead && id && type !== 'memo_recipient') {
                         ntMarkOneRead(id);
                     }
-                    if (url && url !== '#') window.location.href = url;
+                    // The inline action <a> handles its own navigation; only the
+                    // row-body click navigates manually.
+                    if (!isActionClick && url && url !== '#') window.location.href = url;
                 });
             });
         }
