@@ -452,9 +452,10 @@
                     @endif
                 </div>
             </div>
+            @php $canEdit = $isOwner || $folder->canEditContents(auth()->user()); @endphp
             <div class="actions">
                 <a href="{{ $backUrl }}" class="fbtn"><i class="fas fa-arrow-left"></i> Back to {{ $backLabel }}</a>
-                @if($isOwner || $folder->canEditContents(auth()->user()))
+                @if($canEdit)
                     <button type="button" class="fbtn primary" id="openAddModal"><i class="fas fa-plus"></i> Add items</button>
                 @endif
                 @if($isOwner)
@@ -464,7 +465,12 @@
                             <span style="background:#0ea5e9; color:#fff; font-size:11px; padding:1px 7px; border-radius:100px; margin-left:2px;">{{ $folder->members->count() }}</span>
                         @endif
                     </button>
+                @endif
+                {{-- Editors (not viewers) may rename / edit folder details, just like the owner. --}}
+                @if($canEdit)
                     <a href="{{ route('dashboard.folders.edit', $folder) }}{{ $forwardFrom }}" class="fbtn"><i class="fas fa-pen"></i> Edit</a>
+                @endif
+                @if($isOwner)
                     <a href="{{ route('dashboard.folders.security', $folder) }}{{ $forwardFrom }}" class="fbtn"><i class="fas fa-shield-halved"></i> Security</a>
                     <form action="{{ route('dashboard.folders.destroy', $folder) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this folder? Its items will be detached but not deleted.');">
                         @csrf @method('DELETE')

@@ -144,7 +144,10 @@ class FoldersController extends Controller
 
     public function edit(Folder $folder)
     {
-        if ($folder->user_id !== Auth::id()) {
+        // Owner OR an editor (direct or via group grant) may edit folder
+        // details (name/description/color). Viewers may not. canEditContents()
+        // encodes exactly that distinction.
+        if (!$folder->canEditContents(Auth::user())) {
             abort(403, 'Unauthorized access to folder.');
         }
 
@@ -153,7 +156,8 @@ class FoldersController extends Controller
 
     public function update(Request $request, Folder $folder)
     {
-        if ($folder->user_id !== Auth::id()) {
+        // Owner OR an editor may rename/update folder details. Viewers may not.
+        if (!$folder->canEditContents(Auth::user())) {
             abort(403, 'Unauthorized access to folder.');
         }
 
