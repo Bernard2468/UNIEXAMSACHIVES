@@ -385,7 +385,7 @@
                             @if($isCC)
                             <div class="cc-viewer-notice">
                                 <i class="icofont-info-circle"></i>
-                                You are <strong>Cc'd</strong> on this memo — you have received a copy for your information.
+                                You are <strong>Cc'd</strong> on this memo
                             </div>
                             @endif
 
