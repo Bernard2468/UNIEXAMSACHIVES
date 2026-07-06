@@ -828,7 +828,7 @@
                                                     </form>
                                                 @endif
 
-                                                <button type="button" class="action-btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}')">
+                                                <button type="button" class="action-btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}', '{{ $user->account_type ?? 'individual' }}')">
                                                     <i class="fas fa-user-edit"></i>
                                                     Edit Info
                                                 </button>
@@ -912,7 +912,7 @@
                                                                 </button>
                                                             </form>
                                                             @endif
-                                                            <button type="button" class="uact edit" title="Edit Info (Email / Department / Staff Category / Position)" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}')">
+                                                            <button type="button" class="uact edit" title="Edit Info (Email / Account Category / Department / Staff Category / Position)" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}', '{{ $user->account_type ?? 'individual' }}')">
                                                                 <i class="fas fa-user-edit"></i>
                                                                 <span class="uact-label">Edit info</span>
                                                             </button>
@@ -1147,6 +1147,18 @@
             </div>
 
             <div class="efi-field">
+                <label class="efi-label"><i class="fas fa-id-badge"></i> Account Category</label>
+                <div class="efi-control">
+                    <select name="account_type" id="editInfoAccountType" class="efi-select" required>
+                        <option value="individual">Individual Staff Account</option>
+                        <option value="office">Institutional Office Account</option>
+                    </select>
+                    <i class="fas fa-chevron-down efi-control__chev"></i>
+                </div>
+                <p class="efi-hint">Office accounts are for departments/offices; folders they share appear under "Departmental Folders".</p>
+            </div>
+
+            <div class="efi-field">
                 <label class="efi-label"><i class="fas fa-building-columns"></i> Department / Faculty / Unit</label>
                 <div class="efi-control">
                     <select name="department_id" id="editInfoDepartment" class="efi-select" required>
@@ -1246,6 +1258,7 @@
 .efi-label{ display:flex; align-items:center; gap:7px; margin-bottom:7px; font-size:.78rem; font-weight:600; color:#475569; }
 .efi-label i{ font-size:.78rem; color:#94a3b8; }
 .efi-opt{ font-weight:500; color:#94a3b8; font-size:.78rem; }
+.efi-hint{ margin:6px 0 0; font-size:.75rem; line-height:1.4; color:#94a3b8; }
 .efi-control{ position:relative; }
 .efi-control__chev{ position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:.7rem; color:#94a3b8; pointer-events:none; transition:.2s; }
 .efi-input, .efi-select{
@@ -1541,7 +1554,7 @@ function toggleAddUserPasswordConfirm() {
     }
 }
 
-function openEditInfoModal(userId, userName, currentEmail, departmentId, staffCategory, positionId) {
+function openEditInfoModal(userId, userName, currentEmail, departmentId, staffCategory, positionId, accountType) {
     const modal = document.getElementById('editInfoModal');
     const form = document.getElementById('editInfoForm');
     const nameLabel = document.getElementById('editInfoUserName');
@@ -1560,6 +1573,7 @@ function openEditInfoModal(userId, userName, currentEmail, departmentId, staffCa
     emailInput.value = currentEmail || '';
     document.getElementById('editInfoDepartment').value = departmentId || '';
     document.getElementById('editInfoCategory').value = staffCategory || '';
+    document.getElementById('editInfoAccountType').value = accountType || 'individual';
     document.getElementById('editInfoPosition').value = positionId || '';
 
     modal.style.display = 'flex';

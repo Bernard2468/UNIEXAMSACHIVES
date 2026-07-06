@@ -21,6 +21,12 @@
     $itemsSectionLabel = $itemsSectionLabel ?? ($itemKind === 'exam' ? 'Exam Documents' : 'Files');
     $emptyStateText = $emptyStateText ?? 'Documents you upload will appear here.';
     $sharedFolders = $sharedFolders ?? collect();
+    // Heading for the shared-folders strip. Overridden by the Departmental
+    // Folders page ("Departmental Folders"); everywhere else it's "Shared with me".
+    $sharedSectionLabel = $sharedSectionLabel ?? 'Shared with me';
+    // Empty-state copy for folder-only listings (no owned folders and none shared).
+    $noFoldersTitle = $noFoldersTitle ?? 'No folders yet';
+    $noFoldersText = $noFoldersText ?? 'Create your first folder to start organizing your files and exams.';
 
     // "Add Exam" / "Add File" CTA — adapts to the kind of items this page lists.
     // Hidden on folder-only listings (where $showItemsSection is false).
@@ -947,7 +953,7 @@
         @if($sharedFolders->count() > 0)
             <div class="exp-section">
                 <div class="exp-section-head">
-                    <h3><i class="fas fa-user-group" style="color:#0ea5e9;"></i> Shared with me <span class="count">{{ $sharedFolders->count() }}</span></h3>
+                    <h3><i class="fas fa-user-group" style="color:#0ea5e9;"></i> {{ $sharedSectionLabel }} <span class="count">{{ $sharedFolders->count() }}</span></h3>
                 </div>
                 <div class="exp-grid">
                     @foreach($sharedFolders as $folder)
@@ -1076,12 +1082,12 @@
         </div>
         @endif
 
-        @if(!$showItemsSection && $folders->count() === 0)
+        @if(!$showItemsSection && $folders->count() === 0 && $sharedFolders->count() === 0)
             <div class="exp-section">
                 <div class="exp-empty">
                     <div class="ico-circle"><i class="fas fa-folder-plus"></i></div>
-                    <h4>No folders yet</h4>
-                    <p>Create your first folder to start organizing your files and exams.</p>
+                    <h4>{{ $noFoldersTitle }}</h4>
+                    <p>{{ $noFoldersText }}</p>
                 </div>
             </div>
         @endif

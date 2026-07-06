@@ -267,6 +267,11 @@
                             <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762939707/folder_vta5tl.png" alt="My Folders" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
                             My Folders</a>
                     </li>
+                    <li>
+                        <a class="{{ request()->routeIs('dashboard.departmental-folders') ? 'active' : '' }}" href="{{route('dashboard.departmental-folders')}}">
+                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762939707/folder_vta5tl.png" alt="Departmental Folders" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
+                            Departmental Folders</a>
+                    </li>
                 @endif
                 @endauth
                 @auth
@@ -281,6 +286,11 @@
                             <a class="{{ request()->routeIs('dashboard.folders.*') ? 'active' : '' }}" href="{{route('dashboard.folders.index')}}">
                                 <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762939707/folder_vta5tl.png" alt="My Folders" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
                                 My Folders</a>
+                        </li>
+                        <li>
+                            <a class="{{ request()->routeIs('dashboard.departmental-folders') ? 'active' : '' }}" href="{{route('dashboard.departmental-folders')}}">
+                                <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1762939707/folder_vta5tl.png" alt="Departmental Folders" style="width: 18px; height: 18px; object-fit: contain; margin-right: 10px;">
+                                Departmental Folders</a>
                         </li>
                     @endunless
                 @endauth

@@ -30,9 +30,25 @@ class FoldersController extends Controller
 
         // Folders shared with me — directly OR via any group I'm a live member
         // of — each annotated with my effective permission for the role chip.
+        // Defaults to individual-owned only; office folders live under
+        // "Departmental Folders" (see departmental()).
         $sharedFolders = Folder::sharedListingFor($user);
 
         return view('admin.folders.index', compact('folders', 'sharedFolders'));
+    }
+
+    /**
+     * "Departmental Folders" — folders shared with me (directly or via a group
+     * I belong to) whose owner is an Institutional Office account. The same
+     * live sharing engine as "Shared with me", filtered to office owners.
+     */
+    public function departmental()
+    {
+        $user = Auth::user();
+
+        $departmentalFolders = Folder::sharedListingFor($user, User::ACCOUNT_OFFICE);
+
+        return view('admin.folders.departmental', compact('departmentalFolders'));
     }
 
     public function store(Request $request)

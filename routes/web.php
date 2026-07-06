@@ -129,6 +129,10 @@ Route::middleware(['auth'])->group(function () {
 
     #Folders
     Route::get('/dashboard/folders', [FoldersController::class, 'index'])->name('dashboard.folders.index');
+    # Departmental Folders — folders shared with me by Institutional Office accounts.
+    # Named outside the dashboard.folders.* namespace so the "My Folders" sidebar
+    # highlight (routeIs('dashboard.folders.*')) does not light up on this page.
+    Route::get('/dashboard/departmental-folders', [FoldersController::class, 'departmental'])->name('dashboard.departmental-folders');
     Route::post('/dashboard/folders', [FoldersController::class, 'store'])->name('dashboard.folders.store');
     Route::get('/dashboard/folders/{folder}', [FoldersController::class, 'show'])->name('dashboard.folders.show');
     Route::get('/dashboard/folders/{folder}/unlock', [FoldersController::class, 'unlockForm'])->name('dashboard.folders.unlock.form');

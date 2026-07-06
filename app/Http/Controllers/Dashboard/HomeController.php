@@ -61,7 +61,7 @@ class HomeController extends Controller
             'total_files' => $files->count(),
             'admin_total_files' => File::where('user_id', $userId)->count(),
             'admin_total_folders' => Folder::where('user_id', $userId)->count(),
-            'shared_folders_count' => Folder::sharedWith($user)->count(),
+            'shared_folders_count' => Folder::sharedWith($user)->ownedByIndividual()->count(),
             'my_memos' => $myMemos,
             'userCommittees' => $userCommittees,
         ]);
@@ -1077,16 +1077,19 @@ class HomeController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'department_id' => 'required|exists:departments,id',
             'staff_category' => 'required|string|in:Junior Staff,Senior Staff,Senior Member (Non-Teaching),Senior Member (Teaching)',
+            'account_type' => 'required|in:individual,office',
             'position_id' => 'nullable|exists:positions,id',
         ], [
             'email.unique' => 'This email is already in use by another account.',
             'department_id.required' => 'Please choose a Department/Faculty/Unit.',
             'staff_category.required' => 'Please choose a Staff Category.',
+            'account_type.required' => 'Please choose an Account Category.',
         ]);
 
         $user->email = $request->input('email');
         $user->department_id = $request->input('department_id');
         $user->staff_category = $request->input('staff_category');
+        $user->account_type = $request->input('account_type');
         $user->position_id = $request->input('position_id');
         $user->save();
 

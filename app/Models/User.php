@@ -30,6 +30,7 @@ class User extends Authenticatable
         'profile_picture',
         'department_id',
         'staff_category',
+        'account_type',
         'position_id',
         'password_changed',
         'admin_access_requested',
@@ -119,6 +120,22 @@ class User extends Authenticatable
     public function isUsingTemporaryPassword()
     {
         return $this->is_approve && !$this->password_changed;
+    }
+
+    // ===== Account Category =====
+
+    public const ACCOUNT_INDIVIDUAL = 'individual';
+    public const ACCOUNT_OFFICE = 'office';
+
+    /**
+     * True when this account represents an Institutional Office (Finance,
+     * Registrar, a department office, …) rather than an individual member of
+     * staff. Folders an office account creates and shares surface under
+     * "Departmental Folders" for the recipients instead of "Shared with me".
+     */
+    public function isOfficeAccount(): bool
+    {
+        return $this->account_type === self::ACCOUNT_OFFICE;
     }
 
     // ===== Super Admin System Relationships =====

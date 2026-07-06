@@ -232,18 +232,55 @@ class Folder extends Model
     }
 
     /**
+     * Constrain a query to folders owned by an Institutional Office account.
+     * (Owner is folders.user_id — resolved against users.account_type.)
+     */
+    public function scopeOwnedByOffice(Builder $query): Builder
+    {
+        return $query->whereHas('user', fn ($u) => $u->where('account_type', User::ACCOUNT_OFFICE));
+    }
+
+    /**
+     * Constrain a query to folders owned by an ordinary (non-office) account.
+     * Legacy rows with a null account_type count as individual.
+     */
+    public function scopeOwnedByIndividual(Builder $query): Builder
+    {
+        return $query->whereHas('user', function ($u) {
+            $u->where(function ($q) {
+                $q->where('account_type', '!=', User::ACCOUNT_OFFICE)
+                    ->orWhereNull('account_type');
+            });
+        });
+    }
+
+    /**
      * The "Shared with me" listing for a user: every folder shared directly or
      * via a group, each annotated with `effective_permission` (the strongest of
      * direct vs. group, for the role chip). Single source of truth used by the
      * folders page and every other page that shows a shared-folders strip.
+     *
+     * Partitioned by the OWNER's account category:
+     *   - 'individual' (default) → the personal "Shared with me" strips. Office
+     *     folders are intentionally excluded so they surface only under
+     *     "Departmental Folders".
+     *   - 'office'                → the "Departmental Folders" listing.
+     *   - null                    → no owner filter (both).
      */
-    public static function sharedListingFor(User $user): Collection
+    public static function sharedListingFor(User $user, ?string $ownerType = User::ACCOUNT_INDIVIDUAL): Collection
     {
-        $shared = static::sharedWith($user)
+        $query = static::sharedWith($user)
             ->withCount(['files', 'exams'])
-            ->with(['user:id,first_name,last_name,email,profile_picture', 'grants'])
-            ->orderByDesc('updated_at')
-            ->get();
+            ->with(['user:id,first_name,last_name,email,profile_picture,account_type', 'grants'])
+            ->orderByDesc('updated_at');
+
+        if ($ownerType === User::ACCOUNT_OFFICE) {
+            $query->ownedByOffice();
+        } elseif ($ownerType === User::ACCOUNT_INDIVIDUAL) {
+            $query->ownedByIndividual();
+        }
+
+        $shared = $query->get();
 
         $membershipMap = static::audienceMembershipMap($user);
         $directPerms = DB::table('folder_shares')
