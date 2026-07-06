@@ -50,6 +50,9 @@
         .meta .v       { color: #111827; font-size: 10.5pt; }
         .meta .subject { font-weight: bold; color: #16335b; }
         .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
+        /* Cc recipients stack vertically, one per line (institutional memo style). */
+        .meta tr.cc-row td { vertical-align: top; }
+        .meta .cc-line { display: block; line-height: 1.5; }
 
         /* ── Section heading (consistent everywhere) ── */
         .sec {
@@ -229,9 +232,9 @@
         </tr>
         @endif
         @if($displayCcNames->isNotEmpty())
-        <tr>
+        <tr class="cc-row">
             <td class="k">Cc</td>
-            <td class="v">@foreach($displayCcNames as $name){{ $name }}@if(!$loop->last); @endif @endforeach</td>
+            <td class="v">@foreach($displayCcNames as $name)<span class="cc-line">{{ $name }}</span>@endforeach</td>
         </tr>
         @endif
         <tr>

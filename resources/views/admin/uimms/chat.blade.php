@@ -466,7 +466,7 @@
                                     <tr>
                                         <td class="fht-label">Cc:</td>
                                         <td class="fht-value" colspan="3">
-                                            <span class="fht-recipients">
+                                            <span class="fht-recipients fht-recipients--stack">
                                                 @if($ccRecipients->isNotEmpty())
                                                     @foreach($ccRecipients as $ccR)
                                                         <span class="fht-person fht-cc-person">
@@ -2095,6 +2095,13 @@
     gap: 8px;
     align-items: center;
 }
+/* Cc list stacks vertically (one recipient per line), as institutional memos do. */
+.fht-recipients--stack {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 5px;
+}
 .fht-person {
     display: inline-flex;
     align-items: center;
@@ -2143,12 +2150,13 @@
 /* CC row in plain mode */
 .cc-inline-row {
     flex-wrap: wrap;
+    align-items: flex-start;
 }
 .cc-inline-list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
 }
 .cc-chip {
     display: inline-flex;
