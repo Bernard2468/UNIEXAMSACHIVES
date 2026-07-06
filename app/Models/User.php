@@ -138,6 +138,23 @@ class User extends Authenticatable
         return $this->account_type === self::ACCOUNT_OFFICE;
     }
 
+    /**
+     * True when this user is referenced by any Forms audit record — a signed
+     * stage, an authored comment, an uploaded attachment, or a submission they
+     * created. Those four tables use restrictOnDelete() to protect the
+     * tamper-evident signature chain (each chain_hash is computed over the
+     * signer's user_id), so a user tied to any of them must NOT be
+     * hard-deleted: at the DB level it fails, and forcing it would destroy
+     * legally-significant audit history. Deactivate (disapprove) instead.
+     */
+    public function hasFormActivity(): bool
+    {
+        return FormSignature::where('user_id', $this->id)->exists()
+            || FormComment::where('user_id', $this->id)->exists()
+            || FormAttachment::where('uploaded_by', $this->id)->exists()
+            || FormSubmission::where('created_by', $this->id)->exists();
+    }
+
     // ===== Super Admin System Relationships =====
     
     /**

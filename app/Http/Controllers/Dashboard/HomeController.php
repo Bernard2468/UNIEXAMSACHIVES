@@ -1055,7 +1055,41 @@ class HomeController extends Controller
 
     public function destroy(User $user)
     {
-        $user->delete();
+        // Never let an admin delete their own account out from under themselves.
+        if ($user->id === Auth::id()) {
+            return redirect()->route('dashboard.users')
+                ->with('error', 'You cannot delete your own account.');
+        }
+
+        // The Forms tables (form_signatures, form_comments, form_attachments,
+        // form_submissions) reference users with restrictOnDelete() to keep the
+        // tamper-evident signature chain intact. A user tied to any of them
+        // cannot be hard-deleted — the DB rejects it, and forcing it would
+        // destroy legally-significant audit history. Point the admin at the
+        // "Disapprove" action instead, which revokes access while preserving
+        // the form record.
+        if ($user->hasFormActivity()) {
+            return redirect()->route('dashboard.users')->with(
+                'error',
+                'This user has signed, created or commented on forms, so deleting them would break the forms audit trail. Use "Disapprove" to deactivate the account instead — their access is revoked while the form history stays intact.'
+            );
+        }
+
+        try {
+            $user->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Safety net for any other constraint added in future. Turn the raw
+            // 1451 foreign-key 500 into a clear, actionable message.
+            \Log::error('User deletion blocked by a database constraint', [
+                'user_id' => $user->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return redirect()->route('dashboard.users')->with(
+                'error',
+                'This user is still linked to other records and could not be deleted. Use "Disapprove" to deactivate the account instead.'
+            );
+        }
 
         return redirect()->route('dashboard.users')->with('success', 'User deleted successfully');
     }
