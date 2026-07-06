@@ -1085,6 +1085,22 @@
             return `<div class="nt-eyebrow nt-eyebrow--${NT_ESC(style)}">${NT_ESC(item.context_label)}</div>`;
         }
 
+        // SINGLE source of truth for tray ordering (industry-standard: newest
+        // first). created_at_iso is second-precision (Carbon toIso8601String has
+        // no millis), so same-second items tie — we then break the tie by a
+        // GLOBALLY-unique composite (type, then id). memos and notifications are
+        // separate tables whose ids can collide, so `type` must come first. This
+        // yields a total order, meaning the list never re-shuffles between the
+        // tray's periodic refreshes. Defined once and reused everywhere we sort.
+        function ntCompareItems(a, b) {
+            const ta = a.created_at_iso ? Date.parse(a.created_at_iso) : 0;
+            const tb = b.created_at_iso ? Date.parse(b.created_at_iso) : 0;
+            if (tb !== ta) return tb - ta;                       // newest first
+            const typeCmp = String(a.type).localeCompare(String(b.type));
+            if (typeCmp !== 0) return typeCmp;                   // stable by type
+            return (Number(b.id) || 0) - (Number(a.id) || 0);    // newer id first
+        }
+
         // ---------------- PUSH TOGGLE (browser notifications) ----------------
         async function ntRefreshPushButton() {
             const btn = document.getElementById('ntPushToggle');
@@ -1358,6 +1374,7 @@
                                 title: n.title || n.message,
                                 message: n.message || '',
                                 time: n.time_ago,
+                                created_at_iso: n.created_at_iso || null,
                                 is_read: !!n.is_read,
                                 is_new_since_seen: !!n.is_new_since_seen && !n.is_read,
                                 bucket: n.bucket || 'earlier',
@@ -1368,12 +1385,8 @@
                         });
                     }
 
-                    // Sort merged items newest-first by created_at_iso when present.
-                    items.sort((a, b) => {
-                        const ta = a.created_at_iso ? Date.parse(a.created_at_iso) : 0;
-                        const tb = b.created_at_iso ? Date.parse(b.created_at_iso) : 0;
-                        return tb - ta;
-                    });
+                    // Newest-first with a deterministic tie-breaker (see ntCompareItems).
+                    items.sort(ntCompareItems);
 
                     // Preserve current index if items haven't changed significantly
                     const previousItems = notificationTrayState.items;
@@ -1435,13 +1448,16 @@
                             });
                         });
                     }
-                    
+
+                    // Same ordering rule as the main path (shared comparator).
+                    items.sort(ntCompareItems);
+
                     // Preserve current index if items haven't changed significantly
                     const previousItems = notificationTrayState.items;
-                    const itemsChanged = !previousItems || 
+                    const itemsChanged = !previousItems ||
                         previousItems.length !== items.length ||
                         items.some((item, idx) => !previousItems[idx] || item.id !== previousItems[idx].id);
-                    
+
                     // Only reset index if items changed or if current index is out of bounds
                     if (itemsChanged || notificationTrayState.currentIndex >= items.length) {
                         notificationTrayState.currentIndex = 0;
@@ -1451,9 +1467,9 @@
                             notificationTrayState.currentIndex = 0;
                         }
                     }
-                    
+
                     notificationTrayState.items = items;
-                    
+
                     // Only re-render if in carousel view
                     if (notificationTrayState.isCarousel) {
                         renderCarouselCard();

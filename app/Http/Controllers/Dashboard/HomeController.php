@@ -234,7 +234,9 @@ class HomeController extends Controller
                 $q->where('is_read', false)
                   ->orWhere('read_at', '>=', now()->subDays(7));
             })
-            ->orderBy('is_read', 'asc')
+            // Strict newest-first, matching getNotifications(): read state is
+            // shown visually, never used to re-order (which floated old-unread
+            // memos above newer read ones).
             ->orderBy('created_at','desc')
             ->limit(15)
             ->get();
@@ -514,7 +516,10 @@ class HomeController extends Controller
                 $q->where('is_read', false)
                   ->orWhere('read_at', '>=', now()->subDays(7));
             })
-            ->orderBy('is_read', 'asc')          // unread first
+            // Strict newest-first (industry-standard tray order): the newest
+            // notification is always on top regardless of read state. Unread is
+            // still conveyed visually (dimming + unread dot), not by re-sorting —
+            // sorting unread-first pushed old-unread ABOVE new-read items.
             ->orderBy('created_at', 'desc')
             ->limit(30)
             ->get()
