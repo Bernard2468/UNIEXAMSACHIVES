@@ -217,6 +217,20 @@ class AdvanceCommunicationController extends Controller
         $ccUserIds = array_values(array_diff($ccUserIds, $primaryIds));
         $ccUsers = $ccUserIds ? User::whereIn('id', $ccUserIds)->get() : collect();
 
+        // TEMP CC_DEBUG — capture exactly what arrives and what survives processing.
+        // Remove once the "only one Cc persists" issue is diagnosed.
+        Log::info('CC_DEBUG', [
+            'method'                  => __FUNCTION__,
+            'raw_cc_users'            => $request->input('cc_users'),
+            'raw_cc_users_count'      => is_array($request->input('cc_users')) ? count($request->input('cc_users')) : 0,
+            'recipient_type'          => $request->input('recipient_type'),
+            'selected_users'          => $request->input('selected_users'),
+            'primaryIds'              => $primaryIds,
+            'ccUserIds_after_dedup'   => $ccUserIds,
+            'ccUsers_ids_from_db'     => $ccUsers->pluck('id')->all(),
+            'ccUsers_count'           => $ccUsers->count(),
+        ]);
+
         // "Through" intermediary (validated above). When set, the memo is delivered
         // only to this person first; the To/Cc lists are held until they forward it.
         $throughUser = $request->filled('through_user_id') && $request->input('recipient_type') === 'selected'
@@ -1121,6 +1135,20 @@ class AdvanceCommunicationController extends Controller
         $primaryIds = $recipientUsers->pluck('id')->toArray();
         $ccUserIds = array_values(array_diff($ccUserIds, $primaryIds));
         $ccUsers = $ccUserIds ? User::whereIn('id', $ccUserIds)->get() : collect();
+
+        // TEMP CC_DEBUG — capture exactly what arrives and what survives processing.
+        // Remove once the "only one Cc persists" issue is diagnosed.
+        Log::info('CC_DEBUG', [
+            'method'                  => __FUNCTION__,
+            'raw_cc_users'            => $request->input('cc_users'),
+            'raw_cc_users_count'      => is_array($request->input('cc_users')) ? count($request->input('cc_users')) : 0,
+            'recipient_type'          => $request->input('recipient_type'),
+            'selected_users'          => $request->input('selected_users'),
+            'primaryIds'              => $primaryIds,
+            'ccUserIds_after_dedup'   => $ccUserIds,
+            'ccUsers_ids_from_db'     => $ccUsers->pluck('id')->all(),
+            'ccUsers_count'           => $ccUsers->count(),
+        ]);
 
         // "Through" intermediary (validated above). When set, the memo is delivered
         // only to this person first; the To/Cc lists are held until they forward it.
