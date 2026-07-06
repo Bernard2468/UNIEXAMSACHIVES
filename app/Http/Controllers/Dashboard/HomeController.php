@@ -1738,9 +1738,9 @@ class HomeController extends Controller
         ]);
 
         // Recipients are locked to the sender's original addressing.
-        $toIds = collect($memo->selected_users ?? [])->map('intval')
+        $toIds = collect($memo->selected_users ?? [])->map(fn ($id) => (int) $id)
             ->reject(fn ($id) => $id === (int) $userId)->unique()->values()->all();
-        $ccIds = collect($memo->cc_users ?? [])->map('intval')
+        $ccIds = collect($memo->cc_users ?? [])->map(fn ($id) => (int) $id)
             ->reject(fn ($id) => $id === (int) $userId || in_array($id, $toIds, true))->unique()->values()->all();
 
         $toUsers = $toIds ? User::where('is_approve', true)->whereIn('id', $toIds)->get() : collect();

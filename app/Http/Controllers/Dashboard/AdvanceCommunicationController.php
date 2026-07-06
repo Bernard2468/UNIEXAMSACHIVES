@@ -178,11 +178,11 @@ class AdvanceCommunicationController extends Controller
                     $fail('A Through person can only be set when sending to selected users.');
                     return;
                 }
-                $selected = collect($request->input('selected_users', []))->map('intval');
+                $selected = collect($request->input('selected_users', []))->map(fn ($id) => (int) $id);
                 if ($selected->contains((int) $value)) {
                     $fail('The Through person cannot also be a primary recipient.');
                 }
-                if (collect($request->input('cc_users', []))->map('intval')->contains((int) $value)) {
+                if (collect($request->input('cc_users', []))->map(fn ($id) => (int) $id)->contains((int) $value)) {
                     $fail('The Through person cannot also be a Cc recipient.');
                 }
             }],
@@ -212,24 +212,10 @@ class AdvanceCommunicationController extends Controller
         $recipientUsers = $this->getRecipientsByType($request->recipient_type, $request->selected_users);
 
         // Resolve CC users (exclude anyone already in primary recipient list)
-        $ccUserIds = collect($request->input('cc_users', []))->map('intval')->unique()->values()->toArray();
+        $ccUserIds = collect($request->input('cc_users', []))->map(fn ($id) => (int) $id)->unique()->values()->toArray();
         $primaryIds = $recipientUsers->pluck('id')->toArray();
         $ccUserIds = array_values(array_diff($ccUserIds, $primaryIds));
         $ccUsers = $ccUserIds ? User::whereIn('id', $ccUserIds)->get() : collect();
-
-        // TEMP CC_DEBUG — capture exactly what arrives and what survives processing.
-        // Remove once the "only one Cc persists" issue is diagnosed.
-        Log::info('CC_DEBUG', [
-            'method'                  => __FUNCTION__,
-            'raw_cc_users'            => $request->input('cc_users'),
-            'raw_cc_users_count'      => is_array($request->input('cc_users')) ? count($request->input('cc_users')) : 0,
-            'recipient_type'          => $request->input('recipient_type'),
-            'selected_users'          => $request->input('selected_users'),
-            'primaryIds'              => $primaryIds,
-            'ccUserIds_after_dedup'   => $ccUserIds,
-            'ccUsers_ids_from_db'     => $ccUsers->pluck('id')->all(),
-            'ccUsers_count'           => $ccUsers->count(),
-        ]);
 
         // "Through" intermediary (validated above). When set, the memo is delivered
         // only to this person first; the To/Cc lists are held until they forward it.
@@ -1099,11 +1085,11 @@ class AdvanceCommunicationController extends Controller
                     $fail('A Through person can only be set when sending to selected users.');
                     return;
                 }
-                $selected = collect($request->input('selected_users', []))->map('intval');
+                $selected = collect($request->input('selected_users', []))->map(fn ($id) => (int) $id);
                 if ($selected->contains((int) $value)) {
                     $fail('The Through person cannot also be a primary recipient.');
                 }
-                if (collect($request->input('cc_users', []))->map('intval')->contains((int) $value)) {
+                if (collect($request->input('cc_users', []))->map(fn ($id) => (int) $id)->contains((int) $value)) {
                     $fail('The Through person cannot also be a Cc recipient.');
                 }
             }],
@@ -1131,24 +1117,10 @@ class AdvanceCommunicationController extends Controller
         $recipientUsers = $this->getRecipientsByType($request->recipient_type, $request->selected_users);
 
         // Resolve CC users (exclude anyone already in primary recipient list)
-        $ccUserIds = collect($request->input('cc_users', []))->map('intval')->unique()->values()->toArray();
+        $ccUserIds = collect($request->input('cc_users', []))->map(fn ($id) => (int) $id)->unique()->values()->toArray();
         $primaryIds = $recipientUsers->pluck('id')->toArray();
         $ccUserIds = array_values(array_diff($ccUserIds, $primaryIds));
         $ccUsers = $ccUserIds ? User::whereIn('id', $ccUserIds)->get() : collect();
-
-        // TEMP CC_DEBUG — capture exactly what arrives and what survives processing.
-        // Remove once the "only one Cc persists" issue is diagnosed.
-        Log::info('CC_DEBUG', [
-            'method'                  => __FUNCTION__,
-            'raw_cc_users'            => $request->input('cc_users'),
-            'raw_cc_users_count'      => is_array($request->input('cc_users')) ? count($request->input('cc_users')) : 0,
-            'recipient_type'          => $request->input('recipient_type'),
-            'selected_users'          => $request->input('selected_users'),
-            'primaryIds'              => $primaryIds,
-            'ccUserIds_after_dedup'   => $ccUserIds,
-            'ccUsers_ids_from_db'     => $ccUsers->pluck('id')->all(),
-            'ccUsers_count'           => $ccUsers->count(),
-        ]);
 
         // "Through" intermediary (validated above). When set, the memo is delivered
         // only to this person first; the To/Cc lists are held until they forward it.
