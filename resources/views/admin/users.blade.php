@@ -1155,7 +1155,6 @@
                     </select>
                     <i class="fas fa-chevron-down efi-control__chev"></i>
                 </div>
-                <p class="efi-hint">Office accounts are for departments/offices; folders they share appear under "Departmental Folders".</p>
             </div>
 
             <div class="efi-field">
