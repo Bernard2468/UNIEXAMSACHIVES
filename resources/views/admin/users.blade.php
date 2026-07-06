@@ -1202,7 +1202,7 @@
             <div class="efi-actions">
                 <button type="button" class="efi-btn efi-btn--ghost" onclick="closeEditInfoModal()">Cancel</button>
                 <button type="submit" class="efi-btn efi-btn--save">
-                    <span><i class="fas fa-bolt"></i> Save Changes</span>
+                    <span>Save Changes</span>
                 </button>
             </div>
         </form>
