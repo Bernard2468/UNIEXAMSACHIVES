@@ -626,6 +626,9 @@
                 <button type="button" data-view="grid" class="active" title="Grid view" aria-label="Grid view"><i class="fas fa-table-cells-large"></i></button>
                 <button type="button" data-view="list" title="List view" aria-label="List view"><i class="fas fa-list-ul"></i></button>
             </div>
+            <button type="button" class="ai-new-btn" id="aiNewBtn" title="Create a new item without leaving this page">
+                <i class="fas fa-plus"></i> <span id="aiNewBtnLabel">New file</span>
+            </button>
         </div>
 
         <div class="mdrawer__body">
@@ -645,7 +648,8 @@
                         <div class="empty-box" style="grid-column:1/-1; padding:36px 8px;">
                             <div class="ico-c"><img src="{{ $iconFiles }}" alt="" class="drawer-empty-icon" aria-hidden="true"></div>
                             <h4>No files to add</h4>
-                            <p>Upload files first, then add them here.</p>
+                            <p>Create a file now and it'll appear right here, ready to add.</p>
+                            <button type="button" class="qa-empty-btn" data-qa-open="file"><i class="fas fa-plus"></i> Add a file</button>
                         </div>
                     @endforelse
                     <div class="ai-noresult" style="display:none; grid-column:1/-1;">No files match your search.</div>
@@ -671,7 +675,8 @@
                         <div class="empty-box" style="grid-column:1/-1; padding:36px 8px;">
                             <div class="ico-c"><img src="{{ $iconExams }}" alt="" class="drawer-empty-icon" aria-hidden="true"></div>
                             <h4>No exams to add</h4>
-                            <p>Upload exam documents first, then add them here.</p>
+                            <p>Create an exam now and it'll appear right here, ready to add.</p>
+                            <button type="button" class="qa-empty-btn" data-qa-open="exam"><i class="fas fa-plus"></i> Add an exam</button>
                         </div>
                     @endforelse
                     <div class="ai-noresult" style="display:none; grid-column:1/-1;">No exams match your search.</div>
@@ -689,6 +694,256 @@
         </footer>
     </aside>
 </div>
+
+{{-- =================================================================
+     QUICK-ADD MODALS — create a file/exam without leaving the folder.
+     Rendered for any editor ($canEdit), NOT gated behind @if($isOwner),
+     so shared editors get them too. On success the new record is dropped
+     straight into the Add-items drawer, pre-selected, ready to add.
+     ================================================================= --}}
+@if($canEdit)
+<style>
+.ai-new-btn {
+    display:inline-flex; align-items:center; gap:7px; flex-shrink:0;
+    padding: 8px 14px; border-radius: 9px; border: none; cursor: pointer;
+    background: #0ea5e9; color:#fff; font-size: 12.5px; font-weight: 600; font-family: inherit;
+    transition: background .15s, box-shadow .15s;
+}
+.ai-new-btn:hover { background:#0284c7; box-shadow:0 4px 12px rgba(14,165,233,.28); }
+.ai-new-btn i { font-size: 11px; }
+
+.qa-empty-btn {
+    display:inline-flex; align-items:center; gap:8px; margin-top: 14px;
+    padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer;
+    background: #0ea5e9; color:#fff; font-size: 13px; font-weight: 600; font-family: inherit;
+    transition: background .15s, box-shadow .15s;
+}
+.qa-empty-btn:hover { background:#0284c7; box-shadow:0 6px 16px rgba(14,165,233,.3); }
+
+.qa-backdrop {
+    position: fixed; inset: 0; background: rgba(15,23,42,.55);
+    z-index: 10001; display: none; align-items: center; justify-content: center;
+    padding: 20px; backdrop-filter: blur(2px);
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.qa-backdrop.open { display: flex; }
+.qa-modal {
+    background:#fff; border-radius: 16px; width: 100%; max-width: 560px;
+    max-height: 92vh; display:flex; flex-direction:column;
+    box-shadow: 0 24px 70px rgba(15,23,42,.32); animation: qaPop .2s ease;
+}
+@keyframes qaPop { from { opacity:0; transform: translateY(12px) scale(.98);} to {opacity:1; transform:none;} }
+.qa-modal form { display:flex; flex-direction:column; min-height:0; flex:1; }
+.qa-head { display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding: 18px 22px; border-bottom: 1px solid #eef2f7; flex-shrink:0; }
+.qa-head-title { display:flex; align-items:center; gap:12px; min-width:0; }
+.qa-head-ic { width:42px; height:42px; border-radius:12px; flex-shrink:0;
+    background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd;
+    display:flex; align-items:center; justify-content:center; font-size:16px; }
+.qa-head-ic.exam { background:#f5f3ff; color:#7c3aed; border-color:#ddd6fe; }
+.qa-head-title h3 { margin:0; font-size:17px; font-weight:700; color:#0f172a; letter-spacing:-.01em; }
+.qa-head-title p { margin:2px 0 0; font-size:12.5px; color:#94a3b8; }
+.qa-close { width:34px; height:34px; border-radius:9px; flex-shrink:0;
+    border:1px solid #e2e8f0; background:#fff; color:#64748b; cursor:pointer;
+    font-size:14px; display:flex; align-items:center; justify-content:center;
+    transition: background .15s, color .15s; }
+.qa-close:hover { background:#f1f5f9; color:#0f172a; }
+.qa-body { padding: 18px 22px; overflow-y:auto; flex:1; }
+.qa-body::-webkit-scrollbar { width:8px; }
+.qa-body::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:5px; }
+.qa-field { margin-bottom: 14px; }
+.qa-field > label { display:block; font-size:12.5px; font-weight:600; color:#334155; margin-bottom:6px; }
+.qa-req { color:#ef4444; }
+.qa-opt { color:#94a3b8; font-weight:400; }
+.qa-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.qa-field input[type=text], .qa-field input[type=date], .qa-field select {
+    width:100%; padding: 10px 13px; border:1.5px solid #e2e8f0; border-radius:9px;
+    font-size:13.5px; color:#1e293b; background:#fff; font-family:inherit; outline:none;
+    transition: border-color .15s, box-shadow .15s; -webkit-appearance:none; appearance:none; }
+.qa-field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position: right 12px center; padding-right:32px; }
+.qa-field input:focus, .qa-field select:focus { border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.12); }
+.qa-field input.qa-field-err, .qa-field select.qa-field-err { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.12); }
+.qa-drop { display:flex; flex-direction:column; align-items:center; gap:8px;
+    border: 2px dashed #cbd5e1; border-radius:12px; padding: 20px 14px; text-align:center;
+    cursor:pointer; background:#fafbfc; transition: border-color .15s, background .15s; position: relative; }
+.qa-drop:hover { border-color:#0ea5e9; background:#f0f9ff; }
+.qa-drop i { font-size:22px; color:#0ea5e9; }
+.qa-drop span { font-size:12px; color:#64748b; }
+.qa-drop input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.qa-file-name { display:none; margin-top:8px; padding:8px 12px;
+    background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px;
+    font-size:12px; color:#166534; font-weight:500; align-items:center; gap:8px; word-break:break-all; }
+.qa-file-name.show { display:flex; }
+.qa-file-name i { color:#22c55e; }
+.qa-errors { background:#fef2f2; border:1px solid #fecaca; color:#991b1b;
+    border-radius:10px; padding:11px 14px; margin-bottom:14px;
+    font-size:12.5px; line-height:1.5; display:none; align-items:flex-start; gap:9px; }
+.qa-errors i { color:#ef4444; margin-top:2px; flex-shrink:0; }
+.qa-foot { display:flex; align-items:center; justify-content:flex-end; gap:10px;
+    padding: 14px 22px; border-top:1px solid #eef2f7; flex-shrink:0; }
+.qa-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:10px;
+    cursor:pointer; font-size:13px; font-weight:600; font-family:inherit; border:1.5px solid transparent;
+    transition: background .15s, box-shadow .15s, color .15s; }
+.qa-btn.ghost { background:#fff; border-color:#e2e8f0; color:#475569; }
+.qa-btn.ghost:hover { background:#f1f5f9; color:#0f172a; }
+.qa-btn.primary { background:#0ea5e9; color:#fff; }
+.qa-btn.primary:hover { background:#0284c7; box-shadow:0 6px 16px rgba(14,165,233,.3); }
+.qa-btn.primary:disabled { background:#93c5e8; cursor:not-allowed; box-shadow:none; }
+@media (max-width: 520px) { .qa-grid { grid-template-columns: 1fr; } }
+</style>
+
+{{-- Quick-add: FILE --}}
+<div class="qa-backdrop" id="qaddFile">
+    <div class="qa-modal" role="dialog" aria-modal="true" aria-label="Add a file">
+        <div class="qa-head">
+            <div class="qa-head-title">
+                <span class="qa-head-ic"><i class="fas fa-file-arrow-up"></i></span>
+                <div style="min-width:0;">
+                    <h3>Add a file</h3>
+                    <p>Deposit a new file, then add it to this folder</p>
+                </div>
+            </div>
+            <button type="button" class="qa-close" data-qa-close aria-label="Close"><i class="fas fa-xmark"></i></button>
+        </div>
+        <form id="qaddFileForm" action="{{ route('dashboard.file.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="qa-body">
+                <div class="qa-errors"><i class="fas fa-triangle-exclamation"></i><span></span></div>
+                <div class="qa-field">
+                    <label>File title <span class="qa-req">*</span></label>
+                    <input type="text" name="file_title" placeholder="e.g. Budget Report Q1" required>
+                </div>
+                <div class="qa-field">
+                    <label>Document date <span class="qa-req">*</span></label>
+                    <input type="date" name="year_created" max="{{ now()->toDateString() }}" required>
+                </div>
+                <div class="qa-field">
+                    <label>Upload file <span class="qa-req">*</span></label>
+                    <label class="qa-drop">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                        <span>Click to choose — PDF, Word, Excel, CSV, PowerPoint</span>
+                        <input type="file" name="document_file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx" required>
+                    </label>
+                    <div class="qa-file-name"><i class="fas fa-circle-check"></i> <span class="qa-fn-text"></span></div>
+                </div>
+            </div>
+            <div class="qa-foot">
+                <button type="button" class="qa-btn ghost" data-qa-close>Cancel</button>
+                <button type="submit" class="qa-btn primary"><i class="fas fa-check"></i> Create &amp; add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Quick-add: EXAM --}}
+<div class="qa-backdrop" id="qaddExam">
+    <div class="qa-modal" role="dialog" aria-modal="true" aria-label="Add an exam">
+        <div class="qa-head">
+            <div class="qa-head-title">
+                <span class="qa-head-ic exam"><i class="fas fa-file-signature"></i></span>
+                <div style="min-width:0;">
+                    <h3>Add an exam</h3>
+                    <p>Deposit a new exam, then add it to this folder</p>
+                </div>
+            </div>
+            <button type="button" class="qa-close" data-qa-close aria-label="Close"><i class="fas fa-xmark"></i></button>
+        </div>
+        <form id="qaddExamForm" action="{{ route('dashboard.exam.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="qa-body">
+                <div class="qa-errors"><i class="fas fa-triangle-exclamation"></i><span></span></div>
+                <div class="qa-grid">
+                    <div class="qa-field">
+                        <label>Staff ID <span class="qa-req">*</span></label>
+                        <input type="text" name="student_id" placeholder="e.g. STF-00123" required>
+                    </div>
+                    <div class="qa-field">
+                        <label>Course code <span class="qa-req">*</span></label>
+                        <input type="text" name="course_code" placeholder="e.g. CS101" required>
+                    </div>
+                </div>
+                <div class="qa-field">
+                    <label>Course title <span class="qa-req">*</span></label>
+                    <input type="text" name="course_title" placeholder="e.g. Introduction to Computer Science" required>
+                </div>
+                <div class="qa-grid">
+                    <div class="qa-field">
+                        <label>Semester <span class="qa-req">*</span></label>
+                        <select name="semester" required>
+                            <option value="First Semester">First Semester</option>
+                            <option value="Second Semester">Second Semester</option>
+                        </select>
+                    </div>
+                    <div class="qa-field">
+                        <label>Academic year <span class="qa-req">*</span></label>
+                        <select name="academic_year" required>
+                            @forelse($academicYears as $y)
+                                <option value="{{ $y->year }}">{{ $y->year }}</option>
+                            @empty
+                                <option value="" disabled selected>No academic year added</option>
+                            @endforelse
+                        </select>
+                    </div>
+                </div>
+                <div class="qa-grid">
+                    <div class="qa-field">
+                        <label>Exam type <span class="qa-req">*</span></label>
+                        <select name="exams_type" required>
+                            <option value="Midterm">Midterm</option>
+                            <option value="Final Exams">Final Exams</option>
+                            <option value="Quiz">Quiz</option>
+                        </select>
+                    </div>
+                    <div class="qa-field">
+                        <label>Exam format <span class="qa-req">*</span></label>
+                        <select name="exam_format" required>
+                            <option value="In-Person Written">In-Person Written</option>
+                            <option value="Online">Online</option>
+                            <option value="Take-Home">Take-Home</option>
+                            <option value="Oral">Oral</option>
+                            <option value="Practical">Practical</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="qa-grid">
+                    <div class="qa-field">
+                        <label>Exam date <span class="qa-req">*</span></label>
+                        <input type="date" name="exam_date" max="{{ now()->toDateString() }}" required>
+                    </div>
+                    <div class="qa-field">
+                        <label>Duration <span class="qa-req">*</span></label>
+                        <input type="text" name="duration" placeholder="e.g. 2 hours" required>
+                    </div>
+                </div>
+                <div class="qa-field">
+                    <label>Exam document <span class="qa-req">*</span></label>
+                    <label class="qa-drop">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Click to choose — PDF or DOCX</span>
+                        <input type="file" name="exam_document" accept=".pdf,.docx" required>
+                    </label>
+                    <div class="qa-file-name"><i class="fas fa-circle-check"></i> <span class="qa-fn-text"></span></div>
+                </div>
+                <div class="qa-field">
+                    <label>Answer key <span class="qa-opt">(optional)</span></label>
+                    <label class="qa-drop">
+                        <i class="fas fa-key"></i>
+                        <span>Click to choose — PDF or DOCX</span>
+                        <input type="file" name="answer_key" accept=".pdf,.docx">
+                    </label>
+                    <div class="qa-file-name"><i class="fas fa-circle-check"></i> <span class="qa-fn-text"></span></div>
+                </div>
+            </div>
+            <div class="qa-foot">
+                <button type="button" class="qa-btn ghost" data-qa-close>Cancel</button>
+                <button type="submit" class="qa-btn primary"><i class="fas fa-check"></i> Create &amp; add</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
 
 @if($isOwner)
 @php
@@ -1701,7 +1956,11 @@ body.mdrawer-lock { overflow: hidden; }
         addDrawer.addEventListener('click', e => { if (e.target === addDrawer) closeAddDrawer(); });
         document.getElementById('addDrawerClose')?.addEventListener('click', closeAddDrawer);
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && addDrawer.classList.contains('open')) closeAddDrawer();
+            if (e.key !== 'Escape' || !addDrawer.classList.contains('open')) return;
+            // A quick-add modal stacked on top owns the Escape key — leave the
+            // drawer open so we don't dismiss both at once.
+            if (document.querySelector('.qa-backdrop.open')) return;
+            closeAddDrawer();
         });
         let savedView = 'grid';
         try { savedView = localStorage.getItem('folderAddView') || 'grid'; } catch (e) {}
@@ -2461,6 +2720,192 @@ body.mdrawer-lock { overflow: hidden; }
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape' && membersModal.classList.contains('open')) closeMembersDrawer();
         });
+    }
+
+    // ===================================================================
+    //  QUICK-ADD — create a file/exam in a modal, then drop it straight
+    //  into the Add-items drawer (pre-selected) without leaving the page.
+    // ===================================================================
+    const QA_KEY_ICON = @json($iconKey);
+    const qaFile = document.getElementById('qaddFile');
+    const qaExam = document.getElementById('qaddExam');
+    const aiNewBtn = document.getElementById('aiNewBtn');
+    const aiNewBtnLabel = document.getElementById('aiNewBtnLabel');
+
+    function qaIcon(ext) {
+        ext = (ext || 'pdf').toString().toLowerCase();
+        let cls = 'unk', glyph = 'fa-file';
+        if (ext === 'pdf') { cls = 'pdf'; glyph = 'fa-file-pdf'; }
+        else if (ext === 'doc' || ext === 'docx') { cls = 'doc'; glyph = 'fa-file-word'; }
+        else if (ext === 'xls' || ext === 'xlsx' || ext === 'csv') { cls = 'xls'; glyph = 'fa-file-excel'; }
+        else if (ext === 'ppt' || ext === 'pptx') { cls = 'ppt'; glyph = 'fa-file-powerpoint'; }
+        else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].indexOf(ext) !== -1) { cls = 'img'; glyph = 'fa-file-image'; }
+        return { cls: cls, glyph: glyph, ext: ext };
+    }
+
+    function bumpAddBadge(kind, delta) {
+        if (!addDrawer) return;
+        const tab = addDrawer.querySelector('[data-add-tab="' + (kind === 'file' ? 'files' : 'exams') + '"]');
+        const badge = tab ? tab.querySelector('.mb-tab-badge') : null;
+        if (!badge) return;
+        badge.textContent = Math.max(0, (parseInt((badge.textContent || '0').trim(), 10) || 0) + delta);
+    }
+
+    // Insert a freshly-created item into the picker, pre-selected so "Add" lights up.
+    function qaInject(kind, item) {
+        const list = kind === 'file' ? aiListFiles : aiListExams;
+        if (!list || !item) return;
+        const empty = list.querySelector('.empty-box');
+        if (empty) empty.remove();
+
+        const ic = qaIcon(item.ext);
+        const label = document.createElement('label');
+        label.className = 'ai-item selected';
+        label.setAttribute('data-search', (item.title + ' ' + ic.ext).toLowerCase());
+
+        let html = '<input type="checkbox" name="' + (kind === 'file' ? 'file_ids[]' : 'exam_ids[]') + '" value="' + item.id + '" checked>'
+            + '<span class="ai-ico ' + ic.cls + '"><i class="fas ' + ic.glyph + '"></i></span>'
+            + '<span class="ai-name">' + escapeHtml(item.title) + '</span>';
+        if (kind === 'exam' && item.has_key) {
+            html += '<span class="ai-key" title="Answer key attached"><img src="' + QA_KEY_ICON + '" alt="" aria-hidden="true"></span>';
+        }
+        html += '<span class="ai-meta">' + ic.ext.toUpperCase() + '</span>'
+            + '<span class="ai-check"><i class="fas fa-check"></i></span>';
+        label.innerHTML = html;
+
+        const nores = list.querySelector('.ai-noresult');
+        if (nores) list.insertBefore(label, nores); else list.appendChild(label);
+
+        bumpAddBadge(kind, +1);
+        aiUpdateCount();
+        label.scrollIntoView({ block: 'nearest' });
+    }
+
+    function qaOpen(kind) {
+        const m = kind === 'file' ? qaFile : qaExam;
+        if (!m) return;
+        m.classList.add('open');
+        document.body.classList.add('mdrawer-lock');
+        setTimeout(function () {
+            const first = m.querySelector('.qa-body input:not([type=file]), .qa-body select');
+            if (first) first.focus();
+        }, 60);
+    }
+    function qaClose(m) {
+        if (!m) return;
+        m.classList.remove('open');
+        // Keep the scroll lock if the Add-items drawer is still open behind us.
+        if (!addDrawer || !addDrawer.classList.contains('open')) {
+            document.body.classList.remove('mdrawer-lock');
+        }
+    }
+
+    function qaShowErrors(box, msgs) {
+        if (!box) return;
+        const span = box.querySelector('span');
+        if (span) span.innerHTML = msgs.map(escapeHtml).join('<br>');
+        box.style.display = 'flex';
+    }
+
+    function qaWire(formId, kind) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const modal = kind === 'file' ? qaFile : qaExam;
+        const errBox = form.querySelector('.qa-errors');
+        const submitBtn = form.querySelector('[type=submit]');
+
+        // File-name previews.
+        form.querySelectorAll('input[type=file]').forEach(function (inp) {
+            inp.addEventListener('change', function () {
+                const field = inp.closest('.qa-field');
+                const disp = field ? field.querySelector('.qa-file-name') : null;
+                if (!disp) return;
+                const txt = disp.querySelector('.qa-fn-text');
+                if (inp.files && inp.files.length) {
+                    if (txt) txt.textContent = inp.files[0].name;
+                    disp.classList.add('show');
+                } else {
+                    disp.classList.remove('show');
+                }
+            });
+        });
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (errBox) errBox.style.display = 'none';
+            form.querySelectorAll('.qa-field-err').forEach(function (el) { el.classList.remove('qa-field-err'); });
+
+            const original = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
+
+            let res, data = {};
+            try {
+                res = await fetch(form.getAttribute('action'), {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: new FormData(form),
+                });
+                data = await res.json().catch(function () { return {}; });
+            } catch (err) {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = original; }
+                qaShowErrors(errBox, ['Could not reach the server. Check your connection.']);
+                return;
+            }
+
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = original; }
+
+            if (res.ok && data.ok) {
+                const item = kind === 'file' ? data.file : data.exam;
+                form.reset();
+                form.querySelectorAll('.qa-file-name').forEach(function (el) { el.classList.remove('show'); });
+                qaClose(modal);
+                // Land on the matching tab, then inject + select the new record.
+                aiSwitch(kind === 'file' ? 'files' : 'exams');
+                if (aiNewBtnLabel) aiNewBtnLabel.textContent = (kind === 'file') ? 'New file' : 'New exam';
+                qaInject(kind, item);
+                notify((kind === 'file' ? 'File' : 'Exam') + ' created — selected below. Click “Add” to put it in the folder.', 'ok');
+            } else if (res.status === 422 && data.errors) {
+                const msgs = [];
+                Object.keys(data.errors).forEach(function (k) {
+                    (data.errors[k] || []).forEach(function (m) { msgs.push(m); });
+                    const field = form.querySelector('[name="' + k + '"]');
+                    if (field) field.classList.add('qa-field-err');
+                });
+                qaShowErrors(errBox, msgs.length ? msgs : [data.message || 'Please check the form and try again.']);
+            } else {
+                qaShowErrors(errBox, [data.message || ('Could not save (status ' + (res.status || '?') + ').')]);
+            }
+        });
+    }
+
+    if (qaFile || qaExam) {
+        [qaFile, qaExam].forEach(function (m) {
+            if (!m) return;
+            m.addEventListener('click', function (e) { if (e.target === m) qaClose(m); });
+            m.querySelectorAll('[data-qa-close]').forEach(function (b) {
+                b.addEventListener('click', function () { qaClose(m); });
+            });
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            if (qaFile && qaFile.classList.contains('open')) qaClose(qaFile);
+            if (qaExam && qaExam.classList.contains('open')) qaClose(qaExam);
+        });
+
+        document.querySelectorAll('[data-qa-open]').forEach(function (b) {
+            b.addEventListener('click', function () { qaOpen(b.getAttribute('data-qa-open')); });
+        });
+
+        function syncNewBtnLabel() {
+            if (aiNewBtnLabel) aiNewBtnLabel.textContent = (aiActive === 'files') ? 'New file' : 'New exam';
+        }
+        if (aiNewBtn) aiNewBtn.addEventListener('click', function () { qaOpen(aiActive === 'files' ? 'file' : 'exam'); });
+        addTabs.forEach(function (t) { t.addEventListener('click', syncNewBtnLabel); });
+        syncNewBtnLabel();
+
+        qaWire('qaddFileForm', 'file');
+        qaWire('qaddExamForm', 'exam');
     }
 })();
 </script>

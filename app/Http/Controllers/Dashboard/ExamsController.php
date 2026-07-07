@@ -58,7 +58,24 @@ class ExamsController extends Controller
         $validatedData['user_id'] = Auth::user()->id;
         $validatedData['is_approve'] = true; // Auto-approve all uploads
 
-        Exam::create($validatedData);
+        $exam = Exam::create($validatedData);
+
+        // Quick-add from the folder "Add items" drawer posts via AJAX and needs the
+        // new record back so it can drop it straight into the picker (no page nav).
+        // Validation failures are already returned as JSON 422 automatically.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'Exam deposited successfully.',
+                'exam' => [
+                    'id' => $exam->id,
+                    'title' => $exam->course_title . ' (' . $exam->course_code . ')',
+                    'ext' => strtolower(pathinfo($exam->exam_document ?? '', PATHINFO_EXTENSION) ?: 'pdf'),
+                    'has_key' => !empty($exam->answer_key),
+                ],
+            ]);
+        }
+
         return redirect()->route('dashboard.all.exams')->with('success', 'Exam Document deposited successfully.');
     }
 

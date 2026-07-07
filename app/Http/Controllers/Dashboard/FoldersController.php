@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Folders\Audiences\FolderAudience;
 use App\Folders\Audiences\FolderAudienceRegistry;
 use App\Http\Controllers\Controller;
+use App\Models\Academic;
 use App\Models\Exam;
 use App\Models\File;
 use App\Models\Folder;
@@ -142,6 +143,9 @@ class FoldersController extends Controller
         // items only — you can only contribute your own uploads.
         $availableFiles = collect();
         $availableExams = collect();
+        // Academic years power the "quick add exam" modal's Year dropdown. Only
+        // needed for editors (who see the Add-items drawer); empty otherwise.
+        $academicYears = collect();
         if ($isOwner || $folder->canEditContents($user)) {
             $availableFiles = File::where('user_id', $user->id)
                 ->whereDoesntHave('folders', function ($q) use ($folder) {
@@ -153,9 +157,10 @@ class FoldersController extends Controller
                     $q->where('folder_id', $folder->id);
                 })
                 ->get();
+            $academicYears = Academic::all();
         }
 
-        return view('admin.folders.show', compact('folder', 'availableFiles', 'availableExams', 'isOwner', 'audienceTypes'));
+        return view('admin.folders.show', compact('folder', 'availableFiles', 'availableExams', 'isOwner', 'audienceTypes', 'academicYears'));
     }
 
     public function edit(Folder $folder)

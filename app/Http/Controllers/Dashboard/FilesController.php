@@ -35,7 +35,23 @@ class FilesController extends Controller
         $validatedData['user_id'] = $user->id;
         $validatedData['document_id'] = random_int(1000000000, 9999999999);
         $validatedData['is_approve'] = true;
-        File::create($validatedData);
+        $file = File::create($validatedData);
+
+        // Quick-add from the folder "Add items" drawer posts via AJAX and needs the
+        // new record back so it can drop it straight into the picker (no page nav).
+        // Validation failures are already returned as JSON 422 automatically.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'message' => 'File deposited successfully.',
+                'file' => [
+                    'id' => $file->id,
+                    'title' => $file->file_title,
+                    'ext' => strtolower(pathinfo($file->document_file ?? '', PATHINFO_EXTENSION) ?: 'pdf'),
+                ],
+            ]);
+        }
+
         return redirect()->route('dashboard.all.files')->with('success', 'File has been deposited successfully.');
     }
 
