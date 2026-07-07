@@ -704,7 +704,17 @@
         ->orderBy('last_name')
         ->get(['id', 'first_name', 'last_name', 'email', 'profile_picture', 'position_id', 'department_id']);
 @endphp
-{{-- ===== MEMBERS MODAL ===== --}}
+@endif
+
+{{-- Share & Add-items drawer styles.
+     IMPORTANT: this block must NOT be gated behind @if($isOwner). The Add-items
+     drawer (#addModal) renders for any editor (owner OR shared collaborator),
+     and it relies on .mdrawer-backdrop / .mdrawer / .ai-* rules below. If these
+     styles only load for the owner, a shared editor sees the drawer permanently
+     visible & unstyled at the bottom of the page, and the "Add items" button —
+     which only toggles the .open class — appears to do nothing.
+     The members-only rules (.mp-*, .grp-*, .member-row, etc.) are harmless here:
+     their markup only exists in the owner-gated modal, so they simply match nothing. --}}
 <style>
 .members-list { max-height: 260px; overflow-y: auto; margin-top: 4px; }
 .member-row {
@@ -1329,6 +1339,8 @@ body.mdrawer-lock { overflow: hidden; }
 }
 </style>
 
+@if($isOwner)
+{{-- ===== MEMBERS MODAL (owner only) ===== --}}
 <div class="mdrawer-backdrop" id="membersModal">
     <aside class="mdrawer" role="dialog" aria-modal="true" aria-label="Share and access">
         <header class="mdrawer__head">
