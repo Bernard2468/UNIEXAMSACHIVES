@@ -1663,7 +1663,7 @@ class HomeController extends Controller
             $assigneeNames = implode(', ', $assigneeNamesList) . ', and ' . $lastName;
         }
         
-        $assignmentMessage = "<em>📋 Memo Assigned by " . Auth::user()->first_name . " " . Auth::user()->last_name . " to " . $assigneeNames . "</em>";
+        $assignmentMessage = "<em> Memo Assigned by " . Auth::user()->first_name . " " . Auth::user()->last_name . " to " . $assigneeNames . "</em>";
         if ($request->message) {
             $assignmentMessage .= "<div style='margin: 8px 0; border-top: 1px solid rgba(0,0,0,0.1); width: 100%;'></div>" . nl2br(e($request->message));
         }
