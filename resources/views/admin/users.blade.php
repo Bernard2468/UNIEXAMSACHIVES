@@ -1193,7 +1193,6 @@
                         </label>
                     @endforeach
                 </div>
-                <p class="efi-hint">Extra departments this person also belongs to (e.g. teaches or takes a course elsewhere). They'll see those departments' shared folders. The primary can't be picked here.</p>
             </div>
 
             <div class="efi-grid">
