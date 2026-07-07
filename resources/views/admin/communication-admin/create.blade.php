@@ -398,7 +398,7 @@
                                                         <span class="cc-section-label">
                                                             <i class="icofont-users-alt-3"></i> Cc: (Carbon Copy)
                                                         </span>
-                                                        <p class="cc-section-desc">Add people who should receive a copy for their information — they will see they are Cc'd, not the primary recipient.</p>
+                                                        <p class="cc-section-desc">Add people who should receive a copy of the memo</p>
                                                     </div>
                                                     <div class="cc-toggle-wrap">
                                                         <button type="button" id="cc-toggle-btn" class="cc-toggle-btn" onclick="toggleCcSection()">
