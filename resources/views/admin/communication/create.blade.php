@@ -731,7 +731,7 @@
                                                                 <div class="option-icon"><i class="icofont-building-alt"></i></div>
                                                                 <div class="option-content">
                                                                     <strong>Specific Department(s)</strong>
-                                                                    <span class="option-desc">Choose one or more departments — every member receives the memo</span>
+                                                                    <span class="option-desc">Choose one or more departments</span>
                                                                 </div>
                                                             </label>
                                                         </div>
