@@ -884,7 +884,7 @@ class HomeController extends Controller
         $search = trim((string) $request->get('search', ''));
         $filter = $request->get('filter', 'all');
 
-        $query = User::with('position');
+        $query = User::with('position', 'secondaryDepartments:id');
 
         if ($search !== '') {
             $tokens = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
@@ -932,6 +932,8 @@ class HomeController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'temporary_password' => 'required|string|min:8|confirmed',
             'department_id' => 'required|exists:departments,id',
+            'secondary_department_ids' => 'nullable|array',
+            'secondary_department_ids.*' => 'integer|exists:departments,id',
             'staff_category' => 'required|string|in:Junior Staff,Senior Staff,Senior Member (Non-Teaching),Senior Member (Teaching)',
             'position_id' => 'nullable|exists:positions,id',
         ], [
@@ -953,6 +955,14 @@ class HomeController extends Controller
                 'staff_category' => $validatedData['staff_category'],
                 'position_id' => $validatedData['position_id'] ?? null,
             ]);
+
+            // Secondary departments (optional): never let the primary appear here too.
+            $user->secondaryDepartments()->sync(
+                collect($validatedData['secondary_department_ids'] ?? [])
+                    ->reject(fn ($id) => (int) $id === (int) $validatedData['department_id'])
+                    ->values()
+                    ->all()
+            );
 
             return redirect()->route('dashboard.users')
                 ->with('success', "User '{$user->first_name} {$user->last_name}' has been added successfully. They will be required to change their password on first login.");
@@ -1112,15 +1122,17 @@ class HomeController extends Controller
             $request->merge(['position_id' => null]);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'department_id' => 'required|exists:departments,id',
+            'secondary_department_ids' => 'nullable|array',
+            'secondary_department_ids.*' => 'integer|exists:departments,id',
             'staff_category' => 'required|string|in:Junior Staff,Senior Staff,Senior Member (Non-Teaching),Senior Member (Teaching)',
             'account_type' => 'required|in:individual,office',
             'position_id' => 'nullable|exists:positions,id',
         ], [
             'email.unique' => 'This email is already in use by another account.',
-            'department_id.required' => 'Please choose a Department/Faculty/Unit.',
+            'department_id.required' => 'Please choose a Primary Department/Faculty/Unit.',
             'staff_category.required' => 'Please choose a Staff Category.',
             'account_type.required' => 'Please choose an Account Category.',
         ]);
@@ -1131,6 +1143,14 @@ class HomeController extends Controller
         $user->account_type = $request->input('account_type');
         $user->position_id = $request->input('position_id');
         $user->save();
+
+        // Secondary departments (optional): never let the primary appear here too.
+        $user->secondaryDepartments()->sync(
+            collect($validated['secondary_department_ids'] ?? [])
+                ->reject(fn ($id) => (int) $id === (int) $validated['department_id'])
+                ->values()
+                ->all()
+        );
 
         return redirect()->route('dashboard.users')->with('success', "Details for {$user->first_name} {$user->last_name} updated successfully.");
     }

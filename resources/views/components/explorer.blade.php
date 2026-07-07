@@ -977,8 +977,21 @@
                             $folderShowUrl = route('dashboard.folders.show', $folder)
                                 . '?from=' . urlencode(url()->full());
                         @endphp
+                        {{-- Editors may add items, so an editor-shared folder is a valid
+                             drop target. Give it the same `exp-folder-tile` hook + data
+                             attributes the owned folders use — the drop JS keys on that
+                             class, so no JS change is needed. The class carries no CSS
+                             (JS-only), so the tile's appearance is unchanged. Viewers get
+                             neither and stay non-droppable. Editors bypass the folder
+                             password (share IS access), hence locked=0. --}}
+                        @php $canDropShared = ($perm === 'editor'); @endphp
                         <a href="{{ $folderShowUrl }}"
-                            class="exp-tile exp-tile-shared"
+                            class="exp-tile exp-tile-shared{{ $canDropShared ? ' exp-folder-tile' : '' }}"
+                            @if($canDropShared)
+                                data-folder-id="{{ $folder->id }}"
+                                data-folder-name="{{ $folder->name }}"
+                                data-folder-locked="0"
+                            @endif
                             data-search="{{ strtolower($folder->name . ' ' . $ownerName) }}"
                             title="{{ $folder->name }} — shared by {{ $ownerName }} ({{ ucfirst($perm) }})">
                             <div class="ico folder">
@@ -1407,10 +1420,15 @@
     function bumpFolderCount(folderEl, delta) {
         const sub = folderEl.querySelector('.sub');
         if (!sub) return;
-        const m = sub.textContent.match(/^(\d+)/);
+        // Owned tiles keep the count as the .sub's own text ("3 items").
+        // Shared tiles wrap it in the first <span>, with a role chip following —
+        // so target that span to avoid wiping the chip and to survive the
+        // leading whitespace an anchored ^\d+ would miss.
+        const countEl = sub.querySelector('span') || sub;
+        const m = countEl.textContent.match(/(\d+)/);
         if (!m) return;
         const n = Math.max(0, parseInt(m[1], 10) + delta);
-        sub.textContent = n + ' ' + (n === 1 ? 'item' : 'items');
+        countEl.textContent = n + ' ' + (n === 1 ? 'item' : 'items');
     }
 
     function fadeOutTile(tile) {

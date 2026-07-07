@@ -91,11 +91,40 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the department that the user belongs to
+     * Get the user's PRIMARY department (users.department_id). This is the one
+     * that drives Forms routing and is the "home" department in the UI.
      */
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * The user's SECONDARY departments (many-to-many via department_user).
+     * Optional extra departments a member is attached to beyond their primary —
+     * e.g. Computer Engineering staff who also teaches/takes a course in Nursing.
+     * These grant departmental-folder visibility but do NOT affect Forms routing.
+     */
+    public function secondaryDepartments()
+    {
+        return $this->belongsToMany(Department::class, 'department_user')
+            ->withTimestamps();
+    }
+
+    /**
+     * All departments the user is attached to — primary first, then secondaries,
+     * de-duplicated. Handy for "is this user in department X?" checks and for the
+     * departmental-folder audience.
+     *
+     * @return \Illuminate\Support\Collection<int, Department>
+     */
+    public function allDepartments(): \Illuminate\Support\Collection
+    {
+        return collect([$this->department])
+            ->merge($this->secondaryDepartments)
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 
     /**

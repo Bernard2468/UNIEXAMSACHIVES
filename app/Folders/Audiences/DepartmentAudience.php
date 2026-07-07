@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
- * Share with everyone whose primary department matches.
- * Note: a user has a single department_id — see the "teaches in A, takes a
- * course in B" case, which is covered by an additional individual/link share.
+ * Share with everyone attached to the department — its primary members
+ * (users.department_id) AND its secondary members (department_user pivot). The
+ * secondary side covers the "home department is Computer Engineering but also
+ * teaches/takes a course in Nursing" case, which used to need a manual
+ * per-person share. Secondary attachment is managed on the Manage Users page.
  */
 class DepartmentAudience implements FolderAudience
 {
@@ -31,11 +33,24 @@ class DepartmentAudience implements FolderAudience
 
     public function userValues(User $user): array
     {
-        return $user->department_id ? [(string) $user->department_id] : [];
+        return collect([$user->department_id])
+            ->merge($user->secondaryDepartments->pluck('id'))
+            ->filter()
+            ->unique()
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
     }
 
     public function membersQuery(string $value): Builder
     {
-        return User::query()->where('is_approve', true)->where('department_id', $value);
+        return User::query()->where('is_approve', true)
+            ->where(function ($q) use ($value) {
+                $q->where('department_id', $value)
+                    ->orWhereIn('id', function ($sub) use ($value) {
+                        $sub->select('user_id')->from('department_user')
+                            ->where('department_id', $value);
+                    });
+            });
     }
 }

@@ -828,7 +828,7 @@
                                                     </form>
                                                 @endif
 
-                                                <button type="button" class="action-btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}', '{{ $user->account_type ?? 'individual' }}')">
+                                                <button type="button" class="action-btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}', '{{ $user->account_type ?? 'individual' }}', '{{ $user->secondaryDepartments->pluck('id')->join(',') }}')">
                                                     <i class="fas fa-user-edit"></i>
                                                     Edit Info
                                                 </button>
@@ -912,7 +912,7 @@
                                                                 </button>
                                                             </form>
                                                             @endif
-                                                            <button type="button" class="uact edit" title="Edit Info (Email / Account Category / Department / Staff Category / Position)" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}', '{{ $user->account_type ?? 'individual' }}')">
+                                                            <button type="button" class="uact edit" title="Edit Info (Email / Account Category / Department / Staff Category / Position)" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}', '{{ $user->account_type ?? 'individual' }}', '{{ $user->secondaryDepartments->pluck('id')->join(',') }}')">
                                                                 <i class="fas fa-user-edit"></i>
                                                                 <span class="uact-label">Edit info</span>
                                                             </button>
@@ -1058,12 +1058,25 @@
                 <div class="form-group">
                     <div class="input-container">
                         <select name="department_id" id="add-user-department" class="animated-input" required>
-                            <option value="" disabled selected>Choose Department/Faculty/Unit</option>
+                            <option value="" disabled selected>Choose Primary Department/Faculty/Unit</option>
                             @foreach($departments as $department)
                                 <option value="{{ $department->id }}">{{ $department->name }}</option>
                             @endforeach
                         </select>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="dept-multi-label"><i class="fas fa-layer-group"></i> Secondary Departments <span class="dept-opt">optional</span></label>
+                    <div class="dept-multiselect" id="add-user-secondary-departments">
+                        @foreach($departments as $department)
+                            <label class="dept-check" data-dept-id="{{ $department->id }}">
+                                <input type="checkbox" name="secondary_department_ids[]" value="{{ $department->id }}">
+                                <span>{{ $department->name }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <small class="form-text text-muted">Extra departments this person also belongs to (e.g. teaches or takes a course elsewhere). They'll see those departments' shared folders.</small>
                 </div>
 
                 <div class="form-group">
@@ -1158,7 +1171,7 @@
             </div>
 
             <div class="efi-field">
-                <label class="efi-label"><i class="fas fa-building-columns"></i> Department / Faculty / Unit</label>
+                <label class="efi-label"><i class="fas fa-building-columns"></i> Primary Department / Faculty / Unit</label>
                 <div class="efi-control">
                     <select name="department_id" id="editInfoDepartment" class="efi-select" required>
                         <option value="" disabled>Choose department</option>
@@ -1168,6 +1181,19 @@
                     </select>
                     <i class="fas fa-chevron-down efi-control__chev"></i>
                 </div>
+            </div>
+
+            <div class="efi-field">
+                <label class="efi-label"><i class="fas fa-layer-group"></i> Secondary Departments <span class="efi-opt">optional</span></label>
+                <div class="efi-multiselect" id="editInfoSecondaryDepartments">
+                    @foreach($departments as $dept)
+                        <label class="efi-check" data-dept-id="{{ $dept->id }}">
+                            <input type="checkbox" name="secondary_department_ids[]" value="{{ $dept->id }}">
+                            <span>{{ $dept->name }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <p class="efi-hint">Extra departments this person also belongs to (e.g. teaches or takes a course elsewhere). They'll see those departments' shared folders. The primary can't be picked here.</p>
             </div>
 
             <div class="efi-grid">
@@ -1278,6 +1304,24 @@
 .efi-note{ display:flex; align-items:center; gap:8px; margin:4px 0 0; padding:10px 13px; border-radius:10px;
     font-size:.78rem; color:#64748b; background:#f5f6f8; border:1px solid #eef0f3; }
 .efi-note i{ color:#94a3b8; }
+
+/* Secondary-department checkbox list */
+.efi-multiselect{
+    max-height:168px; overflow-y:auto; padding:6px;
+    border:1px solid #e2e8f0; border-radius:12px; background:#fff;
+    display:flex; flex-direction:column; gap:2px; scrollbar-width:thin;
+}
+.efi-multiselect::-webkit-scrollbar{ width:8px }
+.efi-multiselect::-webkit-scrollbar-thumb{ background:#e2e8f0; border-radius:8px }
+.efi-check{
+    display:flex; align-items:center; gap:10px; margin:0; padding:9px 11px;
+    border-radius:9px; cursor:pointer; font-size:.9rem; font-weight:500; color:#0f172a;
+    transition:background .15s ease;
+}
+.efi-check:hover{ background:#f5f6f8; }
+.efi-check input{ width:16px; height:16px; accent-color:#0f172a; cursor:pointer; flex:0 0 auto; }
+.efi-check.is-locked{ opacity:.4; cursor:not-allowed; }
+.efi-check.is-locked span::after{ content:' (primary)'; color:#94a3b8; font-size:.75rem; }
 
 .efi-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:20px; padding-top:18px; border-top:1px solid #eef0f3; }
 .efi-btn{ padding:11px 22px; border-radius:11px; font-weight:600; font-size:.9rem; cursor:pointer; border:1px solid transparent; transition:.2s; }
@@ -1421,6 +1465,47 @@
     color: #64748b;
 }
 
+/* Secondary-department checkbox list (Add User modal) */
+.dept-multi-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #334155;
+}
+.dept-multi-label i { color: #94a3b8; }
+.dept-opt { font-weight: 500; color: #94a3b8; font-size: 0.85rem; }
+.dept-multiselect {
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 8px;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.dept-check {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 11px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #0f172a;
+    transition: background 0.15s ease;
+}
+.dept-check:hover { background: #eef2f7; }
+.dept-check input { width: 17px; height: 17px; accent-color: #2563eb; cursor: pointer; flex: 0 0 auto; }
+.dept-check.is-locked { opacity: 0.4; cursor: not-allowed; }
+.dept-check.is-locked span::after { content: ' (primary)'; color: #94a3b8; font-size: 0.8rem; }
+
 .form-actions-modal {
     display: flex;
     gap: 12px;
@@ -1505,6 +1590,9 @@ document.addEventListener('DOMContentLoaded', function() {
         addUserModal.style.display = 'none';
         document.body.style.overflow = 'auto';
         document.getElementById('addUserForm').reset();
+        if (typeof syncSecondaryDeptLock === 'function') {
+            syncSecondaryDeptLock('add-user-secondary-departments', '');
+        }
     }
     
     if (closeModalBtn) {
@@ -1553,7 +1641,24 @@ function toggleAddUserPasswordConfirm() {
     }
 }
 
-function openEditInfoModal(userId, userName, currentEmail, departmentId, staffCategory, positionId, accountType) {
+// Grey out the secondary-department checkbox that matches the chosen primary
+// (a department can't be both). The server also enforces this, but this keeps
+// the UI honest as the primary changes.
+function syncSecondaryDeptLock(containerId, primaryId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('.efi-check, .dept-check').forEach(function (label) {
+        const isPrimary = String(label.getAttribute('data-dept-id')) === String(primaryId);
+        const box = label.querySelector('input[type="checkbox"]');
+        label.classList.toggle('is-locked', isPrimary && !!primaryId);
+        if (box) {
+            box.disabled = isPrimary && !!primaryId;
+            if (isPrimary) box.checked = false;
+        }
+    });
+}
+
+function openEditInfoModal(userId, userName, currentEmail, departmentId, staffCategory, positionId, accountType, secondaryIds) {
     const modal = document.getElementById('editInfoModal');
     const form = document.getElementById('editInfoForm');
     const nameLabel = document.getElementById('editInfoUserName');
@@ -1575,10 +1680,33 @@ function openEditInfoModal(userId, userName, currentEmail, departmentId, staffCa
     document.getElementById('editInfoAccountType').value = accountType || 'individual';
     document.getElementById('editInfoPosition').value = positionId || '';
 
+    // Pre-check the user's current secondary departments.
+    const selected = String(secondaryIds || '').split(',').map(s => s.trim()).filter(Boolean);
+    document.querySelectorAll('#editInfoSecondaryDepartments input[type="checkbox"]').forEach(function (box) {
+        box.checked = selected.indexOf(String(box.value)) !== -1;
+    });
+    syncSecondaryDeptLock('editInfoSecondaryDepartments', departmentId);
+
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     emailInput.focus();
 }
+
+// Keep the secondary list in sync when the admin changes the primary.
+document.addEventListener('DOMContentLoaded', function () {
+    const editPrimary = document.getElementById('editInfoDepartment');
+    if (editPrimary) {
+        editPrimary.addEventListener('change', function () {
+            syncSecondaryDeptLock('editInfoSecondaryDepartments', this.value);
+        });
+    }
+    const addPrimary = document.getElementById('add-user-department');
+    if (addPrimary) {
+        addPrimary.addEventListener('change', function () {
+            syncSecondaryDeptLock('add-user-secondary-departments', this.value);
+        });
+    }
+});
 
 function closeEditInfoModal() {
     const modal = document.getElementById('editInfoModal');
