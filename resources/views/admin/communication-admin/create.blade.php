@@ -658,6 +658,98 @@
                                                 </div>
                                                 {{-- ===== END COMMITTEES ===== --}}
 
+                                                {{-- ===== DEPARTMENTS & LEADERSHIP ===== --}}
+                                                @php
+                                                    $deptModeSelected = old('recipient_type') === 'departments';
+                                                    $oldDepartments   = array_map('intval', (array) old('recipient_departments', []));
+                                                @endphp
+                                                <style>
+                                                    .departments-leadership-section { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0; }
+                                                    .departments-picker { margin-top: 16px; }
+                                                    .department-selector { margin-top: 12px; border: 2px solid #e2e8f0; border-radius: 12px; padding: 8px; max-height: 260px; overflow-y: auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+                                                    .department-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin: 0; border-radius: 8px; cursor: pointer; transition: background 0.2s ease; }
+                                                    .department-item:hover { background: #f8fafc; }
+                                                    .department-item input { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+                                                    .department-name { font-weight: 600; color: #374151; flex: 1; }
+                                                    .department-count { font-size: 12px; color: #6b7280; white-space: nowrap; }
+                                                    @media (max-width: 640px) { .department-selector { grid-template-columns: 1fr; } }
+                                                </style>
+                                                <div class="departments-leadership-section">
+                                                    <h6 class="section-title">Departments &amp; Leadership</h6>
+
+                                                    <div class="staff-category-grid">
+                                                        <div class="option-card">
+                                                            <input class="option-radio" type="radio" name="recipient_type"
+                                                                   id="all_hods" value="all_hods"
+                                                                   {{ old('recipient_type') === 'all_hods' ? 'checked' : '' }}>
+                                                            <label class="option-label" for="all_hods">
+                                                                <div class="option-icon"><i class="icofont-teacher"></i></div>
+                                                                <div class="option-content">
+                                                                    <strong>All HODs</strong>
+                                                                    <span class="option-desc">Send to every Head of Department ({{ $leadershipCounts['all_hods'] }} users)</span>
+                                                                </div>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="option-card">
+                                                            <input class="option-radio" type="radio" name="recipient_type"
+                                                                   id="all_deans" value="all_deans"
+                                                                   {{ old('recipient_type') === 'all_deans' ? 'checked' : '' }}>
+                                                            <label class="option-label" for="all_deans">
+                                                                <div class="option-icon"><i class="icofont-graduate"></i></div>
+                                                                <div class="option-content">
+                                                                    <strong>All Deans</strong>
+                                                                    <span class="option-desc">Send to every Dean ({{ $leadershipCounts['all_deans'] }} users)</span>
+                                                                </div>
+                                                            </label>
+                                                        </div>
+
+                                                        <div class="option-card">
+                                                            <input class="option-radio" type="radio" name="recipient_type"
+                                                                   id="all_directors" value="all_directors"
+                                                                   {{ old('recipient_type') === 'all_directors' ? 'checked' : '' }}>
+                                                            <label class="option-label" for="all_directors">
+                                                                <div class="option-icon"><i class="icofont-business-man"></i></div>
+                                                                <div class="option-content">
+                                                                    <strong>All Directors</strong>
+                                                                    <span class="option-desc">Send to every Director ({{ $leadershipCounts['all_directors'] }} users)</span>
+                                                                </div>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="departments-picker">
+                                                        <div class="option-card">
+                                                            <input class="option-radio" type="radio" name="recipient_type"
+                                                                   id="departments_mode" value="departments"
+                                                                   {{ $deptModeSelected ? 'checked' : '' }}>
+                                                            <label class="option-label" for="departments_mode">
+                                                                <div class="option-icon"><i class="icofont-building-alt"></i></div>
+                                                                <div class="option-content">
+                                                                    <strong>Specific Department(s)</strong>
+                                                                    <span class="option-desc">Choose one or more departments — every member receives the memo</span>
+                                                                </div>
+                                                            </label>
+                                                        </div>
+
+                                                        <div id="department-selector" class="department-selector" style="{{ $deptModeSelected ? '' : 'display:none;' }}">
+                                                            @forelse ($departments as $department)
+                                                                <label class="department-item" for="dept_{{ $department->id }}">
+                                                                    <input type="checkbox" class="department-checkbox" name="recipient_departments[]"
+                                                                           id="dept_{{ $department->id }}" value="{{ $department->id }}"
+                                                                           {{ in_array((int) $department->id, $oldDepartments, true) ? 'checked' : '' }}>
+                                                                    <span class="department-name">{{ $department->name }}</span>
+                                                                    <span class="department-count">{{ $department->members_count }} member{{ $department->members_count === 1 ? '' : 's' }}</span>
+                                                                </label>
+                                                            @empty
+                                                                <div class="alert alert-info" style="grid-column: 1 / -1; margin: 0;">
+                                                                    <i class="icofont-info-circle"></i> No departments have been created yet.
+                                                                </div>
+                                                            @endforelse
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                             </div>
 
                                         <div class="form-group">
@@ -2889,6 +2981,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const recipientType = document.querySelector('input[name="recipient_type"]:checked').value;
         if (recipientType === 'all') {
             previewRecipients.textContent = `Recipients: All users ({{ $users->count() }} users)`;
+        } else if (recipientType === 'departments') {
+            const deptCount = document.querySelectorAll('.department-checkbox:checked').length;
+            previewRecipients.textContent = `Recipients: ${deptCount} department${deptCount !== 1 ? 's' : ''}`;
         } else {
             const selectedCount = Array.from(userCheckboxes).filter(checkbox => checkbox.checked).length;
             previewRecipients.textContent = `Recipients: ${selectedCount} selected users`;
@@ -2902,6 +2997,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('selected_users').checked) {
         userSelector.style.display = 'block';
     }
+
+    // Reveal the department checklist only while "Specific Department(s)" is picked.
+    const departmentSelectorEl = document.getElementById('department-selector');
+    function syncDepartmentSelector() {
+        if (!departmentSelectorEl) return;
+        const sel = document.querySelector('input[name="recipient_type"]:checked');
+        departmentSelectorEl.style.display = (sel && sel.value === 'departments') ? 'block' : 'none';
+    }
+    document.querySelectorAll('input[name="recipient_type"]').forEach(function (radio) {
+        radio.addEventListener('change', syncDepartmentSelector);
+    });
+    syncDepartmentSelector();
     
     if (document.getElementById('schedule_send').checked) {
         scheduleDateTime.style.display = 'block';
@@ -2932,6 +3039,12 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (recipientType.value === 'selected') {
                 const selectedCount = Array.from(userCheckboxes).filter(checkbox => checkbox.checked).length;
                 modalRecipientsPreview.textContent = `${selectedCount} Selected User${selectedCount !== 1 ? 's' : ''}`;
+            } else if (recipientType.value === 'departments') {
+                const deptCount = document.querySelectorAll('.department-checkbox:checked').length;
+                modalRecipientsPreview.textContent = `${deptCount} Department${deptCount !== 1 ? 's' : ''}`;
+            } else if (['all_hods', 'all_deans', 'all_directors'].includes(recipientType.value)) {
+                const leadershipLabels = { all_hods: 'All HODs', all_deans: 'All Deans', all_directors: 'All Directors' };
+                modalRecipientsPreview.textContent = leadershipLabels[recipientType.value];
             } else {
                 // Staff category
                 const categoryLabels = {
@@ -3239,6 +3352,7 @@ function applyFormRequestMode() {
     const allCard    = document.getElementById('all_users') ? document.getElementById('all_users').closest('.option-card') : null;
     const staffSec   = document.querySelector('.staff-category-section');
     const committees = document.querySelector('.committees-section');
+    const deptLead   = document.querySelector('.departments-leadership-section');
     const hint       = document.getElementById('form-request-hint');
 
     if (formMode) {
@@ -3251,6 +3365,7 @@ function applyFormRequestMode() {
         if (allCard)    allCard.style.display = 'none';
         if (staffSec)   staffSec.style.display = 'none';
         if (committees) committees.style.display = 'none';
+        if (deptLead)   deptLead.style.display = 'none';
         if (hint)       hint.style.display = 'block';
 
         // Collapse any pre-existing multi-selection down to one, then refresh counts.
@@ -3261,6 +3376,7 @@ function applyFormRequestMode() {
         if (allCard)    allCard.style.display = '';
         if (staffSec)   staffSec.style.display = '';
         if (committees) committees.style.display = '';
+        if (deptLead)   deptLead.style.display = '';
         if (hint)       hint.style.display = 'none';
     }
 

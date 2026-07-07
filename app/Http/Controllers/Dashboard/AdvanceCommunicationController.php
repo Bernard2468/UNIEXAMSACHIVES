@@ -9,6 +9,7 @@ use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
 use App\Models\User;
 use App\Models\Committee;
+use App\Models\Department;
 use App\Models\SystemLetterhead;
 use App\Models\Notification;
 use App\Services\ResendMailService;
@@ -110,7 +111,9 @@ class AdvanceCommunicationController extends Controller
 
         $letterheads = SystemLetterhead::active()->ordered()->get();
 
-        return view('admin.communication.create', compact('users', 'staffCategoryCounts', 'committees', 'letterheads'));
+        ['departments' => $departments, 'leadershipCounts' => $leadershipCounts] = $this->recipientDepartmentData();
+
+        return view('admin.communication.create', compact('users', 'staffCategoryCounts', 'committees', 'letterheads', 'departments', 'leadershipCounts'));
     }
 
     public function store(Request $request)
@@ -148,7 +151,7 @@ class AdvanceCommunicationController extends Controller
             'subject' => 'required|string|max:500',
             'message' => 'required|string',
             'recipient_type' => ['required', function ($attribute, $value, $fail) use ($isFormRequest) {
-                $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching'];
+                $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching', 'all_hods', 'all_deans', 'all_directors', 'departments'];
                 // Also allow committee_* format
                 if (!in_array($value, $validTypes) && !str_starts_with($value, 'committee_')) {
                     $fail('Invalid recipient type selected.');
@@ -163,6 +166,8 @@ class AdvanceCommunicationController extends Controller
                 }
             }],
             'selected_users.*' => 'exists:users,id',
+            'recipient_departments' => ['required_if:recipient_type,departments', 'array'],
+            'recipient_departments.*' => ['integer', 'exists:departments,id'],
             'memo_category' => 'nullable|in:promotion,procurement,leave,other',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
             'letterhead' => 'nullable|string|exists:system_letterheads,slug',
@@ -208,8 +213,14 @@ class AdvanceCommunicationController extends Controller
             }
         }
 
+        // For "departments" the selection carries department ids (not user ids);
+        // every other recipient type keeps passing selected_users through unchanged.
+        $recipientSelection = $request->recipient_type === 'departments'
+            ? array_map('intval', (array) $request->input('recipient_departments', []))
+            : $request->selected_users;
+
         // Get recipients using helper method
-        $recipientUsers = $this->getRecipientsByType($request->recipient_type, $request->selected_users);
+        $recipientUsers = $this->getRecipientsByType($request->recipient_type, $recipientSelection);
 
         // Resolve CC users (exclude anyone already in primary recipient list)
         $ccUserIds = collect($request->input('cc_users', []))->map(fn ($id) => (int) $id)->unique()->values()->toArray();
@@ -229,7 +240,9 @@ class AdvanceCommunicationController extends Controller
             'message' => $request->message,
             'attachments' => $attachmentPaths,
             'recipient_type' => $request->recipient_type,
-            'selected_users' => $request->recipient_type === 'selected' ? $recipientUsers->pluck('id')->toArray() : null,
+            'selected_users' => $request->recipient_type === 'selected'
+                ? $recipientUsers->pluck('id')->toArray()
+                : ($request->recipient_type === 'departments' ? $recipientSelection : null),
             'status' => $isDraft ? 'draft' : ($isScheduled ? 'scheduled' : 'sending'),
             'scheduled_at' => $isDraft ? null : ($request->scheduled_at ?? now()),
             'total_recipients' => $recipientUsers->count(),
@@ -530,7 +543,7 @@ class AdvanceCommunicationController extends Controller
             'subject' => 'required|string|max:500',
             'message' => 'required|string',
             'recipient_type' => ['required', function ($attribute, $value, $fail) {
-                $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching'];
+                $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching', 'all_hods', 'all_deans', 'all_directors', 'departments'];
                 // Also allow committee_* format
                 if (!in_array($value, $validTypes) && !str_starts_with($value, 'committee_')) {
                     $fail('Invalid recipient type selected.');
@@ -538,6 +551,8 @@ class AdvanceCommunicationController extends Controller
             }],
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
+            'recipient_departments' => ['required_if:recipient_type,departments', 'array'],
+            'recipient_departments.*' => ['integer', 'exists:departments,id'],
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
         ]);
 
@@ -1018,7 +1033,9 @@ class AdvanceCommunicationController extends Controller
 
         $letterheads = SystemLetterhead::active()->ordered()->get();
 
-        return view('admin.communication-admin.create', compact('users', 'staffCategoryCounts', 'committees', 'letterheads'));
+        ['departments' => $departments, 'leadershipCounts' => $leadershipCounts] = $this->recipientDepartmentData();
+
+        return view('admin.communication-admin.create', compact('users', 'staffCategoryCounts', 'committees', 'letterheads', 'departments', 'leadershipCounts'));
     }
 
     public function adminStore(Request $request)
@@ -1054,7 +1071,7 @@ class AdvanceCommunicationController extends Controller
             'subject' => 'required|string|max:500',
             'message' => 'required|string',
             'recipient_type' => ['required', function ($attribute, $value, $fail) use ($isFormRequest) {
-                $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching'];
+                $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching', 'all_hods', 'all_deans', 'all_directors', 'departments'];
                 if (!in_array($value, $validTypes) && !str_starts_with($value, 'committee_')) {
                     $fail('Invalid recipient type selected.');
                 }
@@ -1068,6 +1085,8 @@ class AdvanceCommunicationController extends Controller
                 }
             }],
             'selected_users.*' => 'exists:users,id',
+            'recipient_departments' => ['required_if:recipient_type,departments', 'array'],
+            'recipient_departments.*' => ['integer', 'exists:departments,id'],
             'memo_category' => 'nullable|in:promotion,procurement,leave,other',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
             'send_immediately' => 'boolean',
@@ -1113,8 +1132,14 @@ class AdvanceCommunicationController extends Controller
             }
         }
 
+        // For "departments" the selection carries department ids (not user ids);
+        // every other recipient type keeps passing selected_users through unchanged.
+        $recipientSelection = $request->recipient_type === 'departments'
+            ? array_map('intval', (array) $request->input('recipient_departments', []))
+            : $request->selected_users;
+
         // Get recipients using helper method
-        $recipientUsers = $this->getRecipientsByType($request->recipient_type, $request->selected_users);
+        $recipientUsers = $this->getRecipientsByType($request->recipient_type, $recipientSelection);
 
         // Resolve CC users (exclude anyone already in primary recipient list)
         $ccUserIds = collect($request->input('cc_users', []))->map(fn ($id) => (int) $id)->unique()->values()->toArray();
@@ -1134,7 +1159,9 @@ class AdvanceCommunicationController extends Controller
             'message' => $request->message,
             'attachments' => $attachmentPaths,
             'recipient_type' => $request->recipient_type,
-            'selected_users' => $request->recipient_type === 'selected' ? $recipientUsers->pluck('id')->toArray() : null,
+            'selected_users' => $request->recipient_type === 'selected'
+                ? $recipientUsers->pluck('id')->toArray()
+                : ($request->recipient_type === 'departments' ? $recipientSelection : null),
             'status' => $isDraft ? 'draft' : ($isScheduled ? 'scheduled' : 'sending'),
             'scheduled_at' => $isDraft ? null : ($request->scheduled_at ?? now()),
             'total_recipients' => $recipientUsers->count(),
@@ -1421,7 +1448,7 @@ class AdvanceCommunicationController extends Controller
             'subject' => 'required|string|max:500',
             'message' => 'required|string',
             'recipient_type' => ['required', function ($attribute, $value, $fail) {
-                $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching'];
+                $validTypes = ['all', 'selected', 'junior_staff', 'senior_staff', 'senior_member_non_teaching', 'senior_member_teaching', 'all_hods', 'all_deans', 'all_directors', 'departments'];
                 // Also allow committee_* format
                 if (!in_array($value, $validTypes) && !str_starts_with($value, 'committee_')) {
                     $fail('Invalid recipient type selected.');
@@ -1429,6 +1456,8 @@ class AdvanceCommunicationController extends Controller
             }],
             'selected_users' => 'required_if:recipient_type,selected|array',
             'selected_users.*' => 'exists:users,id',
+            'recipient_departments' => ['required_if:recipient_type,departments', 'array'],
+            'recipient_departments.*' => ['integer', 'exists:departments,id'],
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
             'send_immediately' => 'boolean',
             'scheduled_at' => $isDraft ? 'nullable|date' : 'nullable|required_if:send_immediately,false|date|after:now',
@@ -2047,6 +2076,36 @@ class AdvanceCommunicationController extends Controller
     /**
      * Get recipients based on recipient type
      */
+    /**
+     * Data for the "Departments & Leadership" recipient picker on the compose page:
+     * every department with its approved-member count (primary + secondary
+     * department membership), plus how many approved users sit in each leadership
+     * category (HOD / Dean / Director, keyed off Position.category).
+     *
+     * @return array{departments: \Illuminate\Support\Collection, leadershipCounts: array<string,int>}
+     */
+    private function recipientDepartmentData(): array
+    {
+        $departments = Department::orderBy('name')->get()->map(function ($dept) {
+            $dept->members_count = User::where('is_approve', true)
+                ->where(function ($q) use ($dept) {
+                    $q->where('department_id', $dept->id)
+                      ->orWhereHas('secondaryDepartments', fn ($sq) => $sq->where('departments.id', $dept->id));
+                })
+                ->count();
+
+            return $dept;
+        });
+
+        $leadershipCounts = [
+            'all_hods'      => User::where('is_approve', true)->whereHas('position', fn ($q) => $q->where('category', 'hod'))->count(),
+            'all_deans'     => User::where('is_approve', true)->whereHas('position', fn ($q) => $q->where('category', 'dean'))->count(),
+            'all_directors' => User::where('is_approve', true)->whereHas('position', fn ($q) => $q->where('category', 'director'))->count(),
+        ];
+
+        return ['departments' => $departments, 'leadershipCounts' => $leadershipCounts];
+    }
+
     private function getRecipientsByType($recipientType, $selectedUsers = null)
     {
         if ($recipientType === 'all') {
@@ -2079,8 +2138,39 @@ class AdvanceCommunicationController extends Controller
                 // Get all users who belong to this committee
                 return $committee->users()->where('is_approve', true)->get();
             }
-            
+
             return collect();
+        } elseif (in_array($recipientType, ['all_hods', 'all_deans', 'all_directors'], true)) {
+            // Leadership pools — resolve by Position.category (the same categories the
+            // Forms workflow uses for HOD / Dean / Director routing).
+            $categoryMap = [
+                'all_hods'      => 'hod',
+                'all_deans'     => 'dean',
+                'all_directors' => 'director',
+            ];
+
+            return User::where('is_approve', true)
+                      ->whereHas('position', fn ($q) => $q->where('category', $categoryMap[$recipientType]))
+                      ->get();
+        } elseif ($recipientType === 'departments') {
+            // For "departments" the $selectedUsers argument carries the chosen
+            // DEPARTMENT ids (not user ids). Members = anyone whose primary OR
+            // secondary department is in the selected set.
+            $departmentIds = collect($selectedUsers ?? [])
+                ->map(fn ($id) => (int) $id)
+                ->filter()
+                ->values();
+
+            if ($departmentIds->isEmpty()) {
+                return collect();
+            }
+
+            return User::where('is_approve', true)
+                      ->where(function ($q) use ($departmentIds) {
+                          $q->whereIn('department_id', $departmentIds)
+                            ->orWhereHas('secondaryDepartments', fn ($sq) => $sq->whereIn('departments.id', $departmentIds));
+                      })
+                      ->get();
         } else {
             return collect();
         }
