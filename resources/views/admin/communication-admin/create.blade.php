@@ -716,9 +716,6 @@
                                                                 </div>
                                                             </label>
                                                         </div>
-                                                    </div>
-
-                                                    <div class="departments-picker">
                                                         <div class="option-card">
                                                             <input class="option-radio" type="radio" name="recipient_type"
                                                                    id="departments_mode" value="departments"
@@ -731,22 +728,22 @@
                                                                 </div>
                                                             </label>
                                                         </div>
+                                                    </div>
 
-                                                        <div id="department-selector" class="department-selector" style="{{ $deptModeSelected ? '' : 'display:none;' }}">
-                                                            @forelse ($departments as $department)
-                                                                <label class="department-item" for="dept_{{ $department->id }}">
-                                                                    <input type="checkbox" class="department-checkbox" name="recipient_departments[]"
-                                                                           id="dept_{{ $department->id }}" value="{{ $department->id }}"
-                                                                           {{ in_array((int) $department->id, $oldDepartments, true) ? 'checked' : '' }}>
-                                                                    <span class="department-name">{{ $department->name }}</span>
-                                                                    <span class="department-count">{{ $department->members_count }} member{{ $department->members_count === 1 ? '' : 's' }}</span>
-                                                                </label>
-                                                            @empty
-                                                                <div class="alert alert-info" style="grid-column: 1 / -1; margin: 0;">
-                                                                    <i class="icofont-info-circle"></i> No departments have been created yet.
-                                                                </div>
-                                                            @endforelse
-                                                        </div>
+                                                    <div id="department-selector" class="department-selector" style="{{ $deptModeSelected ? '' : 'display:none;' }}">
+                                                        @forelse ($departments as $department)
+                                                            <label class="department-item" for="dept_{{ $department->id }}">
+                                                                <input type="checkbox" class="department-checkbox" name="recipient_departments[]"
+                                                                       id="dept_{{ $department->id }}" value="{{ $department->id }}"
+                                                                       {{ in_array((int) $department->id, $oldDepartments, true) ? 'checked' : '' }}>
+                                                                <span class="department-name">{{ $department->name }}</span>
+                                                                <span class="department-count">{{ $department->members_count }} member{{ $department->members_count === 1 ? '' : 's' }}</span>
+                                                            </label>
+                                                        @empty
+                                                            <div class="alert alert-info" style="grid-column: 1 / -1; margin: 0;">
+                                                                <i class="icofont-info-circle"></i> No departments have been created yet.
+                                                            </div>
+                                                        @endforelse
                                                     </div>
                                                 </div>
 
