@@ -758,7 +758,7 @@
 .qa-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .qa-field input[type=text], .qa-field input[type=date], .qa-field select {
     width:100%; padding: 10px 13px; border:1.5px solid #e2e8f0; border-radius:9px;
-    font-size:13.5px; color:#1e293b; background:#fff; font-family:inherit; outline:none;
+    font-size:13.5px; color:#1e293b; background:#fff; font-family:var(--qa-font-ui); outline:none;
     transition: border-color .15s, box-shadow .15s; -webkit-appearance:none; appearance:none; }
 .qa-field select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -792,6 +792,50 @@
 .qa-btn.primary:hover { background:#0284c7; box-shadow:0 6px 16px rgba(14,165,233,.3); }
 .qa-btn.primary:disabled { background:#93c5e8; cursor:not-allowed; box-shadow:none; }
 @media (max-width: 520px) { .qa-grid { grid-template-columns: 1fr; } }
+
+/* ---- Type system: mirrors the share drawer — Sora (display), Outfit
+   (controls), DM Sans (reading text). These modals render outside
+   .folder-page-root, so they declare their own faces explicitly. ---- */
+.qa-modal {
+    --qa-font-display: 'Sora', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --qa-font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --qa-font-text: 'DM Sans', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--qa-font-text);
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;
+}
+.qa-modal p, .qa-modal span, .qa-modal label, .qa-modal a, .qa-modal div { font-family: inherit; }
+.qa-modal button, .qa-modal select, .qa-modal input, .qa-modal textarea { font-family: var(--qa-font-ui); }
+.qa-modal .qa-head-title h3, .qa-modal .qa-step-label { font-family: var(--qa-font-display); }
+.qa-modal .fas, .qa-modal .far, .qa-modal .fab,
+.qa-modal [class^="fa-"], .qa-modal [class*=" fa-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "FontAwesome" !important;
+}
+
+/* ---- Stepper (exam modal) — solid colors, no gradients ---- */
+.qa-steps { display:flex; align-items:center; justify-content:center; margin: 2px 0 20px; }
+.qa-step { display:flex; align-items:center; gap:9px; cursor:default; }
+.qa-step-dot { width:30px; height:30px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background:#eef2f7; color:#94a3b8; font-size:12.5px; font-weight:700;
+    border:2px solid #eef2f7; transition: background .2s, color .2s, border-color .2s; }
+.qa-step-label { font-size:12.5px; font-weight:600; color:#94a3b8; white-space:nowrap; transition: color .2s; }
+.qa-step-line { width:40px; height:2px; background:#eef2f7; margin:0 12px; border-radius:2px;
+    flex-shrink:0; transition: background .2s; }
+.qa-step.is-active .qa-step-dot { background:#0ea5e9; color:#fff; border-color:#0ea5e9; }
+.qa-step.is-active .qa-step-label { color:#0f172a; }
+.qa-step.is-done { cursor:pointer; }
+.qa-step.is-done .qa-step-dot { background:#0284c7; color:#fff; border-color:#0284c7; }
+.qa-step.is-done .qa-step-label { color:#475569; }
+.qa-step-line.is-done { background:#0284c7; }
+.qa-panel { display:none; }
+.qa-panel.is-active { display:block; animation: qaPanelIn .25s ease; }
+@keyframes qaPanelIn { from { opacity:0; transform: translateX(10px);} to {opacity:1; transform:none;} }
+.qa-foot--stepper { justify-content: space-between; }
+.qa-foot-right { display:flex; align-items:center; gap:10px; }
+@media (max-width: 480px) {
+    .qa-step-label { display:none; }
+    .qa-step-line { width:22px; margin:0 7px; }
+}
 </style>
 
 {{-- Quick-add: FILE --}}
@@ -854,91 +898,116 @@
             @csrf
             <div class="qa-body">
                 <div class="qa-errors"><i class="fas fa-triangle-exclamation"></i><span></span></div>
-                <div class="qa-grid">
-                    <div class="qa-field">
-                        <label>Staff ID <span class="qa-req">*</span></label>
-                        <input type="text" name="student_id" placeholder="e.g. STF-00123" required>
+
+                {{-- Step indicator --}}
+                <div class="qa-steps" id="qaExamSteps">
+                    <div class="qa-step is-active" data-step="1"><span class="qa-step-dot">1</span><span class="qa-step-label">Course</span></div>
+                    <span class="qa-step-line"></span>
+                    <div class="qa-step" data-step="2"><span class="qa-step-dot">2</span><span class="qa-step-label">Exam</span></div>
+                    <span class="qa-step-line"></span>
+                    <div class="qa-step" data-step="3"><span class="qa-step-dot">3</span><span class="qa-step-label">Upload</span></div>
+                </div>
+
+                {{-- STEP 1 · Course --}}
+                <div class="qa-panel is-active" data-panel="1">
+                    <div class="qa-grid">
+                        <div class="qa-field">
+                            <label>Staff ID <span class="qa-req">*</span></label>
+                            <input type="text" name="student_id" placeholder="e.g. STF-00123" required>
+                        </div>
+                        <div class="qa-field">
+                            <label>Course code <span class="qa-req">*</span></label>
+                            <input type="text" name="course_code" placeholder="e.g. CS101" required>
+                        </div>
                     </div>
                     <div class="qa-field">
-                        <label>Course code <span class="qa-req">*</span></label>
-                        <input type="text" name="course_code" placeholder="e.g. CS101" required>
+                        <label>Course title <span class="qa-req">*</span></label>
+                        <input type="text" name="course_title" placeholder="e.g. Introduction to Computer Science" required>
+                    </div>
+                    <div class="qa-grid">
+                        <div class="qa-field">
+                            <label>Semester <span class="qa-req">*</span></label>
+                            <select name="semester" required>
+                                <option value="First Semester">First Semester</option>
+                                <option value="Second Semester">Second Semester</option>
+                            </select>
+                        </div>
+                        <div class="qa-field">
+                            <label>Academic year <span class="qa-req">*</span></label>
+                            <select name="academic_year" required>
+                                @forelse($academicYears as $y)
+                                    <option value="{{ $y->year }}">{{ $y->year }}</option>
+                                @empty
+                                    <option value="" disabled selected>No academic year added</option>
+                                @endforelse
+                            </select>
+                        </div>
                     </div>
                 </div>
-                <div class="qa-field">
-                    <label>Course title <span class="qa-req">*</span></label>
-                    <input type="text" name="course_title" placeholder="e.g. Introduction to Computer Science" required>
-                </div>
-                <div class="qa-grid">
-                    <div class="qa-field">
-                        <label>Semester <span class="qa-req">*</span></label>
-                        <select name="semester" required>
-                            <option value="First Semester">First Semester</option>
-                            <option value="Second Semester">Second Semester</option>
-                        </select>
+
+                {{-- STEP 2 · Exam --}}
+                <div class="qa-panel" data-panel="2">
+                    <div class="qa-grid">
+                        <div class="qa-field">
+                            <label>Exam type <span class="qa-req">*</span></label>
+                            <select name="exams_type" required>
+                                <option value="Midterm">Midterm</option>
+                                <option value="Final Exams">Final Exams</option>
+                                <option value="Quiz">Quiz</option>
+                            </select>
+                        </div>
+                        <div class="qa-field">
+                            <label>Exam format <span class="qa-req">*</span></label>
+                            <select name="exam_format" required>
+                                <option value="In-Person Written">In-Person Written</option>
+                                <option value="Online">Online</option>
+                                <option value="Take-Home">Take-Home</option>
+                                <option value="Oral">Oral</option>
+                                <option value="Practical">Practical</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="qa-field">
-                        <label>Academic year <span class="qa-req">*</span></label>
-                        <select name="academic_year" required>
-                            @forelse($academicYears as $y)
-                                <option value="{{ $y->year }}">{{ $y->year }}</option>
-                            @empty
-                                <option value="" disabled selected>No academic year added</option>
-                            @endforelse
-                        </select>
-                    </div>
-                </div>
-                <div class="qa-grid">
-                    <div class="qa-field">
-                        <label>Exam type <span class="qa-req">*</span></label>
-                        <select name="exams_type" required>
-                            <option value="Midterm">Midterm</option>
-                            <option value="Final Exams">Final Exams</option>
-                            <option value="Quiz">Quiz</option>
-                        </select>
-                    </div>
-                    <div class="qa-field">
-                        <label>Exam format <span class="qa-req">*</span></label>
-                        <select name="exam_format" required>
-                            <option value="In-Person Written">In-Person Written</option>
-                            <option value="Online">Online</option>
-                            <option value="Take-Home">Take-Home</option>
-                            <option value="Oral">Oral</option>
-                            <option value="Practical">Practical</option>
-                        </select>
+                    <div class="qa-grid">
+                        <div class="qa-field">
+                            <label>Exam date <span class="qa-req">*</span></label>
+                            <input type="date" name="exam_date" max="{{ now()->toDateString() }}" required>
+                        </div>
+                        <div class="qa-field">
+                            <label>Duration <span class="qa-req">*</span></label>
+                            <input type="text" name="duration" placeholder="e.g. 2 hours" required>
+                        </div>
                     </div>
                 </div>
-                <div class="qa-grid">
+
+                {{-- STEP 3 · Upload --}}
+                <div class="qa-panel" data-panel="3">
                     <div class="qa-field">
-                        <label>Exam date <span class="qa-req">*</span></label>
-                        <input type="date" name="exam_date" max="{{ now()->toDateString() }}" required>
+                        <label>Exam document <span class="qa-req">*</span></label>
+                        <label class="qa-drop">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>Click to choose — PDF or DOCX</span>
+                            <input type="file" name="exam_document" accept=".pdf,.docx" required>
+                        </label>
+                        <div class="qa-file-name"><i class="fas fa-circle-check"></i> <span class="qa-fn-text"></span></div>
                     </div>
                     <div class="qa-field">
-                        <label>Duration <span class="qa-req">*</span></label>
-                        <input type="text" name="duration" placeholder="e.g. 2 hours" required>
+                        <label>Answer key <span class="qa-opt">(optional)</span></label>
+                        <label class="qa-drop">
+                            <i class="fas fa-key"></i>
+                            <span>Click to choose — PDF or DOCX</span>
+                            <input type="file" name="answer_key" accept=".pdf,.docx">
+                        </label>
+                        <div class="qa-file-name"><i class="fas fa-circle-check"></i> <span class="qa-fn-text"></span></div>
                     </div>
-                </div>
-                <div class="qa-field">
-                    <label>Exam document <span class="qa-req">*</span></label>
-                    <label class="qa-drop">
-                        <i class="fas fa-file-pdf"></i>
-                        <span>Click to choose — PDF or DOCX</span>
-                        <input type="file" name="exam_document" accept=".pdf,.docx" required>
-                    </label>
-                    <div class="qa-file-name"><i class="fas fa-circle-check"></i> <span class="qa-fn-text"></span></div>
-                </div>
-                <div class="qa-field">
-                    <label>Answer key <span class="qa-opt">(optional)</span></label>
-                    <label class="qa-drop">
-                        <i class="fas fa-key"></i>
-                        <span>Click to choose — PDF or DOCX</span>
-                        <input type="file" name="answer_key" accept=".pdf,.docx">
-                    </label>
-                    <div class="qa-file-name"><i class="fas fa-circle-check"></i> <span class="qa-fn-text"></span></div>
                 </div>
             </div>
-            <div class="qa-foot">
-                <button type="button" class="qa-btn ghost" data-qa-close>Cancel</button>
-                <button type="submit" class="qa-btn primary"><i class="fas fa-check"></i> Create &amp; add</button>
+            <div class="qa-foot qa-foot--stepper">
+                <button type="button" class="qa-btn ghost qa-step-back" data-qa-back><i class="fas fa-arrow-left"></i> Back</button>
+                <div class="qa-foot-right">
+                    <button type="button" class="qa-btn ghost" data-qa-close>Cancel</button>
+                    <button type="button" class="qa-btn primary qa-step-next" data-qa-next>Next <i class="fas fa-arrow-right"></i></button>
+                    <button type="submit" class="qa-btn primary qa-step-done" data-qa-done style="display:none;"><i class="fas fa-check"></i> Create &amp; add</button>
+                </div>
             </div>
         </form>
     </div>
@@ -2784,10 +2853,12 @@ body.mdrawer-lock { overflow: hidden; }
     function qaOpen(kind) {
         const m = kind === 'file' ? qaFile : qaExam;
         if (!m) return;
+        if (kind === 'exam') qeReset();   // always start the wizard at step 1
         m.classList.add('open');
         document.body.classList.add('mdrawer-lock');
         setTimeout(function () {
-            const first = m.querySelector('.qa-body input:not([type=file]), .qa-body select');
+            const first = m.querySelector('.qa-panel.is-active input:not([type=file]), .qa-panel.is-active select')
+                || m.querySelector('.qa-body input:not([type=file]), .qa-body select');
             if (first) first.focus();
         }, 60);
     }
@@ -2859,6 +2930,7 @@ body.mdrawer-lock { overflow: hidden; }
                 const item = kind === 'file' ? data.file : data.exam;
                 form.reset();
                 form.querySelectorAll('.qa-file-name').forEach(function (el) { el.classList.remove('show'); });
+                if (kind === 'exam') qeReset();
                 qaClose(modal);
                 // Land on the matching tab, then inject + select the new record.
                 aiSwitch(kind === 'file' ? 'files' : 'exams');
@@ -2872,12 +2944,90 @@ body.mdrawer-lock { overflow: hidden; }
                     const field = form.querySelector('[name="' + k + '"]');
                     if (field) field.classList.add('qa-field-err');
                 });
+                if (kind === 'exam') qeGo(1);
                 qaShowErrors(errBox, msgs.length ? msgs : [data.message || 'Please check the form and try again.']);
             } else {
                 qaShowErrors(errBox, [data.message || ('Could not save (status ' + (res.status || '?') + ').')]);
             }
         });
     }
+
+    // ---- Exam modal: stepper navigation (short panels, back/forward) ----
+    const qeForm = qaExam ? document.getElementById('qaddExamForm') : null;
+    const qeStepsWrap = document.getElementById('qaExamSteps');
+    const qeSteps = qeStepsWrap ? Array.prototype.slice.call(qeStepsWrap.querySelectorAll('.qa-step')) : [];
+    const qeLines = qeStepsWrap ? Array.prototype.slice.call(qeStepsWrap.querySelectorAll('.qa-step-line')) : [];
+    const qePanels = qeForm ? Array.prototype.slice.call(qeForm.querySelectorAll('.qa-panel')) : [];
+    const qeBack = qeForm ? qeForm.querySelector('[data-qa-back]') : null;
+    const qeNext = qeForm ? qeForm.querySelector('[data-qa-next]') : null;
+    const qeDone = qeForm ? qeForm.querySelector('[data-qa-done]') : null;
+    const QE_TOTAL = qePanels.length;
+    let qeStep = 1;
+
+    function qeRender() {
+        if (!QE_TOTAL) return;
+        qePanels.forEach(function (p) { p.classList.toggle('is-active', parseInt(p.getAttribute('data-panel'), 10) === qeStep); });
+        qeSteps.forEach(function (s) {
+            const n = parseInt(s.getAttribute('data-step'), 10);
+            s.classList.toggle('is-active', n === qeStep);
+            s.classList.toggle('is-done', n < qeStep);
+            const dot = s.querySelector('.qa-step-dot');
+            if (dot) dot.innerHTML = (n < qeStep) ? '<i class="fas fa-check"></i>' : String(n);
+        });
+        qeLines.forEach(function (ln, i) { ln.classList.toggle('is-done', (i + 1) < qeStep); });
+        if (qeBack) qeBack.style.visibility = (qeStep === 1) ? 'hidden' : 'visible';
+        if (qeNext) qeNext.style.display = (qeStep >= QE_TOTAL) ? 'none' : '';
+        if (qeDone) qeDone.style.display = (qeStep >= QE_TOTAL) ? '' : 'none';
+    }
+    function qeValidate(step) {
+        let panel = null;
+        for (let i = 0; i < qePanels.length; i++) {
+            if (parseInt(qePanels[i].getAttribute('data-panel'), 10) === step) { panel = qePanels[i]; break; }
+        }
+        if (!panel) return true;
+        const controls = panel.querySelectorAll('input, select, textarea');
+        for (let i = 0; i < controls.length; i++) {
+            if (!controls[i].checkValidity()) { controls[i].reportValidity(); return false; }
+        }
+        return true;
+    }
+    function qeGo(step) {
+        if (!QE_TOTAL) return;
+        qeStep = Math.min(Math.max(step, 1), QE_TOTAL);
+        qeRender();
+        const body = qeForm ? qeForm.querySelector('.qa-body') : null;
+        if (body) body.scrollTop = 0;
+    }
+    function qeReset() { if (QE_TOTAL) { qeStep = 1; qeRender(); } }
+
+    if (qeNext) qeNext.addEventListener('click', function () { if (qeValidate(qeStep)) qeGo(qeStep + 1); });
+    if (qeBack) qeBack.addEventListener('click', function () { qeGo(qeStep - 1); });
+    qeSteps.forEach(function (s) {
+        s.addEventListener('click', function () {
+            const n = parseInt(s.getAttribute('data-step'), 10);
+            if (n && n < qeStep) qeGo(n);   // jump backwards only
+        });
+    });
+    // If native validation on the final submit trips a required field that lives
+    // on a hidden step, surface that step so the control is visible + focusable.
+    if (qeForm) {
+        qeForm.addEventListener('invalid', function (e) {
+            const panel = (e.target && e.target.closest) ? e.target.closest('.qa-panel') : null;
+            if (!panel) return;
+            const n = parseInt(panel.getAttribute('data-panel'), 10);
+            if (n && n !== qeStep) qeGo(n);
+        }, true);
+        // Enter in a text field advances the wizard instead of submitting early.
+        qeForm.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            const t = e.target;
+            if (t && t.tagName === 'INPUT' && t.type !== 'file' && qeStep < QE_TOTAL) {
+                e.preventDefault();
+                if (qeValidate(qeStep)) qeGo(qeStep + 1);
+            }
+        });
+    }
+    if (QE_TOTAL) qeReset();
 
     if (qaFile || qaExam) {
         [qaFile, qaExam].forEach(function (m) {
