@@ -118,9 +118,14 @@
                                          are locked here and can only be changed by an administrator. --}}
                                     <div class="sp-grid">
                                         <div class="sp-field sp-field--full">
-                                            <label class="sp-label">Department / Faculty / Unit</label>
+                                            <label class="sp-label">Primary Department / Faculty / Unit</label>
                                             <input class="sp-input" type="text" value="{{ $data->department->name ?? '—' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
                                             <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>Can only be changed by System Administrator</small>
+                                        </div>
+                                        <div class="sp-field sp-field--full">
+                                            <label class="sp-label">Secondary Departments</label>
+                                            <input class="sp-input" type="text" value="{{ $data->secondaryDepartments->pluck('name')->join(', ') ?: 'None' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>Additional departments you belong to. Can only be changed by System Administrator.</small>
                                         </div>
                                         <div class="sp-field">
                                             <label class="sp-label">Staff category</label>
