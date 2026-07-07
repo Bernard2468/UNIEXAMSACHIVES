@@ -741,6 +741,7 @@
     background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd;
     display:flex; align-items:center; justify-content:center; font-size:16px; }
 .qa-head-ic.exam { background:#f5f3ff; color:#7c3aed; border-color:#ddd6fe; }
+.qa-head-ic img { width:26px; height:26px; object-fit:contain; display:block; }
 .qa-head-title h3 { margin:0; font-size:17px; font-weight:700; color:#0f172a; letter-spacing:-.01em; }
 .qa-head-title p { margin:2px 0 0; font-size:12.5px; color:#94a3b8; }
 .qa-close { width:34px; height:34px; border-radius:9px; flex-shrink:0;
@@ -843,7 +844,7 @@
     <div class="qa-modal" role="dialog" aria-modal="true" aria-label="Add a file">
         <div class="qa-head">
             <div class="qa-head-title">
-                <span class="qa-head-ic"><i class="fas fa-file-arrow-up"></i></span>
+                <span class="qa-head-ic"><img src="{{ $iconFiles }}" alt="" aria-hidden="true"></span>
                 <div style="min-width:0;">
                     <h3>Add a file</h3>
                     <p>Deposit a new file, then add it to this folder</p>
@@ -886,7 +887,7 @@
     <div class="qa-modal" role="dialog" aria-modal="true" aria-label="Add an exam">
         <div class="qa-head">
             <div class="qa-head-title">
-                <span class="qa-head-ic exam"><i class="fas fa-file-signature"></i></span>
+                <span class="qa-head-ic exam"><img src="{{ $iconExams }}" alt="" aria-hidden="true"></span>
                 <div style="min-width:0;">
                     <h3>Add an exam</h3>
                     <p>Deposit a new exam, then add it to this folder</p>
