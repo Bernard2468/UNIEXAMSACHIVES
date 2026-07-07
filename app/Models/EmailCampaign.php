@@ -75,6 +75,86 @@ class EmailCampaign extends Model
     }
 
     /**
+     * Human-readable label for the memo's audience, for the "To:" line on the
+     * printable memo and the chat header. Returns null for individually addressed
+     * memos ("selected" — including Through memos, which are always selected) so
+     * those keep listing the actual people. Every bulk audience (all staff, a
+     * staff category, a leadership pool, one or more departments, or a committee)
+     * collapses to a single label instead of enumerating hundreds of names.
+     */
+    public function audienceLabel(): ?string
+    {
+        $type = $this->recipient_type;
+
+        if ($type === 'all') {
+            return 'All Staff';
+        }
+
+        $staffLabels = [
+            'junior_staff'               => 'All Junior Staff',
+            'senior_staff'               => 'All Senior Staff',
+            'senior_member_non_teaching' => 'All Senior Members (Non-Teaching)',
+            'senior_member_teaching'     => 'All Senior Members (Teaching)',
+        ];
+        if (isset($staffLabels[$type])) {
+            return $staffLabels[$type];
+        }
+
+        $leadershipLabels = [
+            'all_hods'      => 'All HODs',
+            'all_deans'     => 'All Deans',
+            'all_directors' => 'All Directors',
+        ];
+        if (isset($leadershipLabels[$type])) {
+            return $leadershipLabels[$type];
+        }
+
+        if ($type === 'departments') {
+            // selected_users stores the chosen DEPARTMENT ids for this memo type.
+            $names = Department::whereIn('id', collect($this->selected_users ?? [])->filter()->all())
+                ->orderBy('name')
+                ->pluck('name');
+
+            if ($names->isEmpty()) {
+                return 'Selected Departments';
+            }
+            if ($names->count() > 3) {
+                return $names->count() . ' Departments';
+            }
+
+            return $this->joinWithAmpersand($names->all())
+                . ' ' . \Illuminate\Support\Str::plural('Department', $names->count());
+        }
+
+        if (\Illuminate\Support\Str::startsWith((string) $type, 'committee_')) {
+            $committee = Committee::find((int) str_replace('committee_', '', $type));
+
+            return $committee?->name ?? 'Committee / Board';
+        }
+
+        // 'selected' (and Through memos) — no bulk label; caller lists real names.
+        return null;
+    }
+
+    /** Grammatical list join: "A", "A & B", "A, B & C". */
+    private function joinWithAmpersand(array $items): string
+    {
+        $items = array_values(array_filter($items, fn ($i) => $i !== null && $i !== ''));
+        $count = count($items);
+
+        if ($count === 0) {
+            return '';
+        }
+        if ($count === 1) {
+            return $items[0];
+        }
+
+        $last = array_pop($items);
+
+        return implode(', ', $items) . ' & ' . $last;
+    }
+
+    /**
      * Whether this memo is in a state that allows urgency alerts and other "active" actions.
      */
     public function isPending(): bool

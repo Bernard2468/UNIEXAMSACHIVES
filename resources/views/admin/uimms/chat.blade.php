@@ -370,6 +370,10 @@
                                 ? \App\Models\User::whereIn('id', $memo->cc_users)->get()
                                 : collect();
                             $isCC = $memo->recipients->where('user_id', auth()->id())->where('recipient_role', 'cc')->isNotEmpty();
+                            // Bulk audiences (all staff, a staff category, a leadership pool, one or
+                            // more departments, or a committee) collapse "To:" to a single label
+                            // instead of listing everyone; "selected"/Through memos keep names.
+                            $audienceLabel = $memo->audienceLabel();
                         @endphp
 
                         <div class="memo-details-section {{ $hasLetterhead ? 'letter-mode' : '' }}" id="memo-letter-wrapper">
@@ -414,6 +418,12 @@
                                         <td class="fht-label">To:</td>
                                         <td class="fht-value" colspan="3">
                                             <span class="fht-recipients">
+                                                @if($audienceLabel)
+                                                    <span class="fht-audience" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;color:#1f2937;">
+                                                        <i class="icofont-users-alt-3" style="font-size:18px;color:#1d4ed8;"></i>
+                                                        {{ $audienceLabel }}
+                                                    </span>
+                                                @else
                                                 @foreach($toRecipients->take(5) as $r)
                                                     <span class="fht-person">
                                                         <img src="{{ $r->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
@@ -439,6 +449,7 @@
                                                     @else
                                                         <span class="text-muted">All registered users</span>
                                                     @endif
+                                                @endif
                                                 @endif
                                             </span>
                                         </td>

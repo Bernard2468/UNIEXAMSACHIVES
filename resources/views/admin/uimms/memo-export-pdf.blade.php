@@ -155,6 +155,13 @@
             ->map(fn($r) => $personName($r->user));
     }
 
+    // Bulk audiences (all staff, a staff category, a leadership pool, one or more
+    // departments, or a committee) collapse the "To" line to a single label instead
+    // of listing everyone; individually addressed ("selected"/Through) memos keep names.
+    $audienceLabel = $memo->audienceLabel();
+    $toLine = $audienceLabel
+        ?? ($displayToNames->isNotEmpty() ? $displayToNames->implode('; ') : 'All Recipients');
+
     $displayCcNames = $throughCcHeld->isNotEmpty()
         ? $throughCcHeld->map($personName)
         : $ccRecipients->map(fn($r) => $personName($r->user));
@@ -223,7 +230,7 @@
         </tr>
         <tr>
             <td class="k">To</td>
-            <td class="v">@forelse($displayToNames as $name){{ $name }}@if(!$loop->last); @endif @empty All Recipients @endforelse</td>
+            <td class="v">{{ $toLine }}</td>
         </tr>
         @if($throughName)
         <tr>
