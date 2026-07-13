@@ -102,7 +102,7 @@
                                         <div class="sp-field sp-field--full">
                                             <label class="sp-label">Email address</label>
                                             <input class="sp-input" type="email" value="{{ $data->email }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
-                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="14" height="14" style="margin-right:4px; vertical-align:-2px;">Email can only be changed by System Administrator</small>
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="17" height="17" style="margin-right:4px; vertical-align:-3px;">Email can only be changed by System Administrator</small>
                                         </div>
                                     </div>
                                 </div>
@@ -120,27 +120,27 @@
                                         <div class="sp-field sp-field--full">
                                             <label class="sp-label">Primary Department / Faculty / Unit</label>
                                             <input class="sp-input" type="text" value="{{ $data->department->name ?? '—' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
-                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="14" height="14" style="margin-right:4px; vertical-align:-2px;">Can only be changed by System Administrator</small>
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="17" height="17" style="margin-right:4px; vertical-align:-3px;">Can only be changed by System Administrator</small>
                                         </div>
                                         <div class="sp-field sp-field--full">
                                             <label class="sp-label">Secondary Departments</label>
                                             <input class="sp-input" type="text" value="{{ $data->secondaryDepartments->pluck('name')->join(', ') ?: 'None' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
-                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="14" height="14" style="margin-right:4px; vertical-align:-2px;">Additional departments you belong to. Can only be changed by System Administrator.</small>
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="17" height="17" style="margin-right:4px; vertical-align:-3px;">Additional departments you belong to. Can only be changed by System Administrator.</small>
                                         </div>
                                         <div class="sp-field">
                                             <label class="sp-label">Staff category</label>
                                             <input class="sp-input" type="text" value="{{ $data->staff_category ?? '—' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
-                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="14" height="14" style="margin-right:4px; vertical-align:-2px;">Locked</small>
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="17" height="17" style="margin-right:4px; vertical-align:-3px;">Locked</small>
                                         </div>
                                         <div class="sp-field">
                                             <label class="sp-label">Position</label>
                                             <input class="sp-input" type="text" value="{{ $data->position->name ?? '—' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
-                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="14" height="14" style="margin-right:4px; vertical-align:-2px;">Locked</small>
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="17" height="17" style="margin-right:4px; vertical-align:-3px;">Locked</small>
                                         </div>
                                         <div class="sp-field sp-field--full">
                                             <label class="sp-label"><i class="fas fa-id-badge" style="margin-right:4px;"></i> Account type</label>
                                             <input class="sp-input" type="text" value="{{ $data->isOfficeAccount() ? 'Institutional Office Account' : 'Individual Staff Account' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
-                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="14" height="14" style="margin-right:4px; vertical-align:-2px;">{{ $data->isOfficeAccount() ? 'This account represents an institutional office.' : 'This is a personal staff account.' }} Can only be changed by a System Administrator.</small>
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><img src="https://img.icons8.com/dotty/80/lock-2.png" alt="lock" width="17" height="17" style="margin-right:4px; vertical-align:-3px;">{{ $data->isOfficeAccount() ? 'This account represents an institutional office.' : 'This is a personal staff account.' }} Can only be changed by a System Administrator.</small>
                                         </div>
                                     </div>
 
