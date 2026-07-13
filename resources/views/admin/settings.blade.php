@@ -247,6 +247,14 @@
     box-sizing: border-box;
 }
 
+/* Font Awesome icons must keep their own font-family — the universal Outfit
+   override above otherwise turns every icon into a tofu box (▯). */
+.sp-wrap .fa,
+.sp-wrap .fas,
+.sp-wrap .far,
+.sp-wrap .fal { font-family: 'Font Awesome 5 Free' !important; }
+.sp-wrap .fab { font-family: 'Font Awesome 5 Brands' !important; }
+
 /* hide hero */
 .settings-page-compact .settings-page-hero { display: none !important; }
 
