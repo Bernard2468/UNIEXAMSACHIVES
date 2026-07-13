@@ -137,6 +137,11 @@
                                             <input class="sp-input" type="text" value="{{ $data->position->name ?? '—' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
                                             <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>Locked</small>
                                         </div>
+                                        <div class="sp-field sp-field--full">
+                                            <label class="sp-label"><i class="fas fa-id-badge" style="margin-right:4px;"></i> Account type</label>
+                                            <input class="sp-input" type="text" value="{{ $data->isOfficeAccount() ? 'Institutional Office Account' : 'Individual Staff Account' }}" readonly style="background:#f1f5f9; cursor:not-allowed; color:#64748b;">
+                                            <small style="display:block; margin-top:4px; color:#94a3b8; font-size:0.8rem;"><i class="fas fa-lock" style="margin-right:4px;"></i>{{ $data->isOfficeAccount() ? 'This account represents an institutional office.' : 'This is a personal staff account.' }} Can only be changed by a System Administrator.</small>
+                                        </div>
                                     </div>
 
                                     <div class="sp-form-foot">
