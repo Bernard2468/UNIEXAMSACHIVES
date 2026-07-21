@@ -44,7 +44,10 @@
 </div>
 
 @once
-@push('styles')
+{{-- Inlined (not @push('styles')): this widget can be rendered from the layout
+     body (inside the search launcher / command palette), after the head's
+     @stack('styles') has already been output — a pushed style would be lost there.
+     An in-body <style> applies globally and covers every render location. --}}
 <style>
 .uds { position: relative; width: 100%; max-width: 560px; margin: 0 auto; font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif; }
 
@@ -176,7 +179,6 @@
     .uds { max-width: 100%; margin: 4px 0 0; }
 }
 </style>
-@endpush
 
 @push('scripts')
 <script>

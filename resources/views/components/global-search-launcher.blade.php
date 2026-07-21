@@ -37,7 +37,10 @@
 </div>
 
 @once
-@push('styles')
+{{-- Inlined (not @push('styles')) on purpose: this component renders in the
+     layout BODY, after the head's @stack('styles') has already been output, so a
+     pushed style would be dropped. An in-body <style> applies globally and is the
+     same pattern the other body-level components (flash-toast, calendar-modal…) use. --}}
 <style>
 /* ── Docked / floating triggers ── */
 .uds-trigger { display: none; align-items: center; justify-content: center; cursor: pointer; border: none; padding: 0; }
@@ -113,7 +116,6 @@ html.udsl-lock { overflow: hidden; }
     .udsl__x { top: -42px; }
 }
 </style>
-@endpush
 
 @push('scripts')
 <script>
