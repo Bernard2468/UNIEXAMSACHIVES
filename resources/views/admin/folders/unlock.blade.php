@@ -43,7 +43,10 @@
                                     @csrf
                                     <div class="mb-3">
                                         <label class="form-label" for="password" style="font-weight:600;color:#374151;">Password</label>
-                                        <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Enter folder password" required>
+                                        <div class="pwv-wrap">
+                                            <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Enter folder password" required>
+                                            <button type="button" class="pwv-toggle" data-target="password" aria-label="Show password" tabindex="-1"><i class="fas fa-eye"></i></button>
+                                        </div>
                                         @error('password')
                                             <div class="text-danger mt-1">{{ $message }}</div>
                                         @enderror
@@ -65,6 +68,36 @@
         </div>
     </div>
 </div>
+
+<style>
+.pwv-wrap { position: relative; }
+.pwv-wrap .form-control { padding-right: 46px; }
+.pwv-toggle {
+    position: absolute; top: 0; right: 0; height: 100%; width: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; padding: 0;
+    color: #94a3b8; cursor: pointer; transition: color .15s;
+}
+.pwv-toggle:hover { color: #475569; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.pwv-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var input = document.getElementById(btn.dataset.target);
+            if (!input) return;
+            var icon = btn.querySelector('i');
+            var reveal = input.type === 'password';
+            input.type = reveal ? 'text' : 'password';
+            if (icon) {
+                icon.classList.toggle('fa-eye', !reveal);
+                icon.classList.toggle('fa-eye-slash', reveal);
+            }
+        });
+    });
+});
+</script>
 @endsection
 
 

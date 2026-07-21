@@ -623,6 +623,17 @@
 .nf-password-block.show { display: block; }
 .nf-password-block .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+/* Password show/hide eye toggle */
+.pwv-wrap { position: relative; }
+.pwv-wrap .nf-input { padding-right: 42px; }
+.pwv-toggle {
+    position: absolute; top: 0; right: 0; height: 100%; width: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; padding: 0;
+    color: #94a3b8; cursor: pointer; transition: color .15s;
+}
+.pwv-toggle:hover { color: #475569; }
+
 /* Share-with-people collapsible (same pattern as password) */
 .nf-share-block { display: none; margin-top: 12px; }
 .nf-share-block.show { display: block; }
@@ -1173,8 +1184,14 @@
                 </label>
                 <div class="nf-password-block" id="nfPasswordBlock">
                     <div class="row">
-                        <input type="password" id="nfPassword" name="password" class="nf-input" minlength="6" placeholder="Password (min 6 chars)" disabled>
-                        <input type="password" id="nfPasswordConfirm" name="password_confirmation" class="nf-input" minlength="6" placeholder="Confirm password" disabled>
+                        <div class="pwv-wrap">
+                            <input type="password" id="nfPassword" name="password" class="nf-input" minlength="6" placeholder="Password (min 6 chars)" disabled>
+                            <button type="button" class="pwv-toggle" data-target="nfPassword" aria-label="Show password" tabindex="-1"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div class="pwv-wrap">
+                            <input type="password" id="nfPasswordConfirm" name="password_confirmation" class="nf-input" minlength="6" placeholder="Confirm password" disabled>
+                            <button type="button" class="pwv-toggle" data-target="nfPasswordConfirm" aria-label="Show password" tabindex="-1"><i class="fas fa-eye"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1580,7 +1597,31 @@
             nfPasswordBlock.classList.toggle('show', on);
             nfPassword.disabled = !on;
             nfPasswordConfirm.disabled = !on;
-            if (!on) { nfPassword.value = ''; nfPasswordConfirm.value = ''; }
+            if (!on) {
+                nfPassword.value = ''; nfPasswordConfirm.value = '';
+                // Reset any revealed fields back to hidden
+                nfPasswordBlock.querySelectorAll('.pwv-toggle').forEach(btn => {
+                    const input = document.getElementById(btn.dataset.target);
+                    if (input) input.type = 'password';
+                    const icon = btn.querySelector('i');
+                    if (icon) { icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye'); }
+                });
+            }
+        });
+
+        // ---- Password show/hide eye toggle ----
+        nfPasswordBlock?.querySelectorAll('.pwv-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const input = document.getElementById(btn.dataset.target);
+                if (!input) return;
+                const icon = btn.querySelector('i');
+                const reveal = input.type === 'password';
+                input.type = reveal ? 'text' : 'password';
+                if (icon) {
+                    icon.classList.toggle('fa-eye', !reveal);
+                    icon.classList.toggle('fa-eye-slash', reveal);
+                }
+            });
         });
 
         // ---- Share-with-people collapsible (toggle reveals/hides the picker) ----

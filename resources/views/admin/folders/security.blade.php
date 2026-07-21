@@ -48,30 +48,44 @@
                                     @if(!empty($folder->password_hash))
                                     <div class="mb-3">
                                         <label class="form-label" for="current_password" style="font-weight:600;color:#374151;">Current Folder Password</label>
-                                        <input type="password" id="current_password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" placeholder="Enter current folder password">
+                                        <div class="pwv-wrap">
+                                            <input type="password" id="current_password" name="current_password" class="form-control @error('current_password') is-invalid @enderror" placeholder="Enter current folder password">
+                                            <button type="button" class="pwv-toggle" data-target="current_password" aria-label="Show password" tabindex="-1"><i class="fas fa-eye"></i></button>
+                                        </div>
                                         @error('current_password')
                                             <div class="text-danger mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
                                     @endif
 
-                                    <div class="mb-3">
+                                    <div class="mb-3" id="newPwGroup">
                                         <label class="form-label" for="new_password" style="font-weight:600;color:#374151;">New Password</label>
-                                        <input type="password" id="new_password" name="new_password" class="form-control @error('new_password') is-invalid @enderror" placeholder="Enter new password">
+                                        <div class="pwv-wrap">
+                                            <input type="password" id="new_password" name="new_password" class="form-control @error('new_password') is-invalid @enderror" placeholder="Enter new password">
+                                            <button type="button" class="pwv-toggle" data-target="new_password" aria-label="Show password" tabindex="-1"><i class="fas fa-eye"></i></button>
+                                        </div>
                                         @error('new_password')
                                             <div class="text-danger mt-1">{{ $message }}</div>
                                         @enderror
                                     </div>
 
-                                    <div class="mb-3">
+                                    <div class="mb-3" id="confirmPwGroup">
                                         <label class="form-label" for="new_password_confirmation" style="font-weight:600;color:#374151;">Confirm New Password</label>
-                                        <input type="password" id="new_password_confirmation" name="new_password_confirmation" class="form-control" placeholder="Re-enter new password">
+                                        <div class="pwv-wrap">
+                                            <input type="password" id="new_password_confirmation" name="new_password_confirmation" class="form-control" placeholder="Re-enter new password">
+                                            <button type="button" class="pwv-toggle" data-target="new_password_confirmation" aria-label="Show password" tabindex="-1"><i class="fas fa-eye"></i></button>
+                                        </div>
                                     </div>
 
+                                    @if(!empty($folder->password_hash))
                                     <div class="form-check" style="margin: 1rem 0;">
                                         <input class="form-check-input" type="checkbox" value="1" id="remove_password" name="remove_password">
                                         <label class="form-check-label" for="remove_password">Remove password protection</label>
                                     </div>
+                                    <p id="removePwHint" class="text-muted" style="display:none;font-size:0.85rem;margin:-0.25rem 0 1rem;">
+                                        Enter the current folder password above, then save to remove password protection.
+                                    </p>
+                                    @endif
 
                                     <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
                                         <a href="{{ route('dashboard.folders.show', $folder) }}" class="btn btn-secondary" style="border:2px solid #e5e7eb;">Back</a>
@@ -87,6 +101,61 @@
         </div>
     </div>
 </div>
+
+<style>
+.pwv-wrap { position: relative; }
+.pwv-wrap .form-control { padding-right: 46px; }
+.pwv-toggle {
+    position: absolute; top: 0; right: 0; height: 100%; width: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; padding: 0;
+    color: #94a3b8; cursor: pointer; transition: color .15s;
+}
+.pwv-toggle:hover { color: #475569; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Show/hide password eye toggles
+    document.querySelectorAll('.pwv-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var input = document.getElementById(btn.dataset.target);
+            if (!input) return;
+            var icon = btn.querySelector('i');
+            var reveal = input.type === 'password';
+            input.type = reveal ? 'text' : 'password';
+            if (icon) {
+                icon.classList.toggle('fa-eye', !reveal);
+                icon.classList.toggle('fa-eye-slash', reveal);
+            }
+        });
+    });
+
+    // "Remove password protection": hide new/confirm fields, keep only current password
+    var removeCb = document.getElementById('remove_password');
+    var newPwGroup = document.getElementById('newPwGroup');
+    var confirmPwGroup = document.getElementById('confirmPwGroup');
+    var removeHint = document.getElementById('removePwHint');
+    var newPw = document.getElementById('new_password');
+    var confirmPw = document.getElementById('new_password_confirmation');
+
+    function syncRemoveState() {
+        if (!removeCb) return;
+        var removing = removeCb.checked;
+        if (newPwGroup) newPwGroup.style.display = removing ? 'none' : '';
+        if (confirmPwGroup) confirmPwGroup.style.display = removing ? 'none' : '';
+        if (removeHint) removeHint.style.display = removing ? 'block' : 'none';
+        // Disable so they are neither submitted nor validated while removing
+        if (newPw) { newPw.disabled = removing; if (removing) newPw.value = ''; }
+        if (confirmPw) { confirmPw.disabled = removing; if (removing) confirmPw.value = ''; }
+    }
+
+    if (removeCb) {
+        removeCb.addEventListener('change', syncRemoveState);
+        syncRemoveState();
+    }
+});
+</script>
 @endsection
 
 
