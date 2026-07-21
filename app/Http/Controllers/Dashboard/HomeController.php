@@ -139,10 +139,12 @@ class HomeController extends Controller
     }
 
     public function allExams(){
-        // Only show user's own exams (no approval system means users manage their own content)
+        // Show every exam the user owns — including ones they've placed in a
+        // folder (e.g. via the folder "quick add" modal). An exam the user
+        // deposited is theirs regardless of folder membership, so it must appear
+        // here and match the sidebar "My Exams" count (which counts all exams).
         $user = Auth::user();
         $exams = Exam::where('user_id', $user->id)
-            ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
         $folders = Folder::where('user_id', $user->id)

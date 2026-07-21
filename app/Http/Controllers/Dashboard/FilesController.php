@@ -149,9 +149,11 @@ class FilesController extends Controller
     }
 
     public function allFiles(){
-        // Only show user's own files (no approval system means users manage their own content)
+        // Show every file the user owns — including ones they've placed in a
+        // folder (e.g. via the folder "quick add" modal). A file the user
+        // deposited is theirs regardless of folder membership, so it must appear
+        // here and match the sidebar "My Files" count (which counts all files).
         $files = File::where('user_id', Auth::id())
-            ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
         $folders = Folder::where('user_id', Auth::id())
