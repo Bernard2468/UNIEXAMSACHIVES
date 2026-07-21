@@ -31,15 +31,10 @@
                 </div>
             </div>
 
-            <!-- Search -->
+            <!-- Search — modern global "search everything" (files, folders, exams,
+                 memos, forms, people, pages & docs). Permission-scoped per user. -->
             <div class="uda-search">
-                <form action="{{ route('exam.search') }}" method="GET">
-                    <div class="uda-search-box">
-                        <i class="icofont-search-1 uda-search-icon" aria-hidden="true"></i>
-                        <input class="uda-search-input" type="search" name="query" placeholder="Search for documents..." aria-label="Search for documents">
-                        <button type="submit" class="uda-btn uda-btn-primary uda-search-btn">Search</button>
-                    </div>
-                </form>
+                @include('components.global-search')
             </div>
 
             <!-- Actions -->
