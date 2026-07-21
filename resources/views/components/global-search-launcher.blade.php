@@ -28,8 +28,6 @@
             @include('components.global-search')
 
             <div class="udsl__hint">
-                <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-                <span><kbd>↵</kbd> open</span>
                 <span><kbd>esc</kbd> close</span>
             </div>
         </div>

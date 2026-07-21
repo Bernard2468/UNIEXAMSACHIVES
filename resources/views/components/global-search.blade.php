@@ -367,7 +367,10 @@
             var q = (input.value || '').trim();
             setFilled(q);
             clearTimeout(timer);
-            if (controller) controller.abort();
+            // Cancelling an in-flight request fires its catch with AbortError,
+            // which returns early without touching the spinner — so stop it here.
+            if (controller) { controller.abort(); controller = null; }
+            if (spinner) spinner.hidden = true;
             if (q.length === 0) { renderRecent(); return; }
             if (q.length < 2) { panel.innerHTML = '<div class="uds__state"><p>Keep typing…</p></div>'; collectOptions(); openPanel(); return; }
             timer = setTimeout(function () { runSearch(q); }, DEBOUNCE);
@@ -423,7 +426,7 @@
         });
 
         if (clearBtn) clearBtn.addEventListener('click', function () {
-            input.value = ''; setFilled(''); input.focus(); renderRecent();
+            input.value = ''; input.focus(); schedule();
         });
 
         instances.push({ root: root, input: input, close: closePanel });
