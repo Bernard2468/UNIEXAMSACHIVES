@@ -11,6 +11,7 @@ use App\Http\Controllers\Dashboard\PositionController;
 use App\Http\Controllers\Dashboard\ExamsController;
 use App\Http\Controllers\Dashboard\FilesController;
 use App\Http\Controllers\Dashboard\FoldersController;
+use App\Http\Controllers\Dashboard\GlobalSearchController;
 use App\Http\Controllers\Dashboard\HomeController;
 use App\Http\Controllers\Dashboard\UserSignatureController;
 use App\Http\Controllers\Frontend\EmailVerificationController;
@@ -89,6 +90,11 @@ Route::get('/api/check-maintenance-status', function() {
 Route::middleware(['auth'])->group(function () {
     #Dashboard - Home
     Route::get('/dashboard/home',[HomeController::class, 'dashboard'])->name('dashboard');
+
+    #Global "search everything" — permission-scoped across files, folders, exams,
+    # memos, forms, people, org units, app pages & docs. See GlobalSearchService.
+    Route::get('/dashboard/search',         [GlobalSearchController::class, 'index'])->name('search.index');
+    Route::get('/dashboard/search/suggest', [GlobalSearchController::class, 'suggest'])->name('search.suggest');
 
     #Documents
     Route::get('/dashboard/create',[HomeController::class, 'create'])->name('dashboard.create');

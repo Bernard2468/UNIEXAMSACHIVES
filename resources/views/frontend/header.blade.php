@@ -79,9 +79,13 @@
                         @endif
                     </div>
 
-                    <!-- Center: Title Pill -->
+                    <!-- Center: Global search (authenticated) / Title pill (guests) -->
                     <div class="uda-nav-center">
-                        <div class="uda-title-pill">University Digital Transformation Suite (UDTS)</div>
+                        @auth
+                            @include('components.global-search')
+                        @else
+                            <div class="uda-title-pill">University Digital Transformation Suite (UDTS)</div>
+                        @endauth
                     </div>
 
                     <!-- Right: Auth Buttons & Notifications -->
@@ -223,6 +227,13 @@
                     </div>
                 </div>
             </div>
+            @auth
+                <div class="row">
+                    <div class="col-12">
+                        @include('components.global-search')
+                    </div>
+                </div>
+            @endauth
         </div>
     </div>
 
