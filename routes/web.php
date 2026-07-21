@@ -106,7 +106,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/all-upload-exams',[HomeController::class, 'allUploadedDocument'])->name('dashboard.all.upload.document');
 
     #Unified Exams (No more pending/approved separation)
-    Route::get('/dashboard/my-exams',[HomeController::class, 'myExams'])->name('dashboard.my.exams');
     Route::get('/dashboard/all-exams',[HomeController::class, 'allExams'])->name('dashboard.all.exams');
 
     #exams
@@ -120,12 +119,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/exams/search', [ExamsController::class, 'search'])->name('exam.search');
 
     #Unified Files (No more pending/approved separation)
-    Route::get('/dashboard/my-files',[FilesController::class, 'myFiles'])->name('dashboard.my.files');
     Route::get('/dashboard/all-files',[FilesController::class, 'allFiles'])->name('dashboard.all.files');
 
     #Files
     Route::post('/dashbaord/file/store',[FilesController::class, 'store'])->name('dashboard.file.store');
-    Route::get('/dashboard/upload-files',[FilesController::class, 'uploadedFile'])->name('dashboard.upload.file');
     Route::get('/dashboard/all-upload-files',[FilesController::class, 'allUploadedFile'])->name('dashboard.all.upload.file');
 
     Route::get('/dashboard/file/{file}/edit', [FilesController::class, 'edit'])->name('files.edit');

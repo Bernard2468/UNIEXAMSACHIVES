@@ -80,16 +80,17 @@ class HomeController extends Controller
 
     public function document(){
         // Each user (including admins) only sees their own uploads on this page.
+        // Show every item the user owns — including ones filed into a folder
+        // (e.g. via the folder "quick add" modal). They're the user's uploads
+        // regardless of folder membership, so they belong on this overview.
         $user = Auth::user();
         $userId = $user->id;
 
         $exams = Exam::where('user_id', $userId)
-            ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
 
         $files = File::where('user_id', $userId)
-            ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -104,9 +105,9 @@ class HomeController extends Controller
     }
 
     public function uploadedDocument(){
+        // Show every exam the user owns, including ones filed into a folder.
         $user = Auth::user();
         $exams = Exam::where('user_id', $user->id)
-            ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
         $folders = Folder::where('user_id', $user->id)
@@ -118,10 +119,9 @@ class HomeController extends Controller
     }
 
     public function allUploadedDocument(){
-        // Only show user's own exams (no approval system means users manage their own content)
+        // Show every exam the user owns, including ones filed into a folder.
         $user = Auth::user();
         $exams = Exam::where('user_id', $user->id)
-            ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
         $folders = Folder::where('user_id', $user->id)
@@ -130,12 +130,6 @@ class HomeController extends Controller
             ->get();
         $sharedFolders = Folder::sharedListingFor($user);
         return view('admin.all_uploaded_documents', compact('exams', 'folders', 'sharedFolders'));
-    }
-
-    // Unified Exams view (no more pending/approved separation)
-    public function myExams(){
-        $exams = Exam::where('user_id', Auth::user()->id)->get();
-        return view('admin.my_exams',compact('exams'));
     }
 
     public function allExams(){

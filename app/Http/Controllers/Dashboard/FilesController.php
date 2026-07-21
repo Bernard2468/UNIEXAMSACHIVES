@@ -123,15 +123,9 @@ class FilesController extends Controller
             ->with('success', 'File has been updated successfully.');
     }
 
-    public function uploadedFile(){
-        return view('admin.files',[
-            'files' => File::where('user_id', Auth::id())->get(),
-        ]);
-    }
     public function allUploadedFile(){
-        // Only show user's own files (no approval system means users manage their own content)
+        // Show every file the user owns, including ones filed into a folder.
         $files = File::where('user_id', Auth::id())
-            ->whereDoesntHave('folders')
             ->orderBy('created_at', 'desc')
             ->get();
         $folders = Folder::where('user_id', Auth::id())
@@ -140,12 +134,6 @@ class FilesController extends Controller
             ->get();
         $sharedFolders = Folder::sharedListingFor(Auth::user());
         return view('admin.all_files', compact('files', 'folders', 'sharedFolders'));
-    }
-
-    // Unified Files view (no more pending/approved separation)
-    public function myFiles(){
-        $files = File::where('user_id', Auth::user()->id)->get();
-        return view('admin.my_files',compact('files'));
     }
 
     public function allFiles(){
