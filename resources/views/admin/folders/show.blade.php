@@ -553,7 +553,11 @@
                 <div class="empty-box">
                     <div class="ico-c"><i class="fas fa-folder-open"></i></div>
                     <h4>This folder is empty</h4>
-                    <p>Click "Add items" or drag files/exams here from the archive pages.</p>
+                    @if($canEdit)
+                        <p>Click "Add items" or drag files/exams here from the archive pages.</p>
+                    @else
+                        <p>There's nothing here yet. Items added to this folder will appear here.</p>
+                    @endif
                 </div>
             @endif
         </div>
