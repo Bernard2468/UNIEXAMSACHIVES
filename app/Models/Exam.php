@@ -14,6 +14,11 @@ class Exam extends Model
         'exam_date' => 'datetime',
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function file()
     {
         return $this->hasMany(File::class);

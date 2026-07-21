@@ -123,7 +123,10 @@ class FoldersController extends Controller
             $this->markFolderUnlockedNow($folder);
         }
 
-        $folder->load(['files', 'exams', 'members', 'grants']);
+        // Eager-load each item's owner so the folder view can show "added by"
+        // without an N+1 query per file/exam. The owner IS the adder, since
+        // addFiles()/addExams() only attach items belonging to the current user.
+        $folder->load(['files.user', 'exams.user', 'members', 'grants']);
 
         // Group/audience options for the owner's "Share with a group" picker.
         // Built from the registry so new group types appear automatically.

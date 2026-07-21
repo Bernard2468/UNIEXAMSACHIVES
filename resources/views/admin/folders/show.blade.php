@@ -233,6 +233,39 @@
     }
     .ftile .key-badge img { width:100%; height:100%; object-fit:contain; display:block; }
     .ftile .key-badge:hover { transform: scale(1.12); box-shadow:0 4px 10px rgba(15,23,42,0.24); }
+    /* "Added by" hover tooltip — glass pill that floats above the tile */
+    .ftile .added-by {
+        position:absolute; left:50%; bottom: calc(100% - 2px);
+        transform: translate(-50%, 6px);
+        display:flex; flex-direction:column; gap:3px;
+        width: max-content; max-width: 220px;
+        padding: 8px 12px; text-align:left;
+        background: linear-gradient(135deg, rgba(30,41,59,0.97), rgba(15,23,42,0.97));
+        -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 10px;
+        box-shadow: 0 12px 30px rgba(2,6,23,0.35);
+        opacity:0; visibility:hidden; pointer-events:none;
+        transition: opacity .17s ease, transform .17s ease;
+        z-index: 50;
+    }
+    .ftile .added-by::after {
+        content:''; position:absolute; top:100%; left:50%;
+        transform: translateX(-50%);
+        border:6px solid transparent; border-top-color: rgba(15,23,42,0.97);
+    }
+    .ftile .added-by .ab-name {
+        font-size: 11.5px; font-weight:600; color:#f8fafc; line-height:1.3;
+        word-break: break-word;
+        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .ftile .added-by .ab-who {
+        font-size: 11px; font-weight:500; color:#93c5fd;
+        display:flex; align-items:center; gap:5px;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .ftile .added-by .ab-who i { font-size:10px; color:#38bdf8; }
+    .ftile:hover .added-by { opacity:1; visibility:visible; transform: translate(-50%, 0); }
 
     .empty-box {
         text-align:center; padding: 48px 20px;
@@ -370,8 +403,18 @@
     // Preserve the from= value when navigating to edit/security so back chains keep working.
     $forwardFrom = $from ? '?from=' . urlencode($from) : '';
 
+    // Resolve who added an item to the folder. Because you can only add your
+    // own uploads, the item's owner is the person who added it. Returns "you"
+    // for the current viewer so shared collaborators see friendly attribution.
+    $whoAdded = function ($owner) {
+        if (!$owner) return 'Unknown';
+        if ((int) $owner->id === (int) auth()->id()) return 'you';
+        $name = trim(($owner->first_name ?? '') . ' ' . ($owner->last_name ?? ''));
+        return $name !== '' ? $name : ($owner->email ?? 'Unknown');
+    };
+
     $folderItems = collect()
-        ->merge($folderFiles->map(function($file) use ($folder) {
+        ->merge($folderFiles->map(function($file) use ($folder, $whoAdded) {
             $ext = strtolower(pathinfo($file->document_file ?? '', PATHINFO_EXTENSION) ?: 'pdf');
             $date = $file->year_deposit
                 ? \Carbon\Carbon::parse($file->year_deposit)->format('Y-m-d')
@@ -383,13 +426,14 @@
                 'date' => $date,
                 'ext' => $ext,
                 'own' => $file->user_id === auth()->id(),
+                'added_by' => $whoAdded($file->user),
                 'view' => asset($file->document_file),
                 'download' => route('download.file', $file->id),
                 'edit' => route('files.edit', $file->id),
                 'remove' => route('dashboard.folders.remove-file', ['folder' => $folder->id, 'file' => $file->id]),
             ];
         }))
-        ->merge($folderExams->map(function($exam) use ($folder) {
+        ->merge($folderExams->map(function($exam) use ($folder, $whoAdded) {
             $ext = strtolower(pathinfo($exam->exam_document ?? '', PATHINFO_EXTENSION) ?: 'pdf');
             $date = $exam->created_at ? $exam->created_at->format('Y-m-d') : now()->format('Y-m-d');
             return (object)[
@@ -399,6 +443,7 @@
                 'date' => $date,
                 'ext' => $ext,
                 'own' => $exam->user_id === auth()->id(),
+                'added_by' => $whoAdded($exam->user),
                 'view' => asset($exam->exam_document),
                 'download' => route('download.exam', $exam->id),
                 'has_key' => !empty($exam->answer_key),
@@ -538,7 +583,7 @@
                             data-key-view-url="{{ $it->key_view ?? '' }}"
                             data-bundle-url="{{ $it->bundle ?? '' }}"
                             data-name="{{ $displayName }}"
-                            title="{{ $displayName }}.{{ $it->ext }}">
+                            aria-label="{{ $displayName }}.{{ $it->ext }} — added by {{ $it->added_by }}">
                             <button type="button" class="kebab" aria-label="More"><i class="fas fa-ellipsis-vertical"></i></button>
                             @if(!empty($it->has_key))
                                 <button type="button" class="key-badge" aria-label="View answer key" title="Answer key attached — click to view"><img src="{{ $iconKey }}" alt="" loading="lazy"></button>
@@ -546,6 +591,10 @@
                             <div class="ico {{ $iconClass }}"><i class="fas {{ $iconFa }}"></i></div>
                             <div class="name">{{ $displayName }}</div>
                             <div class="sub">{{ strtoupper($it->ext) }} &middot; {{ ucfirst($it->kind) }}</div>
+                            <span class="added-by" aria-hidden="true">
+                                <span class="ab-name">{{ $displayName }}.{{ $it->ext }}</span>
+                                <span class="ab-who"><i class="fas fa-user-plus"></i> Added by {{ $it->added_by }}</span>
+                            </span>
                         </div>
                     @endforeach
                 </div>
