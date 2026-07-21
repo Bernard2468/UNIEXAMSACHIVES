@@ -25,7 +25,7 @@
         <input type="search"
                class="uds__input"
                data-uds-input
-               placeholder="Search everything…"
+               placeholder="Search…"
                autocomplete="off"
                spellcheck="false"
                role="combobox"
@@ -119,10 +119,10 @@
     background: #f0f1f4; color: #4b5563;
 }
 .uds__optIcon svg { width: 17px; height: 17px; }
-.uds__optBody { min-width: 0; flex: 1; }
-.uds__optTitle { font-size: .88rem; font-weight: 600; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uds__optBody { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.uds__optTitle { display: block; font-size: .88rem; font-weight: 600; color: #1f2937; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uds__optTitle mark { background: #fde68a; color: inherit; padding: 0 1px; border-radius: 3px; }
-.uds__optSub { font-size: .74rem; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.uds__optSub { display: block; font-size: .74rem; color: #9ca3af; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uds__optSub mark { background: #fde68a; color: inherit; border-radius: 3px; }
 .uds__optMeta { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
 .uds__badge {
@@ -434,17 +434,10 @@
             instances.forEach(function (inst) { if (!inst.root.contains(e.target)) inst.close(); });
         });
 
-        // ⌘K / Ctrl-K focuses the first visible search (unless already typing elsewhere).
-        document.addEventListener('keydown', function (e) {
-            if ((isMac ? e.metaKey : e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
-                var tag = (document.activeElement && document.activeElement.tagName) || '';
-                var typingElsewhere = /^(INPUT|TEXTAREA|SELECT)$/.test(tag)
-                    && !instances.some(function (i) { return i.input === document.activeElement; });
-                if (typingElsewhere) return;
-                var target = instances.filter(function (i) { return i.input.offsetParent !== null; })[0] || instances[0];
-                if (target) { e.preventDefault(); target.input.focus(); target.input.select(); }
-            }
-        });
+        // The ⌘K / Ctrl-K shortcut is owned by the search launcher (it opens the
+        // command palette), so it is intentionally not bound here to avoid a
+        // double action. Expose the instances so the launcher can focus one.
+        window.__udsInstances = instances;
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

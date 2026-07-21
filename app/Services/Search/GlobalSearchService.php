@@ -452,7 +452,7 @@ class GlobalSearchService
             if (! str_contains($hay, $needle)) {
                 continue;
             }
-            $items[] = $this->make('page', $label, 'Go to ' . $label, route($routeName), null, null);
+            $items[] = $this->make('page', $label, 'Go to page', route($routeName), null, null);
             if (count($items) > $perGroup) {
                 break;
             }

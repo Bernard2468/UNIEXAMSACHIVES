@@ -107,6 +107,10 @@
                                 <span class="role-badge__dot"></span>
                                 {{ $roleBadge['label'] }}
                             </span>
+                            {{-- Docked search launcher — hidden until the hero search scrolls out of view (see components.global-search-launcher) --}}
+                            <button type="button" class="uds-trigger uds-trigger--header" data-udsl-open aria-label="Search everything" title="Search — Ctrl K">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                            </button>
                             @include('components.notification-tray')
                             <a href="{{route('logout')}}" class="uda-btn uda-btn-primary">Logout</a>
                         @else

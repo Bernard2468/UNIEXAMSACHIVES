@@ -58,15 +58,16 @@
 
                 <div class="col-xl-9 col-lg-9 col-md-12">
                     <div class="dashboard__content__wraper">
-                        <div class="uds-results">
+                        <div class="sr">
 
-                            <div class="uds-results__head">
+                            <header class="sr__head">
+                                <p class="sr__eyebrow">Search results</p>
                                 @if($q === '')
-                                    <h4>Search everything</h4>
-                                    <p>Use the search bar in the header to find files, folders, exams, memos, forms, people and more — everything you own or that has been shared with you.</p>
+                                    <h1 class="sr__title">Search everything</h1>
+                                    <p class="sr__meta">Find files, folders, exams, memos, forms, people and pages — everything you own or that has been shared with you.</p>
                                 @else
-                                    <h4>Results for &ldquo;{{ $q }}&rdquo;</h4>
-                                    <p>
+                                    <h1 class="sr__title">&ldquo;{{ $q }}&rdquo;</h1>
+                                    <p class="sr__meta">
                                         @if($total > 0)
                                             <strong>{{ $total }}</strong> {{ Str::plural('result', $total) }} across the system
                                         @else
@@ -74,69 +75,69 @@
                                         @endif
                                     </p>
                                 @endif
-                            </div>
+                            </header>
 
                             @if($q !== '' && count($groups))
-                                <div class="uds-results__chips">
+                                <nav class="sr__chips" aria-label="Filter by type">
                                     <a href="{{ route('search.index', ['q' => $q]) }}"
-                                       class="uds-chip {{ $activeType === null ? 'is-active' : '' }}">
+                                       class="sr-chip {{ $activeType === null ? 'is-active' : '' }}">
                                         All <span>{{ $total }}</span>
                                     </a>
                                     @foreach($groups as $key => $group)
                                         <a href="{{ route('search.index', ['q' => $q, 'type' => $key]) }}"
-                                           class="uds-chip {{ $activeType === $key ? 'is-active' : '' }}">
+                                           class="sr-chip {{ $activeType === $key ? 'is-active' : '' }}">
                                             {{ $group['label'] }} <span>{{ count($group['items']) }}</span>
                                         </a>
                                     @endforeach
-                                </div>
+                                </nav>
                             @endif
 
                             @forelse($shown as $key => $group)
-                                <section class="uds-results__group">
-                                    <div class="uds-results__grouphd">
-                                        <span class="uds-results__groupIcon">{!! $iconFor($group['items'][0]['type'] ?? 'page') !!}</span>
-                                        <h5>{{ $group['label'] }}</h5>
-                                        <span class="uds-results__groupCount">{{ count($group['items']) }}</span>
+                                <section class="sr-group">
+                                    <div class="sr-group__head">
+                                        <span class="sr-group__icon">{!! $iconFor($group['items'][0]['type'] ?? 'page') !!}</span>
+                                        <h2 class="sr-group__label">{{ $group['label'] }}</h2>
+                                        <span class="sr-group__count">{{ count($group['items']) }}</span>
                                     </div>
 
-                                    <div class="uds-results__list">
+                                    <div class="sr-group__list">
                                         @foreach($group['items'] as $item)
-                                            <a href="{{ $item['url'] }}" class="uds-res">
-                                                <span class="uds-res__icon">{!! $iconFor($item['type']) !!}</span>
-                                                <span class="uds-res__body">
-                                                    <span class="uds-res__title">{!! $hl($item['title']) !!}</span>
+                                            <a href="{{ $item['url'] }}" class="sr-row">
+                                                <span class="sr-row__icon">{!! $iconFor($item['type']) !!}</span>
+                                                <span class="sr-row__body">
+                                                    <span class="sr-row__title">{!! $hl($item['title']) !!}</span>
                                                     @if(!empty($item['subtitle']))
-                                                        <span class="uds-res__sub">{!! $hl($item['subtitle']) !!}</span>
+                                                        <span class="sr-row__sub">{!! $hl($item['subtitle']) !!}</span>
                                                     @endif
                                                 </span>
-                                                <span class="uds-res__meta">
+                                                <span class="sr-row__meta">
                                                     @if(!empty($item['badge']))
-                                                        <span class="uds-res__badge">{{ $item['badge'] }}</span>
+                                                        <span class="sr-row__badge">{{ $item['badge'] }}</span>
                                                     @endif
                                                     @if(!empty($item['date']))
-                                                        <span class="uds-res__date">{{ $item['date'] }}</span>
+                                                        <span class="sr-row__date">{{ $item['date'] }}</span>
                                                     @endif
-                                                    <svg class="uds-res__chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                                    <svg class="sr-row__chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                                                 </span>
                                             </a>
                                         @endforeach
                                     </div>
 
                                     @if(!empty($group['has_more']))
-                                        <p class="uds-results__more">Showing the top {{ count($group['items']) }} {{ $group['label'] }} — refine your search to narrow further.</p>
+                                        <p class="sr-group__more">Showing the top {{ count($group['items']) }} — refine your search to narrow further.</p>
                                     @endif
                                 </section>
                             @empty
-                                <div class="uds-results__empty">
+                                <div class="sr__empty">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
                                     @if($q === '')
-                                        <h5>Nothing to show yet</h5>
-                                        <p>Start typing in the header search to look across the whole system.</p>
+                                        <h3>Nothing to show yet</h3>
+                                        <p>Start typing in the search bar to look across the whole system.</p>
                                     @elseif($activeType)
-                                        <h5>No {{ $groups[$activeType]['label'] ?? 'results' }} matched</h5>
+                                        <h3>No {{ $groups[$activeType]['label'] ?? 'results' }} matched</h3>
                                         <p>Try the <a href="{{ route('search.index', ['q' => $q]) }}">All results</a> view, or a different keyword.</p>
                                     @else
-                                        <h5>No matches for &ldquo;{{ $q }}&rdquo;</h5>
+                                        <h3>No matches for &ldquo;{{ $q }}&rdquo;</h3>
                                         <p>Only items you own or that are shared with you appear in search. Try a different keyword.</p>
                                     @endif
                                 </div>
@@ -152,71 +153,90 @@
 
 @push('styles')
 <style>
-.uds-results { font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif; }
-.uds-results__head { margin-bottom: 18px; }
-.uds-results__head h4 { font-size: 1.4rem; font-weight: 700; color: #0c0c0c; letter-spacing: -.02em; margin: 0 0 4px; }
-.uds-results__head p { margin: 0; font-size: .9rem; color: #9ca3af; }
-.uds-results__head strong { color: #374151; }
+.sr { font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif; color: #0f172a; max-width: 820px; }
 
-.uds-results__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
-.uds-chip {
-    display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 999px;
-    background: #f4f5f7; border: 1.5px solid transparent; color: #4b5563; font-size: .82rem; font-weight: 600;
-    text-decoration: none; transition: all .15s;
+/* ── Header ── */
+.sr__head { padding-bottom: 20px; margin-bottom: 22px; border-bottom: 1px solid #e9ebef; }
+.sr__eyebrow { margin: 0 0 8px; font-size: .7rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #b6bcc6; }
+.sr__title { margin: 0; font-size: 1.85rem; font-weight: 700; letter-spacing: -.025em; color: #0f172a; line-height: 1.15; }
+.sr__meta { margin: 8px 0 0; font-size: .92rem; color: #94a3b8; }
+.sr__meta strong { color: #0f172a; font-weight: 700; }
+
+/* ── Type chips ── */
+.sr__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; }
+.sr-chip {
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 15px; border-radius: 999px;
+    border: 1.5px solid #e9ebef; color: #64748b; font-size: .82rem; font-weight: 600;
+    text-decoration: none; transition: border-color .15s, color .15s, background .15s;
 }
-.uds-chip span { font-size: .72rem; font-weight: 700; color: #9ca3af; }
-.uds-chip:hover { background: #ececf0; color: #111827; }
-.uds-chip.is-active { background: #0c0c0c; color: #fff; }
-.uds-chip.is-active span { color: rgba(255,255,255,.65); }
+.sr-chip span { font-size: .72rem; font-weight: 700; color: #b6bcc6; }
+.sr-chip:hover { border-color: #cbd0d8; color: #0f172a; }
+.sr-chip.is-active { background: #0f172a; border-color: #0f172a; color: #fff; }
+.sr-chip.is-active span { color: rgba(255,255,255,.6); }
 
-.uds-results__group { margin-bottom: 26px; }
-.uds-results__grouphd { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
-.uds-results__groupIcon { width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; color: #6b7280; }
-.uds-results__groupIcon svg { width: 18px; height: 18px; }
-.uds-results__grouphd h5 { margin: 0; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #6b7280; }
-.uds-results__groupCount { font-size: .72rem; font-weight: 700; color: #b6bcc6; background: #f4f5f7; padding: 2px 9px; border-radius: 999px; }
+/* ── Group: neatly underlined header ── */
+.sr-group { margin-bottom: 34px; }
+.sr-group__head { display: flex; align-items: center; gap: 10px; padding-bottom: 11px; border-bottom: 1.5px solid #e9ebef; }
+.sr-group__icon { color: #0f172a; display: inline-flex; }
+.sr-group__icon svg { width: 17px; height: 17px; }
+.sr-group__label { margin: 0; flex: 1; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #334155; }
+.sr-group__count { font-size: .74rem; font-weight: 700; color: #b6bcc6; }
 
-.uds-results__list { display: flex; flex-direction: column; gap: 6px; }
-.uds-res {
-    display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-radius: 13px;
-    background: #fff; border: 1.5px solid #eef0f3; text-decoration: none; color: inherit; transition: all .15s;
+/* ── Rows: flat, classy, hairline-separated ── */
+.sr-group__list { display: flex; flex-direction: column; }
+.sr-row {
+    display: flex; align-items: center; gap: 15px; padding: 15px 12px;
+    border-bottom: 1px solid #f2f3f5; text-decoration: none; color: inherit;
+    transition: background .14s, padding-left .14s;
 }
-.uds-res:hover { border-color: #d7dbe2; box-shadow: 0 6px 18px rgba(12,12,12,.06); transform: translateY(-1px); }
-.uds-res__icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; background: #f0f1f4; color: #4b5563; display: flex; align-items: center; justify-content: center; }
-.uds-res__icon svg { width: 19px; height: 19px; }
-.uds-res__body { min-width: 0; flex: 1; }
-.uds-res__title { display: block; font-size: .95rem; font-weight: 600; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.uds-res__title mark, .uds-res__sub mark { background: #fde68a; color: inherit; padding: 0 1px; border-radius: 3px; }
-.uds-res__sub { display: block; font-size: .8rem; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-.uds-res__meta { flex-shrink: 0; display: flex; align-items: center; gap: 12px; }
-.uds-res__badge { font-size: .66rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; background: #eef1f6; color: #64748b; white-space: nowrap; }
-.uds-res__date { font-size: .74rem; color: #b6bcc6; white-space: nowrap; }
-.uds-res__chev { color: #cbd0d8; flex-shrink: 0; }
-.uds-res:hover .uds-res__chev { color: #6b7280; }
-.uds-results__more { margin: 10px 2px 0; font-size: .76rem; color: #b6bcc6; }
+.sr-row:hover { background: #f8f9fb; padding-left: 16px; }
+.sr-row__icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; background: #f4f5f7; color: #475569; display: flex; align-items: center; justify-content: center; }
+.sr-row__icon svg { width: 19px; height: 19px; }
+.sr-row__body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.sr-row__title { display: block; font-size: .96rem; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-row__title mark, .sr-row__sub mark { background: transparent; color: inherit; font-weight: 800; box-shadow: inset 0 -.5em 0 #fde68a; border-radius: 2px; }
+.sr-row__sub { display: block; font-size: .81rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-row__meta { flex-shrink: 0; display: flex; align-items: center; gap: 14px; }
+.sr-row__badge { font-size: .64rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; border: 1.5px solid #e9ebef; color: #64748b; white-space: nowrap; }
+.sr-row__date { font-size: .76rem; color: #b6bcc6; white-space: nowrap; }
+.sr-row__chev { color: #cbd0d8; flex-shrink: 0; transition: transform .14s, color .14s; }
+.sr-row:hover .sr-row__chev { color: #0f172a; transform: translateX(2px); }
+.sr-group__more { margin: 12px 2px 0; font-size: .78rem; color: #b6bcc6; }
 
-.uds-results__empty { text-align: center; padding: 60px 20px; }
-.uds-results__empty svg { width: 44px; height: 44px; color: #d1d5db; margin-bottom: 12px; }
-.uds-results__empty h5 { font-size: 1.05rem; font-weight: 700; color: #374151; margin: 0 0 6px; }
-.uds-results__empty p { font-size: .88rem; color: #9ca3af; margin: 0; }
-.uds-results__empty a { color: #0c0c0c; font-weight: 600; text-decoration: underline; }
+/* ── Empty ── */
+.sr__empty { text-align: center; padding: 70px 20px; }
+.sr__empty svg { width: 44px; height: 44px; color: #d1d5db; margin-bottom: 14px; }
+.sr__empty h3 { font-size: 1.1rem; font-weight: 700; color: #334155; margin: 0 0 6px; }
+.sr__empty p { font-size: .9rem; color: #94a3b8; margin: 0; }
+.sr__empty a { color: #0f172a; font-weight: 600; text-decoration: underline; }
 
 /* ── Dark mode ── */
-.is_dark .uds-results__head h4 { color: #f3f4f6; }
-.is_dark .uds-results__head strong { color: #e5e7eb; }
-.is_dark .uds-chip { background: #1a2233; color: #cbd5e1; }
-.is_dark .uds-chip:hover { background: #232c40; color: #fff; }
-.is_dark .uds-chip.is-active { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .uds-chip.is-active span { color: rgba(12,12,12,.55); }
-.is_dark .uds-results__groupCount { background: #1a2233; color: #64748b; }
-.is_dark .uds-res { background: #111827; border-color: #1e2330; }
-.is_dark .uds-res:hover { border-color: #2d3748; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
-.is_dark .uds-res__icon { background: #1e2330; color: #cbd5e1; }
-.is_dark .uds-res__title { color: #e5e7eb; }
-.is_dark .uds-res__title mark, .is_dark .uds-res__sub mark { background: #a16207; color: #fff; }
-.is_dark .uds-res__badge { background: #1e2330; color: #94a3b8; }
-.is_dark .uds-results__empty h5 { color: #e5e7eb; }
-.is_dark .uds-results__empty a { color: #f3f4f6; }
+.is_dark .sr { color: #e5e7eb; }
+.is_dark .sr__head { border-color: #1e2330; }
+.is_dark .sr__title { color: #f3f4f6; }
+.is_dark .sr__meta strong { color: #f3f4f6; }
+.is_dark .sr-chip { border-color: #2d3748; color: #94a3b8; }
+.is_dark .sr-chip:hover { border-color: #3d4a63; color: #f3f4f6; }
+.is_dark .sr-chip.is-active { background: #f3f4f6; border-color: #f3f4f6; color: #0f172a; }
+.is_dark .sr-chip.is-active span { color: rgba(15,23,42,.55); }
+.is_dark .sr-group__head { border-color: #1e2330; }
+.is_dark .sr-group__icon { color: #e5e7eb; }
+.is_dark .sr-group__label { color: #cbd5e1; }
+.is_dark .sr-row { border-color: #171d2b; }
+.is_dark .sr-row:hover { background: #141b29; }
+.is_dark .sr-row__icon { background: #1e2330; color: #cbd5e1; }
+.is_dark .sr-row__title { color: #f3f4f6; }
+.is_dark .sr-row__title mark, .is_dark .sr-row__sub mark { box-shadow: inset 0 -.5em 0 rgba(161,98,7,.7); color: #fff; }
+.is_dark .sr-row__badge { border-color: #2d3748; color: #94a3b8; }
+.is_dark .sr-row__chev { color: #475569; }
+.is_dark .sr-row:hover .sr-row__chev { color: #f3f4f6; }
+.is_dark .sr__empty h3 { color: #e5e7eb; }
+.is_dark .sr__empty a { color: #f3f4f6; }
+
+@media (max-width: 575px) {
+    .sr-row__date { display: none; }
+    .sr__title { font-size: 1.5rem; }
+}
 </style>
 @endpush
 

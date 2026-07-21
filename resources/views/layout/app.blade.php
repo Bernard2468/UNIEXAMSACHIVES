@@ -67,6 +67,12 @@
     {{-- Calendar Modal --}}
     @include('components.calendar-modal')
 
+    {{-- Global search launcher — docked/floating trigger + ⌘K command palette
+         (appears once the inline hero search scrolls out of view). --}}
+    @auth
+        @include('components.global-search-launcher')
+    @endauth
+
     {{-- Maintenance Countdown Banner --}}
     @include('components.maintenance-countdown')
 
