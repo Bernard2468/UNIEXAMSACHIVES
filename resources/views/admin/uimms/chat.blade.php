@@ -2306,7 +2306,7 @@
     background: #F0F7FF;
     border: 1px solid #e9ecef;
     border-radius: 6px;
-    padding: 15px;
+    padding: 18px 22px;
     color: #333;
     line-height: 1.6;
     font-size: 0.95rem;
