@@ -67,6 +67,11 @@
                                  explicitly agrees to the notice in the modal below. --}}
                             @if($sourceCampaign ?? null)
                                 <input type="hidden" name="source_campaign" value="{{ $sourceCampaign->id }}">
+                                {{-- Survives the validation round-trip: set to 1 when the user
+                                     agrees, posted with the form, and restored via old() when
+                                     the server sends the user back with validation errors — so
+                                     nobody is asked to read & accept the notice twice. --}}
+                                <input type="hidden" name="fcn_accepted" id="fcnAcceptedInput" value="{{ old('fcn_accepted') ? '1' : '0' }}">
                                 @php
                                     $obName  = ($onBehalfOf ?? null) ? trim(($onBehalfOf->first_name ?? '') . ' ' . ($onBehalfOf->last_name ?? '')) : null;
                                     $memoRef = $sourceCampaign->reference ?? ('#' . $sourceCampaign->id);
@@ -339,10 +344,8 @@
                                         const form     = document.getElementById('formComposeForm');
                                         const backdrop = document.getElementById('fcnBackdrop');
                                         const bar      = document.getElementById('fcnBar');
+                                        const acceptedInput = document.getElementById('fcnAcceptedInput');
                                         let accepted   = false;
-
-                                        // Lock the form until the notice is accepted.
-                                        form.classList.add('fcn-locked');
 
                                         window.fcnOpen = function () {
                                             backdrop.classList.add('open');
@@ -358,8 +361,11 @@
                                             document.getElementById('fcnAgreeBtn').disabled = !cb.checked;
                                         };
 
-                                        window.fcnAgree = function () {
+                                        // markAccepted(): shared by a fresh agreement and by the
+                                        // restored state after a failed-validation round-trip.
+                                        function markAccepted() {
                                             accepted = true;
+                                            acceptedInput.value = '1';
                                             form.classList.remove('fcn-locked');
                                             bar.classList.add('fcn-bar--accepted');
                                             // Reopening later shows the notice read-only.
@@ -367,6 +373,10 @@
                                             document.getElementById('fcnAgreeBtn').style.display = 'none';
                                             document.getElementById('fcnBackBtn').style.display = 'none';
                                             document.getElementById('fcnDoneBtn').style.display = '';
+                                        }
+
+                                        window.fcnAgree = function () {
+                                            markAccepted();
                                             fcnClose();
                                         };
 
@@ -387,8 +397,17 @@
                                             if (e.target === backdrop) fcnClose();
                                         });
 
-                                        // Auto-open shortly after load so the entrance animation reads well.
-                                        setTimeout(window.fcnOpen, 400);
+                                        if (acceptedInput.value === '1') {
+                                            // Already agreed before a validation error sent the user
+                                            // back — restore the accepted state, keep the form usable,
+                                            // and don't ask them to read the notice again.
+                                            markAccepted();
+                                        } else {
+                                            // First visit: lock the form and auto-open the notice
+                                            // shortly after load so the entrance animation reads well.
+                                            form.classList.add('fcn-locked');
+                                            setTimeout(window.fcnOpen, 400);
+                                        }
                                     })();
                                 </script>
                             @endif
