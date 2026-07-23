@@ -147,7 +147,7 @@ class VehicleMaintenanceAllowanceForm extends BaseFormDefinition
                 officeSlug: 'internal-audit',
                 description: 'The Head/Director of Internal Audit records the inspection notes, confirms the vehicle belongs to the applicant, and endorses payment of the maintenance allowance.',
                 fields: [
-                    new FormField('audit_comments', 'Inspection notes (optional)', FormField::TYPE_TEXTAREA, required: false, col: 12,
+                    new FormField('audit_comments', 'Final Inspection Note', FormField::TYPE_TEXTAREA, required: false, col: 12,
                         help: 'Your signature endorses the confirmation: "I have inspected the above named car / motorcycle / bicycle and all relevant documents and confirm that the vehicle belongs to the applicant. Payment of maintenance allowance is recommended."'),
                 ],
                 signatureRequired: true,
