@@ -47,7 +47,7 @@
         .meta td { padding: 4px 0; line-height: 1.5; vertical-align: top; }
         .meta .k {
             width: 116px;
-            font-size: 10pt;
+            font-size: 10.5pt;
             text-transform: uppercase;
             letter-spacing: 0.06em;
             color: #6b7280;
