@@ -12,11 +12,12 @@ use App\Forms\FormStage;
  * Stages, in order:
  *   1. requisitioner       — Section A (the staff member raising the request)
  *   2. hod_dean            — Section A (Director / Dean / HOD co-signs)
- *   3. finance             — Section B (Finance Processing: codes + accountant + DF)
- *   4. audit               — Section C (Internal Audit vetting comments)
- *   5. registrar           — Section D (Registrar approves, may refer to VC)
- *   6. vc                  — VC approval (optional, only when Registrar refers up)
- *   7. finance_director    — Final authorisation to Accountant or Cashier
+ *   3. finance             — Section B (Finance Office assigns budget codes + confirms)
+ *   4. finance_df_review   — Section B (Director of Finance reviews codes, comments, signs)
+ *   5. audit               — Section C (Internal Audit vetting comments)
+ *   6. registrar           — Section D (Registrar approves, may refer to VC)
+ *   7. vc                  — VC approval (optional, only when Registrar refers up)
+ *   8. finance_director    — Final authorisation to Accountant or Cashier
  */
 class PaymentRequisitionForm extends BaseFormDefinition
 {
@@ -95,14 +96,26 @@ class PaymentRequisitionForm extends BaseFormDefinition
 
             new FormStage(
                 slug: 'finance',
-                label: 'B. Finance Processing',
+                label: 'B. Finance Processing — Budget Codes',
                 officeSlug: 'finance-office',
-                description: 'Finance Office assigns budget codes and the Director of Finance comments.',
+                description: 'The Finance Office assigns the budget codes, confirms they are correct, then forwards to the Director of Finance.',
                 fields: [
                     new FormField('expense_code',     'Expense Code',     FormField::TYPE_TEXT, required: true,  col: 4, maxLength: 50),
                     new FormField('cost_centre_code', 'Cost Centre Code', FormField::TYPE_TEXT, required: true,  col: 4, maxLength: 50),
                     new FormField('accrent_code',     'Accrent Code',     FormField::TYPE_TEXT, required: false, col: 4, maxLength: 50),
-                    new FormField('df_comments',      "Director of Finance Comments (if any)", FormField::TYPE_TEXTAREA, required: false, col: 12),
+                    new FormField('codes_confirmed',  'I confirm the budget codes above are correct.', FormField::TYPE_CHECKBOX, required: true, col: 12,
+                        help: 'You must confirm the codes are correct before this can be forwarded to the Director of Finance.'),
+                ],
+                signatureRequired: true,
+            ),
+
+            new FormStage(
+                slug: 'finance_df_review',
+                label: 'B. Finance Processing — Director of Finance',
+                officeSlug: 'director-of-finance',
+                description: 'The Director of Finance reviews the budget codes, adds any comments, verifies and signs. Attach any supporting document if needed.',
+                fields: [
+                    new FormField('df_comments', 'Director of Finance Comments (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12),
                 ],
                 signatureRequired: true,
             ),

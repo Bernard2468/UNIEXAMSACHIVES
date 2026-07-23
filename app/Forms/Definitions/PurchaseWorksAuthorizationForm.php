@@ -17,10 +17,11 @@ use App\Forms\FormStage;
  *   1. requisitioner       — Section A
  *   2. hod_dean            — Section A (Dean/HOD co-sign)
  *   3. finance             — Section B (Finance Office: budget confirmation, codes)
- *   4. procurement         — Section C (Procurement Committee decision)
- *   5. audit               — Section D (Internal Audit referrals/comments)
- *   6. registrar           — Section E (Registrar approves / refers to VC)
- *   7. vc                  — Optional VC approval branch
+ *   4. finance_df_review   — Section B (Director of Finance confirms/verifies + comments)
+ *   5. procurement         — Section C (Procurement Committee decision)
+ *   6. audit               — Section D (Internal Audit referrals/comments)
+ *   7. registrar           — Section E (Registrar approves / refers to VC)
+ *   8. vc                  — Optional VC approval branch
  */
 class PurchaseWorksAuthorizationForm extends BaseFormDefinition
 {
@@ -108,9 +109,9 @@ class PurchaseWorksAuthorizationForm extends BaseFormDefinition
 
             new FormStage(
                 slug: 'finance',
-                label: 'B. Finance Office',
+                label: 'B. Finance Office — Budget Clearance',
                 officeSlug: 'finance-office',
-                description: 'Finance Office confirms budget status and assigns the budget item code.',
+                description: 'The Finance Office confirms budget status, assigns the budget item code, confirms the entries are correct, then forwards to the Director of Finance.',
                 fields: [
                     new FormField(
                         name: 'budget_confirmation',
@@ -138,6 +139,19 @@ class PurchaseWorksAuthorizationForm extends BaseFormDefinition
                         help: 'Attach schedule, if any.'),
                     new FormField('budget_item_code',  'Budget Item Code', FormField::TYPE_TEXT,     required: true,  col: 6, maxLength: 50),
                     new FormField('fo_comments',       'Finance Office Comments (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12),
+                    new FormField('budget_confirmed',  'I confirm the budget status and item code above are correct.', FormField::TYPE_CHECKBOX, required: true, col: 12,
+                        help: 'You must confirm the entries are correct before this can be forwarded to the Director of Finance.'),
+                ],
+                signatureRequired: true,
+            ),
+
+            new FormStage(
+                slug: 'finance_df_review',
+                label: 'B. Finance Office — Director of Finance',
+                officeSlug: 'director-of-finance',
+                description: 'The Director of Finance confirms and verifies the budget clearance, adds any comments, and signs before the form moves to the Procurement Committee. Attach any supporting document if needed.',
+                fields: [
+                    new FormField('df_comments', 'Director of Finance Comments (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12),
                 ],
                 signatureRequired: true,
             ),
