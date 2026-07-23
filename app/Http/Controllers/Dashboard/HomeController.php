@@ -1370,7 +1370,12 @@ class HomeController extends Controller
             $isActiveParticipant = $memo->isActiveParticipant($userId);
             $isRecipient = $memo->recipients()->where('user_id', $userId)->exists();
             $isCreator = $memo->created_by === $userId;
-            
+
+            // The form delegate ("Assign to Procurement") gains chat access so
+            // they can read the approved request and ask follow-up questions
+            // while filling the form on the originator's behalf.
+            $isFormDelegate = $memo->isFormDelegate($userId);
+
             // If creator, check if memo is assigned to someone else. Exception: the
             // originator of a form-request memo regains chat access once the recipient
             // approves & unlocks the form, so they can supply documents / answer
@@ -1382,13 +1387,13 @@ class HomeController extends Controller
                 && $memo->current_assignee_id != $userId
                 && ! $creatorRegainedAccess;
 
-            if (!$isActiveParticipant && !$isRecipient && !$isCreator) {
+            if (!$isActiveParticipant && !$isRecipient && !$isCreator && !$isFormDelegate) {
                 abort(403, 'You are not a participant in this memo conversation.');
             }
             
             // If user is a recipient but not an active participant, they can view but not participate
             // Creator can participate only if memo is not assigned to someone else
-            $canParticipate = $isActiveParticipant || ($isCreator && !$isAssignedToSomeoneElse);
+            $canParticipate = $isActiveParticipant || ($isCreator && !$isAssignedToSomeoneElse) || $isFormDelegate;
 
             $memo->load([
                 'creator',
@@ -1396,7 +1401,8 @@ class HomeController extends Controller
                 'recipients.user',
                 'ccRecipients.user',
                 'activeParticipants.user',
-                'replies.user'
+                'replies.user',
+                'formDelegate'
             ]);
 
             // Set up active participants for the view (only active participants)
@@ -1489,8 +1495,9 @@ class HomeController extends Controller
         $isActiveParticipant = $memo->isActiveParticipant($userId);
         $isRecipient         = $memo->recipients()->where('user_id', $userId)->exists();
         $isCreator           = $memo->created_by === $userId;
+        $isFormDelegate      = $memo->isFormDelegate($userId);
 
-        if (!$isActiveParticipant && !$isRecipient && !$isCreator) {
+        if (!$isActiveParticipant && !$isRecipient && !$isCreator && !$isFormDelegate) {
             abort(403, 'You are not a participant in this memo.');
         }
 
@@ -1512,9 +1519,12 @@ class HomeController extends Controller
             abort(403, 'This memo is ' . $memo->memo_status . ' and cannot receive new messages.');
         }
         
-        // Check if user is an active participant or the creator (only these can send messages)
+        // Check if user is an active participant or the creator (only these can send messages).
+        // The form delegate ("Assign to Procurement") may also reply so they can
+        // ask follow-up questions while filling the form on the originator's behalf.
         $isActiveParticipant = $memo->isActiveParticipant($userId);
         $isCreator = $memo->created_by === $userId;
+        $isFormDelegate = $memo->isFormDelegate($userId);
         
         // If creator, check if memo is assigned to someone else. Exception: the
         // originator of a form-request memo regains chat access once the recipient
@@ -1534,7 +1544,7 @@ class HomeController extends Controller
             ], 403);
         }
         
-        if (!$isActiveParticipant && !$isCreator) {
+        if (!$isActiveParticipant && !$isCreator && !$isFormDelegate) {
             abort(403, 'You are not an active participant in this memo conversation.');
         }
 
@@ -2061,6 +2071,123 @@ class HomeController extends Controller
     }
 
     /**
+     * "Assign to Procurement": after their memo is approved & unlocked, the
+     * originator may delegate the actual form-filling to somebody else — a
+     * Procurement office member or any other user. The delegate gains chat
+     * access and may start the linked form(s) with ?source_campaign, filling
+     * them on the originator's behalf. Re-delegating overwrites the previous
+     * delegate (workflow history keeps the trail of hand-offs).
+     */
+    public function delegateFormFilling(Request $request, EmailCampaign $memo)
+    {
+        $userId = Auth::id();
+
+        $data = $request->validate([
+            'delegate_user_id' => 'required|integer|exists:users,id',
+        ]);
+        $delegateId = (int) $data['delegate_user_id'];
+
+        // Only the memo originator may delegate; only procurement memos carry
+        // the "Assign to Procurement" flow today.
+        if ((int) $memo->created_by !== (int) $userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the requester who created this memo can assign the form filling to someone else.',
+            ], 403);
+        }
+
+        if ($memo->memo_category !== 'procurement' || !$memo->hasLinkedForms()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Form filling can only be delegated on procurement memos.',
+            ], 422);
+        }
+
+        if (!$memo->isFormUnlocked()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The request must be approved before the form can be assigned to someone else.',
+            ], 422);
+        }
+
+        if ($memo->memo_status === 'archived') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This memo is archived and its form can no longer be delegated.',
+            ], 403);
+        }
+
+        if ($delegateId === (int) $userId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You already can fill the form yourself — pick someone else to fill it on your behalf.',
+            ], 422);
+        }
+
+        if ($memo->isFormDelegate($delegateId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This person has already been assigned to fill the form.',
+            ], 409);
+        }
+
+        $delegate = User::find($delegateId);
+        $delegateName = trim(($delegate->first_name ?? '') . ' ' . ($delegate->last_name ?? ''));
+
+        // Persist the delegation (writes form_delegate_* + workflow history).
+        $memo->delegateFormFilling($delegateId, $userId);
+
+        // Friendly label for the note / notification.
+        $registry   = app(\App\Forms\FormRegistry::class);
+        $formTitles = collect($memo->linkedFormSlugs())
+            ->map(fn ($slug) => optional($registry->find($slug))->title())
+            ->filter()
+            ->values();
+        $formLabel = $formTitles->count() === 1 ? $formTitles->first() : ($formTitles->count() . ' eligible forms');
+
+        // Loop-closing side effects are best-effort: a failure here must never
+        // undo the delegation the requester just performed.
+        $actor     = Auth::user();
+        $actorName = trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? ''));
+
+        try {
+            MemoReply::create([
+                'campaign_id' => $memo->id,
+                'user_id'     => $userId,
+                'message'     => '<img src="https://img.icons8.com/plasticine/50/task.png" alt="Form" style="width:18px;height:18px;vertical-align:-3px;margin-right:4px;"><em>' . e($actorName) . ' assigned ' . e($delegateName) . ' to fill the ' . e($formLabel) . ' on their behalf.</em>',
+                'attachments' => [],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('delegateFormFilling: chat note failed: ' . $e->getMessage());
+        }
+
+        try {
+            \App\Models\Notification::create([
+                'user_id'  => $delegateId,
+                'actor_id' => $userId,
+                'type'     => 'memo',
+                'category' => \App\Models\Notification::CATEGORY_MEMO,
+                'title'    => 'Form Filling Assigned to You',
+                'message'  => $actorName . ' assigned you to fill the ' . $formLabel . ' on their behalf for the approved memo "' . $memo->subject . '". Open the memo to proceed.',
+                'url'      => route('dashboard.uimms.chat', $memo->id),
+                'data'     => [
+                    'memo_id'       => $memo->id,
+                    'memo_category' => $memo->memo_category,
+                    'form_slugs'    => $memo->linkedFormSlugs(),
+                    'delegated_by'  => $userId,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('delegateFormFilling: notification failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Assigned to {$delegateName}. They have been notified and can now fill the form on your behalf.",
+        ]);
+    }
+
+    /**
      * Get chat messages for a memo (AJAX)
      */
     public function getChatMessages(EmailCampaign $memo)
@@ -2068,12 +2195,13 @@ class HomeController extends Controller
         $userId = Auth::id();
         
         try {
-            // Check if user is a recipient or the creator
+            // Check if user is a recipient, the creator, or the form delegate
             $isRecipient = $memo->recipients()->where('user_id', $userId)->exists();
             $isCreator = $memo->created_by === $userId;
             $isActiveParticipant = $memo->isActiveParticipant($userId);
-            
-            if (!$isRecipient && !$isCreator) {
+            $isFormDelegate = $memo->isFormDelegate($userId);
+
+            if (!$isRecipient && !$isCreator && !$isFormDelegate) {
                 abort(403, 'You are not a participant in this memo conversation.');
             }
 
@@ -2131,11 +2259,12 @@ class HomeController extends Controller
     {
         $userId = Auth::id();
         
-        // Check if user is a recipient of this memo
+        // Check if user is a recipient of this memo (or its form delegate)
         $isRecipient = $memo->recipients()->where('user_id', $userId)->exists();
         $isCreator = $memo->created_by === $userId;
-        
-        if (!$isRecipient && !$isCreator) {
+        $isFormDelegate = $memo->isFormDelegate($userId);
+
+        if (!$isRecipient && !$isCreator && !$isFormDelegate) {
             abort(403, 'Unauthorized access to this attachment.');
         }
         
@@ -2162,11 +2291,12 @@ class HomeController extends Controller
     {
         $userId = Auth::id();
         
-        // Check if user is a recipient of this memo
+        // Check if user is a recipient of this memo (or its form delegate)
         $isRecipient = $memo->recipients()->where('user_id', $userId)->exists();
         $isCreator = $memo->created_by === $userId;
-        
-        if (!$isRecipient && !$isCreator) {
+        $isFormDelegate = $memo->isFormDelegate($userId);
+
+        if (!$isRecipient && !$isCreator && !$isFormDelegate) {
             abort(403, 'Unauthorized access to this attachment.');
         }
         
@@ -2240,8 +2370,9 @@ class HomeController extends Controller
         $isRecipient = $memo->recipients()->where('user_id', $userId)->exists();
         $isCreator = $memo->created_by === $userId;
         $isReplyAuthor = $reply->user_id === $userId;
-        
-        if (!$isRecipient && !$isCreator && !$isReplyAuthor) {
+        $isFormDelegate = $memo->isFormDelegate($userId);
+
+        if (!$isRecipient && !$isCreator && !$isReplyAuthor && !$isFormDelegate) {
             abort(403, 'Unauthorized access to this attachment.');
         }
         
@@ -2273,8 +2404,9 @@ class HomeController extends Controller
         $isRecipient = $memo->recipients()->where('user_id', $userId)->exists();
         $isCreator = $memo->created_by === $userId;
         $isReplyAuthor = $reply->user_id === $userId;
-        
-        if (!$isRecipient && !$isCreator && !$isReplyAuthor) {
+        $isFormDelegate = $memo->isFormDelegate($userId);
+
+        if (!$isRecipient && !$isCreator && !$isReplyAuthor && !$isFormDelegate) {
             abort(403, 'Unauthorized access to this attachment.');
         }
         

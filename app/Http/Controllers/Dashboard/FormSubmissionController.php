@@ -59,8 +59,17 @@ class FormSubmissionController extends Controller
 
         // When the user arrived here from an approved memo (?source_campaign=ID)
         // we remember it so the filled form links back to that memo. Null unless
-        // the memo is the user's own, approved, and mapped to this form type.
+        // the memo is the user's own (or delegated to them), approved, and
+        // mapped to this form type.
         $sourceCampaign = $this->resolveSourceCampaign($request, $formSlug);
+
+        // When a delegate is filling on behalf of the memo's originator
+        // ("Assign to Procurement"), surface who the actual requisitioner is
+        // so the compose page can show a short "on behalf of" note.
+        $onBehalfOf = $sourceCampaign
+            && $sourceCampaign->isFormDelegate(Auth::id())
+            ? $sourceCampaign->creator
+            : null;
 
         // The next stage after the requisitioner determines who we route to.
         $nextStage   = $definition->nextStageAfter($stage->slug);
@@ -82,6 +91,7 @@ class FormSubmissionController extends Controller
             'sectionData'          => $this->prefillFromProfile($user, $stage),
             'savedSignature'       => $user->savedSignature,
             'sourceCampaign'       => $sourceCampaign,
+            'onBehalfOf'           => $onBehalfOf,
         ]);
     }
 
@@ -736,7 +746,8 @@ class FormSubmissionController extends Controller
      * Resolve the approved memo a form is being started from, validating that
      * the link is legitimate. Returns null (silently ignored) unless ALL hold:
      *  - a source_campaign id was supplied,
-     *  - the memo exists and belongs to the current user (the originator),
+     *  - the memo exists and the current user is either its originator OR the
+     *    form delegate the originator assigned ("Assign to Procurement"),
      *  - an approver has unlocked the form on it,
      *  - this form type is one the memo's category maps to.
      * This is metadata/traceability only — it never gates form access.
@@ -750,7 +761,7 @@ class FormSubmissionController extends Controller
 
         $memo = \App\Models\EmailCampaign::find($id);
         if (!$memo
-            || (int) $memo->created_by !== (int) Auth::id()
+            || ((int) $memo->created_by !== (int) Auth::id() && !$memo->isFormDelegate(Auth::id()))
             || !$memo->isFormUnlocked()
             || !in_array($formSlug, $memo->linkedFormSlugs(), true)) {
             return null;

@@ -64,9 +64,18 @@
                                  submission traces back to that memo. --}}
                             @if($sourceCampaign ?? null)
                                 <input type="hidden" name="source_campaign" value="{{ $sourceCampaign->id }}">
+                                @if($onBehalfOf ?? null)
+                                    @php $obName = trim(($onBehalfOf->first_name ?? '') . ' ' . ($onBehalfOf->last_name ?? '')); @endphp
+                                    <div style="display:flex;align-items:center;gap:10px;background:#fff7ed;border:1px solid #fed7aa;border-left:4px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:12px;color:#92400e;font-size:13px;">
+                                        <i class="icofont-people" style="font-size:18px;color:#f59e0b;"></i>
+                                        <span>You are filling this form <strong>on behalf of {{ $obName }}</strong>,
+                                            the requisitioner of the approved memo
+                                            <strong>{{ $sourceCampaign->reference ?? ('#' . $sourceCampaign->id) }}</strong>.</span>
+                                    </div>
+                                @endif
                                 <div style="display:flex;align-items:center;gap:10px;background:#eef6ff;border:1px solid #bcdcff;border-left:4px solid #1a4a9b;border-radius:10px;padding:12px 14px;margin-bottom:18px;color:#1a3c6b;font-size:13px;">
                                     <i class="icofont-link" style="font-size:18px;color:#1a4a9b;"></i>
-                                    <span>You're filling this form from your approved memo
+                                    <span>You're filling this form from {{ ($onBehalfOf ?? null) ? 'the' : 'your' }} approved memo
                                         <strong>{{ $sourceCampaign->reference ?? ('#' . $sourceCampaign->id) }}</strong>.
                                         It will be linked back to that memo automatically.</span>
                                 </div>

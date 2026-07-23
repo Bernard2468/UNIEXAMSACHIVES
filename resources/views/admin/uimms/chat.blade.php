@@ -291,15 +291,33 @@
                         </style>
                         @endif
 
-                        {{-- ===== PROCEED-TO-FORM BANNER (originator only, after approval) ===== --}}
-                        @if($memo->isFormUnlocked() && $memo->created_by == auth()->id() && count($linkedForms))
+                        {{-- ===== PROCEED-TO-FORM BANNER (originator or form delegate, after approval) ===== --}}
+                        @php
+                            $viewerIsOriginator   = $memo->created_by == auth()->id();
+                            $viewerIsFormDelegate = $memo->isFormDelegate(auth()->id());
+                            // "Assign to Procurement" ships for procurement memos only.
+                            $canAssignProcurement = $viewerIsOriginator && $memo->memo_category === 'procurement';
+                            $formDelegateName     = $memo->formDelegate
+                                ? trim(($memo->formDelegate->first_name ?? '') . ' ' . ($memo->formDelegate->last_name ?? ''))
+                                : null;
+                        @endphp
+                        @if($memo->isFormUnlocked() && ($viewerIsOriginator || $viewerIsFormDelegate) && count($linkedForms))
                         <div class="proceed-form-banner">
                             <div class="pfb-icon"><i class="icofont-check-circled"></i></div>
                             <div class="pfb-body">
-                                <div class="pfb-title">Your request has been approved</div>
-                                <div class="pfb-text">
-                                    You can now proceed to fill
-                                    {{ count($linkedForms) === 1 ? 'the form below' : 'one of the forms below' }}.
+                                @if($viewerIsFormDelegate && !$viewerIsOriginator)
+                                    @php $pfbOriginatorName = trim(($memo->creator->first_name ?? '') . ' ' . ($memo->creator->last_name ?? '')); @endphp
+                                    <div class="pfb-title">You've been assigned to fill a form on behalf of {{ $pfbOriginatorName }}</div>
+                                    <div class="pfb-text">
+                                        {{ $pfbOriginatorName }} asked you to fill
+                                        {{ count($linkedForms) === 1 ? 'the form below' : 'one of the forms below' }}
+                                        on their behalf for this approved request.
+                                @else
+                                    <div class="pfb-title">Your request has been approved</div>
+                                    <div class="pfb-text">
+                                        You can now proceed to fill
+                                        {{ count($linkedForms) === 1 ? 'the form below' : 'one of the forms below' }}.
+                                @endif
                                     @if($memo->formUnlocker)
                                         @php
                                             $approverName     = trim($memo->formUnlocker->first_name . ' ' . $memo->formUnlocker->last_name);
@@ -315,7 +333,19 @@
                                             <i class="icofont-simple-right pfb-btn-arrow"></i>
                                         </a>
                                     @endforeach
+                                    @if($canAssignProcurement)
+                                        <button type="button" class="pfb-btn pfb-btn--assign" onclick="openAssignProcDrawer()">
+                                            <i class="icofont-people"></i>
+                                            {{ $memo->form_delegate_id ? 'Reassign Form Filling' : 'Assign to Procurement' }}
+                                        </button>
+                                    @endif
                                 </div>
+                                @if($canAssignProcurement && $formDelegateName)
+                                    <div class="pfb-delegate-chip">
+                                        <i class="icofont-check"></i>
+                                        Currently assigned to <strong>&nbsp;{{ $formDelegateName }}&nbsp;</strong> — they can fill the form on your behalf.
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         <style>
@@ -348,7 +378,391 @@
                             .pfb-btn:hover{ background:#143a7c; color:#fff; transform:translateY(-1px); box-shadow:0 6px 16px rgba(26,74,155,.28); }
                             .pfb-btn i{ font-size:14px; }
                             .pfb-btn-arrow{ opacity:.8; margin-left:-2px; }
+                            .pfb-btn--assign{
+                                background:#fff; color:#1a4a9b; border:1.5px solid #1a4a9b;
+                                cursor:pointer; box-shadow:none;
+                            }
+                            .pfb-btn--assign:hover{ background:#eef3ff; color:#143a7c; transform:translateY(-1px); box-shadow:0 4px 12px rgba(26,74,155,.15); }
+                            .pfb-delegate-chip{
+                                display:inline-flex; align-items:center; margin-top:12px;
+                                background:#f0fdf4; border:1px solid #bbf7d0; color:#166534;
+                                font-size:13px; font-weight:500; padding:7px 13px; border-radius:20px;
+                            }
+                            .pfb-delegate-chip i{ margin-right:6px; color:#16a34a; }
                         </style>
+
+                        {{-- ===== ASSIGN-TO-PROCUREMENT DRAWER (originator, procurement memos) ===== --}}
+                        @if($canAssignProcurement)
+                        <div class="apd-backdrop" id="assignProcDrawer" aria-hidden="true">
+                            <aside class="apd" role="dialog" aria-modal="true" aria-label="Assign form filling">
+                                <header class="apd__head">
+                                    <div class="apd__title">
+                                        <span class="apd__ic"><i class="icofont-people"></i></span>
+                                        <div>
+                                            <h3>Assign Form Filling</h3>
+                                            <p>Pick who should fill the form on your behalf</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="apd__close" onclick="closeAssignProcDrawer()" aria-label="Close"><i class="icofont-close"></i></button>
+                                </header>
+
+                                <nav class="apd__tabs" role="tablist">
+                                    <button type="button" class="apd-tab active" data-apd-tab="office" onclick="apdSwitchTab('office')">
+                                        <i class="icofont-building-alt"></i> Procurement Office
+                                    </button>
+                                    <button type="button" class="apd-tab" data-apd-tab="users" onclick="apdSwitchTab('users')">
+                                        <i class="icofont-users-alt-4"></i> Other Users
+                                    </button>
+                                </nav>
+
+                                <div class="apd__search">
+                                    <i class="icofont-search-1"></i>
+                                    <input type="text" id="apdSearch" placeholder="Search by name or email…" autocomplete="off" oninput="apdFilter(this.value)">
+                                </div>
+
+                                <div class="apd__body">
+                                    <div class="apd-pane active" id="apdPaneOffice">
+                                        <div class="apd-loading" id="apdOfficeLoading">
+                                            <span class="apd-spinner"></span> Loading procurement office members…
+                                        </div>
+                                        <div class="apd-list" id="apdOfficeList"></div>
+                                    </div>
+                                    <div class="apd-pane" id="apdPaneUsers">
+                                        <div class="apd-list" id="apdUsersList">
+                                            @foreach($users as $apdUser)
+                                                @php
+                                                    $apdName = trim(($apdUser->first_name ?? '') . ' ' . ($apdUser->last_name ?? ''));
+                                                    $apdInitials = strtoupper(mb_substr($apdUser->first_name ?? '', 0, 1) . mb_substr($apdUser->last_name ?? '', 0, 1));
+                                                @endphp
+                                                <button type="button" class="apd-person"
+                                                        data-id="{{ $apdUser->id }}"
+                                                        data-name="{{ $apdName }}"
+                                                        data-search="{{ strtolower($apdName . ' ' . $apdUser->email) }}"
+                                                        onclick="apdPick(this)">
+                                                    <span class="apd-avatar">{{ $apdInitials }}</span>
+                                                    <span class="apd-person-info">
+                                                        <span class="apd-person-name">{{ $apdName }}</span>
+                                                        <span class="apd-person-email">{{ $apdUser->email }}</span>
+                                                    </span>
+                                                    <span class="apd-person-check"><i class="icofont-check"></i></span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    <div class="apd-empty" id="apdEmpty" style="display:none;">
+                                        <i class="icofont-search-document"></i>
+                                        <p>No people match your search.</p>
+                                    </div>
+                                </div>
+
+                                <footer class="apd__foot">
+                                    <div class="apd__picked" id="apdPicked">No one selected yet</div>
+                                    <div class="apd__foot-btns">
+                                        <button type="button" class="apd-btn apd-btn--ghost" onclick="closeAssignProcDrawer()">Cancel</button>
+                                        <button type="button" class="apd-btn apd-btn--primary" id="apdAssignBtn" disabled onclick="apdSubmit()">
+                                            <i class="icofont-check"></i> Assign
+                                        </button>
+                                    </div>
+                                </footer>
+                            </aside>
+                        </div>
+
+                        <style>
+                            body.apd-lock{ overflow:hidden; }
+                            .apd-backdrop{
+                                position:fixed; inset:0; z-index:10050;
+                                background:rgba(15,23,42,.45);
+                                opacity:0; visibility:hidden;
+                                transition:opacity .25s ease, visibility .25s ease;
+                                font-family:'Outfit',sans-serif;
+                            }
+                            .apd-backdrop.open{ opacity:1; visibility:visible; }
+                            .apd{
+                                position:absolute; top:0; right:0; height:100%;
+                                width:440px; max-width:94vw;
+                                background:#fff; display:flex; flex-direction:column;
+                                box-shadow:-18px 0 50px rgba(15,23,42,.18);
+                                transform:translateX(100%);
+                                transition:transform .3s cubic-bezier(.22,1,.36,1);
+                            }
+                            .apd-backdrop.open .apd{ transform:translateX(0); }
+                            .apd *{ font-family:'Outfit',sans-serif; box-sizing:border-box; }
+                            .apd__head{
+                                display:flex; align-items:center; justify-content:space-between;
+                                padding:18px 20px; border-bottom:1px solid #eef1f6;
+                            }
+                            .apd__title{ display:flex; align-items:center; gap:12px; min-width:0; }
+                            .apd__ic{
+                                flex:0 0 auto; width:40px; height:40px; border-radius:11px;
+                                display:flex; align-items:center; justify-content:center;
+                                background:#eef3ff; color:#1a4a9b; font-size:19px;
+                            }
+                            .apd__title h3{ margin:0; font-size:16.5px; font-weight:700; color:#0f172a; letter-spacing:-.01em; }
+                            .apd__title p{ margin:2px 0 0; font-size:12.5px; color:#64748b; }
+                            .apd__close{
+                                flex:0 0 auto; width:34px; height:34px; border:none; border-radius:9px;
+                                background:#f8fafc; color:#64748b; font-size:15px; cursor:pointer;
+                                display:flex; align-items:center; justify-content:center;
+                                transition:background .15s, color .15s;
+                            }
+                            .apd__close:hover{ background:#f1f5f9; color:#0f172a; }
+                            .apd__tabs{
+                                display:flex; gap:4px; padding:12px 20px 0; border-bottom:1px solid #eef1f6;
+                            }
+                            .apd-tab{
+                                flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+                                background:none; border:none; border-bottom:2.5px solid transparent;
+                                color:#64748b; font-size:13.5px; font-weight:600; padding:10px 6px 12px;
+                                cursor:pointer; transition:color .15s, border-color .15s; white-space:nowrap;
+                            }
+                            .apd-tab i{ font-size:14px; }
+                            .apd-tab:hover{ color:#334155; }
+                            .apd-tab.active{ color:#1a4a9b; border-bottom-color:#1a4a9b; }
+                            .apd__search{
+                                position:relative; padding:14px 20px 10px;
+                            }
+                            .apd__search i{
+                                position:absolute; left:34px; top:50%; transform:translateY(-46%);
+                                color:#94a3b8; font-size:14px; pointer-events:none;
+                            }
+                            .apd__search input{
+                                width:100%; border:1.5px solid #e2e8f0; border-radius:10px;
+                                padding:10px 14px 10px 38px; font-size:13.5px; color:#0f172a;
+                                outline:none; transition:border-color .15s, box-shadow .15s;
+                            }
+                            .apd__search input:focus{ border-color:#1a4a9b; box-shadow:0 0 0 3px rgba(26,74,155,.12); }
+                            .apd__body{ flex:1; overflow-y:auto; padding:4px 20px 16px; }
+                            .apd__body::-webkit-scrollbar{ width:8px; }
+                            .apd__body::-webkit-scrollbar-thumb{ background:#cbd5e1; border-radius:6px; }
+                            .apd-pane{ display:none; }
+                            .apd-pane.active{ display:block; }
+                            .apd-list{ display:flex; flex-direction:column; gap:6px; }
+                            .apd-person{
+                                display:flex; align-items:center; gap:12px; width:100%;
+                                background:#fff; border:1.5px solid #e8ecf3; border-radius:12px;
+                                padding:10px 12px; cursor:pointer; text-align:left;
+                                transition:border-color .15s, background .15s, box-shadow .15s;
+                            }
+                            .apd-person:hover{ border-color:#bcd0f7; background:#f8faff; }
+                            .apd-person.selected{
+                                border-color:#1a4a9b; background:#eef3ff;
+                                box-shadow:0 0 0 3px rgba(26,74,155,.10);
+                            }
+                            .apd-avatar{
+                                flex:0 0 auto; width:38px; height:38px; border-radius:50%;
+                                background:linear-gradient(135deg,#1a4a9b,#3b6fd4); color:#fff;
+                                display:flex; align-items:center; justify-content:center;
+                                font-size:13px; font-weight:700; letter-spacing:.5px;
+                            }
+                            .apd-person-info{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
+                            .apd-person-name{ font-size:14px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:7px; }
+                            .apd-person-email{ font-size:12px; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+                            .apd-head-badge{
+                                display:inline-flex; align-items:center;
+                                background:#fef3c7; color:#92400e; border:1px solid #fde68a;
+                                font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+                                padding:2px 8px; border-radius:12px;
+                            }
+                            .apd-person-check{
+                                flex:0 0 auto; width:24px; height:24px; border-radius:50%;
+                                border:1.5px solid #cbd5e1; color:transparent; font-size:11px;
+                                display:flex; align-items:center; justify-content:center;
+                                transition:all .15s;
+                            }
+                            .apd-person.selected .apd-person-check{ background:#1a4a9b; border-color:#1a4a9b; color:#fff; }
+                            .apd-loading{
+                                display:flex; align-items:center; gap:10px; padding:18px 4px;
+                                color:#64748b; font-size:13.5px;
+                            }
+                            .apd-spinner{
+                                width:16px; height:16px; border-radius:50%;
+                                border:2.5px solid #dbe4f5; border-top-color:#1a4a9b;
+                                animation:apdSpin .8s linear infinite;
+                            }
+                            @keyframes apdSpin{ to{ transform:rotate(360deg); } }
+                            .apd-empty{ text-align:center; padding:34px 10px; color:#94a3b8; }
+                            .apd-empty i{ font-size:30px; }
+                            .apd-empty p{ margin:8px 0 0; font-size:13.5px; }
+                            .apd__foot{
+                                display:flex; align-items:center; justify-content:space-between; gap:12px;
+                                padding:14px 20px; border-top:1px solid #eef1f6; background:#fbfcfe;
+                            }
+                            .apd__picked{ font-size:12.5px; color:#64748b; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+                            .apd__picked strong{ color:#1a4a9b; }
+                            .apd__foot-btns{ display:flex; gap:8px; flex:0 0 auto; }
+                            .apd-btn{
+                                display:inline-flex; align-items:center; gap:7px;
+                                border-radius:10px; font-weight:700; font-size:13.5px;
+                                padding:10px 18px; cursor:pointer; border:none;
+                                transition:background .15s, transform .15s, opacity .15s;
+                            }
+                            .apd-btn--ghost{ background:#fff; color:#475569; border:1.5px solid #e2e8f0; }
+                            .apd-btn--ghost:hover{ background:#f8fafc; }
+                            .apd-btn--primary{ background:#1a4a9b; color:#fff; box-shadow:0 4px 12px rgba(26,74,155,.25); }
+                            .apd-btn--primary:hover:not(:disabled){ background:#143a7c; transform:translateY(-1px); }
+                            .apd-btn--primary:disabled{ opacity:.45; cursor:not-allowed; box-shadow:none; }
+                            @media (max-width:520px){ .apd{ width:100vw; max-width:100vw; } }
+                        </style>
+
+                        <script>
+                            (function () {
+                                let apdSelected = null;           // { id, name }
+                                let apdOfficeLoaded = false;
+
+                                const OFFICE_MEMBERS_URL = @json(route('admin.forms.office-members', 'procurement-committee'));
+                                const DELEGATE_URL       = @json(route('dashboard.uimms.chat.delegate-form', $memo->id));
+
+                                window.openAssignProcDrawer = function () {
+                                    document.getElementById('assignProcDrawer').classList.add('open');
+                                    document.body.classList.add('apd-lock');
+                                    if (!apdOfficeLoaded) loadOfficeMembers();
+                                };
+
+                                window.closeAssignProcDrawer = function () {
+                                    document.getElementById('assignProcDrawer').classList.remove('open');
+                                    document.body.classList.remove('apd-lock');
+                                };
+
+                                // Close when clicking the dimmed backdrop (not the panel itself).
+                                document.getElementById('assignProcDrawer').addEventListener('click', function (e) {
+                                    if (e.target === this) closeAssignProcDrawer();
+                                });
+
+                                window.apdSwitchTab = function (tab) {
+                                    document.querySelectorAll('.apd-tab').forEach(function (t) {
+                                        t.classList.toggle('active', t.dataset.apdTab === tab);
+                                    });
+                                    document.getElementById('apdPaneOffice').classList.toggle('active', tab === 'office');
+                                    document.getElementById('apdPaneUsers').classList.toggle('active', tab === 'users');
+                                    apdFilter(document.getElementById('apdSearch').value);
+                                };
+
+                                function loadOfficeMembers() {
+                                    fetch(OFFICE_MEMBERS_URL, { headers: { 'Accept': 'application/json' } })
+                                        .then(function (r) { return r.json(); })
+                                        .then(function (data) {
+                                            apdOfficeLoaded = true;
+                                            document.getElementById('apdOfficeLoading').style.display = 'none';
+                                            const list = document.getElementById('apdOfficeList');
+                                            const members = (data && data.members) || [];
+                                            if (!members.length) {
+                                                list.innerHTML = '<div class="apd-empty" style="display:block;"><i class="icofont-building-alt"></i><p>The Procurement office has no active members yet.<br>Use the Other Users tab instead.</p></div>';
+                                                return;
+                                            }
+                                            members.forEach(function (m) {
+                                                list.appendChild(buildPersonRow(m));
+                                            });
+                                        })
+                                        .catch(function () {
+                                            document.getElementById('apdOfficeLoading').innerHTML =
+                                                'Could not load office members. Please close and try again.';
+                                        });
+                                }
+
+                                // Rows are built with DOM APIs (never innerHTML with user data)
+                                // so names/emails are always safely escaped.
+                                function buildPersonRow(m) {
+                                    const btn = document.createElement('button');
+                                    btn.type = 'button';
+                                    btn.className = 'apd-person';
+                                    btn.dataset.id = m.id;
+                                    btn.dataset.name = m.name;
+                                    btn.dataset.search = ((m.name || '') + ' ' + (m.email || '')).toLowerCase();
+                                    btn.addEventListener('click', function () { apdPick(btn); });
+
+                                    const avatar = document.createElement('span');
+                                    avatar.className = 'apd-avatar';
+                                    avatar.textContent = (m.name || '?').split(/\s+/).map(function (p) { return p.charAt(0); }).slice(0, 2).join('').toUpperCase();
+
+                                    const info = document.createElement('span');
+                                    info.className = 'apd-person-info';
+                                    const nameEl = document.createElement('span');
+                                    nameEl.className = 'apd-person-name';
+                                    nameEl.textContent = m.name;
+                                    if (m.is_head) {
+                                        const badge = document.createElement('span');
+                                        badge.className = 'apd-head-badge';
+                                        badge.textContent = 'Head';
+                                        nameEl.appendChild(badge);
+                                    }
+                                    const emailEl = document.createElement('span');
+                                    emailEl.className = 'apd-person-email';
+                                    emailEl.textContent = m.email || '';
+                                    info.appendChild(nameEl);
+                                    info.appendChild(emailEl);
+
+                                    const check = document.createElement('span');
+                                    check.className = 'apd-person-check';
+                                    check.innerHTML = '<i class="icofont-check"></i>';
+
+                                    btn.appendChild(avatar);
+                                    btn.appendChild(info);
+                                    btn.appendChild(check);
+                                    return btn;
+                                }
+
+                                window.apdPick = function (el) {
+                                    document.querySelectorAll('.apd-person.selected').forEach(function (p) { p.classList.remove('selected'); });
+                                    el.classList.add('selected');
+                                    apdSelected = { id: el.dataset.id, name: el.dataset.name };
+                                    const picked = document.getElementById('apdPicked');
+                                    picked.innerHTML = 'Assign to <strong></strong>';
+                                    picked.querySelector('strong').textContent = apdSelected.name;
+                                    document.getElementById('apdAssignBtn').disabled = false;
+                                };
+
+                                window.apdFilter = function (term) {
+                                    term = (term || '').trim().toLowerCase();
+                                    const activePane = document.querySelector('.apd-pane.active');
+                                    let visible = 0;
+                                    activePane.querySelectorAll('.apd-person').forEach(function (p) {
+                                        const show = !term || (p.dataset.search || '').indexOf(term) !== -1;
+                                        p.style.display = show ? '' : 'none';
+                                        if (show) visible++;
+                                    });
+                                    const hasRows = activePane.querySelectorAll('.apd-person').length > 0;
+                                    document.getElementById('apdEmpty').style.display = (hasRows && visible === 0) ? 'block' : 'none';
+                                };
+
+                                window.apdSubmit = function () {
+                                    if (!apdSelected) return;
+                                    confirmAction(
+                                        'Assign ' + apdSelected.name + ' to fill the form on your behalf?',
+                                        function () {
+                                            const btn = document.getElementById('apdAssignBtn');
+                                            btn.disabled = true;
+
+                                            const formData = new FormData();
+                                            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                                            formData.append('delegate_user_id', apdSelected.id);
+
+                                            fetch(DELEGATE_URL, { method: 'POST', body: formData })
+                                                .then(function (r) { return r.json(); })
+                                                .then(function (data) {
+                                                    if (data.success) {
+                                                        location.reload();
+                                                    } else {
+                                                        alert(data.message || 'Could not assign. Please try again.');
+                                                        btn.disabled = false;
+                                                    }
+                                                })
+                                                .catch(function () {
+                                                    alert('Error assigning. Please try again.');
+                                                    btn.disabled = false;
+                                                });
+                                        },
+                                        null,
+                                        {
+                                            title: 'Assign Form Filling',
+                                            type: 'success',
+                                            confirmText: 'Assign',
+                                            subtitle: 'They will be notified and can open this memo to fill the form on your behalf. You can reassign to someone else at any time.'
+                                        }
+                                    );
+                                };
+                            })();
+                        </script>
+                        @endif
                         @endif
 
                         {{-- ===== MEMO DETAILS / FORMAL LETTER ===== --}}

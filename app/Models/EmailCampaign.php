@@ -48,6 +48,10 @@ class EmailCampaign extends Model
         'memo_category',
         'form_unlocked_at',
         'form_unlocked_by',
+        // Memo → Forms delegation ("Assign to Procurement")
+        'form_delegate_id',
+        'form_delegated_by',
+        'form_delegated_at',
     ];
 
     protected $casts = [
@@ -63,6 +67,7 @@ class EmailCampaign extends Model
         'suspended_at' => 'datetime',
         'archived_at' => 'datetime',
         'form_unlocked_at' => 'datetime',
+        'form_delegated_at' => 'datetime',
     ];
 
     /**
@@ -565,6 +570,43 @@ class EmailCampaign extends Model
         ]);
 
         $this->addToWorkflowHistory('form_unlocked', $userId);
+    }
+
+    /**
+     * The user delegated to fill the linked form(s) on the originator's
+     * behalf ("Assign to Procurement"). Null when no delegation exists.
+     */
+    public function formDelegate(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'form_delegate_id');
+    }
+
+    /** The originator who performed the delegation. */
+    public function formDelegator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'form_delegated_by');
+    }
+
+    /** Whether the given user is the current form delegate for this memo. */
+    public function isFormDelegate($userId): bool
+    {
+        return $this->form_delegate_id !== null
+            && (int) $this->form_delegate_id === (int) $userId;
+    }
+
+    /**
+     * Record (or replace) the form delegate. Re-delegating simply overwrites
+     * the previous assignee — history keeps a trail of every hand-off.
+     */
+    public function delegateFormFilling(int $delegateId, int $byUserId): void
+    {
+        $this->update([
+            'form_delegate_id'  => $delegateId,
+            'form_delegated_by' => $byUserId,
+            'form_delegated_at' => now(),
+        ]);
+
+        $this->addToWorkflowHistory('form_delegated', $byUserId, $delegateId, 'Delegated form filling on behalf of the requisitioner');
     }
 
     // UIMMS Scopes
