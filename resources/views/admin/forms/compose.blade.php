@@ -75,18 +75,27 @@
                                 {{-- ── NOTICE BAR (locked state → accepted state) ── --}}
                                 <div class="fcn-bar" id="fcnBar">
                                     <div class="fcn-bar__state fcn-bar__state--locked">
-                                        <span class="fcn-bar__ic fcn-bar__ic--amber"><i class="icofont-exclamation-circle"></i></span>
+                                        <span class="fcn-bar__ic fcn-bar__ic--amber">
+                                            {{-- bell — rings gently to draw attention --}}
+                                            <svg class="fcn-svg-bell" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                                        </span>
                                         <div class="fcn-bar__txt">
                                             <div class="fcn-bar__title">Action required — read the notice first</div>
                                             <div class="fcn-bar__sub">This form is locked until you read and accept an important notice.</div>
                                         </div>
-                                        <span class="fcn-arrow" aria-hidden="true"><i class="icofont-long-arrow-right"></i></span>
+                                        <span class="fcn-arrow" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                        </span>
                                         <button type="button" class="fcn-bar__btn" onclick="fcnOpen()">
-                                            <i class="icofont-eye-open"></i> Read &amp; Accept
+                                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            Read &amp; Accept
                                         </button>
                                     </div>
                                     <div class="fcn-bar__state fcn-bar__state--accepted">
-                                        <span class="fcn-bar__ic fcn-bar__ic--green"><i class="icofont-check"></i></span>
+                                        <span class="fcn-bar__ic fcn-bar__ic--green">
+                                            {{-- checkmark — draws itself in when the state appears --}}
+                                            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline class="fcn-draw-check" points="20 6 9 17 4 12"/></svg>
+                                        </span>
                                         <div class="fcn-bar__txt">
                                             <div class="fcn-bar__title">Notice accepted</div>
                                             <div class="fcn-bar__sub">
@@ -94,7 +103,8 @@
                                             </div>
                                         </div>
                                         <button type="button" class="fcn-bar__btn fcn-bar__btn--ghost" onclick="fcnOpen()">
-                                            <i class="icofont-eye-open"></i> View
+                                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            View
                                         </button>
                                     </div>
                                 </div>
@@ -102,10 +112,15 @@
                                 {{-- ── READ-&-ACCEPT MODAL ── --}}
                                 <div class="fcn-backdrop" id="fcnBackdrop" aria-hidden="true">
                                     <div class="fcn-modal" role="dialog" aria-modal="true" aria-labelledby="fcnTitle">
-                                        <button type="button" class="fcn-modal__close" onclick="fcnClose()" aria-label="Close"><i class="icofont-close"></i></button>
+                                        <button type="button" class="fcn-modal__close" onclick="fcnClose()" aria-label="Close">
+                                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        </button>
 
                                         <div class="fcn-modal__head">
-                                            <span class="fcn-modal__badge"><i class="icofont-paper"></i></span>
+                                            <span class="fcn-modal__badge">
+                                                {{-- document icon with a soft radiating pulse ring --}}
+                                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                            </span>
                                             <h3 id="fcnTitle">Before you fill this form</h3>
                                             <p>Please read the notice below carefully — it explains how this submission is connected and who it is for.</p>
                                         </div>
@@ -113,7 +128,9 @@
                                         <div class="fcn-modal__items">
                                             @if($obName)
                                                 <div class="fcn-item">
-                                                    <span class="fcn-item__ic fcn-item__ic--amber"><i class="icofont-people"></i></span>
+                                                    <span class="fcn-item__ic fcn-item__ic--amber">
+                                                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                                    </span>
                                                     <div class="fcn-item__body">
                                                         <div class="fcn-item__title">You are filling on someone's behalf</div>
                                                         <div class="fcn-item__text">
@@ -125,7 +142,9 @@
                                                 </div>
                                             @endif
                                             <div class="fcn-item">
-                                                <span class="fcn-item__ic fcn-item__ic--blue"><i class="icofont-link"></i></span>
+                                                <span class="fcn-item__ic fcn-item__ic--blue">
+                                                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                                </span>
                                                 <div class="fcn-item__body">
                                                     <div class="fcn-item__title">Linked to an approved memo</div>
                                                     <div class="fcn-item__text">
@@ -139,19 +158,25 @@
 
                                         <label class="fcn-consent" id="fcnConsentRow">
                                             <input type="checkbox" id="fcnConsentBox" onchange="fcnToggleAgree(this)">
-                                            <span class="fcn-consent__box" aria-hidden="true"><i class="icofont-check"></i></span>
+                                            <span class="fcn-consent__box" aria-hidden="true">
+                                                {{-- tick draws itself in the moment the box is checked --}}
+                                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline class="fcn-consent-check" points="20 6 9 17 4 12"/></svg>
+                                            </span>
                                             <span class="fcn-consent__label">I have read and understood the notice above.</span>
                                         </label>
 
                                         <div class="fcn-modal__foot">
                                             <a class="fcn-btn fcn-btn--ghost" id="fcnBackBtn" href="{{ route('dashboard.uimms.chat', $sourceCampaign->id) }}">
-                                                <i class="icofont-reply"></i> Go back to memo
+                                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                                                Go back to memo
                                             </a>
                                             <button type="button" class="fcn-btn fcn-btn--primary" id="fcnAgreeBtn" disabled onclick="fcnAgree()">
-                                                <i class="icofont-check"></i> Agree &amp; Continue
+                                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                Agree &amp; Continue
                                             </button>
                                             <button type="button" class="fcn-btn fcn-btn--primary" id="fcnDoneBtn" style="display:none;" onclick="fcnClose()">
-                                                <i class="icofont-check"></i> Close
+                                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                Close
                                             </button>
                                         </div>
                                     </div>
@@ -189,13 +214,53 @@
                                     .fcn-bar__btn--ghost:hover{ background:#eef3ff; }
                                     /* Blinking arrow pointing at the Read & Accept button */
                                     .fcn-arrow{
-                                        flex:0 0 auto; color:#b45309; font-size:22px; line-height:1;
+                                        flex:0 0 auto; display:flex; align-items:center; color:#b45309; line-height:1;
                                         animation:fcnArrowBlink 1.1s ease-in-out infinite;
                                     }
                                     @keyframes fcnArrowBlink{
                                         0%,100%{ opacity:1; transform:translateX(0); }
                                         50%{ opacity:.25; transform:translateX(5px); }
                                     }
+
+                                    /* ── SVG icon micro-animations ── */
+                                    /* Bell swings from its mount point to say "attention needed". */
+                                    .fcn-svg-bell{
+                                        transform-origin:50% 4%;
+                                        animation:fcnBellRing 2.6s ease-in-out infinite;
+                                    }
+                                    @keyframes fcnBellRing{
+                                        0%,55%,100%{ transform:rotate(0); }
+                                        60%{ transform:rotate(13deg); }
+                                        68%{ transform:rotate(-11deg); }
+                                        76%{ transform:rotate(8deg); }
+                                        84%{ transform:rotate(-5deg); }
+                                        92%{ transform:rotate(2deg); }
+                                    }
+                                    /* Checkmark draws itself in when the accepted state appears. */
+                                    .fcn-draw-check{
+                                        stroke-dasharray:26; stroke-dashoffset:26;
+                                        animation:fcnDraw .55s ease .15s forwards;
+                                    }
+                                    @keyframes fcnDraw{ to{ stroke-dashoffset:0; } }
+                                    /* Soft radiating pulse ring behind the modal badge. */
+                                    .fcn-modal__badge{ position:relative; }
+                                    .fcn-modal__badge::after{
+                                        content:''; position:absolute; inset:-2px; border-radius:17px;
+                                        border:2px solid #1a4a9b; opacity:0; pointer-events:none;
+                                        animation:fcnPulseRing 2.2s ease-out infinite;
+                                    }
+                                    @keyframes fcnPulseRing{
+                                        0%{ opacity:.45; transform:scale(1); }
+                                        70%,100%{ opacity:0; transform:scale(1.28); }
+                                    }
+                                    /* Consent tick draws in the moment the box is checked. */
+                                    .fcn-consent-check{ stroke-dasharray:26; stroke-dashoffset:26; }
+                                    .fcn-consent input:checked + .fcn-consent__box .fcn-consent-check{
+                                        animation:fcnDraw .3s ease forwards;
+                                    }
+                                    /* Keep every inline icon optically centered next to its label. */
+                                    .fcn-bar__btn svg, .fcn-btn svg{ flex:0 0 auto; }
+                                    .fcn-bar__ic svg, .fcn-item__ic svg, .fcn-modal__badge svg{ display:block; }
                                     @media (max-width:640px){
                                         .fcn-bar__state{ flex-wrap:wrap; }
                                         .fcn-bar__btn{ width:100%; justify-content:center; }

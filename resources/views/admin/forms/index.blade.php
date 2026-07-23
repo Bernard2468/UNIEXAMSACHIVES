@@ -65,6 +65,10 @@
 .form-shell, .form-shell * { font-family: 'Outfit', sans-serif !important; box-sizing: border-box; }
 .form-shell { max-width: 1020px; padding: 4px 0 60px; }
 
+/* Keep icon fonts intact — the blanket Outfit rule above would otherwise
+   override IcoFont and render icons as empty boxes. (0,2,0) beats (0,1,0). */
+.form-shell [class^="icofont-"], .form-shell [class*=" icofont-"] { font-family: IcoFont !important; }
+
 .form-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1.5px solid #ebebeb; flex-wrap: wrap; }
 .form-page-title { font-size: 2rem; font-weight: 800; color: #0c0c0c; letter-spacing: -0.045em; line-height: 1.1; margin: 0; display: inline-flex; flex-direction: column; }
 .form-title-bar { display: block; width: 2.4rem; height: 3.5px; background: #0c0c0c; border-radius: 3px; margin-top: 9px; }

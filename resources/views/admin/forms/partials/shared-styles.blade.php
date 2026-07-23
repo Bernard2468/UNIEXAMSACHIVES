@@ -7,6 +7,12 @@
 .form-shell, .form-shell * { font-family: 'Outfit', sans-serif !important; box-sizing: border-box; }
 .form-shell { max-width: 1020px; padding: 4px 0 60px; }
 
+/* Icon fonts must keep their own font-family — the blanket Outfit rule above
+   ties icofont.min.css on specificity and wins the load-order tiebreaker,
+   which would render every icon glyph as an empty box. The doubled class
+   selector below is (0,2,0) so it beats `.form-shell *` (0,1,0) outright. */
+.form-shell [class^="icofont-"], .form-shell [class*=" icofont-"] { font-family: IcoFont !important; }
+
 /* Page header ── matches ps-page-header from positions */
 .form-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1.5px solid #ebebeb; flex-wrap: wrap; }
 .form-page-title { font-size: 2rem; font-weight: 800; color: #0c0c0c; letter-spacing: -0.045em; line-height: 1.1; margin: 0; display: inline-flex; flex-direction: column; }
