@@ -35,23 +35,21 @@
 
         /* ── Meta block (Ref / Date / From / To …) ── */
         .meta { width: 100%; border-collapse: collapse; margin-top: 14px; }
-        /* dompdf does NOT honour vertical-align:baseline BETWEEN two <td> cells, so an
-           8pt label in one cell and a 10.5pt value in the next can never share a line —
-           the label always rides high. The reliable fix: each row is ONE cell holding
-           the label and value as INLINE siblings. Inline text always sits on one shared
-           baseline in dompdf whatever the font-size, so "To" lands exactly on its
-           recipient's line. The label is a fixed-width inline-block that forms the value
-           column; multi-recipient To/Cc emit one row per name, the continuation rows
-           carrying an empty label of the same width so the names stay in the column.
-           (No negative text-indent — dompdf's support for that is unreliable.) */
-        .meta td { padding: 5px 0; line-height: 1.55; }
+        /* dompdf lines a label up with its value ONLY when they are the SAME font-size:
+           with equal metrics a plain top-aligned label cell and value cell share one
+           baseline, so "To" sits exactly on its recipient's line. dompdf CANNOT
+           baseline-align two cells of different sizes, and it mis-baselines an
+           inline-block label (it uses the box's bottom edge) — both make a small label
+           drift upward. So the label matches the value's 10.5pt and stays distinct by
+           being uppercase / grey / bold / letter-spaced instead of tiny. Multi-recipient
+           To/Cc print one row per name; continuation rows leave the label cell empty so
+           the names line up under the value column. */
+        .meta td { padding: 4px 0; line-height: 1.5; vertical-align: top; }
         .meta .k {
-            display: inline-block;
-            width: 96px;          /* forms the value column; empty on continuation rows as a spacer */
-            vertical-align: baseline;
+            width: 116px;
+            font-size: 10.5pt;
             text-transform: uppercase;
-            font-size: 8pt;
-            letter-spacing: 0.11em;
+            letter-spacing: 0.06em;
             color: #6b7280;
             font-weight: bold;
             white-space: nowrap;
@@ -59,9 +57,8 @@
         .meta .v       { color: #111827; font-size: 10.5pt; word-wrap: break-word; overflow-wrap: break-word; }
         .meta .subject { font-weight: bold; color: #16335b; }
         .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
-        /* Ref sits alone, top-right — no fixed label column. */
+        /* Ref stands alone, right-aligned; the &nbsp;s hold a gap before its value. */
         .meta td.ref    { text-align: right; }
-        .meta td.ref .k { width: auto; }
 
         /* ── Section heading (consistent everywhere) ── */
         .sec {
@@ -235,33 +232,39 @@
     {{-- ══ META BLOCK ══ --}}
     <table class="meta">
         <tr>
-            <td class="ref"><span class="k">Ref</span><span class="v">{{ $memoRef }}</span></td>
+            <td class="ref" colspan="2"><span class="k">Ref&nbsp;&nbsp;</span><span class="v">{{ $memoRef }}</span></td>
         </tr>
         @foreach($toLines as $line)
         <tr>
-            <td><span class="k">{!! $loop->first ? 'To' : '&nbsp;' !!}</span><span class="v">{{ $line }}</span></td>
+            <td class="k">{{ $loop->first ? 'To' : '' }}</td>
+            <td class="v">{{ $line }}</td>
         </tr>
         @endforeach
         <tr>
-            <td><span class="k">From</span><span class="v">@if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}</span></td>
+            <td class="k">From</td>
+            <td class="v">@if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}</td>
         </tr>
         @if($throughName)
         <tr>
-            <td><span class="k">Through</span><span class="v">{{ $throughName }} <span class="muted">@if($memo->isThroughPending())(awaiting forward)@else(forwarded)@endif</span></span></td>
+            <td class="k">Through</td>
+            <td class="v">{{ $throughName }} <span class="muted">@if($memo->isThroughPending())(awaiting forward)@else(forwarded)@endif</span></td>
         </tr>
         @endif
         @if(!empty($ccLines))
         @foreach($ccLines as $line)
         <tr>
-            <td><span class="k">{!! $loop->first ? 'Cc' : '&nbsp;' !!}</span><span class="v">{{ $line }}</span></td>
+            <td class="k">{{ $loop->first ? 'Cc' : '' }}</td>
+            <td class="v">{{ $line }}</td>
         </tr>
         @endforeach
         @endif
         <tr>
-            <td><span class="k">Date</span><span class="v">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</span></td>
+            <td class="k">Date</td>
+            <td class="v">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</td>
         </tr>
         <tr>
-            <td><span class="k">Subject</span><span class="v subject">{{ strtoupper($memo->subject ?? '') }}</span></td>
+            <td class="k">Subject</td>
+            <td class="v subject">{{ strtoupper($memo->subject ?? '') }}</td>
         </tr>
     </table>
 
