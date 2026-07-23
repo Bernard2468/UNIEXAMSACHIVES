@@ -588,40 +588,6 @@
                                     </tr>
                                     @endif
 
-                                    {{-- Assigned to — only when the memo is actually assigned to someone --}}
-                                    @if($memo->currentAssignee)
-                                    <tr>
-                                        <td class="fht-label">Assigned to:</td>
-                                        <td class="fht-value" colspan="3">
-                                            <span class="fht-person">
-                                                <img src="{{ $memo->currentAssignee->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                     alt="{{ $memo->currentAssignee->first_name }}" class="fht-avatar">
-                                                {{ $memo->currentAssignee->first_name }} {{ $memo->currentAssignee->last_name }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @endif
-
-                                    {{-- Assigned by — only when an assignment action has actually been recorded --}}
-                                    @php
-                                        $lastAssignment = ($canParticipate && $memo->workflow_history && count($memo->workflow_history) > 0)
-                                            ? collect($memo->workflow_history)->where('action', 'assigned')->sortByDesc('timestamp')->first()
-                                            : null;
-                                        $assigner = $lastAssignment ? \App\Models\User::find($lastAssignment['user_id']) : null;
-                                    @endphp
-                                    @if($assigner)
-                                    <tr>
-                                        <td class="fht-label">Assigned by:</td>
-                                        <td class="fht-value" colspan="3">
-                                            <span class="fht-person">
-                                                <img src="{{ $assigner->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                     alt="{{ $assigner->first_name }}" class="fht-avatar">
-                                                {{ $assigner->first_name }} {{ $assigner->last_name }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @endif
-
                                     @if($ccRecipients->isNotEmpty() || $ccAddressees->isNotEmpty())
                                     <tr>
                                         <td class="fht-label">Cc:</td>
