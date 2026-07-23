@@ -4791,6 +4791,8 @@ function exportChatConversation() {
                 .export-meta-value {
                     color: #333;
                     font-size: 14px;
+                    overflow-wrap: break-word;
+                    word-break: break-word;
                 }
                 .export-messages {
                     margin-top: 30px;
@@ -4816,6 +4818,8 @@ function exportChatConversation() {
                 .export-message-content {
                     color: #333;
                     line-height: 1.5;
+                    overflow-wrap: break-word;
+                    word-break: break-word;
                 }
                 .export-message.system-message {
                     margin-bottom: 8px;

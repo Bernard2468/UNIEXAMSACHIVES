@@ -47,7 +47,7 @@
             font-weight: bold;
             white-space: nowrap;
         }
-        .meta .v       { color: #111827; font-size: 10.5pt; }
+        .meta .v       { color: #111827; font-size: 10.5pt; word-wrap: break-word; overflow-wrap: break-word; }
         .meta .subject { font-weight: bold; color: #16335b; }
         .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
         /* Cc recipients stack vertically, one per line (institutional memo style). */
@@ -67,17 +67,19 @@
         }
 
         /* ── Memo body ── */
-        .body          { font-size: 11pt; line-height: 1.75; color: #1f2937; text-align: justify; }
-        .body p        { margin-bottom: 10px; }
+        /* word-wrap/overflow-wrap break very long unbroken strings (pasted URLs,
+           no-space text) so they stay inside the page instead of running off it. */
+        .body          { font-size: 11pt; line-height: 1.75; color: #1f2937; text-align: justify; word-wrap: break-word; overflow-wrap: break-word; }
+        .body p        { margin-bottom: 10px; word-wrap: break-word; overflow-wrap: break-word; }
         .body table    { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 10.5pt; }
         .body table th { background: #16335b; color: #fff; padding: 8px 10px; text-align: left; font-weight: bold; border: 1px solid #16335b; }
-        .body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; }
+        .body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
 
         /* ── Minutes (people who minuted on the memo) ── */
         .msg { margin-bottom: 15px; padding-left: 13px; border-left: 2px solid #d8dee7; }
         .msg .who  { font-weight: bold; font-size: 10pt; color: #16335b; }
         .msg .when { font-size: 8.5pt; color: #9ca3af; margin-left: 8px; }
-        .msg .text { font-size: 10.5pt; line-height: 1.6; color: #1f2937; margin-top: 3px; }
+        .msg .text { font-size: 10.5pt; line-height: 1.6; color: #1f2937; margin-top: 3px; word-wrap: break-word; overflow-wrap: break-word; }
         .msg .text p { margin-bottom: 6px; }
         .empty-note { font-size: 10pt; color: #9ca3af; font-style: italic; }
 
