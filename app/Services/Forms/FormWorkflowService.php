@@ -226,7 +226,13 @@ class FormWorkflowService
                 }
             }
 
-            $nextStage = $this->determineNextStage($definition, $stage, $shouldReferToVc);
+            // Value-conditional divert (e.g. Internal Audit "forward to the
+            // Head/Director"). VC referral takes precedence when both apply.
+            $branchToSlug = $shouldReferToVc
+                ? null
+                : $this->resolveFieldValueBranch($definition, $stage, $data);
+
+            $nextStage = $this->determineNextStage($definition, $stage, $shouldReferToVc, $branchToSlug);
 
             if (!$nextStage) {
                 return $this->completeSubmission($submission, $signer);
@@ -245,6 +251,16 @@ class FormWorkflowService
                 $nextAssigneeId = null;
             }
 
+            // Head-only divert safety net: same reasoning as VC. The member's
+            // page shows the *natural* next office picker (e.g. the Registrar),
+            // so its next_assignee_id is not the audit head. Drop it and let the
+            // head-only stage resolve its own head below.
+            if ($branchToSlug
+                && $nextStage->slug === $branchToSlug
+                && $nextStage->officeHeadOnly) {
+                $nextAssigneeId = null;
+            }
+
             // Creator pool — form returns to the applicant for re-confirmation
             // (e.g. the Renewal of Appointment form's declaration stage).
             if ($nextStage->isCreatorPool()) {
@@ -260,6 +276,9 @@ class FormWorkflowService
                     }
                     if ($nextStage->isLeadershipOrOfficePool()) {
                         abort(422, "No matching recipient is available. Pick a Dean / HOD / Director, or an office whose head is active.");
+                    }
+                    if ($nextStage->officeHeadOnly) {
+                        abort(422, "This step must go to the Head/Director of the office, but none is designated. Ask an administrator to mark a Head for the office that handles the \"{$nextStage->label}\" step.");
                     }
                     abort(422, "No active member of the {$nextStage->label} office is available to receive this form. Ask your administrator to assign someone to that office.");
                 }
@@ -551,13 +570,45 @@ class FormWorkflowService
         return $stage;
     }
 
-    protected function determineNextStage(BaseFormDefinition $definition, FormStage $stage, bool $referToVc): ?FormStage
-    {
+    protected function determineNextStage(
+        BaseFormDefinition $definition,
+        FormStage $stage,
+        bool $referToVc,
+        ?string $branchToSlug = null,
+    ): ?FormStage {
         if ($referToVc && in_array('vc', $stage->branches, true)) {
             return $definition->stage('vc');
         }
 
+        if ($branchToSlug && in_array($branchToSlug, $stage->branches, true)) {
+            if ($target = $definition->stage($branchToSlug)) {
+                return $target;
+            }
+        }
+
         return $definition->nextStageAfter($stage->slug, includeOptional: false);
+    }
+
+    /**
+     * Resolve a value-conditional branch target for the given stage + data,
+     * per the definition's fieldValueBranches(). Returns the target stage
+     * slug, or null when no rule matches.
+     */
+    protected function resolveFieldValueBranch(BaseFormDefinition $definition, FormStage $stage, array $data): ?string
+    {
+        foreach ($definition->fieldValueBranches() as $branch) {
+            if (($branch['stage'] ?? null) !== $stage->slug) {
+                continue;
+            }
+            $field  = $branch['field'] ?? null;
+            $to     = $branch['to'] ?? null;
+            $equals = $branch['equals'] ?? [];
+            if ($field && $to && in_array($data[$field] ?? null, $equals, true)) {
+                return $to;
+            }
+        }
+
+        return null;
     }
 
     protected function resolveNextAssignee(
@@ -622,14 +673,34 @@ class FormWorkflowService
             return null;
         }
 
+        // Head-only stage (e.g. Internal Audit Head/Director) — always resolves
+        // to the office's designated head, ignoring any picked id.
+        if ($stage->officeHeadOnly) {
+            return $office->head();
+        }
+
+        // Head-excluded stage (e.g. Internal Audit member step) — the head is
+        // removed from the pool so the form lands on a non-head member.
+        $excludeHeadId = $stage->excludeOfficeHead ? optional($office->head())->id : null;
+
         if ($nextAssigneeId) {
-            $user = $office->activeUsers()->where('users.id', $nextAssigneeId)->first();
+            $query = $office->activeUsers()->where('users.id', $nextAssigneeId);
+            if ($excludeHeadId) {
+                $query->where('users.id', '!=', $excludeHeadId);
+            }
+            $user = $query->first();
             if ($user) {
                 return $user;
             }
-            // If the picked user is not in the target office, refuse to silently
-            // misroute the form.
-            abort(422, 'Selected recipient is not an active member of the next office.');
+            // If the picked user is not in the target office (or is the head of a
+            // head-excluded stage), refuse to silently misroute the form.
+            abort(422, $excludeHeadId
+                ? 'The Head/Director cannot receive this step — pick another member of the office.'
+                : 'Selected recipient is not an active member of the next office.');
+        }
+
+        if ($excludeHeadId) {
+            return $office->activeUsers()->where('users.id', '!=', $excludeHeadId)->first();
         }
 
         return $office->head() ?? $office->activeUsers()->first();

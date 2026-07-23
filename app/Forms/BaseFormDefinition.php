@@ -68,6 +68,27 @@ abstract class BaseFormDefinition
     }
 
     /**
+     * Value-conditional stage branches beyond the built-in VC referral.
+     *
+     * Each rule diverts a stage to a specific target stage when one of its
+     * fields holds a given value at forward time — instead of the natural
+     * next stage. The target is typically an `optional` stage (so it is
+     * skipped when the rule does NOT match). Used by the Internal Audit
+     * "verify & forward to the Head/Director" step, which diverts to the
+     * optional head-only stage; leaving the choice as "sign on behalf"
+     * skips the head and continues to the natural next stage.
+     *
+     * The target stage slug must also be listed in the source stage's
+     * `branches` array for the divert to be honoured.
+     *
+     * @return array<int, array{stage:string, field:string, equals:array<int,string>, to:string}>
+     */
+    public function fieldValueBranches(): array
+    {
+        return [];
+    }
+
+    /**
      * Optional standing instruction printed at the bottom of the PDF —
      * mirrors any "Instruction to ..." note on the paper form.
      */

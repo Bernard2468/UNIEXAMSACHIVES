@@ -19,9 +19,10 @@ use App\Forms\FormStage;
  *   3. finance             — Section B (Finance Office: budget confirmation, codes)
  *   4. finance_df_review   — Section B (Director of Finance confirms/verifies + comments)
  *   5. procurement         — Section C (Procurement Committee decision)
- *   6. audit               — Section D (Internal Audit referrals/comments)
- *   7. registrar           — Section E (Registrar approves / refers to VC)
- *   8. vc                  — Optional VC approval branch
+ *   6. audit               — Section D (Internal Audit member verifies)
+ *   7. audit_head          — Section D (Internal Audit Head/Director signs; optional — skipped when the member signs on behalf)
+ *   8. registrar           — Section E (Registrar approves / refers to VC)
+ *   9. vc                  — Optional VC approval branch
  */
 class PurchaseWorksAuthorizationForm extends BaseFormDefinition
 {
@@ -63,6 +64,15 @@ class PurchaseWorksAuthorizationForm extends BaseFormDefinition
     public function vcReferralFieldName(): ?string
     {
         return 'referred_for_vc';
+    }
+
+    public function fieldValueBranches(): array
+    {
+        return [
+            // Internal Audit member chose "forward to Head" → divert to the
+            // optional head-only stage instead of skipping straight to Registrar.
+            ['stage' => 'audit', 'field' => 'audit_action', 'equals' => ['forward_head'], 'to' => 'audit_head'],
+        ];
     }
 
     public function stages(): array
@@ -169,13 +179,40 @@ class PurchaseWorksAuthorizationForm extends BaseFormDefinition
 
             new FormStage(
                 slug: 'audit',
-                label: 'D. Internal Audit',
+                label: 'D. Internal Audit — Verification',
                 officeSlug: 'internal-audit',
-                description: 'Internal Audit records referrals or comments after vetting.',
+                description: 'An Internal Audit officer verifies the request. Either verify and forward it to the Head/Director of Internal Audit for sign-off, or verify and sign on behalf of the Auditor.',
+                branches: ['audit_head'],
+                fields: [
+                    new FormField(
+                        name: 'audit_action',
+                        label: 'Audit action',
+                        type: FormField::TYPE_RADIO,
+                        required: true,
+                        col: 12,
+                        options: [
+                            'forward_head' => 'Verify & forward to the Head/Director of Internal Audit for sign-off',
+                            'sign_behalf'  => 'Verify & sign on behalf of the Internal Auditor',
+                        ],
+                    ),
+                    new FormField('audit_comments', 'Referrals / Comments after vetting', FormField::TYPE_TEXTAREA, required: false, col: 12,
+                        help: 'Complete this only if you are signing on behalf of the Auditor. If you are forwarding to the Head/Director, they will add the referrals / comments.'),
+                ],
+                signatureRequired: true,
+                excludeOfficeHead: true,
+            ),
+
+            new FormStage(
+                slug: 'audit_head',
+                label: 'D. Internal Audit — Head / Director',
+                officeSlug: 'internal-audit',
+                description: 'The Head/Director of Internal Audit records referrals or comments after vetting, verifies and signs.',
                 fields: [
                     new FormField('audit_comments', 'Referrals / Comments after vetting', FormField::TYPE_TEXTAREA, required: false, col: 12),
                 ],
                 signatureRequired: true,
+                optional: true,
+                officeHeadOnly: true,
             ),
 
             new FormStage(

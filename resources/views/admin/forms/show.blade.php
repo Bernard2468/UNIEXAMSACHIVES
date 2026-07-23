@@ -297,7 +297,7 @@
                                         </div>
                                     @endif
 
-                                    @if($nextStage || $vcOffice)
+                                    @if($nextStage || $vcOffice || !empty($auditHeadOffice))
                                         <div class="form-panel">
                                             <div class="form-panel__head">
                                                 <div>
@@ -362,6 +362,29 @@
                                                             <strong>"Refer for VC's Approval"</strong> can't be used yet — the VC's Office has no active member.
                                                             Ask an administrator to assign someone to the VC office before referring, otherwise the form
                                                             cannot be forwarded.
+                                                        </p>
+                                                    @endif
+                                                @endif
+
+                                                @if(!empty($auditHeadOffice))
+                                                    @php
+                                                        $ahMembers  = $auditHeadOffice->users->where('pivot.is_active', true)->values();
+                                                        $ahHead     = $ahMembers->where('pivot.is_head', true)->first();
+                                                        $ahHeadName = $ahHead
+                                                            ? trim(($ahHead->first_name ?? '') . ' ' . ($ahHead->last_name ?? ''))
+                                                            : null;
+                                                    @endphp
+                                                    @if($ahHeadName)
+                                                        <p style="margin: 12px 0 0; font-size: 0.78rem; color: #9ca3af; line-height: 1.5;">
+                                                            If you choose <strong>"Verify &amp; forward to the Head/Director"</strong> above, the form goes to the
+                                                            Head/Director of Internal Audit (<strong>{{ $ahHeadName }}</strong>) for their comments and signature —
+                                                            the recipient shown here is used only if you <strong>verify &amp; sign on behalf of the Auditor</strong>.
+                                                        </p>
+                                                    @else
+                                                        <p style="margin: 12px 0 0; font-size: 0.78rem; color: #b45309; line-height: 1.5;">
+                                                            <strong>"Verify &amp; forward to the Head/Director"</strong> can't be used yet — the Internal Audit office
+                                                            has no member marked as <strong>Head</strong>. Ask an administrator to designate one, otherwise choose
+                                                            <strong>verify &amp; sign on behalf of the Auditor</strong>.
                                                         </p>
                                                     @endif
                                                 @endif

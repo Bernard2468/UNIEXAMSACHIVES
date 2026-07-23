@@ -63,6 +63,13 @@ class FormStage
      * @param  bool                  $optional         True if this stage may be skipped (e.g. VC stage).
      * @param  ?string               $description      Short helper text shown on the stage UI.
      * @param  string                $recipientPool    Either POOL_OFFICE (default) or POOL_LEADERSHIP.
+     * @param  bool                  $excludeOfficeHead When true (POOL_OFFICE only), the office head is
+     *                                                  removed from the recipient pool — the form must land
+     *                                                  on a non-head member. Used by the Internal Audit
+     *                                                  member step so the Head/Director is isolated.
+     * @param  bool                  $officeHeadOnly   When true (POOL_OFFICE only), the stage routes solely
+     *                                                  to the office's designated head — no picker. Used by
+     *                                                  the Internal Audit Head/Director step.
      */
     public function __construct(
         public readonly string $slug,
@@ -74,6 +81,8 @@ class FormStage
         public readonly bool $optional = false,
         public readonly ?string $description = null,
         public readonly string $recipientPool = self::POOL_OFFICE,
+        public readonly bool $excludeOfficeHead = false,
+        public readonly bool $officeHeadOnly = false,
     ) {
     }
 

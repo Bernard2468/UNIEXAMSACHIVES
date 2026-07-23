@@ -17,9 +17,11 @@ use App\Forms\FormStage;
  *   2. head         — Section 2: Head of Department/Section/Unit endorses
  *                                (flexible pool — HOD / Dean / Director /
  *                                 any Office head can sign)
- *   3. auditor      — Section 3: Internal Auditor inspects the vehicle and
- *                                relevant documents, recommends payment
- *   4. registrar    — Section 4: Registrar approves and names the effective
+ *   3. auditor      — Section 3: Internal Audit member inspects the vehicle
+ *                                and relevant documents
+ *   4. auditor_head — Section 3: Internal Audit Head/Director endorses; optional
+ *                                — skipped when the member signs on behalf
+ *   5. registrar    — Section 4: Registrar approves and names the effective
  *                                date from which the allowance applies
  */
 class VehicleMaintenanceAllowanceForm extends BaseFormDefinition
@@ -52,6 +54,15 @@ class VehicleMaintenanceAllowanceForm extends BaseFormDefinition
     public function pdfView(): string
     {
         return 'admin.forms.pdf.vehicle-maintenance-allowance';
+    }
+
+    public function fieldValueBranches(): array
+    {
+        return [
+            // Internal Audit member chose "forward to Head" → divert to the
+            // optional head-only stage instead of skipping straight to Registrar.
+            ['stage' => 'auditor', 'field' => 'audit_action', 'equals' => ['forward_head'], 'to' => 'auditor_head'],
+        ];
     }
 
     public function stages(): array
@@ -107,14 +118,41 @@ class VehicleMaintenanceAllowanceForm extends BaseFormDefinition
 
             new FormStage(
                 slug: 'auditor',
-                label: '3. Endorsement by Internal Auditor',
+                label: '3. Internal Audit — Inspection',
                 officeSlug: 'internal-audit',
-                description: 'After inspecting the vehicle and the relevant documents, confirm that it belongs to the applicant and recommend payment of the maintenance allowance.',
+                description: 'An Internal Audit officer inspects the vehicle and the relevant documents. Either forward to the Head/Director of Internal Audit for endorsement, or verify and sign on behalf of the Auditor.',
+                branches: ['auditor_head'],
+                fields: [
+                    new FormField(
+                        name: 'audit_action',
+                        label: 'Audit action',
+                        type: FormField::TYPE_RADIO,
+                        required: true,
+                        col: 12,
+                        options: [
+                            'forward_head' => 'Verify & forward to the Head/Director of Internal Audit for endorsement',
+                            'sign_behalf'  => 'Verify & sign on behalf of the Internal Auditor',
+                        ],
+                    ),
+                    new FormField('audit_comments', 'Inspection notes (optional)', FormField::TYPE_TEXTAREA, required: false, col: 12,
+                        help: 'Complete this only if you are signing on behalf of the Auditor. Your signature endorses: "I have inspected the above named car / motorcycle / bicycle and all relevant documents and confirm that the vehicle belongs to the applicant. Payment of maintenance allowance is recommended." If you are forwarding to the Head/Director, they will add the inspection notes and endorse.'),
+                ],
+                signatureRequired: true,
+                excludeOfficeHead: true,
+            ),
+
+            new FormStage(
+                slug: 'auditor_head',
+                label: '3. Internal Audit — Head / Director',
+                officeSlug: 'internal-audit',
+                description: 'The Head/Director of Internal Audit records the inspection notes, confirms the vehicle belongs to the applicant, and endorses payment of the maintenance allowance.',
                 fields: [
                     new FormField('audit_comments', 'Inspection notes (optional)', FormField::TYPE_TEXTAREA, required: false, col: 12,
                         help: 'Your signature endorses the confirmation: "I have inspected the above named car / motorcycle / bicycle and all relevant documents and confirm that the vehicle belongs to the applicant. Payment of maintenance allowance is recommended."'),
                 ],
                 signatureRequired: true,
+                optional: true,
+                officeHeadOnly: true,
             ),
 
             new FormStage(

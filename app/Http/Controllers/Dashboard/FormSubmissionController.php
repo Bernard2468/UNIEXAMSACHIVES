@@ -228,6 +228,7 @@ class FormSubmissionController extends Controller
 
         $nextContext = ['office' => null, 'leadership' => null, 'all_offices' => collect()];
         $vcOffice    = null;
+        $auditHeadOffice = null;
 
         if ($canFill && $currentStage) {
             $nextStage = $definition->nextStageAfter($currentStage->slug);
@@ -239,6 +240,22 @@ class FormSubmissionController extends Controller
                 ? Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
                     ->where('slug', $vcStage->officeSlug)->first()
                 : null;
+
+            // For a value-conditional head divert (Internal Audit "forward to
+            // the Head/Director"), expose the head-only office so the page can
+            // name the Head in the routing note.
+            foreach ($definition->fieldValueBranches() as $branch) {
+                if (($branch['stage'] ?? null) !== $currentStage->slug
+                    || !in_array($branch['to'] ?? '', $currentStage->branches, true)) {
+                    continue;
+                }
+                $headStage = $definition->stage($branch['to']);
+                if ($headStage && $headStage->officeSlug) {
+                    $auditHeadOffice = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
+                        ->where('slug', $headStage->officeSlug)->first();
+                }
+                break;
+            }
         }
 
         // Prefill the current stage's form fields from the user's profile
@@ -266,6 +283,7 @@ class FormSubmissionController extends Controller
                                         ? $submission->creator
                                         : null,
             'vcOffice'             => $vcOffice,
+            'auditHeadOffice'      => $auditHeadOffice,
             'canFill'              => $canFill,
             'canComment'           => app(\App\Policies\FormSubmissionPolicy::class)->comment($user, $submission),
             'canCancel'            => app(\App\Policies\FormSubmissionPolicy::class)->cancel($user, $submission),
@@ -324,6 +342,15 @@ class FormSubmissionController extends Controller
             $office = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
                 ->where('slug', $nextStage->officeSlug)
                 ->first();
+
+            // Head-excluded step (Internal Audit member): remove the head from
+            // the picker so the form can only be sent to a non-head member.
+            if ($office && $nextStage->excludeOfficeHead) {
+                $headId = optional($office->head())->id;
+                if ($headId) {
+                    $office->setRelation('users', $office->users->where('id', '!=', $headId)->values());
+                }
+            }
         }
 
         return [
@@ -692,6 +719,20 @@ class FormSubmissionController extends Controller
             // forwarding a mismatched id (which the workflow service rejects
             // with a 422).
             return null;
+        }
+
+        // Value-conditional divert (Internal Audit "forward to the Head"): the
+        // form goes to a head-only stage that resolves its own recipient, so the
+        // picked id (built for the natural next office, e.g. the Registrar) must
+        // be dropped — same reasoning as the VC divert above.
+        if ($thisStageData) {
+            foreach ($definition->fieldValueBranches() as $branch) {
+                if (($branch['stage'] ?? null) === $stage->slug
+                    && in_array($branch['to'] ?? '', $stage->branches, true)
+                    && in_array($thisStageData[$branch['field'] ?? ''] ?? null, $branch['equals'] ?? [], true)) {
+                    return null;
+                }
+            }
         }
 
         $nextStage = $definition->nextStageAfter($stage->slug, includeOptional: false);
