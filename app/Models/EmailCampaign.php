@@ -523,19 +523,33 @@ class EmailCampaign extends Model
     }
 
     /**
-     * Who may Approve & Unlock this memo's form. The Through intermediary is
-     * excluded on purpose: they forward/minute the memo, but only the actual
-     * recipient (current assignee / active participant) may approve — both
-     * before forwarding (when the intermediary is the current assignee) and
-     * after (when they remain an active participant).
+     * Who may Approve & Unlock this memo's form. ONLY the memo's original
+     * intended recipient — the single "To" person the sender addressed at
+     * compose time (stored in selected_users) — may approve.
+     *
+     * Deliberately NOT gated on current_assignee_id / active-participant status:
+     * a memo can be minuted/assigned onward (assignMemo) to people in other
+     * offices, which makes THEM the current assignee and an active participant.
+     * Those people can read and act on the memo, but must never approve the
+     * requester's form — only the addressee it was sent to can. The Through
+     * intermediary is likewise excluded: they forward the memo, not approve it.
      */
     public function canApproveForm($userId): bool
     {
-        if ($this->through_user_id && (int) $this->through_user_id === (int) $userId) {
+        $userId = (int) $userId;
+
+        // The Through intermediary forwards/minutes the memo but never approves.
+        if ($this->through_user_id && (int) $this->through_user_id === $userId) {
             return false;
         }
 
-        return ((int) $this->current_assignee_id === (int) $userId) || $this->isActiveParticipant($userId);
+        // Only the original addressee(s) in selected_users may approve. For a
+        // form-request memo this is exactly one user id (enforced at compose
+        // time, recipient_type 'selected') and is never rewritten by minuting
+        // or assignment — so minuted-to recipients cannot approve.
+        return collect($this->selected_users ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->contains($userId);
     }
 
     /**

@@ -2010,7 +2010,7 @@ class HomeController extends Controller
         if (!$memo->canApproveForm($userId)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only the current assignee or active participants can approve this memo.',
+                'message' => 'Only the recipient this request was addressed to can approve and unlock the form.',
             ], 403);
         }
 
