@@ -219,12 +219,10 @@
     {{-- ══ META BLOCK ══ --}}
     <table class="meta">
         <tr>
-            <td class="k">Ref</td>
-            <td class="v">{{ $memoRef }}</td>
-        </tr>
-        <tr>
-            <td class="k">Date</td>
-            <td class="v">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</td>
+            <td colspan="2" style="text-align:right; padding:5px 0;">
+                <span class="k" style="width:auto;">Ref</span>
+                <span class="v">{{ $memoRef }}</span>
+            </td>
         </tr>
         <tr>
             <td class="k">From</td>
@@ -246,6 +244,10 @@
             <td class="v">@foreach($displayCcNames as $name)<span class="cc-line">{{ $name }}</span>@endforeach</td>
         </tr>
         @endif
+        <tr>
+            <td class="k">Date</td>
+            <td class="v">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</td>
+        </tr>
         <tr>
             <td class="k">Subject</td>
             <td class="v subject">{{ strtoupper($memo->subject ?? '') }}</td>

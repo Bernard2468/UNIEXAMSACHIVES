@@ -399,10 +399,9 @@
                                 @if($hasLetterhead)
                                 <table class="formal-header-table">
                                     <tr>
-                                        <td class="fht-label">Ref:</td>
-                                        <td class="fht-value">{{ $memo->reference ?? '—' }}</td>
-                                        <td class="fht-label">Date:</td>
-                                        <td class="fht-value">{{ $memo->created_at->format('d F Y') }}</td>
+                                        <td class="fht-value" colspan="4" style="text-align:right;">
+                                            <span class="fht-label" style="width:auto;">Ref:</span> {{ $memo->reference ?? '—' }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="fht-label">From:</td>
@@ -500,6 +499,10 @@
                                     </tr>
                                     @endif
                                     <tr>
+                                        <td class="fht-label">Date:</td>
+                                        <td class="fht-value" colspan="3">{{ $memo->created_at->format('d F Y') }}</td>
+                                    </tr>
+                                    <tr>
                                         <td class="fht-label">Subject:</td>
                                         <td class="fht-value fht-subject" colspan="3">{{ $memo->subject }}</td>
                                     </tr>
@@ -513,10 +516,9 @@
                                      filler. The section keeps its plain (non-letter-mode) border. --}}
                                 <table class="formal-header-table">
                                     <tr>
-                                        <td class="fht-label">Ref:</td>
-                                        <td class="fht-value">{{ $memo->reference ?? '—' }}</td>
-                                        <td class="fht-label">Date:</td>
-                                        <td class="fht-value">{{ $memo->created_at->format('d F Y') }}</td>
+                                        <td class="fht-value" colspan="4" style="text-align:right;">
+                                            <span class="fht-label" style="width:auto;">Ref:</span> {{ $memo->reference ?? '—' }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="fht-label">From:</td>
@@ -614,6 +616,10 @@
                                         </td>
                                     </tr>
                                     @endif
+                                    <tr>
+                                        <td class="fht-label">Date:</td>
+                                        <td class="fht-value" colspan="3">{{ $memo->created_at->format('d F Y') }}</td>
+                                    </tr>
                                     <tr>
                                         <td class="fht-label">Subject:</td>
                                         <td class="fht-value fht-subject" colspan="3">{{ $memo->subject }}</td>
