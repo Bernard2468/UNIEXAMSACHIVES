@@ -2310,6 +2310,10 @@
     color: #333;
     line-height: 1.6;
     font-size: 0.95rem;
+    /* Keep very long unbroken strings (e.g. pasted URLs / no-space text)
+       inside the box instead of overflowing its right edge. */
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .memo-message-content table {
@@ -2533,6 +2537,9 @@
 
 .message-text {
     line-height: 1.4;
+    /* Break long unbroken strings so they stay inside the chat bubble. */
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .message-attachments {
