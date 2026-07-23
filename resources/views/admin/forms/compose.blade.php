@@ -122,6 +122,9 @@
                                         </button>
 
                                         <div class="fcn-modal__head">
+                                            <img class="fcn-modal__badge-img"
+                                                 src="https://res.cloudinary.com/dsypclqxk/image/upload/v1784828811/16261983-5da4-4ecb-bf9b-30f095e06d46.png"
+                                                 alt="" aria-hidden="true" onerror="this.remove()">
                                             <h3 id="fcnTitle">Before you fill this form</h3>
                                             <p>Please read the notice below carefully — it explains how this submission is connected and who it is for.</p>
                                         </div>
@@ -291,6 +294,10 @@
                                     }
                                     .fcn-modal__close:hover{ background:#f1f5f9; color:#0f172a; }
                                     .fcn-modal__head{ text-align:center; margin-bottom:20px; }
+                                    .fcn-modal__badge-img{
+                                        width:64px; height:64px; object-fit:contain;
+                                        display:inline-block; margin-bottom:10px;
+                                    }
                                     .fcn-modal__head h3{ margin:0; font-size:19px; font-weight:800; color:#0f172a; letter-spacing:-.01em; }
                                     .fcn-modal__head p{ margin:6px auto 0; max-width:400px; color:#64748b; font-size:13.5px; line-height:1.55; }
                                     .fcn-modal__items{ display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
