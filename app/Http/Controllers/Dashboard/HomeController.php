@@ -1462,7 +1462,7 @@ class HomeController extends Controller
             $users = User::with('department')
                 ->where('is_approve', true)
                 ->where('id', '!=', $userId)
-                ->select('id', 'first_name', 'last_name', 'email', 'department_id')
+                ->select('id', 'first_name', 'last_name', 'email', 'department_id', 'profile_picture')
                 ->get();
 
             // Forms this memo's category maps to — drives the "Approve & Unlock"

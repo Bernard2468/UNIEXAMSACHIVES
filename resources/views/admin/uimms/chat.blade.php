@@ -439,7 +439,12 @@
                                                         data-name="{{ $apdName }}"
                                                         data-search="{{ strtolower($apdName . ' ' . $apdUser->email) }}"
                                                         onclick="apdPick(this)">
-                                                    <span class="apd-avatar">{{ $apdInitials }}</span>
+                                                    <span class="apd-avatar">
+                                                        @if($apdUser->profile_picture)
+                                                            <img src="{{ $apdUser->profile_picture_url }}" alt="" loading="lazy" onerror="this.remove()">
+                                                        @endif
+                                                        <span class="apd-avatar-initials">{{ $apdInitials }}</span>
+                                                    </span>
                                                     <span class="apd-person-info">
                                                         <span class="apd-person-name">{{ $apdName }}</span>
                                                         <span class="apd-person-email">{{ $apdUser->email }}</span>
@@ -549,10 +554,17 @@
                                 box-shadow:0 0 0 3px rgba(26,74,155,.10);
                             }
                             .apd-avatar{
+                                position:relative; overflow:hidden;
                                 flex:0 0 auto; width:38px; height:38px; border-radius:50%;
                                 background:linear-gradient(135deg,#1a4a9b,#3b6fd4); color:#fff;
                                 display:flex; align-items:center; justify-content:center;
                                 font-size:13px; font-weight:700; letter-spacing:.5px;
+                            }
+                            /* Photo sits on top of the initials — if it fails to load
+                               (onerror removes it) the initials underneath show through. */
+                            .apd-avatar img{
+                                position:absolute; inset:0; width:100%; height:100%;
+                                object-fit:cover; border-radius:50%; z-index:1;
                             }
                             .apd-person-info{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; }
                             .apd-person-name{ font-size:14px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:7px; }
@@ -672,7 +684,20 @@
 
                                     const avatar = document.createElement('span');
                                     avatar.className = 'apd-avatar';
-                                    avatar.textContent = (m.name || '?').split(/\s+/).map(function (p) { return p.charAt(0); }).slice(0, 2).join('').toUpperCase();
+                                    const initials = document.createElement('span');
+                                    initials.className = 'apd-avatar-initials';
+                                    initials.textContent = (m.name || '?').split(/\s+/).map(function (p) { return p.charAt(0); }).slice(0, 2).join('').toUpperCase();
+                                    avatar.appendChild(initials);
+                                    // Profile photo when the user has one; a load failure
+                                    // removes the img so the initials underneath show.
+                                    if (m.avatar) {
+                                        const img = document.createElement('img');
+                                        img.src = m.avatar;
+                                        img.alt = '';
+                                        img.loading = 'lazy';
+                                        img.addEventListener('error', function () { img.remove(); });
+                                        avatar.appendChild(img);
+                                    }
 
                                     const info = document.createElement('span');
                                     info.className = 'apd-person-info';
@@ -724,42 +749,75 @@
                                     document.getElementById('apdEmpty').style.display = (hasRows && visible === 0) ? 'block' : 'none';
                                 };
 
+                                // Standard layered-dialog UX: the drawer slides away first so
+                                // the confirmation dialog is the only thing on screen. If the
+                                // user cancels, the drawer slides back in with their selection
+                                // preserved; if they confirm, the assignment is submitted.
                                 window.apdSubmit = function () {
                                     if (!apdSelected) return;
-                                    confirmAction(
-                                        'Assign ' + apdSelected.name + ' to fill the form on your behalf?',
-                                        function () {
-                                            const btn = document.getElementById('apdAssignBtn');
-                                            btn.disabled = true;
 
-                                            const formData = new FormData();
-                                            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                                            formData.append('delegate_user_id', apdSelected.id);
+                                    closeAssignProcDrawer();
 
-                                            fetch(DELEGATE_URL, { method: 'POST', body: formData })
-                                                .then(function (r) { return r.json(); })
-                                                .then(function (data) {
-                                                    if (data.success) {
-                                                        location.reload();
-                                                    } else {
-                                                        alert(data.message || 'Could not assign. Please try again.');
-                                                        btn.disabled = false;
-                                                    }
-                                                })
-                                                .catch(function () {
-                                                    alert('Error assigning. Please try again.');
-                                                    btn.disabled = false;
-                                                });
-                                        },
-                                        null,
-                                        {
-                                            title: 'Assign Form Filling',
-                                            type: 'success',
-                                            confirmText: 'Assign',
-                                            subtitle: 'They will be notified and can open this memo to fill the form on your behalf. You can reassign to someone else at any time.'
-                                        }
-                                    );
+                                    // Wait for the drawer's slide-out transition before the
+                                    // dialog appears, so the two never overlap visually.
+                                    setTimeout(function () {
+                                        let confirmed = false;
+
+                                        confirmAction(
+                                            'Assign ' + apdSelected.name + ' to fill the form on your behalf?',
+                                            function () {
+                                                confirmed = true;
+                                                apdSendAssignment();
+                                            },
+                                            null,
+                                            {
+                                                title: 'Assign Form Filling',
+                                                type: 'success',
+                                                confirmText: 'Assign',
+                                                subtitle: 'They will be notified and can open this memo to fill the form on your behalf. You can reassign to someone else at any time.'
+                                            }
+                                        );
+
+                                        // The shared confirmation modal has no cancel callback,
+                                        // so watch for it hiding: closed without confirming
+                                        // (Cancel / overlay / Escape) → bring the drawer back.
+                                        const modal = document.getElementById('confirmationModal');
+                                        if (!modal) return;
+                                        const observer = new MutationObserver(function () {
+                                            if (modal.style.display === 'none') {
+                                                observer.disconnect();
+                                                if (!confirmed) openAssignProcDrawer();
+                                            }
+                                        });
+                                        observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+                                    }, 320);
                                 };
+
+                                function apdSendAssignment() {
+                                    const btn = document.getElementById('apdAssignBtn');
+                                    btn.disabled = true;
+
+                                    const formData = new FormData();
+                                    formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                                    formData.append('delegate_user_id', apdSelected.id);
+
+                                    fetch(DELEGATE_URL, { method: 'POST', body: formData })
+                                        .then(function (r) { return r.json(); })
+                                        .then(function (data) {
+                                            if (data.success) {
+                                                location.reload();
+                                            } else {
+                                                alert(data.message || 'Could not assign. Please try again.');
+                                                btn.disabled = false;
+                                                openAssignProcDrawer();
+                                            }
+                                        })
+                                        .catch(function () {
+                                            alert('Error assigning. Please try again.');
+                                            btn.disabled = false;
+                                            openAssignProcDrawer();
+                                        });
+                                }
                             })();
                         </script>
                         @endif

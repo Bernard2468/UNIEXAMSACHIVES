@@ -601,7 +601,7 @@ class FormSubmissionController extends Controller
         abort_unless($office, 404);
 
         $members = $office->activeUsers()
-            ->select('users.id', 'users.first_name', 'users.last_name', 'users.email', 'office_user.is_head')
+            ->select('users.id', 'users.first_name', 'users.last_name', 'users.email', 'users.profile_picture', 'office_user.is_head')
             ->orderByDesc('office_user.is_head')
             ->orderBy('users.first_name')
             ->get()
@@ -610,6 +610,8 @@ class FormSubmissionController extends Controller
                 'name'    => trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')),
                 'email'   => $u->email,
                 'is_head' => (bool) $u->is_head,
+                // Null when the user has no picture — clients fall back to initials.
+                'avatar'  => $u->profile_picture ? asset('profile_pictures/' . $u->profile_picture) : null,
             ]);
 
         return response()->json([
