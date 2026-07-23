@@ -35,9 +35,12 @@
 
         /* ── Meta block (Ref / Date / From / To …) ── */
         .meta { width: 100%; border-collapse: collapse; margin-top: 14px; }
-        /* Centre label + value on one shared line so the small 8pt label and the
-           larger 10.5pt value never drift apart, regardless of font-size. */
-        .meta td { padding: 5px 0; vertical-align: middle; line-height: 1.35; }
+        /* Seat the small 8pt label on the value's first-line BASELINE. Because the
+           label (8pt) and value (10.5pt) are different sizes, top/middle alignment
+           always leaves a visible gap — the label rides high while the value sinks
+           down. Sharing a baseline is the only way to put "To" on the exact same
+           line as its recipient, so every row lines up perfectly. */
+        .meta td { padding: 5px 0; vertical-align: baseline; line-height: 1.35; }
         .meta .k {
             width: 92px;
             text-transform: uppercase;
@@ -50,9 +53,10 @@
         .meta .v       { color: #111827; font-size: 10.5pt; word-wrap: break-word; overflow-wrap: break-word; }
         .meta .subject { font-weight: bold; color: #16335b; }
         .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
-        /* Cc recipients stack vertically, one per line (institutional memo style). */
-        .meta tr.cc-row td { vertical-align: top; }
-        .meta .cc-line { display: block; line-height: 1.5; }
+        /* To/Cc recipients stack one per line via <br> (institutional memo style).
+           Kept as inline spans — not display:block — so the cell always has a real
+           first line box for the baseline alignment above to lock onto. */
+        .meta .cc-line { line-height: 1.5; }
 
         /* ── Section heading (consistent everywhere) ── */
         .sec {
@@ -230,7 +234,7 @@
                 @if($audienceLabel)
                     {{ $audienceLabel }}
                 @elseif($displayToNames->isNotEmpty())
-                    @foreach($displayToNames as $name)<span class="cc-line">{{ $name }}</span>@endforeach
+                    @foreach($displayToNames as $name)<span class="cc-line">{{ $name }}</span>@if(! $loop->last)<br>@endif @endforeach
                 @else
                     All Recipients
                 @endif
@@ -249,7 +253,7 @@
         @if($displayCcNames->isNotEmpty())
         <tr class="cc-row">
             <td class="k">Cc</td>
-            <td class="v">@foreach($displayCcNames as $name)<span class="cc-line">{{ $name }}</span>@endforeach</td>
+            <td class="v">@foreach($displayCcNames as $name)<span class="cc-line">{{ $name }}</span>@if(! $loop->last)<br>@endif @endforeach</td>
         </tr>
         @endif
         <tr>
