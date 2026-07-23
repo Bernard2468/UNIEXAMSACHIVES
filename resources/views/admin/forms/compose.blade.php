@@ -60,13 +60,14 @@
 
                             <input type="hidden" name="action" id="formActionInput" value="send">
 
-                            {{-- Started from an approved memo: keep the link so the
-                                 submission traces back to that memo. The old inline info
-                                 banners are replaced by a read-&-accept notice: the form
-                                 stays locked (blurred, non-interactive) until the user
-                                 explicitly agrees to the notice in the modal below. --}}
+                            {{-- Read-&-accept gate: EVERY form starts locked (blurred,
+                                 non-interactive) until the user reads and agrees to the
+                                 declaration in the modal below. Forms started from an
+                                 approved memo additionally show the memo-link and
+                                 on-behalf notices, and keep the traceability link. --}}
                             @if($sourceCampaign ?? null)
                                 <input type="hidden" name="source_campaign" value="{{ $sourceCampaign->id }}">
+                            @endif
                                 {{-- Survives the validation round-trip: set to 1 when the user
                                      agrees, posted with the form, and restored via old() when
                                      the server sends the user back with validation errors — so
@@ -74,7 +75,7 @@
                                 <input type="hidden" name="fcn_accepted" id="fcnAcceptedInput" value="{{ old('fcn_accepted') ? '1' : '0' }}">
                                 @php
                                     $obName  = ($onBehalfOf ?? null) ? trim(($onBehalfOf->first_name ?? '') . ' ' . ($onBehalfOf->last_name ?? '')) : null;
-                                    $memoRef = $sourceCampaign->reference ?? ('#' . $sourceCampaign->id);
+                                    $memoRef = ($sourceCampaign ?? null) ? ($sourceCampaign->reference ?? ('#' . $sourceCampaign->id)) : null;
                                 @endphp
 
                                 {{-- ── NOTICE BAR (locked state → accepted state) ── --}}
@@ -104,7 +105,11 @@
                                         <div class="fcn-bar__txt">
                                             <div class="fcn-bar__title">Notice accepted</div>
                                             <div class="fcn-bar__sub">
-                                                Filling from approved memo <strong>{{ $memoRef }}</strong>@if($obName) on behalf of <strong>{{ $obName }}</strong>@endif — it will be linked back automatically.
+                                                @if($memoRef)
+                                                    Filling from approved memo <strong>{{ $memoRef }}</strong>@if($obName) on behalf of <strong>{{ $obName }}</strong>@endif — it will be linked back automatically.
+                                                @else
+                                                    Declaration accepted — you can now fill and submit this form.
+                                                @endif
                                             </div>
                                         </div>
                                         <button type="button" class="fcn-bar__btn fcn-bar__btn--ghost" onclick="fcnOpen()">
@@ -126,7 +131,7 @@
                                                  src="https://res.cloudinary.com/dsypclqxk/image/upload/v1784828811/16261983-5da4-4ecb-bf9b-30f095e06d46.png"
                                                  alt="" aria-hidden="true" onerror="this.remove()">
                                             <h3 id="fcnTitle">Before you fill this form</h3>
-                                            <p>Please read the notice below carefully — it explains how this submission is connected and who it is for.</p>
+                                            <p>Please read the notice below carefully before you proceed with the <strong>{{ $definition->title() }}</strong>.</p>
                                         </div>
 
                                         <div class="fcn-modal__items">
@@ -145,16 +150,32 @@
                                                     </div>
                                                 </div>
                                             @endif
+                                            @if($memoRef)
+                                                <div class="fcn-item">
+                                                    <span class="fcn-item__ic fcn-item__ic--blue">
+                                                        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                                    </span>
+                                                    <div class="fcn-item__body">
+                                                        <div class="fcn-item__title">Linked to an approved memo</div>
+                                                        <div class="fcn-item__text">
+                                                            This form is being filled from {{ $obName ? 'the' : 'your' }} approved memo
+                                                            <strong>{{ $memoRef }}</strong>. Once submitted, it will be
+                                                            linked back to that memo automatically for full traceability.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
                                             <div class="fcn-item">
-                                                <span class="fcn-item__ic fcn-item__ic--blue">
-                                                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                                                <span class="fcn-item__ic fcn-item__ic--green">
+                                                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
                                                 </span>
                                                 <div class="fcn-item__body">
-                                                    <div class="fcn-item__title">Linked to an approved memo</div>
+                                                    <div class="fcn-item__title">Accuracy &amp; electronic signature</div>
                                                     <div class="fcn-item__text">
-                                                        This form is being filled from {{ $obName ? 'the' : 'your' }} approved memo
-                                                        <strong>{{ $memoRef }}</strong>. Once submitted, it will be
-                                                        linked back to that memo automatically for full traceability.
+                                                        By proceeding, you confirm that the information you provide on this form is
+                                                        <strong>true and accurate</strong> to the best of your knowledge. Your electronic
+                                                        signature is binding on this document, and every action is recorded in a
+                                                        time-stamped audit trail.
                                                     </div>
                                                 </div>
                                             </div>
@@ -170,9 +191,10 @@
                                         </label>
 
                                         <div class="fcn-modal__foot">
-                                            <a class="fcn-btn fcn-btn--ghost" id="fcnBackBtn" href="{{ route('dashboard.uimms.chat', $sourceCampaign->id) }}">
+                                            <a class="fcn-btn fcn-btn--ghost" id="fcnBackBtn"
+                                               href="{{ ($sourceCampaign ?? null) ? route('dashboard.uimms.chat', $sourceCampaign->id) : route('admin.forms.gallery') }}">
                                                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-                                                Go back to memo
+                                                {{ ($sourceCampaign ?? null) ? 'Go back to memo' : 'Go back' }}
                                             </a>
                                             <button type="button" class="fcn-btn fcn-btn--primary" id="fcnAgreeBtn" disabled onclick="fcnAgree()">
                                                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -311,6 +333,7 @@
                                     }
                                     .fcn-item__ic--amber{ background:#fef3c7; color:#b45309; }
                                     .fcn-item__ic--blue{ background:#e0edff; color:#1a4a9b; }
+                                    .fcn-item__ic--green{ background:#dcfce7; color:#15803d; }
                                     .fcn-item__title{ font-weight:700; color:#0f172a; font-size:14px; margin-bottom:3px; }
                                     .fcn-item__text{ color:#475569; font-size:13px; line-height:1.6; }
                                     .fcn-item__text strong{ color:#1a4a9b; }
@@ -417,7 +440,6 @@
                                         }
                                     })();
                                 </script>
-                            @endif
 
                             {{-- ════════════════════════════════════════════════════════
                                  WIZARD STEPPER (only when the form opts in)
