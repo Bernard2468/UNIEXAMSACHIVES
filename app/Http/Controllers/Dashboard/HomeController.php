@@ -289,13 +289,17 @@ class HomeController extends Controller
             return ['New memo', 'memo', $openAction];
         }
 
-        // A form-linked memo that hasn't been unlocked yet and is sitting in THIS
-        // user's court is an action item: they must approve to unlock the form.
+        // A form-linked memo that hasn't been unlocked yet and can be approved by
+        // THIS user is an action item: they must approve to unlock the form. Gated
+        // on canApproveForm() — the same single source of truth as the Approve
+        // button — so ONLY the original addressee sees "Approval needed". Someone
+        // the memo was minuted/assigned to (now the current assignee) does not.
         $approvalPending = method_exists($campaign, 'hasLinkedForms')
             && $campaign->hasLinkedForms()
             && method_exists($campaign, 'isFormUnlocked')
             && ! $campaign->isFormUnlocked()
-            && (int) $campaign->current_assignee_id === (int) $userId;
+            && method_exists($campaign, 'canApproveForm')
+            && $campaign->canApproveForm($userId);
 
         // Through intermediary — still holding the memo, needs to forward it.
         if ($rm->recipient_role === 'through') {
@@ -1333,15 +1337,15 @@ class HomeController extends Controller
                     'attachments' => $memo->attachments,
                     'is_bookmarked' => $isBookmarked,
                     'has_new_activity' => $hasNewActivity,
-                    // True when THIS user is the assignee of a form-linked memo
-                    // that hasn't been unlocked yet — drives the list "Approval
-                    // needed" tag. Cheap: no extra query (uses loaded columns).
-                    // Excludes the Through intermediary: they can forward but never
-                    // approve, so the tag must not appear for them.
+                    // True when THIS user may approve a form-linked memo that
+                    // hasn't been unlocked yet — drives the list "Approval needed"
+                    // tag. Gated on canApproveForm() (the single source of truth),
+                    // so ONLY the original addressee sees it: the Through
+                    // intermediary and anyone the memo was minuted/assigned to are
+                    // excluded, even though they may be the current assignee.
                     'awaiting_my_approval' => $memo->hasLinkedForms()
                         && ! $memo->isFormUnlocked()
-                        && (int) $memo->current_assignee_id === (int) $userId
-                        && (int) $memo->through_user_id !== (int) $userId
+                        && $memo->canApproveForm($userId)
                         && ($memo->memo_status ?? 'pending') === 'pending',
                 ];
             });
