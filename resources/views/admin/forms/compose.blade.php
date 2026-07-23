@@ -117,10 +117,6 @@
                                         </button>
 
                                         <div class="fcn-modal__head">
-                                            <span class="fcn-modal__badge">
-                                                {{-- document icon with a soft radiating pulse ring --}}
-                                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                                            </span>
                                             <h3 id="fcnTitle">Before you fill this form</h3>
                                             <p>Please read the notice below carefully — it explains how this submission is connected and who it is for.</p>
                                         </div>
@@ -242,17 +238,6 @@
                                         animation:fcnDraw .55s ease .15s forwards;
                                     }
                                     @keyframes fcnDraw{ to{ stroke-dashoffset:0; } }
-                                    /* Soft radiating pulse ring behind the modal badge. */
-                                    .fcn-modal__badge{ position:relative; }
-                                    .fcn-modal__badge::after{
-                                        content:''; position:absolute; inset:-2px; border-radius:17px;
-                                        border:2px solid #1a4a9b; opacity:0; pointer-events:none;
-                                        animation:fcnPulseRing 2.2s ease-out infinite;
-                                    }
-                                    @keyframes fcnPulseRing{
-                                        0%{ opacity:.45; transform:scale(1); }
-                                        70%,100%{ opacity:0; transform:scale(1.28); }
-                                    }
                                     /* Consent tick draws in the moment the box is checked. */
                                     .fcn-consent-check{ stroke-dasharray:26; stroke-dashoffset:26; }
                                     .fcn-consent input:checked + .fcn-consent__box .fcn-consent-check{
@@ -260,7 +245,7 @@
                                     }
                                     /* Keep every inline icon optically centered next to its label. */
                                     .fcn-bar__btn svg, .fcn-btn svg{ flex:0 0 auto; }
-                                    .fcn-bar__ic svg, .fcn-item__ic svg, .fcn-modal__badge svg{ display:block; }
+                                    .fcn-bar__ic svg, .fcn-item__ic svg{ display:block; }
                                     @media (max-width:640px){
                                         .fcn-bar__state{ flex-wrap:wrap; }
                                         .fcn-bar__btn{ width:100%; justify-content:center; }
@@ -301,11 +286,6 @@
                                     }
                                     .fcn-modal__close:hover{ background:#f1f5f9; color:#0f172a; }
                                     .fcn-modal__head{ text-align:center; margin-bottom:20px; }
-                                    .fcn-modal__badge{
-                                        display:inline-flex; align-items:center; justify-content:center;
-                                        width:52px; height:52px; border-radius:15px;
-                                        background:#eef3ff; color:#1a4a9b; font-size:24px; margin-bottom:12px;
-                                    }
                                     .fcn-modal__head h3{ margin:0; font-size:19px; font-weight:800; color:#0f172a; letter-spacing:-.01em; }
                                     .fcn-modal__head p{ margin:6px auto 0; max-width:400px; color:#64748b; font-size:13.5px; line-height:1.55; }
                                     .fcn-modal__items{ display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
