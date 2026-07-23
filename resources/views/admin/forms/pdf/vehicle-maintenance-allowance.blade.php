@@ -12,16 +12,18 @@
       registrar: effective_from, registrar_comments
 --}}
 @php
-    $applicantData = $submission->sectionData('applicant');
-    $headData      = $submission->sectionData('head');
-    $auditorData   = $submission->sectionData('auditor');
-    $registrarData = $submission->sectionData('registrar');
+    $applicantData    = $submission->sectionData('applicant');
+    $headData         = $submission->sectionData('head');
+    $auditorData      = $submission->sectionData('auditor');
+    $auditorHeadData  = $submission->sectionData('auditor_head');
+    $registrarData    = $submission->sectionData('registrar');
 
     $signaturesByStage = $submission->signatures->groupBy('stage_slug');
-    $applicantSig = $signaturesByStage->get('applicant')?->last();
-    $headSig      = $signaturesByStage->get('head')?->last();
-    $auditorSig   = $signaturesByStage->get('auditor')?->last();
-    $registrarSig = $signaturesByStage->get('registrar')?->last();
+    $applicantSig   = $signaturesByStage->get('applicant')?->last();
+    $headSig        = $signaturesByStage->get('head')?->last();
+    $auditorSig     = $signaturesByStage->get('auditor')?->last();
+    $auditorHeadSig = $signaturesByStage->get('auditor_head')?->last();
+    $registrarSig   = $signaturesByStage->get('registrar')?->last();
 
     $logoFsPath = public_path('img/cug_logo_update.jpeg');
 
@@ -374,6 +376,8 @@
 
     {{-- =========================================================
          3. ENDORSEMENT BY INTERNAL AUDITOR
+         An Internal Audit officer verifies; the Head/Director endorses — unless
+         the officer signs on behalf of the Auditor (then no Head signature).
          ========================================================= --}}
     <div class="pf-section pf-section--bordered">
         <div class="pf-section__title"><span class="pf-num">3</span> Endorsement by Internal Auditor</div>
@@ -383,6 +387,8 @@
             the vehicle belongs to the applicant. Payment of maintenance allowance is recommended.
         </div>
 
+        {{-- Inspection notes recorded by the verifying officer (only when they
+             sign on behalf of the Auditor). --}}
         @if(!empty($auditorData['audit_comments']))
             <table class="pf-item"><tr>
                 <td class="pf-item__num">&nbsp;</td>
@@ -394,12 +400,25 @@
             </tr></table>
         @endif
 
-        {{-- Auditor signature card --}}
+        {{-- Final Inspection Note recorded by the Head/Director. --}}
+        @if(!empty($auditorHeadData['audit_comments']))
+            <table class="pf-item"><tr>
+                <td class="pf-item__num">&nbsp;</td>
+                <td>
+                    <span class="pf-item__label">Final Inspection Note:</span>
+                    <div class="pf-item__value--grow" style="min-height: 26px; color:#15803d; font-weight:bold;">{{ $auditorHeadData['audit_comments'] }}</div>
+                </td>
+            </tr></table>
+        @endif
+
+        {{-- Verifying officer's signature. When the Head/Director endorses, this
+             is the "Verified by" attestation; when the officer signs on behalf of
+             the Auditor, it IS the endorsing signature. --}}
         <table class="pf-item" style="margin-top: 4px;"><tr>
             <td class="pf-item__num">&nbsp;</td>
             <td>
                 <div class="pf-sigcard">
-                    <div class="pf-sigcard__head">Signature of Internal Auditor</div>
+                    <div class="pf-sigcard__head">{{ $auditorHeadSig ? 'Verified by (Internal Audit Officer)' : 'Signature of Internal Auditor' }}</div>
                     <div class="pf-sigcard__body">
                         @if($auditorSig)
                             @php $img = $sigFsPath($auditorSig); @endphp
@@ -407,7 +426,7 @@
                                 <img class="pf-sigcard__img" src="{{ $img }}" alt="Auditor signature">
                             @endif
                         @else
-                            <div class="pf-sigcard__empty">— awaiting Internal Auditor's signature —</div>
+                            <div class="pf-sigcard__empty">— awaiting Internal Audit's signature —</div>
                         @endif
                     </div>
                     <div class="pf-sigcard__meta">
@@ -425,6 +444,35 @@
                 </div>
             </td>
         </tr></table>
+
+        {{-- Head/Director endorsement signature — only when the officer forwarded
+             to the Head/Director, who then signed. --}}
+        @if($auditorHeadSig)
+            <table class="pf-item" style="margin-top: 6px;"><tr>
+                <td class="pf-item__num">&nbsp;</td>
+                <td>
+                    <div class="pf-sigcard">
+                        <div class="pf-sigcard__head">Signature of Internal Auditor (Head / Director)</div>
+                        <div class="pf-sigcard__body">
+                            @php $img = $sigFsPath($auditorHeadSig); @endphp
+                            @if($img)
+                                <img class="pf-sigcard__img" src="{{ $img }}" alt="Head of Internal Audit signature">
+                            @else
+                                <div class="pf-sigcard__empty">— signed —</div>
+                            @endif
+                        </div>
+                        <div class="pf-sigcard__meta">
+                            @php $check = $auditorHeadSig->verifyChain(); @endphp
+                            Signed by <strong>{{ $signerName($auditorHeadSig) }}</strong>
+                            on <span class="pf-sigcard__date">{{ $auditorHeadSig->signed_at?->format('d M Y, H:i') }}</span>
+                            <span class="pf-sigcard__badge {{ $check['valid'] ? 'pf-sigcard__badge--ok' : 'pf-sigcard__badge--bad' }}">
+                                {{ $check['valid'] ? 'VERIFIED' : 'CHAIN MISMATCH' }}
+                            </span>
+                        </div>
+                    </div>
+                </td>
+            </tr></table>
+        @endif
     </div>
 
     {{-- =========================================================
