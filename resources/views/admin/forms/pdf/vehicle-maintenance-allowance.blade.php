@@ -400,17 +400,6 @@
             </tr></table>
         @endif
 
-        {{-- Final Inspection Note recorded by the Head/Director. --}}
-        @if(!empty($auditorHeadData['audit_comments']))
-            <table class="pf-item"><tr>
-                <td class="pf-item__num">&nbsp;</td>
-                <td>
-                    <span class="pf-item__label">Final Inspection Note:</span>
-                    <div class="pf-item__value--grow" style="min-height: 26px; color:#15803d; font-weight:bold;">{{ $auditorHeadData['audit_comments'] }}</div>
-                </td>
-            </tr></table>
-        @endif
-
         {{-- Verifying officer's signature. When the Head/Director endorses, this
              is the "Verified by" attestation; when the officer signs on behalf of
              the Auditor, it IS the endorsing signature. --}}
@@ -448,6 +437,17 @@
         {{-- Head/Director endorsement signature — only when the officer forwarded
              to the Head/Director, who then signed. --}}
         @if($auditorHeadSig)
+            {{-- Final Inspection Note recorded by the Head/Director. --}}
+            @if(!empty($auditorHeadData['audit_comments']))
+                <table class="pf-item"><tr>
+                    <td class="pf-item__num">&nbsp;</td>
+                    <td>
+                        <span class="pf-item__label">Final Inspection Note:</span>
+                        <div class="pf-item__value--grow" style="min-height: 26px; color:#15803d; font-weight:bold;">{{ $auditorHeadData['audit_comments'] }}</div>
+                    </td>
+                </tr></table>
+            @endif
+
             <table class="pf-item" style="margin-top: 6px;"><tr>
                 <td class="pf-item__num">&nbsp;</td>
                 <td>
