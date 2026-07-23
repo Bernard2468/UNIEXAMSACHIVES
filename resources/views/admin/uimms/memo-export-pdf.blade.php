@@ -35,14 +35,20 @@
 
         /* ── Meta block (Ref / Date / From / To …) ── */
         .meta { width: 100%; border-collapse: collapse; margin-top: 14px; }
-        /* Seat the small 8pt label on the value's first-line BASELINE. Because the
-           label (8pt) and value (10.5pt) are different sizes, top/middle alignment
-           always leaves a visible gap — the label rides high while the value sinks
-           down. Sharing a baseline is the only way to put "To" on the exact same
-           line as its recipient, so every row lines up perfectly. */
-        .meta td { padding: 5px 0; vertical-align: baseline; line-height: 1.35; }
+        /* dompdf does NOT honour vertical-align:baseline BETWEEN two <td> cells, so an
+           8pt label in one cell and a 10.5pt value in the next can never share a line —
+           the label always rides high. The reliable fix: each row is ONE cell holding
+           the label and value as INLINE siblings. Inline text always sits on one shared
+           baseline in dompdf whatever the font-size, so "To" lands exactly on its
+           recipient's line. The label is a fixed-width inline-block that forms the value
+           column; multi-recipient To/Cc emit one row per name, the continuation rows
+           carrying an empty label of the same width so the names stay in the column.
+           (No negative text-indent — dompdf's support for that is unreliable.) */
+        .meta td { padding: 5px 0; line-height: 1.55; }
         .meta .k {
-            width: 92px;
+            display: inline-block;
+            width: 96px;          /* forms the value column; empty on continuation rows as a spacer */
+            vertical-align: baseline;
             text-transform: uppercase;
             font-size: 8pt;
             letter-spacing: 0.11em;
@@ -53,10 +59,9 @@
         .meta .v       { color: #111827; font-size: 10.5pt; word-wrap: break-word; overflow-wrap: break-word; }
         .meta .subject { font-weight: bold; color: #16335b; }
         .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
-        /* To/Cc recipients stack one per line via <br> (institutional memo style).
-           Kept as inline spans — not display:block — so the cell always has a real
-           first line box for the baseline alignment above to lock onto. */
-        .meta .cc-line { line-height: 1.5; }
+        /* Ref sits alone, top-right — no fixed label column. */
+        .meta td.ref    { text-align: right; }
+        .meta td.ref .k { width: auto; }
 
         /* ── Section heading (consistent everywhere) ── */
         .sec {
@@ -172,6 +177,13 @@
         ? $throughCcHeld->map($personName)
         : $ccRecipients->map(fn($r) => $personName($r->user));
 
+    // Each To/Cc recipient prints on its own meta row (first row carries the label,
+    // the rest an empty label-width spacer), so build the lists as plain line arrays.
+    $toLines = $audienceLabel
+        ? [$audienceLabel]
+        : ($displayToNames->isNotEmpty() ? $displayToNames->values()->all() : ['All Recipients']);
+    $ccLines = $displayCcNames->values()->all();
+
     $throughName = $memo->hasThrough()
         ? ($memo->throughUser ? $personName($memo->throughUser) : '—')
         : null;
@@ -223,46 +235,33 @@
     {{-- ══ META BLOCK ══ --}}
     <table class="meta">
         <tr>
-            <td colspan="2" style="text-align:right; padding:5px 0;">
-                <span class="k" style="width:auto;">Ref</span>
-                <span class="v">{{ $memoRef }}</span>
-            </td>
+            <td class="ref"><span class="k">Ref</span><span class="v">{{ $memoRef }}</span></td>
         </tr>
-        <tr class="cc-row">
-            <td class="k">To</td>
-            <td class="v">
-                @if($audienceLabel)
-                    {{ $audienceLabel }}
-                @elseif($displayToNames->isNotEmpty())
-                    @foreach($displayToNames as $name)<span class="cc-line">{{ $name }}</span>@if(! $loop->last)<br>@endif @endforeach
-                @else
-                    All Recipients
-                @endif
-            </td>
-        </tr>
+        @foreach($toLines as $line)
         <tr>
-            <td class="k">From</td>
-            <td class="v">@if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}</td>
+            <td><span class="k">{!! $loop->first ? 'To' : '&nbsp;' !!}</span><span class="v">{{ $line }}</span></td>
+        </tr>
+        @endforeach
+        <tr>
+            <td><span class="k">From</span><span class="v">@if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}</span></td>
         </tr>
         @if($throughName)
         <tr>
-            <td class="k">Through</td>
-            <td class="v">{{ $throughName }} <span class="muted">@if($memo->isThroughPending())(awaiting forward)@else(forwarded)@endif</span></td>
+            <td><span class="k">Through</span><span class="v">{{ $throughName }} <span class="muted">@if($memo->isThroughPending())(awaiting forward)@else(forwarded)@endif</span></span></td>
         </tr>
         @endif
-        @if($displayCcNames->isNotEmpty())
-        <tr class="cc-row">
-            <td class="k">Cc</td>
-            <td class="v">@foreach($displayCcNames as $name)<span class="cc-line">{{ $name }}</span>@if(! $loop->last)<br>@endif @endforeach</td>
+        @if(!empty($ccLines))
+        @foreach($ccLines as $line)
+        <tr>
+            <td><span class="k">{!! $loop->first ? 'Cc' : '&nbsp;' !!}</span><span class="v">{{ $line }}</span></td>
         </tr>
+        @endforeach
         @endif
         <tr>
-            <td class="k">Date</td>
-            <td class="v">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</td>
+            <td><span class="k">Date</span><span class="v">{{ $memo->created_at ? $memo->created_at->format('d F Y') : date('d F Y') }}</span></td>
         </tr>
         <tr>
-            <td class="k">Subject</td>
-            <td class="v subject">{{ strtoupper($memo->subject ?? '') }}</td>
+            <td><span class="k">Subject</span><span class="v subject">{{ strtoupper($memo->subject ?? '') }}</span></td>
         </tr>
     </table>
 
