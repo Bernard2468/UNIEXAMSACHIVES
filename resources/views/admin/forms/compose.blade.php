@@ -61,24 +61,291 @@
                             <input type="hidden" name="action" id="formActionInput" value="send">
 
                             {{-- Started from an approved memo: keep the link so the
-                                 submission traces back to that memo. --}}
+                                 submission traces back to that memo. The old inline info
+                                 banners are replaced by a read-&-accept notice: the form
+                                 stays locked (blurred, non-interactive) until the user
+                                 explicitly agrees to the notice in the modal below. --}}
                             @if($sourceCampaign ?? null)
                                 <input type="hidden" name="source_campaign" value="{{ $sourceCampaign->id }}">
-                                @if($onBehalfOf ?? null)
-                                    @php $obName = trim(($onBehalfOf->first_name ?? '') . ' ' . ($onBehalfOf->last_name ?? '')); @endphp
-                                    <div style="display:flex;align-items:center;gap:10px;background:#fff7ed;border:1px solid #fed7aa;border-left:4px solid #f59e0b;border-radius:10px;padding:12px 14px;margin-bottom:12px;color:#92400e;font-size:13px;">
-                                        <i class="icofont-people" style="font-size:18px;color:#f59e0b;"></i>
-                                        <span>You are filling this form <strong>on behalf of {{ $obName }}</strong>,
-                                            the requisitioner of the approved memo
-                                            <strong>{{ $sourceCampaign->reference ?? ('#' . $sourceCampaign->id) }}</strong>.</span>
+                                @php
+                                    $obName  = ($onBehalfOf ?? null) ? trim(($onBehalfOf->first_name ?? '') . ' ' . ($onBehalfOf->last_name ?? '')) : null;
+                                    $memoRef = $sourceCampaign->reference ?? ('#' . $sourceCampaign->id);
+                                @endphp
+
+                                {{-- ── NOTICE BAR (locked state → accepted state) ── --}}
+                                <div class="fcn-bar" id="fcnBar">
+                                    <div class="fcn-bar__state fcn-bar__state--locked">
+                                        <span class="fcn-bar__ic fcn-bar__ic--amber"><i class="icofont-exclamation-circle"></i></span>
+                                        <div class="fcn-bar__txt">
+                                            <div class="fcn-bar__title">Action required — read the notice first</div>
+                                            <div class="fcn-bar__sub">This form is locked until you read and accept an important notice.</div>
+                                        </div>
+                                        <span class="fcn-arrow" aria-hidden="true"><i class="icofont-long-arrow-right"></i></span>
+                                        <button type="button" class="fcn-bar__btn" onclick="fcnOpen()">
+                                            <i class="icofont-eye-open"></i> Read &amp; Accept
+                                        </button>
                                     </div>
-                                @endif
-                                <div style="display:flex;align-items:center;gap:10px;background:#eef6ff;border:1px solid #bcdcff;border-left:4px solid #1a4a9b;border-radius:10px;padding:12px 14px;margin-bottom:18px;color:#1a3c6b;font-size:13px;">
-                                    <i class="icofont-link" style="font-size:18px;color:#1a4a9b;"></i>
-                                    <span>You're filling this form from {{ ($onBehalfOf ?? null) ? 'the' : 'your' }} approved memo
-                                        <strong>{{ $sourceCampaign->reference ?? ('#' . $sourceCampaign->id) }}</strong>.
-                                        It will be linked back to that memo automatically.</span>
+                                    <div class="fcn-bar__state fcn-bar__state--accepted">
+                                        <span class="fcn-bar__ic fcn-bar__ic--green"><i class="icofont-check"></i></span>
+                                        <div class="fcn-bar__txt">
+                                            <div class="fcn-bar__title">Notice accepted</div>
+                                            <div class="fcn-bar__sub">
+                                                Filling from approved memo <strong>{{ $memoRef }}</strong>@if($obName) on behalf of <strong>{{ $obName }}</strong>@endif — it will be linked back automatically.
+                                            </div>
+                                        </div>
+                                        <button type="button" class="fcn-bar__btn fcn-bar__btn--ghost" onclick="fcnOpen()">
+                                            <i class="icofont-eye-open"></i> View
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {{-- ── READ-&-ACCEPT MODAL ── --}}
+                                <div class="fcn-backdrop" id="fcnBackdrop" aria-hidden="true">
+                                    <div class="fcn-modal" role="dialog" aria-modal="true" aria-labelledby="fcnTitle">
+                                        <button type="button" class="fcn-modal__close" onclick="fcnClose()" aria-label="Close"><i class="icofont-close"></i></button>
+
+                                        <div class="fcn-modal__head">
+                                            <span class="fcn-modal__badge"><i class="icofont-paper"></i></span>
+                                            <h3 id="fcnTitle">Before you fill this form</h3>
+                                            <p>Please read the notice below carefully — it explains how this submission is connected and who it is for.</p>
+                                        </div>
+
+                                        <div class="fcn-modal__items">
+                                            @if($obName)
+                                                <div class="fcn-item">
+                                                    <span class="fcn-item__ic fcn-item__ic--amber"><i class="icofont-people"></i></span>
+                                                    <div class="fcn-item__body">
+                                                        <div class="fcn-item__title">You are filling on someone's behalf</div>
+                                                        <div class="fcn-item__text">
+                                                            This form is being completed <strong>on behalf of {{ $obName }}</strong>,
+                                                            the requisitioner of the approved memo <strong>{{ $memoRef }}</strong>.
+                                                            You are acting as their delegate.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            <div class="fcn-item">
+                                                <span class="fcn-item__ic fcn-item__ic--blue"><i class="icofont-link"></i></span>
+                                                <div class="fcn-item__body">
+                                                    <div class="fcn-item__title">Linked to an approved memo</div>
+                                                    <div class="fcn-item__text">
+                                                        This form is being filled from {{ $obName ? 'the' : 'your' }} approved memo
+                                                        <strong>{{ $memoRef }}</strong>. Once submitted, it will be
+                                                        linked back to that memo automatically for full traceability.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <label class="fcn-consent" id="fcnConsentRow">
+                                            <input type="checkbox" id="fcnConsentBox" onchange="fcnToggleAgree(this)">
+                                            <span class="fcn-consent__box" aria-hidden="true"><i class="icofont-check"></i></span>
+                                            <span class="fcn-consent__label">I have read and understood the notice above.</span>
+                                        </label>
+
+                                        <div class="fcn-modal__foot">
+                                            <a class="fcn-btn fcn-btn--ghost" id="fcnBackBtn" href="{{ route('dashboard.uimms.chat', $sourceCampaign->id) }}">
+                                                <i class="icofont-reply"></i> Go back to memo
+                                            </a>
+                                            <button type="button" class="fcn-btn fcn-btn--primary" id="fcnAgreeBtn" disabled onclick="fcnAgree()">
+                                                <i class="icofont-check"></i> Agree &amp; Continue
+                                            </button>
+                                            <button type="button" class="fcn-btn fcn-btn--primary" id="fcnDoneBtn" style="display:none;" onclick="fcnClose()">
+                                                <i class="icofont-check"></i> Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <style>
+                                    /* ── Notice bar ── */
+                                    .fcn-bar{
+                                        background:#ffffff; border:1px solid #e8eaf0; border-radius:14px;
+                                        padding:14px 16px; margin-bottom:18px;
+                                        box-shadow:0 6px 18px rgba(16,24,40,.05);
+                                    }
+                                    .fcn-bar__state{ display:none; align-items:center; gap:13px; }
+                                    .fcn-bar .fcn-bar__state--locked{ display:flex; }
+                                    .fcn-bar.fcn-bar--accepted .fcn-bar__state--locked{ display:none; }
+                                    .fcn-bar.fcn-bar--accepted .fcn-bar__state--accepted{ display:flex; }
+                                    .fcn-bar__ic{
+                                        flex:0 0 auto; width:38px; height:38px; border-radius:11px;
+                                        display:flex; align-items:center; justify-content:center; font-size:18px;
+                                    }
+                                    .fcn-bar__ic--amber{ background:#fef3c7; color:#b45309; }
+                                    .fcn-bar__ic--green{ background:#dcfce7; color:#15803d; }
+                                    .fcn-bar__txt{ flex:1 1 auto; min-width:0; }
+                                    .fcn-bar__title{ font-weight:700; color:#0f172a; font-size:14.5px; }
+                                    .fcn-bar__sub{ color:#64748b; font-size:12.5px; margin-top:1px; }
+                                    .fcn-bar__sub strong{ color:#1a4a9b; font-weight:600; }
+                                    .fcn-bar__btn{
+                                        flex:0 0 auto; display:inline-flex; align-items:center; gap:7px;
+                                        background:#1a4a9b; color:#fff; border:none; border-radius:10px;
+                                        font-weight:700; font-size:13px; padding:10px 16px; cursor:pointer;
+                                        transition:background .15s, transform .15s;
+                                    }
+                                    .fcn-bar__btn:hover{ background:#143a7c; transform:translateY(-1px); }
+                                    .fcn-bar__btn--ghost{ background:#fff; color:#1a4a9b; border:1.5px solid #cbd9f2; }
+                                    .fcn-bar__btn--ghost:hover{ background:#eef3ff; }
+                                    /* Blinking arrow pointing at the Read & Accept button */
+                                    .fcn-arrow{
+                                        flex:0 0 auto; color:#b45309; font-size:22px; line-height:1;
+                                        animation:fcnArrowBlink 1.1s ease-in-out infinite;
+                                    }
+                                    @keyframes fcnArrowBlink{
+                                        0%,100%{ opacity:1; transform:translateX(0); }
+                                        50%{ opacity:.25; transform:translateX(5px); }
+                                    }
+                                    @media (max-width:640px){
+                                        .fcn-bar__state{ flex-wrap:wrap; }
+                                        .fcn-bar__btn{ width:100%; justify-content:center; }
+                                        .fcn-arrow{ display:none; }
+                                    }
+
+                                    /* ── Locked form: everything except the bar and modal is
+                                          blurred and non-interactive until the notice is accepted ── */
+                                    .form-composer.fcn-locked > *:not(.fcn-bar):not(.fcn-backdrop){
+                                        filter:blur(3px); pointer-events:none; user-select:none;
+                                    }
+
+                                    /* ── Modal ── */
+                                    body.fcn-noscroll{ overflow:hidden; }
+                                    .fcn-backdrop{
+                                        position:fixed; inset:0; z-index:10060;
+                                        background:rgba(15,23,42,.5);
+                                        -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+                                        display:flex; align-items:center; justify-content:center; padding:20px;
+                                        opacity:0; visibility:hidden;
+                                        transition:opacity .25s ease, visibility .25s ease;
+                                    }
+                                    .fcn-backdrop.open{ opacity:1; visibility:visible; }
+                                    .fcn-modal{
+                                        position:relative; width:100%; max-width:530px;
+                                        background:#fff; border-radius:20px; padding:28px 28px 24px;
+                                        box-shadow:0 30px 80px rgba(15,23,42,.28);
+                                        transform:translateY(16px) scale(.98); opacity:0;
+                                        transition:transform .3s cubic-bezier(.22,1,.36,1), opacity .25s ease;
+                                        max-height:92vh; overflow-y:auto;
+                                    }
+                                    .fcn-backdrop.open .fcn-modal{ transform:translateY(0) scale(1); opacity:1; }
+                                    .fcn-modal__close{
+                                        position:absolute; top:16px; right:16px; width:32px; height:32px;
+                                        border:none; border-radius:9px; background:#f8fafc; color:#64748b;
+                                        font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+                                        transition:background .15s, color .15s;
+                                    }
+                                    .fcn-modal__close:hover{ background:#f1f5f9; color:#0f172a; }
+                                    .fcn-modal__head{ text-align:center; margin-bottom:20px; }
+                                    .fcn-modal__badge{
+                                        display:inline-flex; align-items:center; justify-content:center;
+                                        width:52px; height:52px; border-radius:15px;
+                                        background:#eef3ff; color:#1a4a9b; font-size:24px; margin-bottom:12px;
+                                    }
+                                    .fcn-modal__head h3{ margin:0; font-size:19px; font-weight:800; color:#0f172a; letter-spacing:-.01em; }
+                                    .fcn-modal__head p{ margin:6px auto 0; max-width:400px; color:#64748b; font-size:13.5px; line-height:1.55; }
+                                    .fcn-modal__items{ display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+                                    .fcn-item{
+                                        display:flex; gap:12px; align-items:flex-start;
+                                        background:#f8fafc; border:1px solid #eef1f6; border-radius:14px; padding:14px 15px;
+                                    }
+                                    .fcn-item__ic{
+                                        flex:0 0 auto; width:36px; height:36px; border-radius:10px;
+                                        display:flex; align-items:center; justify-content:center; font-size:17px;
+                                    }
+                                    .fcn-item__ic--amber{ background:#fef3c7; color:#b45309; }
+                                    .fcn-item__ic--blue{ background:#e0edff; color:#1a4a9b; }
+                                    .fcn-item__title{ font-weight:700; color:#0f172a; font-size:14px; margin-bottom:3px; }
+                                    .fcn-item__text{ color:#475569; font-size:13px; line-height:1.6; }
+                                    .fcn-item__text strong{ color:#1a4a9b; }
+                                    .fcn-consent{
+                                        display:flex; align-items:center; gap:11px; cursor:pointer;
+                                        background:#fff; border:1.5px dashed #cbd5e1; border-radius:12px;
+                                        padding:13px 15px; margin-bottom:18px; transition:border-color .15s, background .15s;
+                                    }
+                                    .fcn-consent:hover{ border-color:#94a3b8; }
+                                    .fcn-consent input{ position:absolute; opacity:0; pointer-events:none; }
+                                    .fcn-consent__box{
+                                        flex:0 0 auto; width:22px; height:22px; border-radius:7px;
+                                        border:1.5px solid #cbd5e1; background:#fff; color:transparent;
+                                        display:flex; align-items:center; justify-content:center; font-size:12px;
+                                        transition:all .15s;
+                                    }
+                                    .fcn-consent input:checked + .fcn-consent__box{
+                                        background:#1a4a9b; border-color:#1a4a9b; color:#fff;
+                                    }
+                                    .fcn-consent input:checked ~ .fcn-consent__label{ color:#0f172a; }
+                                    .fcn-consent__label{ color:#475569; font-size:13.5px; font-weight:600; }
+                                    .fcn-modal__foot{ display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+                                    .fcn-btn{
+                                        display:inline-flex; align-items:center; gap:8px;
+                                        border-radius:11px; font-weight:700; font-size:13.5px;
+                                        padding:11px 20px; cursor:pointer; border:none; text-decoration:none;
+                                        transition:background .15s, transform .15s, opacity .15s;
+                                    }
+                                    .fcn-btn--ghost{ background:#fff; color:#475569; border:1.5px solid #e2e8f0; }
+                                    .fcn-btn--ghost:hover{ background:#f8fafc; color:#334155; }
+                                    .fcn-btn--primary{ background:#1a4a9b; color:#fff; box-shadow:0 4px 14px rgba(26,74,155,.28); }
+                                    .fcn-btn--primary:hover:not(:disabled){ background:#143a7c; color:#fff; transform:translateY(-1px); }
+                                    .fcn-btn--primary:disabled{ opacity:.45; cursor:not-allowed; box-shadow:none; }
+                                </style>
+
+                                <script>
+                                    (function () {
+                                        const form     = document.getElementById('formComposeForm');
+                                        const backdrop = document.getElementById('fcnBackdrop');
+                                        const bar      = document.getElementById('fcnBar');
+                                        let accepted   = false;
+
+                                        // Lock the form until the notice is accepted.
+                                        form.classList.add('fcn-locked');
+
+                                        window.fcnOpen = function () {
+                                            backdrop.classList.add('open');
+                                            document.body.classList.add('fcn-noscroll');
+                                        };
+
+                                        window.fcnClose = function () {
+                                            backdrop.classList.remove('open');
+                                            document.body.classList.remove('fcn-noscroll');
+                                        };
+
+                                        window.fcnToggleAgree = function (cb) {
+                                            document.getElementById('fcnAgreeBtn').disabled = !cb.checked;
+                                        };
+
+                                        window.fcnAgree = function () {
+                                            accepted = true;
+                                            form.classList.remove('fcn-locked');
+                                            bar.classList.add('fcn-bar--accepted');
+                                            // Reopening later shows the notice read-only.
+                                            document.getElementById('fcnConsentRow').style.display = 'none';
+                                            document.getElementById('fcnAgreeBtn').style.display = 'none';
+                                            document.getElementById('fcnBackBtn').style.display = 'none';
+                                            document.getElementById('fcnDoneBtn').style.display = '';
+                                            fcnClose();
+                                        };
+
+                                        // Any attempt to use the locked form re-opens the notice.
+                                        form.addEventListener('submit', function (e) {
+                                            if (!accepted) { e.preventDefault(); fcnOpen(); }
+                                        });
+                                        form.addEventListener('focusin', function (e) {
+                                            if (!accepted && !backdrop.contains(e.target) && !bar.contains(e.target)) {
+                                                e.target.blur();
+                                                fcnOpen();
+                                            }
+                                        });
+
+                                        // Clicking the dimmed area closes the modal — the form simply
+                                        // stays locked and the bar's blinking arrow keeps nudging.
+                                        backdrop.addEventListener('click', function (e) {
+                                            if (e.target === backdrop) fcnClose();
+                                        });
+
+                                        // Auto-open shortly after load so the entrance animation reads well.
+                                        setTimeout(window.fcnOpen, 400);
+                                    })();
+                                </script>
                             @endif
 
                             {{-- ════════════════════════════════════════════════════════
