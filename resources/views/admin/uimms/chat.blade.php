@@ -506,108 +506,154 @@
                                 </table>
                                 <div class="formal-divider"></div>
                                 @else
-                                {{-- ── PLAIN MODE HEADER STRIP ── --}}
-                                <div class="memo-details-single-row">
-                                    <div class="memo-detail-item-inline">
-                                        <label>From:</label>
-                                        <span class="memo-sender">
-                                            <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                 alt="{{ $memo->creator->first_name }}" class="sender-avatar">
-                                            {{ $memo->creator->first_name }} {{ $memo->creator->last_name }}
-                                        </span>
-                                    </div>
-
-                                    <div class="memo-detail-item-inline">
-                                        <label>Created:</label>
-                                        <span class="memo-date">{{ $memo->created_at->format('M d, Y H:i') }}</span>
-                                    </div>
-
-                                    @if($canParticipate && $memo->workflow_history && count($memo->workflow_history) > 0)
-                                        @php
-                                            $lastAssignment = collect($memo->workflow_history)
-                                                ->where('action', 'assigned')
-                                                ->sortByDesc('timestamp')
-                                                ->first();
-                                        @endphp
-                                        @if($lastAssignment)
-                                            <div class="memo-detail-item-inline">
-                                                <label>Assigned By:</label>
-                                                <span class="memo-assigner">
-                                                    @php
-                                                        $assigner = \App\Models\User::find($lastAssignment['user_id']);
-                                                    @endphp
-                                                    @if($assigner)
-                                                        <img src="{{ $assigner->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                             alt="{{ $assigner->first_name }}" class="assigner-avatar">
-                                                        {{ $assigner->first_name }} {{ $assigner->last_name }}
+                                {{-- ── FORMAL HEADER TABLE (no-letterhead mode) ──
+                                     Mirrors the letterhead layout so the header looks uniform whether or
+                                     not a letterhead is attached. The Assigned to / Assigned by rows are
+                                     rendered ONLY when an assignment actually exists — no "Not assigned"
+                                     filler. The section keeps its plain (non-letter-mode) border. --}}
+                                <table class="formal-header-table">
+                                    <tr>
+                                        <td class="fht-label">Ref:</td>
+                                        <td class="fht-value">{{ $memo->reference ?? '—' }}</td>
+                                        <td class="fht-label">Date:</td>
+                                        <td class="fht-value">{{ $memo->created_at->format('d F Y') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fht-label">From:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-person">
+                                                <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                     alt="{{ $memo->creator->first_name }}" class="fht-avatar">
+                                                {{ $memo->creator->first_name }} {{ $memo->creator->last_name }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fht-label">To:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-recipients">
+                                                @if($audienceLabel)
+                                                    <span class="fht-audience" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;color:#1f2937;">
+                                                        <i class="icofont-users-alt-3" style="font-size:18px;color:#1d4ed8;"></i>
+                                                        {{ $audienceLabel }}
+                                                    </span>
+                                                @else
+                                                @foreach($toRecipients->take(5) as $r)
+                                                    <span class="fht-person">
+                                                        <img src="{{ $r->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                             alt="{{ $r->user->first_name }}" class="fht-avatar">
+                                                        {{ $r->user->first_name }} {{ $r->user->last_name }}
+                                                    </span>
+                                                @endforeach
+                                                @if($toRecipients->count() > 5)
+                                                    <span class="fht-overflow">+{{ $toRecipients->count() - 5 }} more</span>
+                                                @endif
+                                                @if($toRecipients->isEmpty())
+                                                    @if($throughAddressees->isNotEmpty())
+                                                        @foreach($throughAddressees->take(5) as $au)
+                                                            <span class="fht-person">
+                                                                <img src="{{ $au->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                                     alt="{{ $au->first_name }}" class="fht-avatar">
+                                                                {{ $au->first_name }} {{ $au->last_name }}
+                                                            </span>
+                                                        @endforeach
+                                                        @if($throughAddressees->count() > 5)
+                                                            <span class="fht-overflow">+{{ $throughAddressees->count() - 5 }} more</span>
+                                                        @endif
                                                     @else
-                                                        <span class="text-muted">Unknown</span>
+                                                        <span class="text-muted">All registered users</span>
                                                     @endif
-                                                </span>
-                                            </div>
-                                        @endif
-                                    @endif
-
-                                    <div class="memo-detail-item-inline">
-                                        <label>Assigned To:</label>
-                                        <span class="memo-assignee">
-                                            @if($memo->currentAssignee)
-                                                <img src="{{ $memo->currentAssignee->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                     alt="{{ $memo->currentAssignee->first_name }}" class="assignee-avatar">
-                                                {{ $memo->currentAssignee->first_name }} {{ $memo->currentAssignee->last_name }}
-                                            @else
-                                                <span class="text-muted">Not assigned</span>
-                                            @endif
-                                        </span>
-                                    </div>
-
-                                    {{-- Through row (plain mode) --}}
+                                                @endif
+                                                @endif
+                                            </span>
+                                        </td>
+                                    </tr>
                                     @if($memo->hasThrough())
-                                    <div class="memo-detail-item-inline">
-                                        <label>Through:</label>
-                                        <span class="memo-assignee">
-                                            @if($memo->throughUser)
-                                                <img src="{{ $memo->throughUser->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                     alt="{{ $memo->throughUser->first_name }}" class="assignee-avatar">
-                                                {{ $memo->throughUser->first_name }} {{ $memo->throughUser->last_name }}
-                                            @else
-                                                <span class="text-muted">—</span>
-                                            @endif
-                                            @if($memo->isThroughPending())
-                                                <span class="text-muted">(awaiting forward)</span>
-                                            @else
-                                                <span class="text-muted">(forwarded)</span>
-                                            @endif
-                                        </span>
-                                    </div>
+                                    <tr>
+                                        <td class="fht-label">Through:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-recipients">
+                                                <span class="fht-person">
+                                                    <img src="{{ $memo->throughUser?->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                         alt="through" class="fht-avatar">
+                                                    {{ $memo->throughUser ? $memo->throughUser->first_name . ' ' . $memo->throughUser->last_name : '—' }}
+                                                </span>
+                                                @if($memo->isThroughPending())
+                                                    <span class="fht-overflow" style="background:#fef3c7;color:#92400e;">awaiting forward</span>
+                                                @else
+                                                    <span class="fht-overflow" style="background:#dcfce7;color:#166534;">forwarded</span>
+                                                @endif
+                                            </span>
+                                        </td>
+                                    </tr>
                                     @endif
 
-                                    {{-- CC row (plain mode) --}}
-                                    @if($ccRecipients->isNotEmpty() || $ccAddressees->isNotEmpty())
-                                    <div class="memo-detail-item-inline cc-inline-row">
-                                        <label>Cc:</label>
-                                        <span class="cc-inline-list">
-                                            @if($ccRecipients->isNotEmpty())
-                                                @foreach($ccRecipients as $ccR)
-                                                    <span class="cc-chip">
-                                                        <img src="{{ $ccR->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                             alt="{{ $ccR->user->first_name }}" class="cc-chip-avatar">
-                                                        {{ $ccR->user->first_name }} {{ $ccR->user->last_name }}
-                                                    </span>
-                                                @endforeach
-                                            @else
-                                                @foreach($ccAddressees as $ccU)
-                                                    <span class="cc-chip">
-                                                        <img src="{{ $ccU->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                             alt="{{ $ccU->first_name }}" class="cc-chip-avatar">
-                                                        {{ $ccU->first_name }} {{ $ccU->last_name }}
-                                                    </span>
-                                                @endforeach
-                                            @endif
-                                        </span>
-                                    </div>
+                                    {{-- Assigned to — only when the memo is actually assigned to someone --}}
+                                    @if($memo->currentAssignee)
+                                    <tr>
+                                        <td class="fht-label">Assigned to:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-person">
+                                                <img src="{{ $memo->currentAssignee->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                     alt="{{ $memo->currentAssignee->first_name }}" class="fht-avatar">
+                                                {{ $memo->currentAssignee->first_name }} {{ $memo->currentAssignee->last_name }}
+                                            </span>
+                                        </td>
+                                    </tr>
                                     @endif
-                                </div>
+
+                                    {{-- Assigned by — only when an assignment action has actually been recorded --}}
+                                    @php
+                                        $lastAssignment = ($canParticipate && $memo->workflow_history && count($memo->workflow_history) > 0)
+                                            ? collect($memo->workflow_history)->where('action', 'assigned')->sortByDesc('timestamp')->first()
+                                            : null;
+                                        $assigner = $lastAssignment ? \App\Models\User::find($lastAssignment['user_id']) : null;
+                                    @endphp
+                                    @if($assigner)
+                                    <tr>
+                                        <td class="fht-label">Assigned by:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-person">
+                                                <img src="{{ $assigner->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                     alt="{{ $assigner->first_name }}" class="fht-avatar">
+                                                {{ $assigner->first_name }} {{ $assigner->last_name }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endif
+
+                                    @if($ccRecipients->isNotEmpty() || $ccAddressees->isNotEmpty())
+                                    <tr>
+                                        <td class="fht-label">Cc:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-recipients fht-recipients--stack">
+                                                @if($ccRecipients->isNotEmpty())
+                                                    @foreach($ccRecipients as $ccR)
+                                                        <span class="fht-person fht-cc-person">
+                                                            <img src="{{ $ccR->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                                 alt="{{ $ccR->user->first_name }}" class="fht-avatar">
+                                                            {{ $ccR->user->first_name }} {{ $ccR->user->last_name }}
+                                                        </span>
+                                                    @endforeach
+                                                @else
+                                                    @foreach($ccAddressees as $ccU)
+                                                        <span class="fht-person fht-cc-person">
+                                                            <img src="{{ $ccU->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                                 alt="{{ $ccU->first_name }}" class="fht-avatar">
+                                                            {{ $ccU->first_name }} {{ $ccU->last_name }}
+                                                        </span>
+                                                    @endforeach
+                                                @endif
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endif
+                                    <tr>
+                                        <td class="fht-label">Subject:</td>
+                                        <td class="fht-value fht-subject" colspan="3">{{ $memo->subject }}</td>
+                                    </tr>
+                                </table>
+                                <div class="formal-divider"></div>
                                 @endif
 
                                 {{-- ── MESSAGE BODY ── --}}
@@ -2155,7 +2201,9 @@
     font-size: 14.5px;
     line-height: 1.8;
     color: #1e293b;
-    padding: 0;
+    /* Match the non-letterhead blue box padding so the message text has the same
+       breathing room in both modes instead of sitting flush against the edge. */
+    padding: 18px 22px;
 }
 
 /* CC row in plain mode */
