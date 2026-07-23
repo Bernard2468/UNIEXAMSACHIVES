@@ -404,19 +404,9 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="fht-label">From:</td>
-                                        <td class="fht-value" colspan="3">
-                                            <span class="fht-person">
-                                                <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                     alt="{{ $memo->creator->first_name }}" class="fht-avatar">
-                                                {{ $memo->creator->first_name }} {{ $memo->creator->last_name }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <tr>
                                         <td class="fht-label">To:</td>
                                         <td class="fht-value" colspan="3">
-                                            <span class="fht-recipients">
+                                            <span class="fht-recipients fht-recipients--stack">
                                                 @if($audienceLabel)
                                                     <span class="fht-audience" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;color:#1f2937;">
                                                         <i class="icofont-users-alt-3" style="font-size:18px;color:#1d4ed8;"></i>
@@ -450,6 +440,16 @@
                                                     @endif
                                                 @endif
                                                 @endif
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fht-label">From:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-person">
+                                                <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                     alt="{{ $memo->creator->first_name }}" class="fht-avatar">
+                                                {{ $memo->creator->first_name }} {{ $memo->creator->last_name }}
                                             </span>
                                         </td>
                                     </tr>
@@ -521,19 +521,9 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="fht-label">From:</td>
-                                        <td class="fht-value" colspan="3">
-                                            <span class="fht-person">
-                                                <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
-                                                     alt="{{ $memo->creator->first_name }}" class="fht-avatar">
-                                                {{ $memo->creator->first_name }} {{ $memo->creator->last_name }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    <tr>
                                         <td class="fht-label">To:</td>
                                         <td class="fht-value" colspan="3">
-                                            <span class="fht-recipients">
+                                            <span class="fht-recipients fht-recipients--stack">
                                                 @if($audienceLabel)
                                                     <span class="fht-audience" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;color:#1f2937;">
                                                         <i class="icofont-users-alt-3" style="font-size:18px;color:#1d4ed8;"></i>
@@ -567,6 +557,16 @@
                                                     @endif
                                                 @endif
                                                 @endif
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fht-label">From:</td>
+                                        <td class="fht-value" colspan="3">
+                                            <span class="fht-person">
+                                                <img src="{{ $memo->creator->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                     alt="{{ $memo->creator->first_name }}" class="fht-avatar">
+                                                {{ $memo->creator->first_name }} {{ $memo->creator->last_name }}
                                             </span>
                                         </td>
                                     </tr>

@@ -224,13 +224,13 @@
                 <span class="v">{{ $memoRef }}</span>
             </td>
         </tr>
+        <tr class="cc-row">
+            <td class="k">To</td>
+            <td class="v">@if($audienceLabel){{ $audienceLabel }}@elseif($displayToNames->isNotEmpty())@foreach($displayToNames as $name)<span class="cc-line">{{ $name }}</span>@endforeach@else All Recipients @endif</td>
+        </tr>
         <tr>
             <td class="k">From</td>
             <td class="v">@if($creatorPosition){{ $creatorPosition }} &mdash; @endif{{ $creatorName }}</td>
-        </tr>
-        <tr>
-            <td class="k">To</td>
-            <td class="v">{{ $toLine }}</td>
         </tr>
         @if($throughName)
         <tr>
