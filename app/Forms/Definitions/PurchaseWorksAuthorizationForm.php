@@ -138,7 +138,7 @@ class PurchaseWorksAuthorizationForm extends BaseFormDefinition
                     new FormField('non_budget_amount', 'If No, state budget allocation for the item(s) (GhS)', FormField::TYPE_CURRENCY, required: false, col: 6,
                         help: 'Attach schedule, if any.'),
                     new FormField('budget_item_code',  'Budget Item Code', FormField::TYPE_TEXT,     required: true,  col: 6, maxLength: 50),
-                    new FormField('fo_comments',       'Finance Office Comments (if any)', FormField::TYPE_TEXTAREA, required: false, col: 12),
+                    new FormField('fo_comments',       "Budget Officer's Comments (if any)", FormField::TYPE_TEXTAREA, required: false, col: 12),
                     new FormField('budget_confirmed',  'I confirm the budget status and item code above are correct.', FormField::TYPE_CHECKBOX, required: true, col: 12,
                         help: 'You must confirm the entries are correct before this can be forwarded to the Director of Finance.'),
                 ],
