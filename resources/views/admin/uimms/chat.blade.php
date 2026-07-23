@@ -193,15 +193,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            @else
-                                <div class="through-cta through-cta--done">
-                                    <span class="through-cta-badge through-cta-badge--done"><i class="icofont-check-circled"></i> Through</span>
-                                    <div class="through-cta-main">
-                                        <div class="through-cta-text">
-                                            Routed through <strong>{{ $throughName }}</strong> &mdash; forwarded to the addressed recipient(s).
-                                        </div>
-                                    </div>
-                                </div>
                             @endif
 
                             <style>
