@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Folders\Audiences\DepartmentAudience;
 use App\Folders\Audiences\FolderAudience;
 use App\Folders\Audiences\FolderAudienceRegistry;
 use App\Http\Controllers\Controller;
@@ -130,15 +131,32 @@ class FoldersController extends Controller
 
         // Group/audience options for the owner's "Share with a group" picker.
         // Built from the registry so new group types appear automatically.
+        // UI "Users" (department/office accounts) get a restricted picker:
+        // no "Everyone", and Department is locked to their own primary
+        // department with a membership-scope choice (primary/secondary/all).
         $audienceTypes = [];
         if ($isOwner) {
+            $restricted = $this->sharesRestrictedToOwnDepartment($user);
             foreach (app(FolderAudienceRegistry::class)->all() as $aud) {
-                $audienceTypes[] = [
+                if ($restricted && $aud->type() === 'everyone') {
+                    continue;
+                }
+
+                $entry = [
                     'type' => $aud->type(),
                     'label' => $aud->label(),
                     'icon' => $aud->icon(),
                     'options' => $aud->options()->values()->all(),
                 ];
+
+                if ($restricted && $aud->type() === 'department') {
+                    $entry['options'] = $user->department_id
+                        ? [['value' => (string) $user->department_id, 'label' => optional($user->department)->name ?? 'My department']]
+                        : [];
+                    $entry['scopes'] = self::departmentScopeChoices();
+                }
+
+                $audienceTypes[] = $entry;
             }
         }
 
@@ -695,11 +713,12 @@ class FoldersController extends Controller
             return $this->jsonOrAbort($request, 422, 'Unknown group type.');
         }
 
-        // Validate the value against the audience's own allowed options so a
-        // forged request cannot grant access to an arbitrary / non-existent
-        // group. ('' is the canonical value for the "everyone" audience.)
+        // Validate the value against the allow-list for THIS user so a forged
+        // request cannot grant access to an arbitrary / non-existent group —
+        // or, for department accounts, to another department or "everyone".
+        // ('' is the canonical value for the "everyone" audience.)
         $value = (string) ($data['audience_value'] ?? '');
-        $allowed = $audience->options()->pluck('value')->map(fn ($v) => (string) $v)->all();
+        $allowed = $this->allowedAudienceValues($audience, Auth::user());
         if (!in_array($value, $allowed, true)) {
             return $this->jsonOrAbort($request, 422, 'That group is not available to share with.');
         }
@@ -912,6 +931,80 @@ class FoldersController extends Controller
             // Notifications are best-effort — never block sharing on a notification failure.
             \Log::warning('Folder share notification failed: ' . $e->getMessage());
         }
+    }
+
+    // =================================================================
+    //  DEPARTMENT-RESTRICTED SHARING (UI "Users" / office accounts)
+    // =================================================================
+
+    /**
+     * UI "Users" (database role 'admin' — the interface department/office
+     * accounts run on) may only share folders with their own PRIMARY
+     * department, and never with "Everyone". UI "Admins" (database role
+     * 'user') are the overall administrators and keep the full picker, as do
+     * super admins. See ROLE_TERMINOLOGY.md for the reversed naming.
+     */
+    private function sharesRestrictedToOwnDepartment(User $user): bool
+    {
+        return $user->role === 'admin';
+    }
+
+    /**
+     * The audience values this user is allowed to grant. Departments always
+     * accept all three membership scopes (all / primary-only / secondary-only);
+     * restricted users are additionally locked to their primary department.
+     *
+     * @return array<int,string>
+     */
+    private function allowedAudienceValues(FolderAudience $audience, User $user): array
+    {
+        $restricted = $this->sharesRestrictedToOwnDepartment($user);
+
+        if ($restricted && $audience->type() === 'everyone') {
+            return [];
+        }
+
+        $base = $audience->options()->pluck('value')->map(fn ($v) => (string) $v)->all();
+
+        if ($audience->type() === 'department') {
+            if ($restricted) {
+                $base = $user->department_id ? [(string) $user->department_id] : [];
+            }
+
+            return collect($base)
+                ->flatMap(fn ($id) => DepartmentAudience::scopedValues($id))
+                ->all();
+        }
+
+        return $base;
+    }
+
+    /**
+     * The membership-scope choices shown to a department-restricted owner
+     * after they pick their department. 'all' maps to the bare department id;
+     * the others append ':primary' / ':secondary' to the stored value.
+     *
+     * @return array<int,array{value:string,label:string,hint:string}>
+     */
+    private static function departmentScopeChoices(): array
+    {
+        return [
+            [
+                'value' => DepartmentAudience::SCOPE_PRIMARY,
+                'label' => 'Primary members only',
+                'hint' => 'Staff whose home department is this one',
+            ],
+            [
+                'value' => DepartmentAudience::SCOPE_SECONDARY,
+                'label' => 'Secondary members only',
+                'hint' => 'Staff attached to it as an additional department',
+            ],
+            [
+                'value' => 'all',
+                'label' => 'All members',
+                'hint' => 'Everyone in the department — primary and secondary',
+            ],
+        ];
     }
 
     private function jsonOrAbort(Request $request, int $status, string $message)

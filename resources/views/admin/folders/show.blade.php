@@ -1402,6 +1402,22 @@
     margin-top: 12px;
 }
 
+/* ===== Groups tab: department membership-scope picker ===== */
+.grp-scope { margin-top: 10px; }
+.grp-scope .grp-scope-opts { display:flex; flex-direction:column; gap:6px; }
+.grp-scope-opt {
+    display:flex; align-items:flex-start; gap:9px;
+    border: 1.5px solid #e2e8f0; border-radius: 9px;
+    background:#fff; padding: 8px 11px; cursor:pointer;
+    transition: border-color .15s, background .15s;
+}
+.grp-scope-opt:hover { border-color:#bae6fd; }
+.grp-scope-opt input[type="radio"] { margin-top: 2px; accent-color:#0ea5e9; cursor:pointer; }
+.grp-scope-opt.selected { border-color:#0ea5e9; background:#f0f9ff; }
+.grp-scope-opt .grp-scope-txt { min-width:0; }
+.grp-scope-opt .grp-scope-name { font-size: 12.5px; font-weight: 600; color:#0f172a; }
+.grp-scope-opt .grp-scope-hint { font-size: 11.5px; color:#64748b; margin-top:1px; }
+
 /* ===== Link tab ===== */
 .link-panel .link-box {
     border: 1px solid #e2e8f0; border-radius: 12px;
@@ -1886,6 +1902,12 @@ body.mdrawer-lock { overflow: hidden; }
                             <option value="" selected disabled>Select a type first…</option>
                         </select>
                     </label>
+                </div>
+                {{-- Membership scope — shown only when the owner's department
+                     picker is restricted to their own primary department. --}}
+                <div class="grp-scope" id="grpScopeWrap" style="display:none;">
+                    <span class="grp-field-label">Share with</span>
+                    <div class="grp-scope-opts" id="grpScopeOpts"></div>
                 </div>
                 <div class="grp-grid" style="margin-top:10px;">
                     <label class="grp-field">
@@ -2559,6 +2581,8 @@ body.mdrawer-lock { overflow: hidden; }
     const grpValue = document.getElementById('grpValue');
     const grpPerm = document.getElementById('grpPerm');
     const grpAddBtn = document.getElementById('grpAddBtn');
+    const grpScopeWrap = document.getElementById('grpScopeWrap');
+    const grpScopeOpts = document.getElementById('grpScopeOpts');
     const mbBadgeGroups = document.getElementById('mbBadgeGroups');
 
     function renderGroups(grants) {
@@ -2607,9 +2631,43 @@ body.mdrawer-lock { overflow: hidden; }
         } catch (e) { console.error('[groups] load failed:', e); }
     }
 
+    // Membership-scope radios (all / primary-only / secondary-only). Present
+    // only when the server restricted the department picker to the owner's
+    // own department (def.scopes is set for UI "User" accounts).
+    function renderScopeOptions(def) {
+        if (!grpScopeWrap || !grpScopeOpts) return;
+        const scopes = (def && def.scopes) || [];
+        if (!scopes.length) {
+            grpScopeWrap.style.display = 'none';
+            grpScopeOpts.innerHTML = '';
+            return;
+        }
+        grpScopeOpts.innerHTML = scopes.map((s, i) => `
+            <label class="grp-scope-opt ${i === 0 ? 'selected' : ''}">
+                <input type="radio" name="grpScope" value="${escapeHtml(s.value)}" ${i === 0 ? 'checked' : ''}>
+                <span class="grp-scope-txt">
+                    <span class="grp-scope-name">${escapeHtml(s.label)}</span>
+                    <span class="grp-scope-hint" style="display:block;">${escapeHtml(s.hint || '')}</span>
+                </span>
+            </label>`).join('');
+        grpScopeOpts.querySelectorAll('input[name="grpScope"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                grpScopeOpts.querySelectorAll('.grp-scope-opt').forEach(l => l.classList.remove('selected'));
+                radio.closest('.grp-scope-opt')?.classList.add('selected');
+            });
+        });
+        grpScopeWrap.style.display = '';
+    }
+
+    function selectedScope() {
+        const checked = grpScopeOpts?.querySelector('input[name="grpScope"]:checked');
+        return checked ? checked.value : 'all';
+    }
+
     function populateGroupValues() {
         if (!grpType || !grpValue) return;
         const def = audienceMap[grpType.value];
+        renderScopeOptions(def);
         if (!def) {
             grpValue.innerHTML = '<option value="" selected disabled>Select a type first…</option>';
             grpValue.disabled = true;
@@ -2710,7 +2768,14 @@ body.mdrawer-lock { overflow: hidden; }
     async function addGroup() {
         if (!grpType || !grpType.value || !grpAddBtn) return;
         const type = grpType.value;
-        const value = grpValue ? (grpValue.value || '') : '';
+        let value = grpValue ? (grpValue.value || '') : '';
+        // Restricted department sharing: append the chosen membership scope
+        // (":primary" / ":secondary"); "all" keeps the bare department id.
+        const def = audienceMap[type];
+        if (def && def.scopes && def.scopes.length && value) {
+            const scope = selectedScope();
+            if (scope && scope !== 'all') value = value + ':' + scope;
+        }
         const permission = grpPerm ? grpPerm.value : 'viewer';
         const original = grpAddBtn.innerHTML;
         grpAddBtn.disabled = true;
