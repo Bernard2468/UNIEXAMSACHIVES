@@ -5,6 +5,7 @@ namespace App\Services\Forms;
 use App\Forms\BaseFormDefinition;
 use App\Forms\FormRegistry;
 use App\Forms\FormStage;
+use App\Mail\FormCompletionNotice;
 use App\Mail\FormStageAssigned;
 use App\Mail\FormSubmissionCompleted;
 use App\Mail\FormSubmissionRejected;
@@ -435,6 +436,11 @@ class FormWorkflowService
                 ->unique()
                 ->reject(fn ($id) => (int) $id === (int) $submission->created_by);
 
+            $actor    = trim("{$user->first_name} {$user->last_name}");
+            $headline = 'This form is now fully complete.';
+            $message  = ($actor !== '' ? "{$actor} confirmed disbursement. " : 'Disbursement has been confirmed. ')
+                . "{$submission->form_code} {$submission->reference} has completed its full workflow — no further action is needed from you.";
+
             foreach ($signerIds as $signerId) {
                 $signer = User::find($signerId);
                 if (!$signer) {
@@ -446,7 +452,7 @@ class FormWorkflowService
                     'type'     => 'form_completed',
                     'category' => Notification::CATEGORY_FORM,
                     'title'    => "Requisition fully complete ({$submission->reference})",
-                    'message'  => trim("{$user->first_name} {$user->last_name}") . " confirmed disbursement. This {$submission->form_code} is now complete.",
+                    'message'  => $message,
                     'url'      => route('admin.forms.show', $submission->id),
                     'data'     => [
                         'submission_id' => $submission->id,
@@ -454,7 +460,7 @@ class FormWorkflowService
                         'reference'     => $submission->reference,
                     ],
                 ]);
-                $this->sendEmail($signer, new FormSubmissionCompleted($submission));
+                $this->sendEmail($signer, new FormCompletionNotice($submission, $headline, $message));
             }
         }
 

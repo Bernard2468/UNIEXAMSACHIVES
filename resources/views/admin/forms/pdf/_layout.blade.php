@@ -64,7 +64,7 @@
 
     <div class="meta-strip">
         <span><strong>Reference:</strong> {{ $submission->reference }}</span>
-        <span><strong>Status:</strong> {{ ucfirst(str_replace('_', ' ', $submission->status)) }}</span>
+        <span><strong>Status:</strong> {{ ucfirst($submission->statusLabel()) }}</span>
         @if($submission->submitted_at)<span><strong>Submitted:</strong> {{ $submission->submitted_at->format('d M Y, H:i') }}</span>@endif
         @if($submission->completed_at)<span><strong>Completed:</strong> {{ $submission->completed_at->format('d M Y, H:i') }}</span>@endif
     </div>

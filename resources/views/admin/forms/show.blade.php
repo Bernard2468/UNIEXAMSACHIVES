@@ -100,7 +100,7 @@
                             </div>
                             <div class="form-meta-strip__item">
                                 <span class="form-meta-strip__label">Status</span>
-                                <span class="status-pill status-pill--{{ $submission->status }}">{{ str_replace('_', ' ', $submission->status) }}</span>
+                                <span class="status-pill status-pill--{{ $submission->status }}">{{ $submission->statusLabel() }}</span>
                             </div>
                             <div class="form-meta-strip__item">
                                 <span class="form-meta-strip__label">Requisitioner</span>

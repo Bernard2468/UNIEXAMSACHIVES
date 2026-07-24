@@ -94,6 +94,12 @@ class FormStage
          *         'map' => ['accountant' => 'accountant', 'cashier' => 'cashier']]
          */
         public readonly ?array $officeFromField = null,
+        /**
+         * Optional human status label shown while the form is IN PROGRESS and
+         * sitting on this stage — e.g. "Awaiting disbursement" for the PR
+         * disbursement step. Falls back to the generic status ("In progress").
+         */
+        public readonly ?string $awaitingLabel = null,
     ) {
     }
 

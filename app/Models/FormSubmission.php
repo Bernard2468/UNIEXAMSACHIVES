@@ -116,6 +116,25 @@ class FormSubmission extends Model
     }
 
     /**
+     * Human-friendly status label. While a form is in progress, the stage it is
+     * sitting on may override the generic label with its own (e.g. "Awaiting
+     * disbursement" for the PR disbursement step); otherwise the underscored
+     * status is simply spaced out ("in progress", "completed", …). Keep this the
+     * single source of truth for status text so list, show and PDF never drift.
+     */
+    public function statusLabel(): string
+    {
+        if ($this->status === self::STATUS_IN_PROGRESS && $this->current_stage) {
+            $stage = $this->definition()?->stage($this->current_stage);
+            if ($stage && $stage->awaitingLabel) {
+                return $stage->awaitingLabel;
+            }
+        }
+
+        return str_replace('_', ' ', (string) $this->status);
+    }
+
+    /**
      * Persist section data for a stage, leaving other stages untouched.
      */
     public function setSectionData(string $stageSlug, array $data): void

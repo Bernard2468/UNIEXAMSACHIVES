@@ -241,6 +241,7 @@ class PaymentRequisitionForm extends BaseFormDefinition
                         help: 'Tick to confirm the cheque / cash has been issued. This marks the requisition fully complete and notifies the Director of Finance and the Registrar.'),
                 ],
                 signatureRequired: true,
+                awaitingLabel: 'Awaiting disbursement',
             ),
         ];
     }

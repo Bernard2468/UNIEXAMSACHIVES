@@ -117,7 +117,7 @@
                                                 <td><span class="form-list__code">{{ $s->form_code }}</span></td>
                                                 <td>{{ $s->title ?? '—' }}</td>
                                                 <td>{{ $creatorName ?: '—' }}</td>
-                                                <td><span class="status-pill status-pill--{{ $s->status }}">{{ str_replace('_', ' ', $s->status) }}</span></td>
+                                                <td><span class="status-pill status-pill--{{ $s->status }}">{{ $s->statusLabel() }}</span></td>
                                                 <td>
                                                     @if($s->currentAssignee)
                                                         {{ $awaitingName }}
