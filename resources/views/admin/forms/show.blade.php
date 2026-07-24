@@ -297,96 +297,73 @@
                                         </div>
                                     @endif
 
-                                    @if($nextStage || $vcOffice || !empty($auditHeadOffice))
+                                    @if($nextStage || !empty($divert))
                                         <div class="form-panel">
                                             <div class="form-panel__head">
                                                 <div>
-                                                    <h2 class="form-panel__title">Forward to {{ $nextStage->label ?? '—' }}<span class="form-panel__title-bar"></span></h2>
-                                                    @if($nextStage && $nextStage->isCreatorPool())
-                                                        <p class="form-panel__desc">This form returns to the applicant for their declaration. No need to pick anyone — it's routed automatically.</p>
-                                                    @elseif($nextStage && $nextStage->isLeadershipOrOfficePool())
-                                                        <p class="form-panel__desc">Choose <strong>Dean</strong>, <strong>HOD</strong>, <strong>Director</strong>, or <strong>Office</strong> — then pick the specific person, or the office whose head will recommend.</p>
-                                                    @elseif($nextStage && $nextStage->isLeadershipPool())
-                                                        <p class="form-panel__desc">Choose whether this form is going to a <strong>Dean</strong>, <strong>HOD</strong> or <strong>Director</strong>, then pick the specific person from the list.</p>
-                                                    @else
-                                                        <p class="form-panel__desc">Pick a specific person to receive this form next.</p>
-                                                    @endif
+                                                    <h2 class="form-panel__title"><span data-divert-title @if(!empty($divert)) data-title-natural="Forward to {{ $nextStage->label ?? '—' }}" data-title-divert="Forward to {{ $divert['destinationLabel'] }}" @endif>Forward to {{ $nextStage->label ?? '—' }}</span><span class="form-panel__title-bar"></span></h2>
+                                                    <div data-divert-desc>
+                                                        @if($nextStage && $nextStage->isCreatorPool())
+                                                            <p class="form-panel__desc">This form returns to the applicant for their declaration. No need to pick anyone — it's routed automatically.</p>
+                                                        @elseif($nextStage && $nextStage->isLeadershipOrOfficePool())
+                                                            <p class="form-panel__desc">Choose <strong>Dean</strong>, <strong>HOD</strong>, <strong>Director</strong>, or <strong>Office</strong> — then pick the specific person, or the office whose head will recommend.</p>
+                                                        @elseif($nextStage && $nextStage->isLeadershipPool())
+                                                            <p class="form-panel__desc">Choose whether this form is going to a <strong>Dean</strong>, <strong>HOD</strong> or <strong>Director</strong>, then pick the specific person from the list.</p>
+                                                        @else
+                                                            <p class="form-panel__desc">Pick a specific person to receive this form next.</p>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="form-panel__body">
-                                                @if($nextStage && $nextStage->isCreatorPool())
-                                                    @include('admin.forms.partials.creator-recipient-notice', [
-                                                        'recipient' => $creatorRecipient ?? null,
-                                                        'nextStage' => $nextStage,
-                                                    ])
-                                                @elseif($nextStage && $nextStage->isLeadershipOrOfficePool())
-                                                    @include('admin.forms.partials.recommender-picker', [
-                                                        'leadershipCandidates' => $leadershipCandidates ?? [],
-                                                        'allOffices'           => $allOffices ?? collect(),
-                                                        'fieldName'            => 'next_assignee_id',
-                                                        'categoryFieldName'    => 'next_leadership_category',
-                                                        'officeFieldName'      => 'next_office_id',
-                                                        'required'             => true,
-                                                    ])
-                                                @elseif($nextStage && $nextStage->isLeadershipPool())
-                                                    @include('admin.forms.partials.leadership-picker', [
-                                                        'leadershipCandidates' => $leadershipCandidates ?? [],
-                                                        'fieldName'            => 'next_assignee_id',
-                                                        'categoryFieldName'    => 'next_leadership_category',
-                                                        'required'             => true,
-                                                    ])
-                                                @else
-                                                    @include('admin.forms.partials.recipient-picker', [
-                                                        'office'    => $nextOffice,
-                                                        'fieldName' => 'next_assignee_id',
-                                                        'required'  => true,
-                                                    ])
-                                                @endif
-
-                                                @if($vcOffice)
-                                                    @php
-                                                        $vcMembers   = $vcOffice->users->where('pivot.is_active', true)->values();
-                                                        $vcRecipient = $vcMembers->where('pivot.is_head', true)->first() ?? $vcMembers->first();
-                                                        $vcRecipientName = $vcRecipient
-                                                            ? trim(($vcRecipient->first_name ?? '') . ' ' . ($vcRecipient->last_name ?? ''))
-                                                            : null;
-                                                    @endphp
-                                                    @if($vcRecipientName)
-                                                        <p style="margin: 12px 0 0; font-size: 0.78rem; color: #9ca3af; line-height: 1.5;">
-                                                            If you tick <strong>"Refer for VC's Approval"</strong> above, the form is sent to the VC's Office
-                                                            (<strong>{{ $vcRecipientName }}</strong>) first — once the VC approves it routes on to the office shown here.
-                                                            Leave it unticked to go straight to the office shown here.
-                                                        </p>
+                                            <div class="form-panel__body"
+                                                @if(!empty($divert)) data-divert-root data-divert-field="{{ $divert['field'] }}" data-divert-trigger="{{ $divert['trigger'] }}" data-divert-values="{{ implode(',', $divert['values']) }}" @endif>
+                                                <div data-divert-picker>
+                                                    @if($nextStage && $nextStage->isCreatorPool())
+                                                        @include('admin.forms.partials.creator-recipient-notice', [
+                                                            'recipient' => $creatorRecipient ?? null,
+                                                            'nextStage' => $nextStage,
+                                                        ])
+                                                    @elseif($nextStage && $nextStage->isLeadershipOrOfficePool())
+                                                        @include('admin.forms.partials.recommender-picker', [
+                                                            'leadershipCandidates' => $leadershipCandidates ?? [],
+                                                            'allOffices'           => $allOffices ?? collect(),
+                                                            'fieldName'            => 'next_assignee_id',
+                                                            'categoryFieldName'    => 'next_leadership_category',
+                                                            'officeFieldName'      => 'next_office_id',
+                                                            'required'             => true,
+                                                        ])
+                                                    @elseif($nextStage && $nextStage->isLeadershipPool())
+                                                        @include('admin.forms.partials.leadership-picker', [
+                                                            'leadershipCandidates' => $leadershipCandidates ?? [],
+                                                            'fieldName'            => 'next_assignee_id',
+                                                            'categoryFieldName'    => 'next_leadership_category',
+                                                            'required'             => true,
+                                                        ])
                                                     @else
-                                                        <p style="margin: 12px 0 0; font-size: 0.78rem; color: #b45309; line-height: 1.5;">
-                                                            <strong>"Refer for VC's Approval"</strong> can't be used yet — the VC's Office has no active member.
-                                                            Ask an administrator to assign someone to the VC office before referring, otherwise the form
-                                                            cannot be forwarded.
-                                                        </p>
+                                                        @include('admin.forms.partials.recipient-picker', [
+                                                            'office'    => $nextOffice,
+                                                            'fieldName' => 'next_assignee_id',
+                                                            'required'  => true,
+                                                        ])
                                                     @endif
-                                                @endif
+                                                </div>
 
-                                                @if(!empty($auditHeadOffice))
-                                                    @php
-                                                        $ahMembers  = $auditHeadOffice->users->where('pivot.is_active', true)->values();
-                                                        $ahHead     = $ahMembers->where('pivot.is_head', true)->first();
-                                                        $ahHeadName = $ahHead
-                                                            ? trim(($ahHead->first_name ?? '') . ' ' . ($ahHead->last_name ?? ''))
-                                                            : null;
-                                                    @endphp
-                                                    @if($ahHeadName)
-                                                        <p style="margin: 12px 0 0; font-size: 0.78rem; color: #9ca3af; line-height: 1.5;">
-                                                            If you choose <strong>"Verify &amp; forward to the Head/Director"</strong> above, the form goes to the
-                                                            Head/Director of Internal Audit (<strong>{{ $ahHeadName }}</strong>) for their comments and signature —
-                                                            the recipient shown here is used only if you <strong>verify &amp; sign on behalf of the Auditor</strong>.
-                                                        </p>
-                                                    @else
-                                                        <p style="margin: 12px 0 0; font-size: 0.78rem; color: #b45309; line-height: 1.5;">
-                                                            <strong>"Verify &amp; forward to the Head/Director"</strong> can't be used yet — the Internal Audit office
-                                                            has no member marked as <strong>Head</strong>. Ask an administrator to designate one, otherwise choose
-                                                            <strong>verify &amp; sign on behalf of the Auditor</strong>.
-                                                        </p>
-                                                    @endif
+                                                @if(!empty($divert))
+                                                    {{-- Shown (via JS) only when the divert option is selected; the
+                                                         form then routes to an auto-resolved office head, so no picker. --}}
+                                                    <div data-divert-note style="display:none;">
+                                                        @if(!empty($divert['recipientName']))
+                                                            <div style="padding: 12px 14px; background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:10px; font-size:0.82rem; color:#0369a1; line-height:1.55;">
+                                                                This form will go to <strong>{{ $divert['destinationLabel'] }}</strong>
+                                                                (<strong>{{ $divert['recipientName'] }}</strong>) next — no recipient needs to be picked here.
+                                                            </div>
+                                                        @else
+                                                            <div style="padding: 12px 14px; background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px; font-size:0.82rem; color:#b45309; line-height:1.55;">
+                                                                This option can't be used yet — {{ $divert['destinationLabel'] }} has no active recipient.
+                                                                Ask an administrator to designate one, or choose the other option.
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 @endif
                                             </div>
                                         </div>
@@ -632,6 +609,61 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('Please sign before forwarding, or tick "Use my saved signature".');
             }
         });
+    }
+
+    // ── Divert toggle ──────────────────────────────────────────────
+    // When the current stage offers a "send elsewhere" option (VC referral or
+    // "forward to the Internal Audit Head"), selecting it routes the form to an
+    // auto-resolved office head. So hide the natural-next recipient picker (and
+    // strip its `required` so the hidden field can't block submit), swap the
+    // panel title, and show the destination note instead.
+    const divertRoot = document.querySelector('[data-divert-root][data-divert-field]');
+    if (divertRoot) {
+        const field   = divertRoot.getAttribute('data-divert-field');
+        const trigger = divertRoot.getAttribute('data-divert-trigger'); // 'checked' | 'value'
+        const values  = (divertRoot.getAttribute('data-divert-values') || '').split(',').filter(Boolean);
+        const picker  = divertRoot.querySelector('[data-divert-picker]');
+        const note    = divertRoot.querySelector('[data-divert-note]');
+        const desc    = document.querySelector('[data-divert-desc]');
+        const title   = document.querySelector('[data-divert-title]');
+        const titleNatural = title ? title.getAttribute('data-title-natural') : null;
+        const titleDivert  = title ? title.getAttribute('data-title-divert') : null;
+        const triggers = document.querySelectorAll('[name="' + field + '"]');
+
+        function divertActive() {
+            if (trigger === 'checked') {
+                const cb = document.querySelector('[name="' + field + '"]');
+                return !!(cb && cb.checked);
+            }
+            const sel = document.querySelector('[name="' + field + '"]:checked');
+            return !!(sel && values.indexOf(sel.value) !== -1);
+        }
+
+        function applyDivert() {
+            const active = divertActive();
+            if (picker) picker.style.display = active ? 'none' : '';
+            if (note)   note.style.display   = active ? '' : 'none';
+            if (desc)   desc.style.display   = active ? 'none' : '';
+            if (picker) {
+                picker.querySelectorAll('input').forEach(function (el) {
+                    if (active) {
+                        if (el.hasAttribute('required')) {
+                            el.setAttribute('data-was-required', '1');
+                            el.removeAttribute('required');
+                        }
+                    } else if (el.getAttribute('data-was-required') === '1') {
+                        el.setAttribute('required', 'required');
+                        el.removeAttribute('data-was-required');
+                    }
+                });
+            }
+            if (title && titleNatural) {
+                title.textContent = (active && titleDivert) ? titleDivert : titleNatural;
+            }
+        }
+
+        triggers.forEach(function (el) { el.addEventListener('change', applyDivert); });
+        applyDivert();
     }
 });
 </script>

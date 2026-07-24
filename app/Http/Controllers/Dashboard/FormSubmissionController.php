@@ -229,6 +229,7 @@ class FormSubmissionController extends Controller
         $nextContext = ['office' => null, 'leadership' => null, 'all_offices' => collect()];
         $vcOffice    = null;
         $auditHeadOffice = null;
+        $divert      = null;
 
         if ($canFill && $currentStage) {
             $nextStage = $definition->nextStageAfter($currentStage->slug);
@@ -253,8 +254,33 @@ class FormSubmissionController extends Controller
                 if ($headStage && $headStage->officeSlug) {
                     $auditHeadOffice = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
                         ->where('slug', $headStage->officeSlug)->first();
+                    $ahHead = $auditHeadOffice?->users
+                        ->where('pivot.is_active', true)->where('pivot.is_head', true)->first();
+                    $divert = [
+                        'field'            => $branch['field'],
+                        'trigger'          => 'value',
+                        'values'           => array_values($branch['equals'] ?? []),
+                        'destinationLabel' => 'the Head/Director of Internal Audit',
+                        'recipientName'    => $ahHead ? trim(($ahHead->first_name ?? '') . ' ' . ($ahHead->last_name ?? '')) : null,
+                    ];
                 }
                 break;
+            }
+
+            // VC referral is the other divert flow (a checkbox on the Registrar
+            // stage). Only one divert can apply to a given stage.
+            if (!$divert && $vcOffice
+                && ($vcFieldName = $definition->vcReferralFieldName())
+                && in_array('vc', $currentStage->branches, true)) {
+                $vcActive = $vcOffice->users->where('pivot.is_active', true)->values();
+                $vcPick   = $vcActive->where('pivot.is_head', true)->first() ?? $vcActive->first();
+                $divert = [
+                    'field'            => $vcFieldName,
+                    'trigger'          => 'checked',
+                    'values'           => [],
+                    'destinationLabel' => "the Vice-Chancellor's Office",
+                    'recipientName'    => $vcPick ? trim(($vcPick->first_name ?? '') . ' ' . ($vcPick->last_name ?? '')) : null,
+                ];
             }
         }
 
@@ -284,6 +310,7 @@ class FormSubmissionController extends Controller
                                         : null,
             'vcOffice'             => $vcOffice,
             'auditHeadOffice'      => $auditHeadOffice,
+            'divert'               => $divert,
             'canFill'              => $canFill,
             'canComment'           => app(\App\Policies\FormSubmissionPolicy::class)->comment($user, $submission),
             'canCancel'            => app(\App\Policies\FormSubmissionPolicy::class)->cancel($user, $submission),
