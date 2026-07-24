@@ -89,6 +89,19 @@ abstract class BaseFormDefinition
     }
 
     /**
+     * Stage slugs whose signers should ALSO be alerted (in-app + email) when
+     * the form reaches final completion — beyond the requisitioner, who is
+     * always notified. Used by the Payment Requisition form so the Director of
+     * Finance and the Registrar learn the moment disbursement is confirmed.
+     *
+     * @return array<int, string>
+     */
+    public function notifyOnCompletionStages(): array
+    {
+        return [];
+    }
+
+    /**
      * Optional standing instruction printed at the bottom of the PDF —
      * mirrors any "Instruction to ..." note on the paper form.
      */

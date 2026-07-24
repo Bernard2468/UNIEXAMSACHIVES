@@ -324,6 +324,10 @@
                                                         <div style="padding: 14px 16px; background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:10px; font-size:0.84rem; color:#15803d; line-height:1.55;">
                                                             <strong>Final approval.</strong> Signing this form completes it — there's no further office to send it to.
                                                         </div>
+                                                    @elseif($nextStage->officeFromField ?? null)
+                                                        <div style="padding: 14px 16px; background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:10px; font-size:0.84rem; color:#1e40af; line-height:1.55;">
+                                                            This will be routed automatically to the <strong>Accountant</strong> or <strong>Cashier</strong> — whichever you select above — for disbursement. No recipient needs to be picked here.
+                                                        </div>
                                                     @elseif($nextStage && $nextStage->isCreatorPool())
                                                         @include('admin.forms.partials.creator-recipient-notice', [
                                                             'recipient' => $creatorRecipient ?? null,

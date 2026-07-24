@@ -775,6 +775,12 @@ class FormSubmissionController extends Controller
             return null;
         }
 
+        // Dynamic-office stage (e.g. PR disbursement) auto-routes to the selected
+        // office's head — the page shows no recipient picker, so no id is sent.
+        if ($nextStage->officeFromField) {
+            return null;
+        }
+
         $assigneeId = $request->input('next_assignee_id');
         if (!$assigneeId) {
             return null;

@@ -18,7 +18,8 @@ use App\Forms\FormStage;
  *   6. audit_head          — Section C (Internal Audit Head/Director signs; optional — skipped when the member signs on behalf)
  *   7. registrar           — Section D (Registrar approves, may refer to VC)
  *   8. vc                  — VC approval (optional, only when Registrar refers up)
- *   9. finance_director    — Final authorisation to Accountant or Cashier
+ *   9. finance_director    — Payment authorisation to Accountant or Cashier
+ *  10. disbursement        — Section F (the chosen Accountant/Cashier confirms payment; completes the form)
  */
 class PaymentRequisitionForm extends BaseFormDefinition
 {
@@ -207,7 +208,7 @@ class PaymentRequisitionForm extends BaseFormDefinition
                 slug: 'finance_director',
                 label: 'E. Director of Finance — Payment Authorisation',
                 officeSlug: 'director-of-finance',
-                description: 'Final authorisation. Choose whether payment goes to the Accountant or the Cashier.',
+                description: 'Authorise payment and choose whether it goes to the Accountant or the Cashier for disbursement.',
                 fields: [
                     new FormField(
                         name: 'payment_authorisation_to',
@@ -223,6 +224,31 @@ class PaymentRequisitionForm extends BaseFormDefinition
                 ],
                 signatureRequired: true,
             ),
+
+            new FormStage(
+                slug: 'disbursement',
+                label: 'F. Disbursement',
+                officeSlug: null,
+                officeFromField: [
+                    'sourceStage' => 'finance_director',
+                    'field'       => 'payment_authorisation_to',
+                    'map'         => ['accountant' => 'accountant', 'cashier' => 'cashier'],
+                ],
+                description: 'The Accountant or Cashier issues the payment, then confirms and signs — this completes the requisition and alerts the Director of Finance and the Registrar.',
+                fields: [
+                    new FormField('payment_reference', 'Cheque No. / Reference (if any)', FormField::TYPE_TEXT, required: false, col: 12, maxLength: 100),
+                    new FormField('disbursement_confirmed', 'I confirm the payment has been disbursed to the payee.', FormField::TYPE_CHECKBOX, required: true, col: 12,
+                        help: 'Tick to confirm the cheque / cash has been issued. This marks the requisition fully complete and notifies the Director of Finance and the Registrar.'),
+                ],
+                signatureRequired: true,
+            ),
         ];
+    }
+
+    public function notifyOnCompletionStages(): array
+    {
+        // On final completion (disbursement confirmed), also alert the signers
+        // of these stages — the Director of Finance and the Registrar.
+        return ['finance_director', 'registrar'];
     }
 }

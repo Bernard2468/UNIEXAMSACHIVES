@@ -261,6 +261,11 @@ class FormWorkflowService
                 $nextAssigneeId = null;
             }
 
+            // Resolve this stage's office slug — dynamic (looked up from a field
+            // saved on an earlier stage) for stages like the PR disbursement step,
+            // otherwise the stage's hard-wired slug.
+            $effectiveOfficeSlug = $this->effectiveOfficeSlug($nextStage, $submission);
+
             // Creator pool — form returns to the applicant for re-confirmation
             // (e.g. the Renewal of Appointment form's declaration stage).
             if ($nextStage->isCreatorPool()) {
@@ -269,7 +274,10 @@ class FormWorkflowService
                     abort(422, "The original applicant's account is no longer available to receive this form.");
                 }
             } else {
-                $assignee = $this->resolveNextAssignee($nextStage, $nextAssigneeId, $leadershipCategory, $nextOfficeId);
+                if ($nextStage->officeFromField && !$effectiveOfficeSlug) {
+                    abort(422, 'This form could not be routed for disbursement — the payment authorisation choice did not map to an office. Refresh and try again.');
+                }
+                $assignee = $this->resolveNextAssignee($nextStage, $nextAssigneeId, $leadershipCategory, $nextOfficeId, $effectiveOfficeSlug);
                 if (!$assignee) {
                     if ($nextStage->isLeadershipPool()) {
                         abort(422, "No matching leadership user is available for this form. Ask an administrator to tag the appropriate positions as HOD / Dean / Director.");
@@ -292,8 +300,8 @@ class FormWorkflowService
             $office = null;
             if ($nextStage->isLeadershipOrOfficePool() && $leadershipCategory === 'office' && $nextOfficeId) {
                 $office = Office::find($nextOfficeId);
-            } elseif ($nextStage->officeSlug) {
-                $office = Office::where('slug', $nextStage->officeSlug)->first();
+            } elseif ($effectiveOfficeSlug) {
+                $office = Office::where('slug', $effectiveOfficeSlug)->first();
             }
 
             $submission->status              = FormSubmission::STATUS_IN_PROGRESS;
@@ -414,6 +422,41 @@ class FormWorkflowService
         ]);
 
         $this->sendEmail($submission->creator, new FormSubmissionCompleted($submission));
+
+        // Alert configured stage-signers (e.g. the Director of Finance and the
+        // Registrar on the PR form, once disbursement is confirmed) — in-app +
+        // email — so they know the requisition is fully complete.
+        $definition   = $this->registry->find($submission->form_slug);
+        $notifyStages = $definition ? $definition->notifyOnCompletionStages() : [];
+        if ($notifyStages) {
+            $signerIds = $submission->signatures()
+                ->whereIn('stage_slug', $notifyStages)
+                ->pluck('user_id')
+                ->unique()
+                ->reject(fn ($id) => (int) $id === (int) $submission->created_by);
+
+            foreach ($signerIds as $signerId) {
+                $signer = User::find($signerId);
+                if (!$signer) {
+                    continue;
+                }
+                Notification::create([
+                    'user_id'  => $signer->id,
+                    'actor_id' => $user->id,
+                    'type'     => 'form_completed',
+                    'category' => Notification::CATEGORY_FORM,
+                    'title'    => "Requisition fully complete ({$submission->reference})",
+                    'message'  => trim("{$user->first_name} {$user->last_name}") . " confirmed disbursement. This {$submission->form_code} is now complete.",
+                    'url'      => route('admin.forms.show', $submission->id),
+                    'data'     => [
+                        'submission_id' => $submission->id,
+                        'form_code'     => $submission->form_code,
+                        'reference'     => $submission->reference,
+                    ],
+                ]);
+                $this->sendEmail($signer, new FormSubmissionCompleted($submission));
+            }
+        }
 
         return $submission->fresh();
     }
@@ -611,11 +654,29 @@ class FormWorkflowService
         return null;
     }
 
+    /**
+     * Resolve the Office slug a stage routes to. For most stages this is the
+     * hard-wired officeSlug; for dynamic-office stages (officeFromField) it is
+     * looked up from a field value saved on an earlier stage — e.g. the PR
+     * disbursement step routes to Accountant or Cashier per the Director of
+     * Finance's "Payment Authorisation To" choice.
+     */
+    protected function effectiveOfficeSlug(FormStage $stage, FormSubmission $submission): ?string
+    {
+        if (!$stage->officeFromField) {
+            return $stage->officeSlug;
+        }
+        $cfg   = $stage->officeFromField;
+        $value = $submission->sectionData($cfg['sourceStage'] ?? '')[$cfg['field'] ?? ''] ?? null;
+        return ($cfg['map'] ?? [])[$value] ?? null;
+    }
+
     protected function resolveNextAssignee(
         FormStage $stage,
         ?int $nextAssigneeId,
         ?string $leadershipCategory = null,
         ?int $nextOfficeId = null,
+        ?string $officeSlugOverride = null,
     ): ?User
     {
         // ── Leadership pool: HOD / Dean / Director picked dynamically ──
@@ -661,14 +722,17 @@ class FormWorkflowService
             return $this->resolveLeadershipAssignee($nextAssigneeId, $leadershipCategory);
         }
 
-        // ── Office pool (default) ──
-        if (!$stage->officeSlug) {
+        // ── Office pool (default) ── an override slug (dynamic office, e.g. PR
+        // disbursement to Accountant/Cashier) takes precedence over the stage's
+        // hard-wired slug.
+        $officeSlug = $officeSlugOverride ?? $stage->officeSlug;
+        if (!$officeSlug) {
             // No office and not a leadership pool means it's the requisitioner —
             // caller is responsible for setting current_assignee_id.
             return $nextAssigneeId ? User::find($nextAssigneeId) : null;
         }
 
-        $office = Office::where('slug', $stage->officeSlug)->first();
+        $office = Office::where('slug', $officeSlug)->first();
         if (!$office) {
             return null;
         }

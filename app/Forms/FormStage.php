@@ -83,12 +83,25 @@ class FormStage
         public readonly string $recipientPool = self::POOL_OFFICE,
         public readonly bool $excludeOfficeHead = false,
         public readonly bool $officeHeadOnly = false,
+        /**
+         * Dynamic office routing: resolve this stage's Office from a field value
+         * set on an earlier stage, instead of a hard-wired officeSlug. Routes to
+         * that office's head (or first active member). Used by the PR
+         * disbursement step, whose office (Accountant vs Cashier) depends on the
+         * Director of Finance's "Payment Authorisation To" choice.
+         *
+         * Shape: ['sourceStage' => 'finance_director', 'field' => 'payment_authorisation_to',
+         *         'map' => ['accountant' => 'accountant', 'cashier' => 'cashier']]
+         */
+        public readonly ?array $officeFromField = null,
     ) {
     }
 
     public function isRequisitionerStage(): bool
     {
-        return $this->officeSlug === null && $this->recipientPool === self::POOL_OFFICE;
+        return $this->officeSlug === null
+            && $this->officeFromField === null
+            && $this->recipientPool === self::POOL_OFFICE;
     }
 
     public function isLeadershipPool(): bool
