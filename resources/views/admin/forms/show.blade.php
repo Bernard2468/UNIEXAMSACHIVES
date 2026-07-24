@@ -355,7 +355,7 @@
                                                         @if(!empty($divert['recipientName']))
                                                             <div style="padding: 12px 14px; background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:10px; font-size:0.82rem; color:#0369a1; line-height:1.55;">
                                                                 This form will go to <strong>{{ $divert['destinationLabel'] }}</strong>
-                                                                (<strong>{{ $divert['recipientName'] }}</strong>) next — no recipient needs to be picked here.
+                                                                (<strong>{{ $divert['recipientName'] }}</strong>) next.
                                                             </div>
                                                         @else
                                                             <div style="padding: 12px 14px; background:#fffbeb; border:1.5px solid #fde68a; border-radius:10px; font-size:0.82rem; color:#b45309; line-height:1.55;">
