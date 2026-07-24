@@ -938,15 +938,20 @@ class FoldersController extends Controller
     // =================================================================
 
     /**
-     * UI "Users" (database role 'admin' — the interface department/office
-     * accounts run on) may only share folders with their own PRIMARY
-     * department, and never with "Everyone". UI "Admins" (database role
-     * 'user') are the overall administrators and keep the full picker, as do
-     * super admins. See ROLE_TERMINOLOGY.md for the reversed naming.
+     * UI "Users" (is_admin = 1 — the interface department/office accounts run
+     * on) may only share folders with their own PRIMARY department, and never
+     * with "Everyone". UI "Admins" (is_admin = 0) are the overall
+     * administrators and keep the full picker, as do super admins.
+     *
+     * NOTE: keyed off the is_admin boolean — the same flag the sidebar and
+     * InstitutionalAdminMiddleware use — NOT the `role` column, because
+     * account creation never sets `role` (it stays at its 'user' default even
+     * for is_admin = 1 accounts). See ROLE_TERMINOLOGY.md for the reversed
+     * naming.
      */
     private function sharesRestrictedToOwnDepartment(User $user): bool
     {
-        return $user->role === 'admin';
+        return (bool) $user->is_admin && !$user->isSuperAdmin();
     }
 
     /**

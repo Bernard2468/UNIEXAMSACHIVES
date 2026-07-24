@@ -12,7 +12,7 @@ var_dump($aud::parseValue('12:primary') === ['12', 'primary']);
 var_dump($aud::scopedValues('5') === ['5', '5:primary', '5:secondary']);
 
 // 2. A real user with a primary department
-$u = User::whereNotNull('department_id')->where('role', 'admin')->first();
+$u = User::whereNotNull('department_id')->where('is_admin', 1)->where('role', '!=', 'super_admin')->first();
 if ($u) {
     echo "User {$u->id} primary dept: {$u->department_id}; secondaries: " . $u->secondaryDepartments->pluck('id')->join(',') . PHP_EOL;
     print_r($aud->userValues($u));
@@ -36,5 +36,5 @@ if ($u) {
     // 4. valueLabel
     echo $aud->valueLabel($d) . ' | ' . $aud->valueLabel($d . ':primary') . ' | ' . $aud->valueLabel($d . ':secondary') . PHP_EOL;
 } else {
-    echo 'No role=admin user with a primary department found.' . PHP_EOL;
+    echo 'No is_admin=1 user with a primary department found.' . PHP_EOL;
 }
