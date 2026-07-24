@@ -997,12 +997,12 @@ class FoldersController extends Controller
             [
                 'value' => DepartmentAudience::SCOPE_PRIMARY,
                 'label' => 'Primary members only',
-                'hint' => 'Staff whose home department is this one',
+                'hint' => 'Staff assigned to this department as their primary department',
             ],
             [
                 'value' => DepartmentAudience::SCOPE_SECONDARY,
                 'label' => 'Secondary members only',
-                'hint' => 'Staff attached to it as an additional department',
+                'hint' => 'Staff affiliated with this department secondarily',
             ],
             [
                 'value' => 'all',
