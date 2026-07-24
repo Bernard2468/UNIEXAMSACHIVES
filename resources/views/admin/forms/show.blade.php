@@ -750,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 textEl.textContent = 'Choose an option above to see who will receive this form for disbursement.';
             } else if (info.recipient) {
                 textEl.innerHTML = 'This will be sent to <strong>' + esc(info.recipient)
-                    + '</strong> (' + esc(info.office) + ') for disbursement — no recipient needs to be picked here.';
+                    + '</strong> (' + esc(info.office) + ') for disbursement';
             } else {
                 textEl.innerHTML = 'The <strong>' + esc(info.office) + '</strong> office has no active member yet — '
                     + 'ask an administrator to add one before authorising.';
