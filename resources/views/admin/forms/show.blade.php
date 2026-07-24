@@ -301,9 +301,11 @@
                                         <div class="form-panel">
                                             <div class="form-panel__head">
                                                 <div>
-                                                    <h2 class="form-panel__title"><span data-divert-title @if(!empty($divert)) data-title-natural="Forward to {{ $nextStage->label ?? '—' }}" data-title-divert="Forward to {{ $divert['destinationLabel'] }}" @endif>Forward to {{ $nextStage->label ?? '—' }}</span><span class="form-panel__title-bar"></span></h2>
+                                                    <h2 class="form-panel__title"><span data-divert-title @if(!empty($divert)) data-title-natural="{{ $nextStage ? 'Forward to '.$nextStage->label : 'Final approval' }}" data-title-divert="Forward to {{ $divert['destinationLabel'] }}" @endif>{{ $nextStage ? 'Forward to '.$nextStage->label : 'Final approval' }}</span><span class="form-panel__title-bar"></span></h2>
                                                     <div data-divert-desc>
-                                                        @if($nextStage && $nextStage->isCreatorPool())
+                                                        @if(!$nextStage)
+                                                            <p class="form-panel__desc">This is the final approval — signing will complete the form. No further recipient is needed.</p>
+                                                        @elseif($nextStage && $nextStage->isCreatorPool())
                                                             <p class="form-panel__desc">This form returns to the applicant for their declaration. No need to pick anyone — it's routed automatically.</p>
                                                         @elseif($nextStage && $nextStage->isLeadershipOrOfficePool())
                                                             <p class="form-panel__desc">Choose <strong>Dean</strong>, <strong>HOD</strong>, <strong>Director</strong>, or <strong>Office</strong> — then pick the specific person, or the office whose head will recommend.</p>
@@ -318,7 +320,11 @@
                                             <div class="form-panel__body"
                                                 @if(!empty($divert)) data-divert-root data-divert-field="{{ $divert['field'] }}" data-divert-trigger="{{ $divert['trigger'] }}" data-divert-values="{{ implode(',', $divert['values']) }}" @endif>
                                                 <div data-divert-picker>
-                                                    @if($nextStage && $nextStage->isCreatorPool())
+                                                    @if(!$nextStage)
+                                                        <div style="padding: 14px 16px; background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:10px; font-size:0.84rem; color:#15803d; line-height:1.55;">
+                                                            <strong>Final approval.</strong> Signing this form completes it — there's no further office to send it to.
+                                                        </div>
+                                                    @elseif($nextStage && $nextStage->isCreatorPool())
                                                         @include('admin.forms.partials.creator-recipient-notice', [
                                                             'recipient' => $creatorRecipient ?? null,
                                                             'nextStage' => $nextStage,
@@ -374,8 +380,14 @@
                                         @if($currentStage->slug !== 'requisitioner')
                                             <button type="button" class="btn-action btn-action--danger" id="rejectBtn">Send Back</button>
                                         @endif
+                                        @php
+                                            $fwdNatural = $currentStage->signatureRequired
+                                                ? ($nextStage ? 'Sign & Forward' : 'Sign & Complete')
+                                                : ($nextStage ? 'Forward' : 'Complete');
+                                            $fwdDivert  = $currentStage->signatureRequired ? 'Sign & Forward' : 'Forward';
+                                        @endphp
                                         <button type="submit" class="btn-action btn-action--primary">
-                                            {{ $currentStage->signatureRequired ? 'Sign & Forward' : 'Forward' }}
+                                            <span data-forward-btn-label @if(!empty($divert) && !$nextStage) data-label-natural="{{ $fwdNatural }}" data-label-divert="{{ $fwdDivert }}" @endif>{{ $fwdNatural }}</span>
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                                         </button>
                                     </div>
@@ -628,6 +640,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const title   = document.querySelector('[data-divert-title]');
         const titleNatural = title ? title.getAttribute('data-title-natural') : null;
         const titleDivert  = title ? title.getAttribute('data-title-divert') : null;
+        const btnLabel     = document.querySelector('[data-forward-btn-label]');
+        const labelNatural = btnLabel ? btnLabel.getAttribute('data-label-natural') : null;
+        const labelDivert  = btnLabel ? btnLabel.getAttribute('data-label-divert') : null;
         const triggers = document.querySelectorAll('[name="' + field + '"]');
 
         function divertActive() {
@@ -660,11 +675,50 @@ document.addEventListener('DOMContentLoaded', function () {
             if (title && titleNatural) {
                 title.textContent = (active && titleDivert) ? titleDivert : titleNatural;
             }
+            if (btnLabel && labelNatural) {
+                btnLabel.textContent = (active && labelDivert) ? labelDivert : labelNatural;
+            }
         }
 
         triggers.forEach(function (el) { el.addEventListener('change', applyDivert); });
         applyDivert();
     }
+
+    // ── Conditional fields ─────────────────────────────────────────
+    // Hide (and clear) a field while a sibling trigger matches — e.g. hide the
+    // Registrar's "Approved By / Value" fields when the form is referred to the
+    // VC, since the VC fills those instead. Server-side conditional rules keep
+    // it correct even without JS.
+    document.querySelectorAll('[data-hide-when-field]').forEach(function (cell) {
+        const trigField = cell.getAttribute('data-hide-when-field');
+        const onChecked = cell.getAttribute('data-hide-when-checked') === '1';
+        const vals      = (cell.getAttribute('data-hide-when-values') || '').split(',').filter(Boolean);
+        const trigs = document.querySelectorAll('[name="' + trigField + '"]');
+        if (!trigs.length) return;
+
+        function shouldHide() {
+            if (onChecked) {
+                const cb = document.querySelector('[name="' + trigField + '"]');
+                return !!(cb && cb.checked);
+            }
+            const sel = document.querySelector('[name="' + trigField + '"]:checked');
+            return !!(sel && vals.indexOf(sel.value) !== -1);
+        }
+
+        function applyHide() {
+            const hide = shouldHide();
+            cell.style.display = hide ? 'none' : '';
+            if (hide) {
+                cell.querySelectorAll('input, textarea, select').forEach(function (el) {
+                    if (el.type === 'checkbox' || el.type === 'radio') { el.checked = false; }
+                    else { el.value = ''; }
+                });
+            }
+        }
+
+        trigs.forEach(function (el) { el.addEventListener('change', applyHide); });
+        applyHide();
+    });
 });
 </script>
 

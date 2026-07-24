@@ -60,6 +60,19 @@ class FormField
          * manually. Null = no auto-fill.
          */
         public readonly ?string $calculatesAgeTarget = null,
+        /**
+         * Optional client-side conditional visibility. When set, this field is
+         * HIDDEN (and its inputs cleared) on the compose/show page while a
+         * sibling field matches the condition — e.g. hide the Registrar's
+         * "Approved By / Value" fields when the form is referred to the VC (the
+         * VC fills those instead). Purely a UX convenience: server-side
+         * validation must use a matching conditional rule, e.g.
+         * `rule: 'nullable|required_unless:referred_for_vc,1|string|max:255'`.
+         *
+         * Shape: ['field' => 'sibling_name', 'checked' => true]        // checkbox ticked
+         *     or ['field' => 'sibling_name', 'equals' => ['a', 'b']]   // radio/select value
+         */
+        public readonly ?array $hiddenWhen = null,
     ) {
     }
 

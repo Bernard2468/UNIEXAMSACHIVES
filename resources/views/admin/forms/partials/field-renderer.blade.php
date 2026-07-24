@@ -32,7 +32,7 @@
             @continue
         @endif
 
-        <div class="form-field form-field--col-{{ $col }}" data-field-name="{{ $field->name }}" @if($field->required) data-required="1" data-field-type="{{ $field->type }}" data-field-label="{{ $field->label }}" @endif>
+        <div class="form-field form-field--col-{{ $col }}" data-field-name="{{ $field->name }}" @if($field->required) data-required="1" data-field-type="{{ $field->type }}" data-field-label="{{ $field->label }}" @endif @if($field->hiddenWhen) data-hide-when-field="{{ $field->hiddenWhen['field'] }}" data-hide-when-checked="{{ !empty($field->hiddenWhen['checked']) ? '1' : '' }}" data-hide-when-values="{{ implode(',', $field->hiddenWhen['equals'] ?? []) }}" @endif>
             <label for="{{ $inputId }}" class="form-field__label">
                 {{ $field->label }}
                 @if($field->required)<span class="form-field__required">*</span>@endif
