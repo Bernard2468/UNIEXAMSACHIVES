@@ -325,8 +325,10 @@
                                                             <strong>Final approval.</strong> Signing this form completes it — there's no further office to send it to.
                                                         </div>
                                                     @elseif($nextStage->officeFromField ?? null)
-                                                        <div style="padding: 14px 16px; background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:10px; font-size:0.84rem; color:#1e40af; line-height:1.55;">
-                                                            This will be routed automatically to the <strong>Accountant</strong> or <strong>Cashier</strong> — whichever you select above — for disbursement. No recipient needs to be picked here.
+                                                        <div style="padding: 14px 16px; background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:10px; font-size:0.84rem; color:#1e40af; line-height:1.55;"
+                                                             data-dynrecipient-field="{{ $nextStage->officeFromField['field'] ?? '' }}"
+                                                             data-dynrecipient-map="{{ json_encode($dynamicRecipients ?? [], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) }}">
+                                                            <span data-dynrecipient-text>Choose an option above to see who will receive this form for disbursement.</span>
                                                         </div>
                                                     @elseif($nextStage && $nextStage->isCreatorPool())
                                                         @include('admin.forms.partials.creator-recipient-notice', [
@@ -722,6 +724,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
         trigs.forEach(function (el) { el.addEventListener('change', applyHide); });
         applyHide();
+    });
+
+    // ── Dynamic recipient note ── name the actual person a dynamic-office stage
+    // (e.g. PR disbursement) will route to, updating live with the selection
+    // made above (Accountant vs Cashier).
+    document.querySelectorAll('[data-dynrecipient-field]').forEach(function (box) {
+        const field = box.getAttribute('data-dynrecipient-field');
+        const textEl = box.querySelector('[data-dynrecipient-text]');
+        let map = {};
+        try { map = JSON.parse(box.getAttribute('data-dynrecipient-map') || '{}'); } catch (e) { map = {}; }
+        const inputs = field ? document.querySelectorAll('[name="' + field + '"]') : [];
+        if (!textEl || !inputs.length) return;
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        function update() {
+            const sel = document.querySelector('[name="' + field + '"]:checked');
+            const info = sel ? map[sel.value] : null;
+            if (!info) {
+                textEl.textContent = 'Choose an option above to see who will receive this form for disbursement.';
+            } else if (info.recipient) {
+                textEl.innerHTML = 'This will be sent to <strong>' + esc(info.recipient)
+                    + '</strong> (' + esc(info.office) + ') for disbursement — no recipient needs to be picked here.';
+            } else {
+                textEl.innerHTML = 'The <strong>' + esc(info.office) + '</strong> office has no active member yet — '
+                    + 'ask an administrator to add one before authorising.';
+            }
+        }
+
+        inputs.forEach(function (el) { el.addEventListener('change', update); });
+        update();
     });
 });
 </script>

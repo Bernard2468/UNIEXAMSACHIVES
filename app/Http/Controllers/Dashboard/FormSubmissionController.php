@@ -230,6 +230,7 @@ class FormSubmissionController extends Controller
         $vcOffice    = null;
         $auditHeadOffice = null;
         $divert      = null;
+        $dynamicRecipients = null;
 
         if ($canFill && $currentStage) {
             $nextStage = $definition->nextStageAfter($currentStage->slug);
@@ -282,6 +283,27 @@ class FormSubmissionController extends Controller
                     'recipientName'    => $vcPick ? trim(($vcPick->first_name ?? '') . ' ' . ($vcPick->last_name ?? '')) : null,
                 ];
             }
+
+            // Dynamic-office next stage (e.g. PR disbursement): resolve the actual
+            // recipient (head, else first active member) for each selectable option
+            // so the page can name the person, updating live with the choice above.
+            if ($nextStage && $nextStage->officeFromField) {
+                $dynamicRecipients = [];
+                foreach (($nextStage->officeFromField['map'] ?? []) as $optionValue => $officeSlug) {
+                    $office = Office::with(['users' => fn ($q) => $q->wherePivot('is_active', true)])
+                        ->where('slug', $officeSlug)->first();
+                    $recipient = null;
+                    if ($office) {
+                        $members   = $office->users->where('pivot.is_active', true)->values();
+                        $pick      = $members->where('pivot.is_head', true)->first() ?? $members->first();
+                        $recipient = $pick ? trim(($pick->first_name ?? '') . ' ' . ($pick->last_name ?? '')) : null;
+                    }
+                    $dynamicRecipients[$optionValue] = [
+                        'office'    => $office?->name ?? ucfirst($officeSlug),
+                        'recipient' => $recipient,
+                    ];
+                }
+            }
         }
 
         // Prefill the current stage's form fields from the user's profile
@@ -311,6 +333,7 @@ class FormSubmissionController extends Controller
             'vcOffice'             => $vcOffice,
             'auditHeadOffice'      => $auditHeadOffice,
             'divert'               => $divert,
+            'dynamicRecipients'    => $dynamicRecipients,
             'canFill'              => $canFill,
             'canComment'           => app(\App\Policies\FormSubmissionPolicy::class)->comment($user, $submission),
             'canCancel'            => app(\App\Policies\FormSubmissionPolicy::class)->cancel($user, $submission),
