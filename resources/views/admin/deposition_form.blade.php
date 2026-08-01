@@ -408,7 +408,7 @@
         border: 1px solid #e2e8f0;
         overflow: hidden;
         position: sticky;
-        top: 100px;
+        top: calc(var(--udts-header-h, 116px) + 16px);
     }
     .tips-card-header {
         background: #0f172a;

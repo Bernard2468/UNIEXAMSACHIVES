@@ -180,14 +180,10 @@ html.udsl-lock { overflow: hidden; }
         function toggle(show) {
             triggers.forEach(function (t) { t.classList.toggle('is-shown', show); });
         }
-        var hero = document.querySelector('.uda-search [data-global-search]');
-        if (hero && 'IntersectionObserver' in window) {
-            new IntersectionObserver(function (entries) {
-                toggle(!entries[0].isIntersecting);
-            }, { rootMargin: '-110px 0px 0px 0px', threshold: 0 }).observe(hero);
-        } else {
-            toggle(true); // no hero on this page → search is always one tap away
-        }
+        // The header is now permanently pinned, so the search trigger is ALWAYS
+        // visible — no more reveal/hide animation tied to the hero search
+        // scrolling out of view.
+        toggle(true);
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

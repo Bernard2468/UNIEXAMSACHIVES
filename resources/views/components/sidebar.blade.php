@@ -684,8 +684,10 @@ document.addEventListener('DOMContentLoaded', function() {
    column — on mobile it stacks above the content and flows naturally. */
 @media (min-width: 992px) {
     .dashboard__inner.sticky-top {
-        top: 20px;
-        max-height: calc(100vh - 40px);
+        /* Sit just below the permanently pinned header (height published as
+           --udts-header-h by frontend/header.blade.php) */
+        top: calc(var(--udts-header-h, 116px) + 16px);
+        max-height: calc(100vh - var(--udts-header-h, 116px) - 32px);
         overflow-y: auto;
         overflow-x: hidden;
         /* Reaching the sidebar's end must never chain-scroll the page (and

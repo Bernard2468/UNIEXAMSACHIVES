@@ -1,5 +1,9 @@
-<header>
-    <div class="headerarea headerarea__2 header__sticky header__area">
+<header class="uda-header-sticky">
+    {{-- `header__sticky` removed: the theme JS used to bolt a fixed clone-style
+         `.sticky` state onto it at 245px scroll (fadeInDown animation). The header
+         is now PERMANENTLY pinned via position: sticky below — no scroll
+         animation, no consolidation. --}}
+    <div class="headerarea headerarea__2 header__area">
         <div class="uda-clock-bar" data-live-clock="navbar">
             <div class="clock-left">
                 <span class="clock-item">
@@ -107,12 +111,52 @@
                                 <span class="role-badge__dot"></span>
                                 {{ $roleBadge['label'] }}
                             </span>
-                            {{-- Docked search launcher — hidden until the hero search scrolls out of view (see components.global-search-launcher) --}}
-                            <button type="button" class="uds-trigger uds-trigger--header" data-udsl-open aria-label="Search everything" title="Search — Ctrl K">
+                            {{-- Search launcher — always visible (opens the Ctrl+K command palette) --}}
+                            <button type="button" class="uds-trigger uds-trigger--header is-shown" data-udsl-open aria-label="Search everything" title="Search — Ctrl K">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
                             </button>
                             @include('components.notification-tray')
-                            <a href="{{route('logout')}}" class="uda-btn uda-btn-primary">Logout</a>
+
+                            {{-- Account menu — avatar trigger + dropdown (profile, settings, theme, sign out) --}}
+                            <div class="uda-user-menu" data-uda-usermenu>
+                                <button type="button" class="uda-user-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+                                    <img class="uda-user-trigger__avatar" src="{{ Auth::user()->profile_picture_url }}" alt="{{ Auth::user()->first_name }}">
+                                    <svg class="uda-user-trigger__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="uda-user-dropdown" hidden>
+                                    <div class="uda-user-dropdown__head">
+                                        <img class="uda-user-dropdown__avatar" src="{{ Auth::user()->profile_picture_url }}" alt="">
+                                        <div class="uda-user-dropdown__id">
+                                            <span class="uda-user-dropdown__name">{{ Auth::user()->first_name }} {{ Auth::user()->last_name }}</span>
+                                            <span class="uda-user-dropdown__email">{{ Auth::user()->email }}</span>
+                                            <span class="role-badge {{ $roleBadge['class'] }} uda-user-dropdown__role">
+                                                <span class="role-badge__dot"></span>
+                                                {{ $roleBadge['label'] }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="uda-user-dropdown__sep"></div>
+                                    <nav class="uda-user-dropdown__nav">
+                                        <a href="{{ route('dashboard.profile') }}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                            My Profile
+                                        </a>
+                                        <a href="{{ route('dashboard.settings') }}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                            Settings
+                                        </a>
+                                        <button type="button" data-uda-theme-toggle>
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                                            <span data-uda-theme-label>Dark mode</span>
+                                        </button>
+                                    </nav>
+                                    <div class="uda-user-dropdown__sep"></div>
+                                    <a class="uda-user-dropdown__logout" href="{{ route('logout') }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                        Sign out
+                                    </a>
+                                </div>
+                            </div>
                         @else
                             <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary">Register / Login</a>
                         @endif
@@ -236,6 +280,210 @@
 
 <style>
 /* Old notification styles removed - now using notification-tray component */
+
+/* ═══ Permanently pinned header (no scroll animation / consolidation) ═══
+   Both rows — the utility clock bar and the main navbar — are always fixed
+   to the top of the viewport on desktop. The page content scrolls beneath
+   them. `--udts-header-h` is kept in sync by JS so the dashboard sidebar
+   and other sticky panels can position themselves just below the header. */
+@media (min-width: 992px) {
+    header.uda-header-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 1030; /* above the dashboard sidebar (1020), below modals (1050) */
+        background: var(--whiteColor, #fff);
+        box-shadow: 0 1px 0 rgba(148, 163, 184, 0.16),
+                    0 10px 30px -18px rgba(15, 23, 42, 0.25);
+    }
+    /* Anchor jumps land below the pinned header */
+    html {
+        scroll-padding-top: calc(var(--udts-header-h, 116px) + 12px);
+    }
+}
+
+/* ═══ Account menu (avatar trigger + dropdown) ═══ */
+.uda-user-menu {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+.uda-user-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 3px;
+    cursor: pointer;
+    border-radius: 999px;
+    transition: background .15s ease;
+}
+.uda-user-trigger:hover { background: rgba(100, 116, 139, 0.1); }
+.uda-user-trigger__avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+    transition: border-color .15s ease;
+}
+.uda-user-trigger:hover .uda-user-trigger__avatar,
+.uda-user-trigger[aria-expanded="true"] .uda-user-trigger__avatar {
+    border-color: #6366f1;
+}
+.uda-user-trigger__chevron {
+    width: 14px;
+    height: 14px;
+    color: #64748b;
+    transition: transform .18s ease;
+}
+.uda-user-trigger[aria-expanded="true"] .uda-user-trigger__chevron {
+    transform: rotate(180deg);
+}
+.uda-user-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 288px;
+    background: #fff;
+    border: 1.5px solid #ebebeb;
+    border-radius: 16px;
+    box-shadow: 0 18px 50px -12px rgba(15, 23, 42, 0.25);
+    padding: 8px;
+    z-index: 1040;
+    animation: uda-user-dropdown-in .16s ease;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    text-align: left;
+}
+@keyframes uda-user-dropdown-in {
+    from { opacity: 0; transform: translateY(-6px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.uda-user-dropdown__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 12px 10px;
+}
+.uda-user-dropdown__avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #eef2f7;
+    flex-shrink: 0;
+}
+.uda-user-dropdown__id {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+.uda-user-dropdown__name {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.uda-user-dropdown__email {
+    font-size: 12px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.uda-user-dropdown .uda-user-dropdown__role {
+    margin: 3px 0 0;
+    align-self: flex-start;
+}
+.uda-user-dropdown__sep {
+    height: 1px;
+    background: #f1f5f9;
+    margin: 4px 8px;
+}
+.uda-user-dropdown__nav {
+    display: flex;
+    flex-direction: column;
+}
+.uda-user-dropdown__nav a,
+.uda-user-dropdown__nav button,
+.uda-user-dropdown__logout {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    background: none;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #334155;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .13s ease, color .13s ease;
+    text-align: left;
+}
+.uda-user-dropdown__nav a svg,
+.uda-user-dropdown__nav button svg,
+.uda-user-dropdown__logout svg {
+    width: 17px;
+    height: 17px;
+    color: #94a3b8;
+    flex-shrink: 0;
+    transition: color .13s ease;
+}
+.uda-user-dropdown__nav a:hover,
+.uda-user-dropdown__nav button:hover {
+    background: #f4f6fb;
+    color: #0f172a;
+}
+.uda-user-dropdown__nav a:hover svg,
+.uda-user-dropdown__nav button:hover svg {
+    color: #6366f1;
+}
+.uda-user-dropdown__logout {
+    color: #dc2626;
+}
+.uda-user-dropdown__logout svg { color: #dc2626; }
+.uda-user-dropdown__logout:hover {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+/* Dark mode */
+.is_dark header.uda-header-sticky {
+    box-shadow: 0 1px 0 rgba(148, 163, 184, 0.14),
+                0 10px 30px -18px rgba(0, 0, 0, 0.6);
+}
+.is_dark .uda-user-trigger:hover { background: rgba(148, 163, 184, 0.12); }
+.is_dark .uda-user-trigger__avatar { border-color: #2d3748; }
+.is_dark .uda-user-dropdown {
+    background: #111827;
+    border-color: #1e2330;
+    box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.7);
+}
+.is_dark .uda-user-dropdown__name { color: #f3f4f6; }
+.is_dark .uda-user-dropdown__sep { background: #1e2330; }
+.is_dark .uda-user-dropdown__nav a,
+.is_dark .uda-user-dropdown__nav button { color: #cbd5e1; }
+.is_dark .uda-user-dropdown__nav a:hover,
+.is_dark .uda-user-dropdown__nav button:hover {
+    background: #1e2330;
+    color: #f3f4f6;
+}
+.is_dark .uda-user-dropdown__logout { color: #f87171; }
+.is_dark .uda-user-dropdown__logout svg { color: #f87171; }
+.is_dark .uda-user-dropdown__logout:hover { background: rgba(220, 38, 38, 0.12); }
+
+@media (max-width: 575px) {
+    .uda-user-trigger__avatar { width: 36px; height: 36px; }
+    .uda-user-dropdown { width: 260px; }
+}
 
 /* ===== ROLE BADGE (Admin / User / Super Admin) =====
    Inlined here (not in css/style.css) so the badge is styled the instant the
@@ -710,6 +958,63 @@ document.addEventListener('DOMContentLoaded', function(){
       setTimeout(pollUnread, 100);
     }
   });
+});
+
+// ═══ Pinned header: publish the real header height as --udts-header-h ═══
+// The dashboard sidebar and other sticky panels read this variable to position
+// themselves right below the permanently pinned header.
+function udtsSyncHeaderHeight(){
+  const el = document.querySelector('header.uda-header-sticky');
+  if (!el) return;
+  document.documentElement.style.setProperty('--udts-header-h', el.offsetHeight + 'px');
+}
+document.addEventListener('DOMContentLoaded', function(){
+  udtsSyncHeaderHeight();
+  // Re-measure once fonts/images have settled
+  setTimeout(udtsSyncHeaderHeight, 350);
+  window.addEventListener('resize', udtsSyncHeaderHeight);
+});
+
+// ═══ Account menu (avatar dropdown) ═══
+document.addEventListener('DOMContentLoaded', function(){
+  const menu = document.querySelector('[data-uda-usermenu]');
+  if (!menu) return;
+  const trigger  = menu.querySelector('.uda-user-trigger');
+  const dropdown = menu.querySelector('.uda-user-dropdown');
+
+  function setOpen(open){
+    dropdown.hidden = !open;
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  trigger.addEventListener('click', function(e){
+    e.stopPropagation();
+    setOpen(dropdown.hidden);
+  });
+  document.addEventListener('click', function(e){
+    if (!dropdown.hidden && !menu.contains(e.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !dropdown.hidden) { setOpen(false); trigger.focus(); }
+  });
+
+  // Dark / light mode toggle — same mechanism as the head script in layout.app
+  // (html.is_dark class + localStorage "theme-color")
+  const themeBtn   = menu.querySelector('[data-uda-theme-toggle]');
+  const themeLabel = menu.querySelector('[data-uda-theme-label]');
+  function syncThemeLabel(){
+    if (themeLabel) {
+      themeLabel.textContent = document.documentElement.classList.contains('is_dark') ? 'Light mode' : 'Dark mode';
+    }
+  }
+  syncThemeLabel();
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function(){
+      const nowDark = document.documentElement.classList.toggle('is_dark');
+      try { localStorage.setItem('theme-color', nowDark ? 'dark' : 'light'); } catch (e) {}
+      syncThemeLabel();
+    });
+  }
 });
 </script>
 

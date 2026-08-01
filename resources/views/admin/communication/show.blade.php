@@ -517,7 +517,7 @@
 /* ---------- body grid ---------- */
 .memo-view .mv-body { display: grid; grid-template-columns: 1fr 340px; gap: 22px; align-items: start; }
 .memo-view .mv-col-main { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
-.memo-view .mv-col-side { display: flex; flex-direction: column; gap: 22px; position: sticky; top: 20px; }
+.memo-view .mv-col-side { display: flex; flex-direction: column; gap: 22px; position: sticky; top: calc(var(--udts-header-h, 116px) + 16px); }
 
 /* cards */
 .memo-view .mv-card {

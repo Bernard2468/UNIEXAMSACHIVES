@@ -842,7 +842,7 @@
     border-radius: 16px;
     box-shadow: 0 1px 3px rgba(12, 12, 12, 0.04);
     position: sticky;
-    top: 10px;
+    top: calc(var(--udts-header-h, 116px) + 10px);
     z-index: 6;
     backdrop-filter: saturate(180%) blur(8px);
     font-family: 'Outfit', sans-serif !important;
