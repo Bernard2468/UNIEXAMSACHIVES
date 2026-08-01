@@ -115,15 +115,50 @@
                             <button type="button" class="uds-trigger uds-trigger--header is-shown" data-udsl-open aria-label="Search everything" title="Search — Ctrl K">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
                             </button>
+
+                            {{-- Calendar — opens the calendar modal (component included in layout.app) --}}
+                            <button type="button" class="uda-cal-trigger" onclick="openCalendarModal()" aria-label="Calendar" title="Calendar">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            </button>
+
+                            {{-- "+ Create" — quick creation menu (Add Exam / Add File) --}}
+                            <div class="uda-create-menu" data-uda-menu>
+                                <button type="button" class="uda-create-trigger" data-uda-menu-trigger aria-haspopup="true" aria-expanded="false">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    <span class="uda-create-trigger__label">Create</span>
+                                    <svg class="uda-create-trigger__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                <div class="uda-create-dropdown" data-uda-menu-panel hidden>
+                                    <a href="{{ route('dashboard.create') }}">
+                                        <span class="uda-create-dropdown__icon uda-create-dropdown__icon--exam">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                        </span>
+                                        <span class="uda-create-dropdown__text">
+                                            <span class="uda-create-dropdown__title">Add Exam</span>
+                                            <span class="uda-create-dropdown__sub">Upload a new exam paper</span>
+                                        </span>
+                                    </a>
+                                    <a href="{{ route('dashboard.file.create') }}">
+                                        <span class="uda-create-dropdown__icon uda-create-dropdown__icon--file">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                                        </span>
+                                        <span class="uda-create-dropdown__text">
+                                            <span class="uda-create-dropdown__title">Add File</span>
+                                            <span class="uda-create-dropdown__sub">Upload a new document</span>
+                                        </span>
+                                    </a>
+                                </div>
+                            </div>
+
                             @include('components.notification-tray')
 
                             {{-- Account menu — avatar trigger + dropdown (profile, settings, theme, sign out) --}}
-                            <div class="uda-user-menu" data-uda-usermenu>
-                                <button type="button" class="uda-user-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
+                            <div class="uda-user-menu" data-uda-menu>
+                                <button type="button" class="uda-user-trigger" data-uda-menu-trigger aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
                                     <img class="uda-user-trigger__avatar" src="{{ Auth::user()->profile_picture_url }}" alt="{{ Auth::user()->first_name }}">
                                     <svg class="uda-user-trigger__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                                 </button>
-                                <div class="uda-user-dropdown" hidden>
+                                <div class="uda-user-dropdown" data-uda-menu-panel hidden>
                                     <div class="uda-user-dropdown__head">
                                         <img class="uda-user-dropdown__avatar" src="{{ Auth::user()->profile_picture_url }}" alt="">
                                         <div class="uda-user-dropdown__id">
@@ -296,6 +331,105 @@
         scroll-padding-top: calc(var(--udts-header-h, 116px) + 12px);
     }
 }
+
+/* ═══ Calendar icon button (matches the search trigger) ═══ */
+.uda-cal-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    margin-right: 12px;
+    cursor: pointer;
+    padding: 0;
+    transition: background .18s, color .18s, transform .18s, box-shadow .18s;
+}
+.uda-cal-trigger:hover {
+    background: #0c0c0c;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(12, 12, 12, .2);
+}
+.uda-cal-trigger svg { width: 18px; height: 18px; }
+
+/* ═══ "+ Create" menu (Add Exam / Add File) ═══ */
+.uda-create-menu {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-right: 12px;
+}
+.uda-create-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 40px;
+    padding: 0 14px 0 12px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.uda-create-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(109, 40, 217, .35);
+    filter: brightness(1.05);
+}
+.uda-create-trigger svg { width: 15px; height: 15px; }
+.uda-create-trigger__chevron { width: 13px !important; height: 13px !important; opacity: .8; transition: transform .18s ease; }
+.uda-create-trigger[aria-expanded="true"] .uda-create-trigger__chevron { transform: rotate(180deg); }
+@media (max-width: 1365px) {
+    .uda-create-trigger__label { display: none; }
+    .uda-create-trigger { padding: 0 10px; }
+}
+.uda-create-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 264px;
+    background: #fff;
+    border: 1.5px solid #ebebeb;
+    border-radius: 16px;
+    box-shadow: 0 18px 50px -12px rgba(15, 23, 42, 0.25);
+    padding: 8px;
+    z-index: 1040;
+    animation: uda-user-dropdown-in .16s ease;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.uda-create-dropdown a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: background .13s ease;
+}
+.uda-create-dropdown a:hover { background: #f4f6fb; }
+.uda-create-dropdown__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    flex-shrink: 0;
+}
+.uda-create-dropdown__icon svg { width: 19px; height: 19px; }
+.uda-create-dropdown__icon--exam { background: #ede9fe; color: #6d28d9; }
+.uda-create-dropdown__icon--file { background: #e0f2fe; color: #0369a1; }
+.uda-create-dropdown__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.uda-create-dropdown__title { font-size: 13.5px; font-weight: 600; color: #0f172a; line-height: 1.25; }
+.uda-create-dropdown__sub { font-size: 11.5px; color: #94a3b8; line-height: 1.3; }
 
 /* ═══ Account menu (avatar trigger + dropdown) ═══ */
 .uda-user-menu {
@@ -930,27 +1064,49 @@ document.addEventListener('DOMContentLoaded', function(){
   window.addEventListener('resize', udtsSyncHeaderHeight);
 });
 
-// ═══ Account menu (avatar dropdown) ═══
+// ═══ Header dropdown menus (avatar account menu + "+ Create" menu) ═══
+// Generic behaviour: click toggles, opening one closes the others, outside
+// click / Escape closes.
 document.addEventListener('DOMContentLoaded', function(){
-  const menu = document.querySelector('[data-uda-usermenu]');
-  if (!menu) return;
-  const trigger  = menu.querySelector('.uda-user-trigger');
-  const dropdown = menu.querySelector('.uda-user-dropdown');
+  const menus = Array.prototype.slice.call(document.querySelectorAll('[data-uda-menu]'));
+  if (!menus.length) return;
 
-  function setOpen(open){
-    dropdown.hidden = !open;
+  function panelOf(menu){ return menu.querySelector('[data-uda-menu-panel]'); }
+  function triggerOf(menu){ return menu.querySelector('[data-uda-menu-trigger]'); }
+
+  function setOpen(menu, open){
+    const panel = panelOf(menu), trigger = triggerOf(menu);
+    if (!panel || !trigger) return;
+    panel.hidden = !open;
     trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
+  function closeAll(except){
+    menus.forEach(function(m){ if (m !== except) setOpen(m, false); });
+  }
 
-  trigger.addEventListener('click', function(e){
-    e.stopPropagation();
-    setOpen(dropdown.hidden);
+  menus.forEach(function(menu){
+    const panel = panelOf(menu), trigger = triggerOf(menu);
+    if (!panel || !trigger) return;
+    trigger.addEventListener('click', function(e){
+      e.stopPropagation();
+      const willOpen = panel.hidden;
+      closeAll(menu);
+      setOpen(menu, willOpen);
+    });
   });
+
   document.addEventListener('click', function(e){
-    if (!dropdown.hidden && !menu.contains(e.target)) setOpen(false);
+    menus.forEach(function(menu){
+      const panel = panelOf(menu);
+      if (panel && !panel.hidden && !menu.contains(e.target)) setOpen(menu, false);
+    });
   });
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && !dropdown.hidden) { setOpen(false); trigger.focus(); }
+    if (e.key !== 'Escape') return;
+    menus.forEach(function(menu){
+      const panel = panelOf(menu), trigger = triggerOf(menu);
+      if (panel && !panel.hidden) { setOpen(menu, false); if (trigger) trigger.focus(); }
+    });
   });
 });
 </script>
