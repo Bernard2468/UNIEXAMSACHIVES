@@ -472,41 +472,6 @@
     box-shadow: 0 4px 12px rgba(12,12,12,.18);
 }
 
-/* ── Dark mode ── */
-.is_dark .mp-page-title { color: #f3f4f6; }
-.is_dark .mp-title-bar  { background: #f3f4f6; }
-.is_dark .mp-page-sub   { color: #6b7280; }
-.is_dark .mp-page-header { border-color: #1e2330; }
-
-.is_dark .mp-hero,
-.is_dark .mp-card,
-.is_dark .mp-cta {
-    background: #111827;
-    border-color: #1e2330;
-}
-
-.is_dark .mp-hero__name     { color: #f3f4f6; }
-.is_dark .mp-hero__role     { color: #6b7280; }
-.is_dark .mp-hero__avatar   { border-color: #1e2330; }
-.is_dark .mp-hero__status-dot { border-color: #111827; }
-.is_dark .mp-hero__edit-btn { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .mp-hero__edit-btn:hover { background: #e5e7eb; color: #0c0c0c; }
-
-.is_dark .mp-card__header  { border-color: #1e2330; }
-.is_dark .mp-card__title   { color: #f3f4f6; }
-.is_dark .mp-card__bar     { background: #f3f4f6; }
-
-.is_dark .mp-row            { border-color: #1e2330; }
-.is_dark .mp-row:hover      { background: #0f172a; }
-.is_dark .mp-row__label     { color: #6b7280; }
-.is_dark .mp-row__label svg { color: #374151; }
-.is_dark .mp-row__value     { color: #e5e7eb; }
-
-.is_dark .mp-cta__heading { color: #f3f4f6; }
-.is_dark .mp-cta__sub     { color: #6b7280; }
-.is_dark .mp-cta__btn     { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .mp-cta__btn:hover { background: #e5e7eb; }
-
 /* ── Responsive ── */
 @media (max-width: 680px) {
     .mp-hero { flex-wrap: wrap; }

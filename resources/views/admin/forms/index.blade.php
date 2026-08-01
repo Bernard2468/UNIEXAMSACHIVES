@@ -99,20 +99,5 @@
 .gallery-card__cta { display: inline-flex; align-items: center; gap: 6px; color: #0c0c0c; font-weight: 600; font-size: 0.82rem; margin-top: auto; padding-top: 10px; border-top: 1.5px dashed #ebebeb; }
 .gallery-card:hover .gallery-card__cta svg { transform: translateX(2px); }
 .gallery-card__cta svg { transition: transform .15s; }
-
-/* Dark mode */
-.is_dark .form-page-title { color: #f3f4f6; }
-.is_dark .form-title-bar { background: #f3f4f6; }
-.is_dark .form-page-sub { color: #6b7280; }
-.is_dark .form-page-header { border-color: #1e2330; }
-.is_dark .gallery-portal-btn { background: #111827; color: #d1d5db; border-color: #2d3748; }
-.is_dark .gallery-portal-btn:hover { border-color: #f3f4f6; color: #f3f4f6; }
-.is_dark .gallery-card { background: #111827; border-color: #1e2330; }
-.is_dark .gallery-card:hover { border-color: #f3f4f6; }
-.is_dark .gallery-card__code { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .gallery-card__title { color: #f3f4f6; }
-.is_dark .gallery-card__cta { color: #f3f4f6; }
-.is_dark .gallery-card--placeholder { background: #0f172a; border-color: #2d3748; }
-.is_dark .gallery-card__steps { background: #0f172a; border-color: #2d3748; color: #9ca3af; }
 </style>
 @endsection

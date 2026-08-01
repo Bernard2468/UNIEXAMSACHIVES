@@ -257,7 +257,6 @@
 .ps-card__bar { display: block; width: 1.7rem; height: 2.5px; background: #0c0c0c; border-radius: 2px; margin-top: 6px; }
 .ps-card__count { margin: 8px 0 0; font-size: 0.78rem; color: #b0b5c0; }
 .ps-card__search-wrap { padding: 0 18px 6px; border-bottom: 1.5px solid #f5f5f5; margin-bottom: 4px; }
-.is_dark .ps-card__search-wrap { border-color: #1e2330; }
 
 /* Office cards grid */
 .off-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; padding: 18px 18px 20px; }
@@ -323,34 +322,6 @@ textarea.ps-modal__input { resize: vertical; min-height: 64px; }
 .pagination-link:hover:not(.disabled):not(.active) { background: #f3f4f6; }
 .pagination-link.active { background: #0c0c0c; color: #fff; border-color: #0c0c0c; font-weight: 600; }
 .pagination-link.disabled { color: #d4d7de; cursor: not-allowed; }
-
-/* Dark mode */
-.is_dark .ps-page-title  { color: #f3f4f6; }
-.is_dark .ps-title-bar   { background: #f3f4f6; }
-.is_dark .ps-page-sub    { color: #6b7280; }
-.is_dark .ps-page-header { border-color: #1e2330; }
-.is_dark .ps-btn-primary { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .ps-card        { background: #111827; border-color: #1e2330; }
-.is_dark .ps-card__hd    { border-color: #1e2330; }
-.is_dark .ps-card__title { color: #f3f4f6; }
-.is_dark .ps-card__bar   { background: #f3f4f6; }
-.is_dark .off-card       { background: #111827; border-color: #1e2330; }
-.is_dark .off-card:hover { border-color: #f3f4f6; }
-.is_dark .off-card__icon { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .off-card__title { color: #f3f4f6; }
-.is_dark .off-card__stats { border-color: #1e2330; }
-.is_dark .off-stat__value { color: #f3f4f6; }
-.is_dark .ps-modal { background: #111827; border-color: #1e2330; }
-.is_dark .ps-modal__hd { border-color: #1e2330; }
-.is_dark .ps-modal__title { color: #f3f4f6; }
-.is_dark .ps-modal__input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .ps-modal__input:focus { border-color: #f3f4f6; }
-.is_dark .ps-modal__btn-save { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .ps-modal__hd-icon { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .ps-modal__sub { color: #6b7280; }
-.is_dark .ps-modal__help { color: #6b7280; }
-.is_dark .ps-modal__foot { border-color: #1e2330; }
-.is_dark .ps-modal__hd { border-color: #1e2330; }
 </style>
 
 <script>

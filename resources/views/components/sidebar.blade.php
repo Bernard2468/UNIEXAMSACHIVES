@@ -483,8 +483,6 @@
                     </form>
                 </li>
 
-
-
             </ul>
         </div>
 
@@ -721,21 +719,6 @@ document.addEventListener('DOMContentLoaded', function() {
     .dashboard__inner.sticky-top::-webkit-scrollbar-thumb:active {
         background-color: rgba(100, 116, 139, 0.7);
     }
-
-    /* Dark mode: lighter thumb so it stays visible on dark backgrounds */
-    .is_dark .dashboard__inner.sticky-top {
-        scrollbar-color: rgba(148, 163, 184, 0.18) transparent;
-    }
-    .is_dark .dashboard__inner.sticky-top:hover,
-    .is_dark .dashboard__inner.sticky-top:focus-within {
-        scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
-    }
-    .is_dark .dashboard__inner.sticky-top::-webkit-scrollbar-thumb {
-        background-color: rgba(148, 163, 184, 0.18);
-    }
-    .is_dark .dashboard__inner.sticky-top:hover::-webkit-scrollbar-thumb {
-        background-color: rgba(148, 163, 184, 0.5);
-    }
 }
 
 /* ── Department Modal ── */
@@ -782,11 +765,4 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: all .15s; font-family: 'Outfit', sans-serif !important;
 }
 .dm-modal__btn-save:hover { background: #1f2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(12,12,12,.18); }
-
-.is_dark .dm-modal { background: #111827; border-color: #1e2330; }
-.is_dark .dm-modal__hd  { border-color: #1e2330; }
-.is_dark .dm-modal__title { color: #f3f4f6; }
-.is_dark .dm-modal__input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .dm-modal__input:focus { border-color: #f3f4f6; }
-.is_dark .dm-modal__btn-save { background: #f3f4f6; color: #0c0c0c; }
 </style>

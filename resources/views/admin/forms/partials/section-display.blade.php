@@ -291,7 +291,5 @@
 .locked-table th { background: #fafafa; font-weight: 600; color: #374151; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1.5px solid #e5e7eb; }
 .locked-table td { color: #111827; }
 .locked-table__index { width: 32px; color: #9ca3af; font-weight: 600; font-family: 'JetBrains Mono', monospace, sans-serif; }
-.is_dark .locked-table th { background: #0f172a; color: #d1d5db; border-color: #2d3748; }
-.is_dark .locked-table td { color: #f3f4f6; border-color: #1e2330; }
 </style>
 @endonce

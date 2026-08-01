@@ -61,8 +61,6 @@
 }
 .upload-list__remove:active { transform: scale(0.96); }
 .upload-list__remove svg { display: block; }
-.is_dark .upload-list__remove { border-color: rgba(185, 28, 28, 0.35); color: #fca5a5; }
-.is_dark .upload-list__remove:hover { background: rgba(185, 28, 28, 0.15); border-color: rgba(185, 28, 28, 0.55); }
 
 /* Empty-state hint shown when the list is rendered but no files picked yet */
 .upload-list__empty {
@@ -75,7 +73,6 @@
     border: 1px dashed #ebebeb;
     border-radius: 8px;
 }
-.is_dark .upload-list__empty { color: #6b7280; border-color: #2d3748; }
 </style>
 <script>
 /**

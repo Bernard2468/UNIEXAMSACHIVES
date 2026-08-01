@@ -311,19 +311,6 @@
     .form-table__cell--remove { flex: 0 0 auto; position: absolute; right: 14px; }
     .form-table__row { position: relative; background: #fff; border: 1px solid #ebebeb; padding: 12px 12px 8px; }
 }
-
-/* Dark mode */
-.is_dark .form-table { background: #0b1322; border-color: #1e2330; }
-.is_dark .form-table__row--header { border-color: #1e2330; }
-.is_dark .form-table__row--header .form-table__cell { color: #d1d5db; }
-.is_dark .form-table__cell--index { color: #9ca3af; }
-.is_dark .form-table__cell .form-control,
-.is_dark .form-table__cell .form-select { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .form-table__cell .form-control:focus,
-.is_dark .form-table__cell .form-select:focus { border-color: #f3f4f6; box-shadow: 0 0 0 3px rgba(243,244,246,.08); }
-.is_dark .form-table__remove-btn { background: #111827; border-color: #2d3748; color: #6b7280; }
-.is_dark .form-table__remove-btn:hover { background: #7f1d1d; border-color: #b91c1c; color: #fee2e2; }
-.is_dark .form-table__add-btn { background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); color: #0c0c0c; }
 </style>
 
 <script>

@@ -667,7 +667,6 @@
    so it reads as a step within this panel, not a floating control. */
 .attachments-confirm { margin-top: 14px; padding-top: 14px; border-top: 1.5px dashed #ebebeb; }
 .attachments-confirm .form-grid { gap: 8px 16px; }
-.is_dark .attachments-confirm { border-top-color: #2d3748; }
 
 /* ════════════════════════════════════════════════════════
    PASSPORT-PHOTO UPLOADER — square click-to-upload box that
@@ -813,23 +812,6 @@
     .passport-uploader__inner { flex-direction: row; gap: 12px; }
     .passport-uploader__lines { text-align: left; }
 }
-
-/* Dark mode */
-.is_dark .passport-uploader {
-    background: linear-gradient(135deg, #0f172a 0%, #0b1322 100%);
-    border-color: #2d3748;
-    color: #9ca3af;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-.is_dark .passport-uploader:hover {
-    background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
-    border-color: #f3f4f6;
-    color: #f3f4f6;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
-}
-.is_dark .passport-uploader__lines strong { color: #f3f4f6; }
-.is_dark .passport-uploader__lines small { color: #6b7280; }
-.is_dark .passport-uploader.has-photo { background: #0b1322; border-color: #16a34a; }
 
 /* ════════════════════════════════════════════════════════
    WIZARD STEPPER — modern multi-step compose UI
@@ -996,31 +978,6 @@
     .form-wizard-chip__label { font-size: 0.78rem; }
     .form-wizard-chip__num { display: none; }
 }
-
-/* Dark mode */
-.is_dark .form-wizard-stepper {
-    background: #0b1322;
-    border-color: #1e2330;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-}
-.is_dark .form-wizard-stepper__progress { background: #1e2330; }
-.is_dark .form-wizard-chip { background: #0f172a; border-color: #1e2330; color: #9ca3af; }
-.is_dark .form-wizard-chip:hover { background: #111827; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .form-wizard-chip__circle { background: #0b1322; border-color: #1e2330; color: #9ca3af; }
-.is_dark .form-wizard-chip__num { color: #6b7280; }
-.is_dark .form-wizard-chip.is-active {
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-    color: #0c0c0c;
-    border-color: #f3f4f6;
-    box-shadow: 0 6px 18px rgba(243, 244, 246, 0.18);
-}
-.is_dark .form-wizard-chip.is-active .form-wizard-chip__circle { background: #0c0c0c; color: #f3f4f6; border-color: #0c0c0c; }
-.is_dark .form-wizard-chip.is-active .form-wizard-chip__num { color: rgba(12, 12, 12, 0.6); }
-.is_dark .form-wizard-chip.is-done { background: rgba(21, 128, 61, 0.18); border-color: #15803d; color: #6ee7b7; }
-.is_dark .form-wizard-chip__connector { background: #1e2330; }
-.is_dark .form-wizard-stepper__sub { color: #9ca3af; }
-.is_dark .btn-action.btn-action--ghost { color: #d1d5db; border-color: #2d3748; }
-.is_dark .btn-action.btn-action--ghost:hover { background: #111827; border-color: #4b5563; color: #f3f4f6; }
 </style>
 
 <script>

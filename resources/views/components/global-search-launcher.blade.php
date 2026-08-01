@@ -65,10 +65,6 @@
 
 @keyframes uds-trigger-in { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
 
-.is_dark .uds-trigger--header { background: #1e2330; color: #cbd5e1; border-color: #2d3748; }
-.is_dark .uds-trigger--header:hover { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .uds-trigger--fab { background: #f3f4f6; color: #0c0c0c; box-shadow: 0 12px 30px rgba(0,0,0,.5); }
-
 /* ── Command-palette overlay ── */
 html.udsl-lock { overflow: hidden; }
 

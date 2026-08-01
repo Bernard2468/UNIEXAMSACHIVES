@@ -153,27 +153,6 @@
 .uds__recentClear { background: none; border: none; cursor: pointer; font-size: .7rem; font-weight: 600; color: #9ca3af; padding: 2px 4px; }
 .uds__recentClear:hover { color: #0c0c0c; }
 
-/* ── Dark mode ── */
-.is_dark .uds__shell { background: #0f172a; border-color: #2d3748; }
-.is_dark .uds__shell:focus-within { background: #111827; border-color: #f3f4f6; box-shadow: 0 0 0 4px rgba(243,244,246,.08), 0 10px 26px rgba(0,0,0,.4); }
-.is_dark .uds__icon { color: #6b7280; }
-.is_dark .uds__shell:focus-within .uds__icon { color: #f3f4f6; }
-.is_dark .uds__input { color: #f3f4f6; }
-.is_dark .uds__input::placeholder { color: #6b7280; }
-.is_dark .uds__kbd { background: #1e2330; border-color: #2d3748; color: #9ca3af; }
-.is_dark .uds__clear { background: #1e2330; color: #9ca3af; }
-.is_dark .uds__clear:hover { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .uds__spinner { border-color: #2d3748; border-top-color: #f3f4f6; }
-.is_dark .uds__panel { background: #111827; border-color: #1e2330; box-shadow: 0 18px 50px rgba(0,0,0,.5); }
-.is_dark .uds__opt:hover, .is_dark .uds__opt.is-active { background: #1a2233; }
-.is_dark .uds__opt.is-active { box-shadow: inset 0 0 0 1.5px #2d3748; }
-.is_dark .uds__optIcon { background: #1e2330; color: #cbd5e1; }
-.is_dark .uds__optTitle { color: #e5e7eb; }
-.is_dark .uds__optTitle mark, .is_dark .uds__optSub mark { background: #a16207; color: #fff; }
-.is_dark .uds__badge { background: #1e2330; color: #94a3b8; }
-.is_dark .uds__foot { border-color: #1e2330; color: #e5e7eb; }
-.is_dark .uds__foot:hover, .is_dark .uds__foot.is-active { background: #f3f4f6; color: #0c0c0c; }
-
 /* ── Responsive: keep it usable in the mobile header ── */
 @media (max-width: 991px) {
     .uds { max-width: 100%; margin: 4px 0 0; }

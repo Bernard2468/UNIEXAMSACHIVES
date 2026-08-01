@@ -145,10 +145,6 @@
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                                             Settings
                                         </a>
-                                        <button type="button" data-uda-theme-toggle>
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                                            <span data-uda-theme-label>Dark mode</span>
-                                        </button>
                                     </nav>
                                     <div class="uda-user-dropdown__sep"></div>
                                     <a class="uda-user-dropdown__logout" href="{{ route('logout') }}">
@@ -455,31 +451,6 @@
     color: #b91c1c;
 }
 
-/* Dark mode */
-.is_dark header.uda-header-sticky {
-    box-shadow: 0 1px 0 rgba(148, 163, 184, 0.14),
-                0 10px 30px -18px rgba(0, 0, 0, 0.6);
-}
-.is_dark .uda-user-trigger:hover { background: rgba(148, 163, 184, 0.12); }
-.is_dark .uda-user-trigger__avatar { border-color: #2d3748; }
-.is_dark .uda-user-dropdown {
-    background: #111827;
-    border-color: #1e2330;
-    box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.7);
-}
-.is_dark .uda-user-dropdown__name { color: #f3f4f6; }
-.is_dark .uda-user-dropdown__sep { background: #1e2330; }
-.is_dark .uda-user-dropdown__nav a,
-.is_dark .uda-user-dropdown__nav button { color: #cbd5e1; }
-.is_dark .uda-user-dropdown__nav a:hover,
-.is_dark .uda-user-dropdown__nav button:hover {
-    background: #1e2330;
-    color: #f3f4f6;
-}
-.is_dark .uda-user-dropdown__logout { color: #f87171; }
-.is_dark .uda-user-dropdown__logout svg { color: #f87171; }
-.is_dark .uda-user-dropdown__logout:hover { background: rgba(220, 38, 38, 0.12); }
-
 @media (max-width: 575px) {
     .uda-user-trigger__avatar { width: 36px; height: 36px; }
     .uda-user-dropdown { width: 260px; }
@@ -533,22 +504,6 @@
   background: #f3eefe;
   color: #6d28d9;
   border-color: #e4d9fb;
-}
-/* Dark header support */
-.is_dark .role-badge--admin {
-  background: rgba(202, 158, 30, 0.16);
-  color: #e8c45f;
-  border-color: rgba(202, 158, 30, 0.35);
-}
-.is_dark .role-badge--user {
-  background: rgba(148, 163, 184, 0.16);
-  color: #cbd5e1;
-  border-color: rgba(148, 163, 184, 0.3);
-}
-.is_dark .role-badge--super {
-  background: rgba(124, 58, 237, 0.18);
-  color: #c4b5fd;
-  border-color: rgba(124, 58, 237, 0.4);
 }
 @media (max-width: 575px) {
   .role-badge {
@@ -997,24 +952,6 @@ document.addEventListener('DOMContentLoaded', function(){
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape' && !dropdown.hidden) { setOpen(false); trigger.focus(); }
   });
-
-  // Dark / light mode toggle — same mechanism as the head script in layout.app
-  // (html.is_dark class + localStorage "theme-color")
-  const themeBtn   = menu.querySelector('[data-uda-theme-toggle]');
-  const themeLabel = menu.querySelector('[data-uda-theme-label]');
-  function syncThemeLabel(){
-    if (themeLabel) {
-      themeLabel.textContent = document.documentElement.classList.contains('is_dark') ? 'Light mode' : 'Dark mode';
-    }
-  }
-  syncThemeLabel();
-  if (themeBtn) {
-    themeBtn.addEventListener('click', function(){
-      const nowDark = document.documentElement.classList.toggle('is_dark');
-      try { localStorage.setItem('theme-color', nowDark ? 'dark' : 'light'); } catch (e) {}
-      syncThemeLabel();
-    });
-  }
 });
 </script>
 

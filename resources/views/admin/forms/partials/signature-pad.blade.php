@@ -181,25 +181,6 @@
 .sigpad-save-toggle { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 8px 12px; background: #fff; border: 1.5px solid #ebebeb; border-radius: 9px; font-size: 0.8rem; font-weight: 500; color: #374151; cursor: pointer; transition: all .15s; }
 .sigpad-save-toggle:hover { border-color: #0c0c0c; color: #0c0c0c; }
 .sigpad-save-toggle input { accent-color: #0c0c0c; }
-.is_dark .sigpad-save-toggle { background: #111827; border-color: #2d3748; color: #d1d5db; }
-.is_dark .sigpad-save-toggle:hover { border-color: #f3f4f6; color: #f3f4f6; }
-
-/* Dark mode */
-.is_dark .sigpad-wrapper { background: #0f172a; border-color: #1e2330; }
-.is_dark .sigpad-saved { background: #111827; border-color: #2d3748; }
-.is_dark .sigpad-tabs { background: #111827; border-color: #1e2330; }
-.is_dark .sigpad-tab { color: #9ca3af; }
-.is_dark .sigpad-tab.is-active { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .sigpad { background: #111827; border-color: #2d3748; }
-.is_dark .sigpad canvas { background: #fff; }
-.is_dark .btn-link { color: #f3f4f6; }
-.is_dark .sigtyped-name__input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .sigtyped-name__input:focus { border-color: #f3f4f6; }
-.is_dark .sigtyped-card { background: #111827; border-color: #2d3748; }
-.is_dark .sigtyped-card:hover { border-color: #f3f4f6; }
-.is_dark .sigtyped-card.is-selected { border-color: #f3f4f6; box-shadow: 0 0 0 3px rgba(255,255,255,.06); }
-.is_dark .sigtyped-card__preview { color: #f3f4f6; }
-.is_dark .sigtyped-card.is-selected .sigtyped-card__check { background: #f3f4f6; color: #0c0c0c; border-color: #f3f4f6; }
 </style>
 
 <script>

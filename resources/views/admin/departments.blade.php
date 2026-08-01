@@ -287,27 +287,6 @@
 .dp-empty__icon { display: inline-flex; padding: 18px; background: #f9fafb; border: 1.5px solid #ebebeb; border-radius: 16px; color: #d1d5db; margin-bottom: 16px; }
 .dp-empty__text { font-size: 0.9rem; color: #9ca3af; margin-bottom: 20px; }
 
-/* ── Dark mode ── */
-.is_dark .dp-page-title  { color: #f3f4f6; }
-.is_dark .dp-title-bar   { background: #f3f4f6; }
-.is_dark .dp-page-sub    { color: #6b7280; }
-.is_dark .dp-page-header { border-color: #1e2330; }
-.is_dark .dp-btn-primary { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .dp-btn-primary:hover { background: #e5e7eb; color: #0c0c0c; }
-.is_dark .dp-card        { background: #111827; border-color: #1e2330; }
-.is_dark .dp-card__hd    { border-color: #1e2330; }
-.is_dark .dp-card__title { color: #f3f4f6; }
-.is_dark .dp-card__bar   { background: #f3f4f6; }
-.is_dark .dp-card__count { color: #6b7280; }
-.is_dark .dp-th  { background: #0f172a; border-color: #1e2330; color: #6b7280; }
-.is_dark .dp-tr  { border-color: #1e2330; }
-.is_dark .dp-tr:hover { background: #0f172a; }
-.is_dark .dp-td  { color: #d1d5db; }
-.is_dark .dp-td--name { color: #f3f4f6; }
-.is_dark .dp-action--edit { color: #d1d5db; border-color: #374151; }
-.is_dark .dp-action--edit:hover { background: #1f2937; border-color: #4b5563; color: #f3f4f6; }
-.is_dark .dp-empty__icon { background: #0f172a; border-color: #1e2330; }
-
 /* ── Pagination ── */
 .pagination-wrapper {
     display: flex; align-items: center; justify-content: space-between;
@@ -348,14 +327,6 @@
     .pagination-controls { justify-content: center; }
     .page-size-selector { justify-content: center; }
 }
-.is_dark .pagination-wrapper { border-color: #1e2330; }
-.is_dark .pagination-info { color: #9ca3af; }
-.is_dark .pagination-info strong { color: #f3f4f6; }
-.is_dark .pagination-link { background: #111827; border-color: #374151; color: #d1d5db; }
-.is_dark .pagination-link:hover:not(.disabled):not(.active) { background: #1f2937; border-color: #4b5563; color: #f3f4f6; }
-.is_dark .pagination-link.disabled { background: #0f172a; }
-.is_dark .page-size-select { background: #111827; border-color: #374151; color: #d1d5db; }
-.is_dark .page-size-label { color: #9ca3af; }
 </style>
 
 <script>

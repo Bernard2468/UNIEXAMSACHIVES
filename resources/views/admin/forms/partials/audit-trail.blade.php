@@ -143,10 +143,4 @@
 .audit-timeline__by { color: #9ca3af; font-size: 0.74rem; margin-top: 2px; }
 .audit-timeline__by strong { color: #6b7280; font-weight: 600; }
 .audit-timeline__sub { margin: 6px 0 0 38px; padding: 8px 12px; background: #fafafa; border: 1.5px solid #f0f1f3; border-radius: 8px; font-size: 0.78rem; color: #6b7280; line-height: 1.5; word-break: break-word; }
-
-.is_dark .audit-timeline__rail::before { background: #1e2330; }
-.is_dark .audit-timeline__dot { background: #f3f4f6; border-color: #111827; box-shadow: 0 0 0 1.5px #1e2330; }
-.is_dark .audit-timeline__title { color: #f3f4f6; }
-.is_dark .audit-timeline__by strong { color: #d1d5db; }
-.is_dark .audit-timeline__sub { background: #0f172a; border-color: #1e2330; color: #9ca3af; }
 </style>

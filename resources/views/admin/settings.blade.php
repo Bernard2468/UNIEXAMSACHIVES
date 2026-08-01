@@ -669,39 +669,6 @@
     line-height: 1.5;
 }
 
-/* ─────────────── Dark mode ─────────────── */
-.is_dark .sp-page-title,
-.is_dark .sp-page-title .sp-title-bar { color: #f3f4f6; background: #f3f4f6; }
-.is_dark .sp-page-sub { color: #6b7280; }
-.is_dark .sp-page-header { border-color: #1e2330; }
-.is_dark .sp-tabs { border-color: #1e2330; }
-.is_dark .sp-tab { color: #6b7280; }
-.is_dark .sp-tab:hover { color: #f3f4f6; }
-.is_dark .sp-tab--active { color: #f3f4f6; border-bottom-color: #f3f4f6; }
-.is_dark .sp-section { border-color: #1e2330; }
-.is_dark .sp-section__title,
-.is_dark .sp-section__title .sp-section__bar { color: #f3f4f6; background: #f3f4f6; }
-.is_dark .sp-section__hint { color: #6b7280; }
-.is_dark .sp-avatar-row { background: #111827; border-color: #1e2330; }
-.is_dark .sp-avatar-name { color: #f3f4f6; }
-.is_dark .sp-avatar-email { color: #6b7280; }
-.is_dark .sp-label { color: #d1d5db; }
-.is_dark .sp-input,
-.is_dark .sp-select {
-    background: #111827;
-    border-color: #2d3748;
-    color: #f3f4f6;
-}
-.is_dark .sp-input:hover, .is_dark .sp-select:hover { border-color: #4b5563; }
-.is_dark .sp-input:focus, .is_dark .sp-select:focus {
-    border-color: #f3f4f6;
-    box-shadow: 0 0 0 3px rgba(243,244,246,.1);
-}
-.is_dark .sp-form-foot { border-color: #1e2330; }
-.is_dark .sp-btn { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .sp-btn:hover { background: #e5e7eb; }
-.is_dark .sp-warn-banner { background: #1c1208; border-color: #78350f; color: #fcd34d; }
-
 /* ─────────────── Responsive ─────────────── */
 @media (max-width: 640px) {
     .sp-grid { grid-template-columns: 1fr; }

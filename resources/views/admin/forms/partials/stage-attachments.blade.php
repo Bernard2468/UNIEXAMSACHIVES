@@ -161,17 +161,6 @@
         box-shadow: 0 1px 3px rgba(99, 102, 241, 0.35);
     }
 
-    /* Dark mode — invert the bubble surface, keep the indigo halo */
-    .is_dark .stage-clip-badge__bubble {
-        background: linear-gradient(140deg, #1e293b 0%, #0f172a 100%);
-        border-color: rgba(165, 180, 252, 0.45);
-        box-shadow:
-            0 0 0 3px rgba(99, 102, 241, 0.18),
-            0 0 18px rgba(99, 102, 241, 0.55),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    }
-    .is_dark .stage-clip-badge__img { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5)); }
-
     /* Respect reduced-motion users — kill the pulse but keep the glow */
     @media (prefers-reduced-motion: reduce) {
         .stage-clip-badge__bubble { animation: none; }
@@ -184,7 +173,6 @@
         border: 1px dashed #e2e8f0;
         border-radius: 12px;
     }
-    .is_dark .stage-att { background: rgba(255, 255, 255, 0.025); border-color: rgba(255, 255, 255, 0.08); }
 
     .stage-att__head {
         display: flex; align-items: center; gap: 8px;
@@ -195,7 +183,6 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
-    .is_dark .stage-att__head { color: #cbd5e1; }
     .stage-att__icon {
         width: 22px; height: 22px;
         border-radius: 6px;
@@ -203,7 +190,6 @@
         color: #4338ca;
         display: inline-flex; align-items: center; justify-content: center;
     }
-    .is_dark .stage-att__icon { background: rgba(67, 56, 202, 0.18); color: #a5b4fc; }
     .stage-att__label { letter-spacing: 0.5px; }
     .stage-att__count {
         display: inline-flex; align-items: center; justify-content: center;
@@ -240,8 +226,6 @@
         transform: translateY(-1px);
     }
     .stage-att__tile:active { transform: translateY(0); }
-    .is_dark .stage-att__tile { background: #111827; border-color: #2d3748; }
-    .is_dark .stage-att__tile:hover { border-color: #6366f1; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.18); }
 
     .stage-att__tile-icon {
         width: 34px; height: 34px;
@@ -254,11 +238,6 @@
     .stage-att__tile-icon--doc   { background: #eff6ff; color: #1d4ed8; }
     .stage-att__tile-icon--sheet { background: #ecfdf5; color: #047857; }
     .stage-att__tile-icon--file  { background: #f3f4f6; color: #4b5563; }
-    .is_dark .stage-att__tile-icon--pdf   { background: rgba(185, 28, 28, 0.18); color: #fca5a5; }
-    .is_dark .stage-att__tile-icon--image { background: rgba(8, 145, 178, 0.18); color: #67e8f9; }
-    .is_dark .stage-att__tile-icon--doc   { background: rgba(29, 78, 216, 0.18); color: #93c5fd; }
-    .is_dark .stage-att__tile-icon--sheet { background: rgba(4, 120, 87, 0.18); color: #6ee7b7; }
-    .is_dark .stage-att__tile-icon--file  { background: rgba(75, 85, 99, 0.25); color: #d1d5db; }
 
     .stage-att__tile-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .stage-att__tile-name {
@@ -266,7 +245,6 @@
         color: #111827;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .is_dark .stage-att__tile-name { color: #f3f4f6; }
     .stage-att__tile-size { font-size: 11px; color: #9ca3af; font-variant-numeric: tabular-nums; }
 
     .stage-att__tile-cta {
@@ -281,7 +259,6 @@
         flex-shrink: 0;
     }
     .stage-att__tile:hover .stage-att__tile-cta { opacity: 1; transform: translateX(0); }
-    .is_dark .stage-att__tile-cta { background: rgba(67, 56, 202, 0.22); color: #a5b4fc; }
     /* Touch devices — always show the CTA since there's no hover state. */
     @media (hover: none) {
         .stage-att__tile-cta { opacity: 1; transform: translateX(0); }

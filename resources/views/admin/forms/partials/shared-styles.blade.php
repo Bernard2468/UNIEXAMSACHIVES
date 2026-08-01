@@ -156,13 +156,6 @@
 .upload-list__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: #111827; }
 .upload-list__size { color: #9ca3af; font-size: 0.74rem; flex-shrink: 0; }
 
-.is_dark .upload-dropzone { background: #0f172a; border-color: #2d3748; }
-.is_dark .upload-dropzone:hover { border-color: #f3f4f6; background: #111827; }
-.is_dark .upload-dropzone__icon { background: #111827; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .upload-dropzone__text strong { color: #f3f4f6; }
-.is_dark .upload-list__item { background: #111827; border-color: #2d3748; }
-.is_dark .upload-list__name { color: #f3f4f6; }
-
 /* ── Locked / signed fields display ──
    Kept visually identical to the original dashed-underline rows
    (used across every form's show page). The container is a 12-col
@@ -281,11 +274,6 @@
 .stale-pill { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 99px; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }
 .stale-pill--warn   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 .stale-pill--danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-.is_dark .stale-pill--warn   { background: #422006; color: #fde68a; border-color: #78350f; }
-.is_dark .stale-pill--danger { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
-.is_dark .locked-signature__broken { background: #422006; color: #fde68a; border-color: #78350f; }
-.is_dark .locked-signature__badge--ok  { background: #052e16; color: #86efac; border-color: #14532d; }
-.is_dark .locked-signature__badge--bad { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
 
 /* Action buttons */
 .form-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 4px; flex-wrap: wrap; }
@@ -323,41 +311,4 @@
 .status-pill--rejected    { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
 .status-pill--cancelled   { background: #fef3c7; color: #92400e; border-color: #fde68a; }
 .status-pill--archived    { background: #e5e7eb; color: #4b5563; border-color: #d1d5db; }
-
-/* Dark mode */
-.is_dark .form-page-title { color: #f3f4f6; }
-.is_dark .form-title-bar  { background: #f3f4f6; }
-.is_dark .form-page-header { border-color: #1e2330; }
-.is_dark .form-page-sub  { color: #6b7280; }
-.is_dark .form-back-link { color: #9ca3af; }
-.is_dark .form-back-link:hover { color: #f3f4f6; }
-.is_dark .form-code-chip { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .stage-stepper { background: #111827; border-color: #1e2330; }
-.is_dark .stage-step__dot { background: #0f172a; border-color: #1e2330; }
-.is_dark .stage-step--done .stage-step__dot { background: #f3f4f6; color: #0c0c0c; border-color: #f3f4f6; }
-.is_dark .stage-step--active .stage-step__dot { background: #0f172a; color: #f3f4f6; border-color: #f3f4f6; }
-.is_dark .stage-step__label { color: #6b7280; }
-.is_dark .stage-step--active .stage-step__label { color: #f3f4f6; }
-.is_dark .form-panel { background: #111827; border-color: #1e2330; }
-.is_dark .form-panel__head { border-color: #1e2330; }
-.is_dark .form-panel__title { color: #f3f4f6; }
-.is_dark .form-panel__title-bar { background: #f3f4f6; }
-.is_dark .form-panel__step-num { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .form-control,
-.is_dark .form-select,
-.is_dark .form-shell input,
-.is_dark .form-shell textarea,
-.is_dark .form-shell select { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .form-control:focus { border-color: #f3f4f6; box-shadow: 0 0 0 3px rgba(243,244,246,.08); }
-.is_dark .input-group { border-color: #2d3748; }
-.is_dark .input-group-text { background: #0f172a; border-color: #2d3748; color: #9ca3af; }
-.is_dark .radio-pill, .is_dark .checkbox-pill { background: #0f172a; border-color: #2d3748; color: #d1d5db; }
-.is_dark .radio-pill:has(input:checked), .is_dark .checkbox-pill:has(input:checked) { background: #f3f4f6; color: #0c0c0c; border-color: #f3f4f6; }
-.is_dark .btn-action--primary { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .btn-action--primary:hover { background: #e5e7eb; color: #0c0c0c; }
-.is_dark .btn-action--draft { background: #0f172a; color: #d1d5db; border-color: #2d3748; }
-.is_dark .form-meta-strip { background: #111827; border-color: #1e2330; }
-.is_dark .form-meta-strip__value { color: #f3f4f6; }
-.is_dark .locked-fields__row dd { color: #f3f4f6; }
-.is_dark .photo-preview-card { border-color: #16a34a; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.22); background: #0b1322; }
 </style>

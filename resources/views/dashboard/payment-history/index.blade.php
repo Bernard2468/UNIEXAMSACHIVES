@@ -332,39 +332,6 @@
 .ph-empty__icon { display: inline-flex; padding: 18px; background: #f9fafb; border: 1.5px solid #ebebeb; border-radius: 16px; color: #d1d5db; margin-bottom: 16px; }
 .ph-empty__text { font-size: 0.9rem; color: #9ca3af; }
 
-/* ── Dark mode ── */
-.is_dark .ph-page-title  { color: #f3f4f6; }
-.is_dark .ph-title-bar   { background: #f3f4f6; }
-.is_dark .ph-page-sub    { color: #6b7280; }
-.is_dark .ph-page-header { border-color: #1e2330; }
-.is_dark .ph-stat        { background: #111827; border-color: #1e2330; }
-.is_dark .ph-stat__val   { color: #f3f4f6; }
-.is_dark .ph-filter-card { background: #111827; border-color: #1e2330; }
-.is_dark .ph-filter-card__hd { border-color: #1e2330; }
-.is_dark .ph-filter-title { color: #f3f4f6; }
-.is_dark .ph-filter-bar  { background: #f3f4f6; }
-.is_dark .ph-input, .is_dark .ph-select { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .ph-input:focus, .is_dark .ph-select:focus { border-color: #f3f4f6; }
-.is_dark .ph-btn-primary { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .ph-btn-ghost   { border-color: #374151; color: #9ca3af; }
-.is_dark .ph-btn-ghost:hover { border-color: #4b5563; color: #d1d5db; background: #1f2937; }
-.is_dark .ph-card        { background: #111827; border-color: #1e2330; }
-.is_dark .ph-card__hd    { border-color: #1e2330; }
-.is_dark .ph-card__title { color: #f3f4f6; }
-.is_dark .ph-card__bar   { background: #f3f4f6; }
-.is_dark .ph-card__count { color: #6b7280; }
-.is_dark .ph-th  { background: #0f172a; border-color: #1e2330; color: #6b7280; }
-.is_dark .ph-tr  { border-color: #1e2330; }
-.is_dark .ph-tr:hover { background: #0f172a; }
-.is_dark .ph-td  { color: #d1d5db; }
-.is_dark .ph-ref { color: #f3f4f6; }
-.is_dark .ph-amount { color: #f3f4f6; }
-.is_dark .ph-date { color: #d1d5db; }
-.is_dark .ph-action--view { color: #d1d5db; border-color: #374151; }
-.is_dark .ph-action--view:hover { background: #1f2937; border-color: #4b5563; color: #f3f4f6; }
-.is_dark .ph-pagination { border-color: #1e2330; }
-.is_dark .ph-empty__icon { background: #0f172a; border-color: #1e2330; }
-
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .ph-stats { grid-template-columns: 1fr 1fr; }

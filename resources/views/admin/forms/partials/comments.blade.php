@@ -63,7 +63,4 @@
 .comment-form { margin-top: 14px; }
 .comment-form__actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 12px; flex-wrap: wrap; }
 .comment-form__internal { font-size: 0.78rem; color: #6b7280; display: inline-flex; gap: 6px; align-items: center; cursor: pointer; margin: 0; }
-.is_dark .comment { background: #0f172a; border-color: #1e2330; }
-.is_dark .comment__author { color: #f3f4f6; }
-.is_dark .comment__body { color: #d1d5db; }
 </style>

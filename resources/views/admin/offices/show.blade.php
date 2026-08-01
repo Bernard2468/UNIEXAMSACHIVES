@@ -453,27 +453,6 @@ textarea.ps-modal__input { resize: vertical; min-height: 64px; }
 .off-toggle-pill__star { color: #b0b5c0; display: inline-flex; transition: color .15s; }
 .off-toggle-pill:has(input:checked) { background: #0c0c0c; color: #fff; border-color: #0c0c0c; }
 .off-toggle-pill:has(input:checked) .off-toggle-pill__star { color: #fbbf24; }
-
-/* Dark mode */
-.is_dark .ps-page-title  { color: #f3f4f6; }
-.is_dark .ps-title-bar   { background: #f3f4f6; }
-.is_dark .ps-page-header { border-color: #1e2330; }
-.is_dark .ps-btn-primary { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .ps-card        { background: #111827; border-color: #1e2330; }
-.is_dark .ps-card__hd    { border-color: #1e2330; }
-.is_dark .ps-card__title { color: #f3f4f6; }
-.is_dark .ps-card__bar   { background: #f3f4f6; }
-.is_dark .ps-th  { background: #0f172a; border-color: #1e2330; color: #6b7280; }
-.is_dark .ps-tr  { border-color: #1e2330; }
-.is_dark .ps-tr:hover { background: #0f172a; }
-.is_dark .ps-td  { color: #d1d5db; }
-.is_dark .ps-modal__input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .ps-modal__input:focus { border-color: #f3f4f6; }
-.is_dark .off-modal__panel { background: #111827; border-color: #1e2330; }
-.is_dark .off-search-input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .off-user-item:hover { background: #0f172a; }
-.is_dark .off-user-name { color: #f3f4f6; }
-.is_dark .off-member-name { color: #f3f4f6; }
 </style>
 
 <script>

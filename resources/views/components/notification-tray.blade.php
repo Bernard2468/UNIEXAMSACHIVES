@@ -225,10 +225,6 @@
             70%  { transform: scale(2.1);  opacity: 0; }
             100% { transform: scale(2.1);  opacity: 0; }
         }
-        /* Dark header support — replace the white ring with the dark surface so it still pops */
-        .is_dark .notification-badge {
-            box-shadow: 0 0 0 2px #0f172a, 0 1px 3px rgba(220, 38, 38, 0.5);
-        }
         @media (prefers-reduced-motion: reduce) {
             .notification-tray-trigger.ringing .notification-bell-wrap,
             .notification-badge.popping,
@@ -600,12 +596,6 @@
             0%, 100% { opacity: 1; }
             50%      { opacity: 0.35; }
         }
-        .is_dark .nt-new-pill {
-            background: rgba(67, 56, 202, 0.15);
-            color: #a5b4fc;
-            border-color: rgba(99, 102, 241, 0.35);
-        }
-        .is_dark .nt-new-pill .nt-new-pill__dot { background: #a5b4fc; }
 
         /* Bucket group header */
         .nt-group-header {
@@ -620,10 +610,6 @@
             top: 0;
             background: #fff;
             z-index: 1;
-        }
-        .is_dark .nt-group-header {
-            color: #6b7280;
-            background: #1f2937;
         }
 
         /* Avatar (photo or initials) */
@@ -641,7 +627,6 @@
             box-shadow: 0 0 0 2px #fff;
             position: relative;
         }
-        .is_dark .nt-avatar { box-shadow: 0 0 0 2px #1f2937; }
         /* Clip the photo to a circle on the IMG itself (not via overflow:hidden on
            the avatar) so the corner category pip can overflow outside the avatar. */
         .nt-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
@@ -664,7 +649,6 @@
             justify-content: center;
             box-shadow: 0 0 0 1.5px #fff, 0 1px 2px rgba(0,0,0,0.15);
         }
-        .is_dark .nt-avatar__pip { background: #1f2937; box-shadow: 0 0 0 1.5px #1f2937, 0 1px 2px rgba(0,0,0,0.4); }
         .nt-avatar__pip svg { width: 9px; height: 9px; }
         .nt-avatar__pip--form   { color: #2563eb; }
         .nt-avatar__pip--memo   { color: #16a34a; }
@@ -682,8 +666,6 @@
             position: relative;
         }
         .nt-list-item-with-avatar:hover { background: #f9fafb; }
-        .is_dark .nt-list-item-with-avatar { border-color: #374151; }
-        .is_dark .nt-list-item-with-avatar:hover { background: #1f2937; }
         .nt-list-item-with-avatar.is-fresh::before {
             content: '';
             position: absolute;
@@ -704,7 +686,6 @@
             background: #3b82f6;
             box-shadow: 0 0 0 2px #fff;
         }
-        .is_dark .nt-list-item-with-avatar.is-unread:not(.is-fresh)::after { box-shadow: 0 0 0 2px #1f2937; }
 
         /* Read items — visually dimmer so unread items dominate the eye
            (Slack / Linear / GitHub convention). Items still clickable,
@@ -714,8 +695,6 @@
         .nt-list-item-with-avatar.is-read .nt-list-item__msg   { color: #9ca3af; }
         .nt-list-item-with-avatar.is-read .nt-list-item__actor strong { color: #6b7280; }
         .nt-list-item-with-avatar.is-read .nt-avatar { filter: saturate(0.55); opacity: 0.85; }
-        .is_dark .nt-list-item-with-avatar.is-read .nt-list-item__title { color: #9ca3af; }
-        .is_dark .nt-list-item-with-avatar.is-read .nt-list-item__msg   { color: #6b7280; }
         .nt-list-item__body { flex: 1; min-width: 0; }
 
         /* Contextual eyebrow — the "what to do" tag on a single memo card
@@ -744,9 +723,6 @@
         .nt-eyebrow--memo   { background: #f1f5f9; color: #475569; }
         .nt-eyebrow--action { background: #eff6ff; color: #1d4ed8; }
         .nt-eyebrow--urgent { background: #fef3c7; color: #b45309; }
-        .is_dark .nt-eyebrow--memo   { background: rgba(148,163,184,0.18); color: #cbd5e1; }
-        .is_dark .nt-eyebrow--action { background: rgba(29,78,216,0.22);  color: #93c5fd; }
-        .is_dark .nt-eyebrow--urgent { background: rgba(180,83,9,0.22);   color: #fcd34d; }
         .nt-list-item__header-row {
             display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
             margin-bottom: 2px;
@@ -761,7 +737,6 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
         }
-        .is_dark .nt-list-item__title { color: #f9fafb; }
         .nt-list-item__time {
             font-size: 11px; color: #9ca3af;
             white-space: nowrap;
@@ -772,7 +747,6 @@
             margin-top: 2px;
         }
         .nt-list-item__actor strong { color: #374151; font-weight: 600; }
-        .is_dark .nt-list-item__actor strong { color: #d1d5db; }
         .nt-list-item__msg {
             font-size: 12px; color: #6b7280;
             line-height: 1.4;
@@ -782,7 +756,6 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
         }
-        .is_dark .nt-list-item__msg { color: #9ca3af; }
 
         /* Inline action buttons */
         .nt-actions {
@@ -811,12 +784,6 @@
             background: #ecfdf5; color: #047857; border-color: #a7f3d0;
         }
         .nt-action-btn--success:hover { background: #d1fae5; color: #065f46; }
-        .is_dark .nt-action-btn--primary {
-            background: rgba(29, 78, 216, 0.18); color: #93c5fd; border-color: rgba(59, 130, 246, 0.4);
-        }
-        .is_dark .nt-action-btn--success {
-            background: rgba(4, 120, 87, 0.18); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.4);
-        }
 
         /* Carousel card upgrade — avatar + actions inside the card */
         .nt-carousel-actor-row {
@@ -824,79 +791,6 @@
             margin-top: 12px;
             padding-top: 10px;
             border-top: 1px dashed #e5e7eb;
-        }
-        .is_dark .nt-carousel-actor-row { border-color: #374151; }
-
-        /* Dark mode support */
-        .is_dark .notification-tray-popover {
-            background: #1f2937;
-            border-color: #374151;
-        }
-
-        .is_dark .notification-tray-header {
-            background: #111827;
-            border-color: #374151;
-        }
-
-        .is_dark .notification-tray-title {
-            color: #f9fafb;
-        }
-
-        .is_dark .notification-mark-all-btn {
-            color: #9ca3af;
-        }
-
-        .is_dark .notification-mark-all-btn:hover {
-            background: #374151;
-            color: #f9fafb;
-        }
-
-        .is_dark .notification-view-toggle {
-            color: #9ca3af;
-        }
-
-        .is_dark .notification-view-toggle:hover {
-            background: #374151;
-            color: #f9fafb;
-        }
-
-        .is_dark .notification-carousel-card {
-            background: #1f2937;
-            border-color: #374151;
-        }
-
-        .is_dark .notification-carousel-card-title {
-            color: #f9fafb;
-        }
-
-        .is_dark .notification-carousel-card-description {
-            color: #d1d5db;
-        }
-
-        .is_dark .notification-list-item {
-            border-color: #374151;
-        }
-
-        .is_dark .notification-list-item:hover {
-            background: #1f2937;
-        }
-
-        .is_dark .notification-list-item-title {
-            color: #f9fafb;
-        }
-
-        .is_dark .notification-list-item-description {
-            color: #d1d5db;
-        }
-
-        .is_dark .notification-carousel-btn {
-            background: #1f2937;
-            color: #9ca3af;
-        }
-
-        .is_dark .notification-carousel-btn:hover {
-            background: #374151;
-            color: #f9fafb;
         }
     </style>
 

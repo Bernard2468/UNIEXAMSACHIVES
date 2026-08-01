@@ -178,8 +178,6 @@
 .stale-pill { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }
 .stale-pill--warn   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 .stale-pill--danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-.is_dark .stale-pill--warn   { background: #422006; color: #fde68a; border-color: #78350f; }
-.is_dark .stale-pill--danger { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
 </style>
 
 @include('admin.forms.partials.shared-styles')

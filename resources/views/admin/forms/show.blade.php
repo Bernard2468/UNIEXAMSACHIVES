@@ -524,8 +524,6 @@
 .reject-modal__panel { position: relative; background: #fff; border: 1.5px solid #ebebeb; border-radius: 18px; padding: 24px; width: 100%; max-width: 500px; box-shadow: 0 24px 60px rgba(0,0,0,.25); }
 .reject-modal__panel h5 { font-size: 1.02rem; font-weight: 700; color: #0c0c0c; letter-spacing: -0.02em; margin: 0 0 6px; }
 .reject-modal__panel p { font-size: 0.85rem; color: #6b7280; margin: 0 0 14px; }
-.is_dark .reject-modal__panel { background: #111827; border-color: #1e2330; }
-.is_dark .reject-modal__panel h5 { color: #f3f4f6; }
 
 /* Reassign candidate picker (compact, inside modal) */
 .rs-candidates { display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto; padding: 4px; background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 10px; }
@@ -541,10 +539,6 @@
 .rs-card__email { font-size: 0.72rem; color: #9ca3af; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rs-card__check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid #e5e7eb; display: inline-flex; align-items: center; justify-content: center; color: transparent; transition: all .12s; flex-shrink: 0; }
 .rs-card.is-selected .rs-card__check { background: #0c0c0c; border-color: #0c0c0c; color: #fff; }
-.is_dark .rs-candidates { background: #0f172a; border-color: #1e2330; }
-.is_dark .rs-card { background: #111827; border-color: #2d3748; }
-.is_dark .rs-card.is-selected { background: #0f172a; border-color: #f3f4f6; }
-.is_dark .rs-card__name { color: #f3f4f6; }
 </style>
 
 <script>

@@ -200,32 +200,6 @@
 .lead-picker__empty { padding: 24px 16px; text-align: center; color: #b0b5c0; font-size: 0.82rem; }
 .lead-picker__empty p { margin: 0 0 4px; }
 .lead-picker__empty small { font-size: 0.74rem; color: #c7cbd6; }
-
-/* Dark mode */
-.is_dark .lead-picker { background: #0b1322; border-color: #1e2330; }
-.is_dark .lead-picker__chips { background: #111827; border-color: #1e2330; }
-.is_dark .lead-chip { background: #0f172a; border-color: #2d3748; color: #d1d5db; }
-.is_dark .lead-chip__count { background: rgba(255,255,255,.06); color: #9ca3af; }
-.is_dark .lead-chip:has(input:checked) {
-    background: linear-gradient(135deg, #f3f4f6 0%, #d1d5db 100%);
-    color: #0c0c0c;
-    border-color: #e5e7eb;
-    box-shadow: 0 1px 2px rgba(0,0,0,.20), 0 6px 16px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.6);
-}
-.is_dark .lead-chip:has(input:checked):hover:not(.is-disabled) {
-    background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 100%);
-    color: #0c0c0c;
-    border-color: #f3f4f6;
-    box-shadow: 0 2px 4px rgba(0,0,0,.24), 0 10px 22px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.7);
-    transform: translateY(-1px);
-}
-.is_dark .lead-picker__search { background: #111827; }
-.is_dark .lead-picker__search-input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .lead-picker__lists { background: #111827; }
-.is_dark .lead-card:hover { background: #0f172a; }
-.is_dark .lead-card.is-selected { background: #0f172a; border-color: #f3f4f6; }
-.is_dark .lead-card.is-selected .lead-card__check { background: #f3f4f6; color: #0c0c0c; border-color: #f3f4f6; }
-.is_dark .lead-card__name { color: #f3f4f6; }
 </style>
 
 <script>

@@ -524,32 +524,11 @@ var swiper = new Swiper(".ai__slider", {
     slidesPerView: 1,
   });
 
-// Dark to light mode js
+// Dark mode removed — the system is light-mode only. (The #light--to-dark-button
+// toggle no longer exists; this guard block is kept because it also wraps the
+// gallery slider initialisation below.)
 const lightToDarkButton = document.getElementById("light--to-dark-button");
 if (lightToDarkButton) {
-  lightToDarkButton.addEventListener("click", function () {
-    if (localStorage.getItem("theme-color")) {
-      if (localStorage.getItem("theme-color") === "light") {
-        document.documentElement.classList.add("is_dark");
-        localStorage.setItem("theme-color", "dark");
-        lightToDarkButton?.classList.add("dark--mode");
-      } else {
-        document.documentElement.classList.remove("is_dark");
-        localStorage.setItem("theme-color", "light");
-        lightToDarkButton?.classList?.remove("dark--mode");
-      }
-    } else {
-      if (document.documentElement.classList.contains("is_dark")) {
-        document.documentElement.classList.remove("is_dark");
-        lightToDarkButton?.classList?.remove("dark--mode");
-        localStorage.setItem("theme-color", "light");
-      } else {
-        document.documentElement.classList.add("is_dark");
-        localStorage.setItem("theme-color", "dark");
-        lightToDarkButton?.classList.add("dark--mode");
-      }
-    }
-  });
 
 
 

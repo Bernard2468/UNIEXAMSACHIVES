@@ -58,11 +58,4 @@
 .creator-notice__name { font-weight: 600; color: #111827; font-size: 0.84rem; line-height: 1.1; }
 .creator-notice__email { color: #9ca3af; font-size: 0.72rem; margin-top: 2px; }
 .creator-notice__hint { margin: 0; color: #6b7280; font-size: 0.8rem; line-height: 1.55; }
-
-.is_dark .creator-notice { background: #0b1322; border-color: #1e2330; }
-.is_dark .creator-notice__icon { background: #111827; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .creator-notice__title { color: #f3f4f6; }
-.is_dark .creator-notice__card { background: #111827; border-color: #2d3748; }
-.is_dark .creator-notice__name { color: #f3f4f6; }
-.is_dark .creator-notice__hint { color: #9ca3af; }
 </style>

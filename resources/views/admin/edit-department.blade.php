@@ -148,23 +148,6 @@
 }
 .ed-btn-save:hover { background: #1f2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(12,12,12,.18); }
 .ed-btn-save:active { transform: translateY(0); box-shadow: none; }
-
-/* ── Dark mode ── */
-.is_dark .ed-page-title  { color: #f3f4f6; }
-.is_dark .ed-title-bar   { background: #f3f4f6; }
-.is_dark .ed-page-sub    { color: #6b7280; }
-.is_dark .ed-page-header { border-color: #1e2330; }
-.is_dark .ed-card        { background: #111827; border-color: #1e2330; }
-.is_dark .ed-card__hd    { border-color: #1e2330; }
-.is_dark .ed-card__title { color: #f3f4f6; }
-.is_dark .ed-card__bar   { background: #f3f4f6; }
-.is_dark .ed-card__sub strong { color: #d1d5db; }
-.is_dark .ed-label       { color: #d1d5db; }
-.is_dark .ed-input       { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .ed-input:focus { border-color: #f3f4f6; }
-.is_dark .ed-foot        { border-color: #1e2330; }
-.is_dark .ed-btn-save    { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .ed-btn-save:hover { background: #e5e7eb; }
 </style>
 
 @endsection

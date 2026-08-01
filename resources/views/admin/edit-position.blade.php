@@ -156,23 +156,6 @@
 }
 .ep-btn-save:hover { background: #1f2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(12,12,12,.18); }
 .ep-btn-save:active { transform: translateY(0); box-shadow: none; }
-
-/* ── Dark mode ── */
-.is_dark .ep-page-title  { color: #f3f4f6; }
-.is_dark .ep-title-bar   { background: #f3f4f6; }
-.is_dark .ep-page-sub    { color: #6b7280; }
-.is_dark .ep-page-header { border-color: #1e2330; }
-.is_dark .ep-card        { background: #111827; border-color: #1e2330; }
-.is_dark .ep-card__hd    { border-color: #1e2330; }
-.is_dark .ep-card__title { color: #f3f4f6; }
-.is_dark .ep-card__bar   { background: #f3f4f6; }
-.is_dark .ep-card__sub strong { color: #d1d5db; }
-.is_dark .ep-label       { color: #d1d5db; }
-.is_dark .ep-input       { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .ep-input:focus { border-color: #f3f4f6; }
-.is_dark .ep-foot        { border-color: #1e2330; }
-.is_dark .ep-btn-save    { background: #f3f4f6; color: #0c0c0c; }
-.is_dark .ep-btn-save:hover { background: #e5e7eb; }
 </style>
 
 @endsection

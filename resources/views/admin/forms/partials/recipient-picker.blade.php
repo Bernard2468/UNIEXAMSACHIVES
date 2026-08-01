@@ -133,19 +133,6 @@
 
 .rcpt-picker__empty { padding: 26px 16px; text-align: center; color: #b0b5c0; font-size: 0.82rem; }
 .rcpt-picker__empty p { margin: 0; }
-
-/* Dark mode */
-.is_dark .rcpt-picker { background: #0b1322; border-color: #1e2330; }
-.is_dark .rcpt-picker__header { background: #111827; border-color: #1e2330; }
-.is_dark .rcpt-picker__office { color: #f3f4f6; }
-.is_dark .rcpt-picker__office-dot { background: #f3f4f6; }
-.is_dark .rcpt-picker__search { background: #111827; }
-.is_dark .rcpt-picker__search-input { background: #0f172a; border-color: #2d3748; color: #f3f4f6; }
-.is_dark .rcpt-picker__list { background: #111827; }
-.is_dark .rcpt-card:hover { background: #0f172a; }
-.is_dark .rcpt-card.is-selected { background: #0f172a; border-color: #f3f4f6; }
-.is_dark .rcpt-card.is-selected .rcpt-card__check { background: #f3f4f6; color: #0c0c0c; border-color: #f3f4f6; }
-.is_dark .rcpt-card__name { color: #f3f4f6; }
 </style>
 
 <script>

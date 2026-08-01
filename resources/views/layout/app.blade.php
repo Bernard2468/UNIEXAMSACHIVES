@@ -31,13 +31,10 @@
     @stack('styles')
 
     <script>
-        // On page load or when changing themes, best to add inline in `head` to avoid FOUC
-        if (localStorage.getItem("theme-color") === "dark" || (!("theme-color" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-            document.documentElement.classList.add("is_dark");
-        }
-        if (localStorage.getItem("theme-color") === "light") {
-            document.documentElement.classList.remove("is_dark");
-        }
+        // Light mode only: clear any dark-mode class/preference left over from
+        // before dark mode was removed from the system.
+        document.documentElement.classList.remove("is_dark");
+        try { localStorage.removeItem("theme-color"); } catch (e) {}
     </script>
     <script src="https://cdn.tiny.cloud/1/29x31yy541lnbv7bhwkb8eehrwt7mzsc64d3yow8lw3v6y3v/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 
