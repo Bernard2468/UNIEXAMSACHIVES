@@ -41,6 +41,17 @@
     </script>
     <script src="https://cdn.tiny.cloud/1/29x31yy541lnbv7bhwkb8eehrwt7mzsc64d3yow8lw3v6y3v/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 
+    <style>
+        /* Clip horizontal overflow (from slide-in animations) WITHOUT creating a
+           scroll container — `overflow: hidden` on this wrapper silently disables
+           position: sticky for the dashboard sidebar. `clip` keeps the clipping
+           behavior while letting sticky work. */
+        .main_wrapper {
+            overflow-x: hidden; /* fallback for very old browsers */
+            overflow-x: clip;
+            overflow-y: visible;
+        }
+    </style>
 </head>
 <body class="body__wrapper">
 
@@ -76,7 +87,7 @@
     {{-- Maintenance Countdown Banner --}}
     @include('components.maintenance-countdown')
 
-    <main class="main_wrapper overflow-hidden">
+    <main class="main_wrapper">
         @include('components.password-reminder')
         @yield('content')
 

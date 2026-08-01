@@ -632,6 +632,37 @@ document.addEventListener('DOMContentLoaded', function() {
     navSections.forEach(nav => {
         nav.style.transition = 'all 0.3s ease-in-out';
     });
+
+    // Persist the sidebar's own scroll position across page navigations so it
+    // doesn't jump back to the top on every click (matches top-app behaviour).
+    const sidebarScroller = document.querySelector('.dashboard__inner.sticky-top');
+    if (sidebarScroller) {
+        const saved = sessionStorage.getItem('udts:sidebarScrollTop');
+        if (saved !== null) {
+            // Bypass CSS smooth-scroll for the instant restore
+            sidebarScroller.style.scrollBehavior = 'auto';
+            sidebarScroller.scrollTop = parseInt(saved, 10) || 0;
+            sidebarScroller.style.scrollBehavior = '';
+        } else {
+            // First visit this session: bring the active menu item into view
+            const activeLink = sidebarScroller.querySelector('.dashboard__nav a.active');
+            if (activeLink) {
+                const linkTop = activeLink.getBoundingClientRect().top - sidebarScroller.getBoundingClientRect().top;
+                if (linkTop > sidebarScroller.clientHeight - 60) {
+                    sidebarScroller.style.scrollBehavior = 'auto';
+                    sidebarScroller.scrollTop = linkTop - (sidebarScroller.clientHeight / 2);
+                    sidebarScroller.style.scrollBehavior = '';
+                }
+            }
+        }
+        let saveTimer = null;
+        sidebarScroller.addEventListener('scroll', function() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(function() {
+                sessionStorage.setItem('udts:sidebarScrollTop', String(sidebarScroller.scrollTop));
+            }, 100);
+        }, { passive: true });
+    }
 });
 
 // Dropdown functionality removed - using direct link now
@@ -643,6 +674,66 @@ document.addEventListener('DOMContentLoaded', function() {
 .dashboard__inner,
 .dashboard__inner * {
     font-family: 'Outfit', sans-serif !important;
+}
+
+/* ── Independent sidebar scrolling ──
+   The sidebar is pinned to the viewport and scrolls on its own, completely
+   decoupled from the page scroll. Its scrollbar is ultra-thin and nearly
+   invisible until the cursor is over the sidebar (Slack / Notion / Linear
+   pattern). Applies only on desktop widths where the sidebar is a side
+   column — on mobile it stacks above the content and flows naturally. */
+@media (min-width: 992px) {
+    .dashboard__inner.sticky-top {
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        /* Reaching the sidebar's end must never chain-scroll the page (and
+           page scrolling never moves the sidebar) */
+        overscroll-behavior: contain;
+        scroll-behavior: smooth;
+        /* Modern browsers (Chrome 121+, Firefox, Safari 18.2+) */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(100, 116, 139, 0.14) transparent;
+    }
+    .dashboard__inner.sticky-top:hover,
+    .dashboard__inner.sticky-top:focus-within {
+        scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+    }
+
+    /* WebKit fallback (older Safari / Chromium that ignore scrollbar-color) */
+    .dashboard__inner.sticky-top::-webkit-scrollbar {
+        width: 6px;
+    }
+    .dashboard__inner.sticky-top::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .dashboard__inner.sticky-top::-webkit-scrollbar-thumb {
+        background-color: rgba(100, 116, 139, 0.14);
+        border-radius: 999px;
+    }
+    .dashboard__inner.sticky-top:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(100, 116, 139, 0.45);
+    }
+    .dashboard__inner.sticky-top::-webkit-scrollbar-thumb:hover,
+    .dashboard__inner.sticky-top::-webkit-scrollbar-thumb:active {
+        background-color: rgba(100, 116, 139, 0.7);
+    }
+
+    /* Dark mode: lighter thumb so it stays visible on dark backgrounds */
+    .is_dark .dashboard__inner.sticky-top {
+        scrollbar-color: rgba(148, 163, 184, 0.18) transparent;
+    }
+    .is_dark .dashboard__inner.sticky-top:hover,
+    .is_dark .dashboard__inner.sticky-top:focus-within {
+        scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+    }
+    .is_dark .dashboard__inner.sticky-top::-webkit-scrollbar-thumb {
+        background-color: rgba(148, 163, 184, 0.18);
+    }
+    .is_dark .dashboard__inner.sticky-top:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(148, 163, 184, 0.5);
+    }
 }
 
 /* ── Department Modal ── */

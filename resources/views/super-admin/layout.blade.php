@@ -166,7 +166,39 @@
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             overflow-y: auto;
+            overflow-x: hidden;
             z-index: 999;
+            /* Independent scroll: never chain into the page scroll */
+            overscroll-behavior: contain;
+            /* Thin scrollbar, nearly invisible until hovered */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(100, 116, 139, 0.14) transparent;
+        }
+
+        .sidebar:hover {
+            scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: rgba(100, 116, 139, 0.14);
+            border-radius: 999px;
+        }
+
+        .sidebar:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(100, 116, 139, 0.45);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover,
+        .sidebar::-webkit-scrollbar-thumb:active {
+            background-color: rgba(100, 116, 139, 0.7);
         }
 
         .sidebar-menu {
