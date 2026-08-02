@@ -26,11 +26,23 @@
                         <span class="ft-link__text">Academic Files</span>
                         <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
+                    <a href="{{ route('dashboard.folders.index') }}" class="ft-link">
+                        <span class="ft-link__dot"></span>
+                        <span class="ft-link__text">Folders</span>
+                        <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
                     <a href="{{ route('dashboard.uimms.portal') }}" class="ft-link">
                         <span class="ft-link__dot"></span>
                         <span class="ft-link__text">Memos</span>
                         <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>
+                    @auth
+                        <a href="{{ auth()->user()->is_admin ? route('admin.communication-admin.create') : route('admin.communication.create') }}" class="ft-link">
+                            <span class="ft-link__dot"></span>
+                            <span class="ft-link__text">Compose Memo</span>
+                            <svg class="ft-link__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </a>
+                    @endauth
                 </nav>
             </div>
 
@@ -124,8 +136,8 @@
 }
 
 .ft-col--nav {
-    flex: 1 1 340px;
-    max-width: 420px;
+    flex: 1 1 380px;
+    max-width: 480px;
 }
 
 .ft-col--support {
