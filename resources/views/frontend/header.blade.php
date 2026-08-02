@@ -320,7 +320,7 @@
    sidebar and other sticky panels can position themselves just below it.
 
    Official breakpoints (see CLAUDE.md → Responsive breakpoints):
-   Mobile 0–767 · Tablet 768–1199 · Desktop 1200–1599 · Large Desktop 1600+ */
+   Mobile 0–767 · Tablet 768–1023 · Desktop 1024–1439 · Large Desktop 1440+ */
 header.uda-header-sticky {
     position: sticky;
     top: 0;
@@ -405,7 +405,7 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
 .uda-create-trigger__chevron { width: 13px !important; height: 13px !important; opacity: .8; transition: transform .18s ease; }
 .uda-create-trigger[aria-expanded="true"] .uda-create-trigger__chevron { transform: rotate(180deg); }
 /* Tablet & below: icon-only Create button */
-@media (max-width: 1199px) {
+@media (max-width: 1023px) {
     .uda-create-trigger__label { display: none; }
     .uda-create-trigger { padding: 0 10px; }
 }
@@ -752,10 +752,10 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
 }
 
 /* ═══ Responsive header — official breakpoints ═══
-   Mobile 0–767 · Tablet 768–1199 · Desktop 1200–1599 · Large Desktop 1600+ */
+   Mobile 0–767 · Tablet 768–1023 · Desktop 1024–1439 · Large Desktop 1440+ */
 
-/* ── Desktop (1200–1599): slightly condensed utility bar, no wrapping ── */
-@media (min-width: 1200px) and (max-width: 1599px) {
+/* ── Desktop (1024–1439): slightly condensed utility bar, no wrapping ── */
+@media (min-width: 1024px) and (max-width: 1439px) {
     .uda-clock-bar {
         padding: 6px 16px;
         font-size: 12px;
@@ -777,8 +777,8 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     }
 }
 
-/* ── Tablet (768–1199): full navbar, slimmer single-row utility bar ── */
-@media (min-width: 768px) and (max-width: 1199px) {
+/* ── Tablet (768–1023): full navbar, slimmer single-row utility bar ── */
+@media (min-width: 768px) and (max-width: 1023px) {
     .uda-clock-bar {
         flex-direction: row;
         align-items: center;

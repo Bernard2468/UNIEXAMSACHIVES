@@ -144,19 +144,26 @@ The "Forms Portal" sidebar badge (`$awaitingFormsCount`) is computed globally in
 
 ## Responsive Breakpoints (official)
 
-All new responsive CSS MUST use these breakpoints — do not invent ad-hoc widths:
+All new responsive CSS MUST use these breakpoints — do not invent ad-hoc widths.
+Aligned with Tailwind / modern SaaS (Linear, Notion) for tablet vs laptop, while
+keeping Mobile at the universal phone cutoff:
 
-| Breakpoint | Min Width | Max Width |
-|------------|-----------|-----------|
-| Mobile | 0px | 767px |
-| Tablet | 768px | 1199px |
-| Desktop | 1200px | 1599px |
-| Large Desktop | 1600px+ | — |
+| Breakpoint | Min Width | Max Width | Typical devices |
+|------------|-----------|-----------|-----------------|
+| Mobile | 0px | 767px | Phones (portrait + landscape) |
+| Tablet | 768px | 1023px | iPad portrait, small tablets |
+| Desktop | 1024px | 1439px | Laptops, standard monitors |
+| Large Desktop | 1440px+ | — | Large monitors, ultrawides |
 
-Goal (in progress): the system will become fully responsive with an app-like mobile
-experience — mobile and desktop must share the SAME features and flow (never a
-stripped-down mobile variant). Already done to this standard: the permanently pinned
-two-row header ([resources/views/frontend/header.blade.php](resources/views/frontend/header.blade.php))
+**Rules of engagement**
+- Same features and flow on every breakpoint — never a stripped-down mobile variant.
+- Mobile gets an app-like chrome (compact single-row header, thumb-friendly targets,
+  full-width sheets/drawers). Density changes; capability does not.
+- Prefer `max-width: 767px` for phone-only, `min-width: 768px` / `1024px` / `1440px`
+  for progressive enhancement.
+
+Already done to this standard: the permanently pinned header
+([resources/views/frontend/header.blade.php](resources/views/frontend/header.blade.php))
 renders the same navbar (search, calendar, + Create, notifications, avatar menu) on
 every breakpoint — on Mobile the utility clock-bar hides, the title pill shows "UDTS",
 and the old bare-logo `mob_menu_wrapper` row is suppressed.
