@@ -2812,6 +2812,53 @@
     width: 100%;
   }
 }
+
+/* ============================================================
+   COMPOSE — MOBILE APP-LIKE PASS (official breakpoint, ≤767)
+   Layers on the 768/576 rules above. Goals: no-zoom inputs, a
+   single swipeable toolbar row (not a tall wrapped block), calmer
+   (less-crowded) recipient rows, and full-width primary actions.
+   ============================================================ */
+@media (max-width: 767px) {
+  /* Inputs at ≥16px so iOS never zooms in on focus */
+  .form-input,
+  .form-textarea,
+  .search-input,
+  #subject,
+  #user-search,
+  #cc-search,
+  .toolbar-select { font-size: 16px; }
+
+  /* Rich-text toolbar → one clean swipeable row (it used to wrap into a
+     tall, crowded multi-row block on phones) */
+  .editor-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .editor-toolbar::-webkit-scrollbar { display: none; }
+  .editor-toolbar > * { flex: 0 0 auto; }
+
+  /* Letterhead: swipe the rail (hide the desktop hover arrows); slimmer preview */
+  .lhpk-rail-wrap.has-overflow .lhpk-nav { display: none; }
+  .lhpk-preview-canvas { min-height: 96px; padding: 10px; }
+  .lhpk-preview-canvas img { max-height: 130px; }
+
+  /* Recipient choice: stack the two option cards full-width */
+  .recipient-options { flex-direction: column; }
+
+  /* User / Cc picker — calmer, roomier rows; drop the noisy status line
+     and clamp long emails so text never crowds the row */
+  .user-selector-header { padding: 16px; }
+  .user-status { display: none; }
+  .user-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-list-container { max-height: 48vh; }
+
+  /* Primary actions become full-width, thumb-sized */
+  .form-actions { flex-direction: column; gap: 10px; }
+  .form-actions .action-btn { width: 100%; justify-content: center; }
+}
 </style>
 
 <script>

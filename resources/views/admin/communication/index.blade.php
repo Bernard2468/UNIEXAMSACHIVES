@@ -183,10 +183,10 @@
                                     <tbody>
                                         @forelse($campaigns as $campaign)
                                         <tr class="email-row">
-                                            <td>
+                                            <td data-label="Reference">
                                                 <span class="recipient-badge" title="Memo Reference">{{ $campaign->reference ?? '-' }}</span>
                                             </td>
-                                            <td>
+                                            <td data-label="Subject">
                                                 <div class="email-title">
                                                     <strong class="subject-text" title="{{ $campaign->subject }}">{{ $campaign->subject }}</strong>
                                                     @if($campaign->attachments && count($campaign->attachments) > 0)
@@ -194,16 +194,16 @@
                                                     @endif
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-label="Recipients">
                                                 <span class="recipient-count">{{ $campaign->total_recipients }}<span class="unit">users</span></span>
                                             </td>
-                                            <td>
+                                            <td data-label="Status">
                                                 <span class="email-status status-{{ $campaign->status }}">
                                                     <span class="status-dot"></span>{{ ucfirst($campaign->status) }}
                                                 </span>
                                             </td>
-                                            <td class="created-date">{{ $campaign->created_at->format('M j, Y') }}</td>
-                                            <td>
+                                            <td class="created-date" data-label="Created">{{ $campaign->created_at->format('M j, Y') }}</td>
+                                            <td data-label="Actions">
                                                 <div class="actions-cell">
                                                     <button type="button" class="actions-more-btn" title="Actions" aria-haspopup="true" aria-expanded="false" onclick="toggleActions(this, event)">
                                                         <img src="https://img.icons8.com/glyph-neue/64/more.png" alt="Actions" class="more-icon">
@@ -1314,6 +1314,82 @@
   .action-buttons .send-btn:hover { background: #e8f4ee !important; }
   .action-buttons .delete-btn { color: #c0392b; }
   .action-buttons .delete-btn:hover { background: #fbecef !important; }
+}
+
+/* ============================================================
+   MEMOS LIST — MOBILE APP-LIKE PASS (≤767): table → cards
+   Each memo becomes a tidy card of label:value rows (Subject leads),
+   instead of a horizontally-scrolling table. Uses the data-label on
+   each <td>. The kebab actions menu (already active <1600px) stays.
+   ============================================================ */
+@media (max-width: 767px) {
+  .table-container {
+    overflow: visible;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+  }
+  .email-table { border: none; background: transparent; }
+  .email-table thead { display: none; }
+  .email-table,
+  .email-table tbody { display: block; width: 100%; }
+
+  .email-table tr.email-row {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #eef1f6;
+    border-radius: 14px;
+    padding: 4px 14px 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .05);
+  }
+  .email-table tr.email-row td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: auto;
+    padding: 9px 0;
+    border: none;
+    border-bottom: 1px solid #f4f6fb;
+    text-align: right;
+    white-space: normal;
+  }
+  .email-table tr.email-row td:last-child { border-bottom: none; }
+  .email-table tr.email-row td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #94a3b8;
+    text-align: left;
+  }
+
+  /* Subject leads the card: full width, bold, wrapping, no label */
+  .email-table tr.email-row td[data-label="Subject"] {
+    order: -1;
+    display: block;
+    padding-top: 10px;
+    text-align: left;
+    border-bottom: 1px solid #eef1f6;
+  }
+  .email-table tr.email-row td[data-label="Subject"]::before { display: none; }
+  .email-table tr.email-row td[data-label="Subject"] .subject-text {
+    white-space: normal;
+    font-size: 15px;
+    line-height: 1.35;
+    font-weight: 700;
+  }
+
+  /* Controls full-width, no-zoom search */
+  .table-controls,
+  .search-form,
+  .search-input-wrapper { width: 100%; max-width: 100%; }
+  .search-input { font-size: 16px; }
 }
 </style>
 
