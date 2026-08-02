@@ -69,7 +69,7 @@
                         @endif
 
                         <!-- Statistics Cards -->
-                        <div class="row mb-5">
+                        <div class="row mb-5 metric-row">
                             <div class="col-xl-3 col-lg-6 col-md-6 col-12 mb-4">
                                 <div class="metric-card">
                                     <div class="metric-icon">
@@ -1316,20 +1316,76 @@
   .action-buttons .delete-btn:hover { background: #fbecef !important; }
 }
 
-/* ============================================================
-   MEMOS LIST — MOBILE APP-LIKE PASS (≤767): table → cards
-   Each memo becomes a tidy card of label:value rows (Subject leads),
-   instead of a horizontally-scrolling table. Uses the data-label on
-   each <td>. The kebab actions menu (already active <1600px) stays.
-   ============================================================ */
+/* ════════════════════════════════════════════════════════════
+   MEMOS INDEX — REAL MOBILE-APP REDESIGN (≤767)
+   Edge-to-edge sections, a compact 2×2 stat grid, horizontal filter
+   chips, a contained search bar, a tidy stacked header, and each memo
+   as a card. Cues from modern banking apps (clean, roomy, no squish).
+   ════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
-  .table-container {
-    overflow: visible;
-    border: none;
-    box-shadow: none;
-    background: transparent;
-    padding: 0;
+  /* De-squish: kill the nested container paddings so sections use the
+     full width and sit edge-to-edge on the page background */
+  .dashboardarea .full__width__padding { padding-left: 12px !important; padding-right: 12px !important; }
+  .dashboard__content__wraper { padding: 0 !important; background: transparent !important; box-shadow: none !important; border: none !important; }
+  .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
+
+  /* ── Header: stack the title + a clean full-width Compose button ── */
+  .dashboard__section__title {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
   }
+  .dashboard__section__title h4 { font-size: 20px; line-height: 1.25; margin: 0; }
+  .dashboard__section__actions { width: 100%; margin: 0; }
+  .responsive-btn.compose-btn { width: 100%; height: 46px; border-radius: 12px; justify-content: center; }
+
+  /* ── Stat tiles: compact 2×2 grid (was 4 giant stacked cards) ── */
+  .metric-row { display: flex; flex-wrap: wrap; margin: 0 -5px 14px !important; }
+  .metric-row > [class*="col-"] {
+    flex: 0 0 50%; max-width: 50%; width: 50%;
+    padding: 0 5px; margin-bottom: 10px !important;
+  }
+  .metric-card { padding: 14px !important; gap: 12px; border-radius: 14px; }
+  .metric-icon { width: 40px !important; height: 40px !important; font-size: 17px !important; border-radius: 11px; flex-shrink: 0; }
+  .metric-number { font-size: 22px !important; line-height: 1.1; }
+  .metric-label { font-size: 11px; }
+
+  /* ── Filters: one horizontal scrollable chip row (was a tall column) ── */
+  .filter-section { margin-bottom: 14px !important; }
+  .filter-buttons {
+    flex-direction: row !important;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-buttons::-webkit-scrollbar { display: none; }
+  .filter-btn {
+    width: auto !important;
+    flex: 0 0 auto;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+    border-radius: 999px;
+    white-space: nowrap;
+    justify-content: center;
+  }
+
+  /* ── Panel + search: edge-to-edge card, contained (non-overflowing) search ── */
+  .stats-panel { padding: 14px !important; border-radius: 16px; }
+  .panel-header { margin-bottom: 14px; }
+  .panel-header h5 { font-size: 16px; }
+  .panel-subtitle { font-size: 12px; }
+  .table-controls { margin-bottom: 12px; }
+  .search-form { width: 100%; max-width: 100%; }
+  .search-input-wrapper { display: flex; align-items: center; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .search-input { flex: 1 1 auto; min-width: 0; font-size: 16px; }
+  .search-button { flex: 0 0 auto; white-space: nowrap; padding-left: 16px; padding-right: 16px; }
+
+  /* ── Each memo → a clean card (table → cards via the <td> data-labels) ── */
+  .table-container { overflow: visible; border: none; box-shadow: none; background: transparent; padding: 0; }
   .email-table { border: none; background: transparent; }
   .email-table thead { display: none; }
   .email-table,
@@ -1373,7 +1429,7 @@
   .email-table tr.email-row td[data-label="Subject"] {
     order: -1;
     display: block;
-    padding-top: 10px;
+    padding: 10px 0 8px;
     text-align: left;
     border-bottom: 1px solid #eef1f6;
   }
@@ -1384,12 +1440,18 @@
     line-height: 1.35;
     font-weight: 700;
   }
+  /* Trim the reference badge so it doesn't dominate the card */
+  .email-table tr.email-row .recipient-badge { font-size: 12px; padding: 3px 10px; }
+}
 
-  /* Controls full-width, no-zoom search */
-  .table-controls,
-  .search-form,
-  .search-input-wrapper { width: 100%; max-width: 100%; }
-  .search-input { font-size: 16px; }
+/* ── Tablet (768–1023): keep the table, but fix the filter row into tidy
+   chips (never a tall stacked column) and keep the search bar contained ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .filter-buttons { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .filter-btn { width: auto; flex: 0 0 auto; padding: 9px 16px; border-radius: 999px; white-space: nowrap; }
+  .search-input-wrapper { display: flex; align-items: center; width: 100%; max-width: 100%; box-sizing: border-box; }
+  .search-input { flex: 1 1 auto; min-width: 0; }
+  .search-button { flex: 0 0 auto; white-space: nowrap; }
 }
 </style>
 

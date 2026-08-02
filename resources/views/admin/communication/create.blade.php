@@ -2820,6 +2820,28 @@
    (less-crowded) recipient rows, and full-width primary actions.
    ============================================================ */
 @media (max-width: 767px) {
+  /* De-squish: pull the nested container paddings so the form uses the full
+     width instead of being pinched into the middle of the screen */
+  .dashboardarea .full__width__padding { padding-left: 12px !important; padding-right: 12px !important; }
+  .dashboard__content__wraper { padding: 0 !important; background: transparent !important; box-shadow: none !important; border: none !important; }
+  .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
+  .compose-panel { padding: 16px !important; border-radius: 16px; }
+
+  /* Header: page title with a compact, icon-only circular Back button above it */
+  .dashboard__section__title { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+  .dashboard__section__title h4 { font-size: 20px; margin: 0; }
+  .dashboard__section__actions { order: -1; width: auto; margin: 0; }
+  .responsive-btn.back-btn { width: 40px; height: 40px; padding: 0; border-radius: 50%; justify-content: center; }
+  .responsive-btn.back-btn .text { display: none; }
+  .responsive-btn.back-btn .svgWrapper { width: auto; justify-content: center; margin: 0; }
+
+  /* Attachment: compact horizontal dropzone (was a huge centered block) */
+  .file-upload-area { padding: 14px 16px !important; }
+  .file-upload-display { display: flex; flex-direction: row; align-items: center; gap: 12px; text-align: left; }
+  .file-upload-icon { font-size: 26px !important; margin: 0 !important; }
+  .file-upload-text { font-size: 12px; }
+  .file-upload-text small { font-size: 10.5px; }
+
   /* Inputs at ≥16px so iOS never zooms in on focus */
   .form-input,
   .form-textarea,
