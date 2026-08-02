@@ -1319,6 +1319,11 @@
 
                         <!-- Inline Recipients Selector (hidden by default) -->
                         <div class="inline-recipients-selector" id="inline-recipients-selector" style="display: none;">
+                            {{-- Mobile bottom-sheet top bar (hidden on desktop) --}}
+                            <div class="rcp-sheet-topbar">
+                                <span class="rcp-sheet-title">Comment to specific people</span>
+                                <button type="button" class="rcp-sheet-done" onclick="closeRecipientsSheet()">Done</button>
+                            </div>
                             <div class="recipients-dropdown">
                                 <div class="recipients-input-wrapper">
                                     <input type="text" 
@@ -1337,6 +1342,8 @@
                                 <!-- Selected recipients will appear here -->
                             </div>
                         </div>
+                        {{-- Dim backdrop for the mobile "Comment-to" bottom-sheet --}}
+                        <div class="rcp-sheet-backdrop" id="rcp-recipients-backdrop" onclick="closeRecipientsSheet()" aria-hidden="true"></div>
                     </div>
                     
                             <form id="chat-form" enctype="multipart/form-data">
@@ -3783,6 +3790,10 @@
     font-size: 0.9rem;
 }
 
+/* Comment-to bottom-sheet scaffolding — hidden on desktop/tablet */
+.rcp-sheet-topbar { display: none; }
+.rcp-sheet-backdrop { display: none; }
+
 /* ════════════════════════════════════════════════════════════
    MEMO CHAT — REAL MOBILE-APP PASS (≤767)
    Messaging-app feel: 16px gutter (consistent with the memo list/compose),
@@ -3855,6 +3866,57 @@
   .attachment-image { max-width: 78vw !important; }
 
   .chat-blocked-container { padding: 28px 16px; }
+
+  /* ── "Comment-to" recipients → a bottom-sheet (down drawer) on phones ──
+     #inline-recipients-selector is shown/hidden by setReplyMode(); here we
+     present it as a slide-up sheet. `display:flex !important` beats the JS
+     inline display; visibility is driven by the transform + backdrop. */
+  #inline-recipients-selector {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    left: 0; right: 0; bottom: 0; top: auto;
+    z-index: 1060;
+    margin: 0;
+    max-height: 82dvh;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -18px 50px rgba(15, 23, 42, .3);
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+    padding: 0;
+  }
+  #inline-recipients-selector.rcp-sheet-open { transform: translateY(0); }
+  #inline-recipients-selector .recipients-dropdown { flex: 0 0 auto; padding: 12px 14px 0; }
+  #inline-recipients-selector .recipients-dropdown-menu { max-height: 46vh; overflow-y: auto; }
+  #inline-recipients-selector .selected-recipients { flex: 0 0 auto; padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); }
+  #inline-recipients-selector #recipients-search { font-size: 16px; }   /* no iOS zoom */
+
+  .rcp-sheet-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; flex: 0 0 auto;
+    padding: 18px 16px 12px; background: #fff; border-bottom: 1px solid #eef1f6;
+  }
+  .rcp-sheet-topbar::before {
+    content: ''; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 4px; border-radius: 999px; background: #e2e8f0;
+  }
+  .rcp-sheet-title { font-weight: 700; font-size: 15px; color: #0f172a; }
+  .rcp-sheet-done {
+    border: none; background: #1976d2; color: #fff; font-weight: 600;
+    padding: 8px 20px; border-radius: 999px; font-size: 14px; cursor: pointer;
+  }
+
+  .rcp-sheet-backdrop {
+    display: block; position: fixed; inset: 0;
+    background: rgba(15, 23, 42, .5);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    z-index: 1059; opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .3s ease, visibility .3s ease;
+  }
+  .rcp-sheet-backdrop.is-open { opacity: 1; visibility: visible; pointer-events: auto; }
+  body.rcp-sheet-lock { overflow: hidden; }
 }
 </style>
 
@@ -3949,20 +4011,40 @@ function setReplyMode(mode) {
     // Update hidden input
     document.getElementById('reply-mode').value = mode;
     
-    // Show/hide inline recipients selector
+    // Show/hide inline recipients selector (a bottom-sheet on phones)
     const inlineRecipientsSelector = document.getElementById('inline-recipients-selector');
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    const rcpBackdrop = document.getElementById('rcp-recipients-backdrop');
     if (mode === 'specific') {
         inlineRecipientsSelector.style.display = 'flex';
-        // Focus on the search input
-        setTimeout(() => {
-            document.getElementById('recipients-search').focus();
-        }, 100);
+        if (isMobile) {
+            inlineRecipientsSelector.classList.add('rcp-sheet-open');
+            if (rcpBackdrop) rcpBackdrop.classList.add('is-open');
+            document.body.classList.add('rcp-sheet-lock');
+        } else {
+            // Auto-focus the search on desktop (on mobile this would pop the keyboard
+            // before the sheet finishes sliding up).
+            setTimeout(() => { document.getElementById('recipients-search').focus(); }, 100);
+        }
     } else {
         inlineRecipientsSelector.style.display = 'none';
+        inlineRecipientsSelector.classList.remove('rcp-sheet-open');
+        if (rcpBackdrop) rcpBackdrop.classList.remove('is-open');
+        document.body.classList.remove('rcp-sheet-lock');
         selectedRecipients = [];
         updateSpecificRecipientsInput();
         updateSelectedRecipientsDisplay();
     }
+}
+
+// Close the mobile "Comment-to" bottom-sheet WITHOUT changing the mode — the
+// chosen recipients stay selected; tap "Comment-to" again to review/edit.
+function closeRecipientsSheet() {
+    const sel = document.getElementById('inline-recipients-selector');
+    const bd = document.getElementById('rcp-recipients-backdrop');
+    if (sel) sel.classList.remove('rcp-sheet-open');
+    if (bd) bd.classList.remove('is-open');
+    document.body.classList.remove('rcp-sheet-lock');
 }
 
 function populateRecipientsList() {

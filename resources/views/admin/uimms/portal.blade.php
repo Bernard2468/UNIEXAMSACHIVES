@@ -30,7 +30,7 @@
                                             <i class="icofont-chat"></i>
                                         </div>
                                         <div class="dashboard__card__text">
-                                            <h5>💬 Pending Memos</h5>
+                                            <h5>Pending Memos</h5>
                                             <h3 class="count" id="count-pending">{{ $pendingCount }}</h3>
                                             <p>Pending conversations</p>
                                         </div>
@@ -44,7 +44,7 @@
                                             <i class="icofont-pause"></i>
                                         </div>
                                         <div class="dashboard__card__text">
-                                            <h5>⏸️ Suspended Memos</h5>
+                                            <h5>Suspended Memos</h5>
                                             <h3 class="count" id="count-suspended">{{ $suspendedCount }}</h3>
                                             <p>Paused conversations</p>
                                         </div>
@@ -58,7 +58,7 @@
                                             <i class="icofont-check-circled"></i>
                                         </div>
                                         <div class="dashboard__card__text">
-                                            <h5>✅ Completed Memos</h5>
+                                            <h5>Completed Memos</h5>
                                             <h3 class="count" id="count-completed">{{ $completedCount }}</h3>
                                             <p>Finished conversations</p>
                                         </div>
@@ -72,7 +72,7 @@
                                             <i class="icofont-archive"></i>
                                         </div>
                                         <div class="dashboard__card__text">
-                                            <h5>📦 Memos Archive</h5>
+                                            <h5>Memos Archive</h5>
                                             <h3 class="count" id="count-archived">{{ $archivedCount }}</h3>
                                             <p>Old conversations</p>
                                         </div>
@@ -964,6 +964,9 @@
   .dashboard__card__text h5 { font-size: 0.72rem !important; margin: 0 !important; line-height: 1.25; white-space: normal; }
   .dashboard__card__text h3 { font-size: 1.7rem !important; margin: 0 !important; }
   .dashboard__card__text p { display: none; }   /* sub-line ("Pending conversations") is noise on mobile */
+  /* All four tiles the SAME height (the col stretches; the card fills it) */
+  .row > [class*="col-"]:has(.uimms-card) { display: flex; }
+  .uimms-card { height: 100% !important; width: 100%; }
 
   /* Memo inbox: one page scroll (drop the nested 600px scrollbox), edge-to-edge */
   .dashboard__meessage {
@@ -984,14 +987,26 @@
   .refresh-btn .text { display: none !important; }
   .refresh-btn .svgWrapper { width: auto !important; margin: 0 !important; justify-content: center; }
 
-  /* Memo cards: comfortable padding, trimmed one-line subject/sender so the
-     status badge never gets pushed off the edge */
-  .dashboard__meessage__contact__wrap { padding: 12px 14px !important; gap: 12px; }
-  .dashboard__meessage__chat__img img { width: 40px !important; height: 40px !important; }
-  .memo-header { gap: 8px; }
-  .memo-subject,
-  .memo-sender-info,
-  .dashboard__meessage__meta h5 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* ── Inbox rows (WhatsApp/Gmail style) — keep every row inside its card ── */
+  .dashboard__meessage__contact { padding: 0 !important; }
+  .dashboard__meessage__contact ul { list-style: none; margin: 0 !important; padding: 0 !important; }  /* kill the default ~40px indent that pushed the list out */
+  .dashboard__meessage__contact__wrap { padding: 12px 14px !important; gap: 12px; align-items: flex-start; }
+  .dashboard__meessage__chat__img img { width: 44px !important; height: 44px !important; }
+  .dashboard__meessage__meta { min-width: 0; }
+
+  /* Header row: sender name (ellipsis) + a single compact status badge on the
+     right. Recipient-avatar cluster is hidden — it's noise + the main overflow
+     source on a phone. */
+  .memo-participants { display: none !important; }
+  .memo-header { flex-wrap: nowrap; align-items: center; gap: 8px; min-width: 0; }
+  .memo-sender-info { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+  .memo-sender-info h5 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .memo-right-section { flex: 0 0 auto; }
+  .memo-right-badges { flex-shrink: 0; gap: 6px; }
+  .memo-status-badge { font-size: 10px !important; padding: 3px 8px !important; }
+
+  .memo-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .memo-footer { margin-top: 4px; }
 }
                                         </style>
 

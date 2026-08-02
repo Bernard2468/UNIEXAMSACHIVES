@@ -334,6 +334,57 @@
                                         .refresh-btn:hover {
                                             background-color: #0f3a7a;
                                         }
+
+/* ════════════════════════════════════════════════════════════
+   KEEP IN VIEW — MOBILE-APP PASS (≤767), consistent with the portal:
+   full-width (fixes the narrow left-column bug), single-scroll inbox with
+   rows that stay inside the card, compact toolbar.
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Full-width fix (same as portal) */
+  .dashboard .row > .col-xl-9.col-lg-9.col-md-12 {
+    flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important;
+    padding-left: 0 !important; padding-right: 0 !important;
+  }
+  .dashboard__message__content__main { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 16px !important; }
+  .dashboard__message__content__main > * { max-width: 100% !important; }
+  .dashboard__meessage__wraper { width: 100% !important; }
+  .dashboard__meessage__wraper .row { margin-left: 0 !important; margin-right: 0 !important; }
+  .dashboard__meessage__wraper [class*="col-"] { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
+
+  .dashboard__message__content__main__title h3 { font-size: 18px !important; margin-bottom: 14px !important; line-height: 1.3; }
+
+  /* Single-scroll inbox */
+  .dashboard__meessage {
+    min-width: 0 !important; width: 100% !important;
+    max-height: none !important; overflow: visible !important;
+    border: 1px solid #eef1f6 !important; border-radius: 14px !important;
+  }
+
+  /* Toolbar: compact, icon-only Refresh */
+  .memos-toolbar { position: static !important; padding: 12px 14px !important; gap: 8px; flex-wrap: wrap; }
+  .memos-badge { font-size: 0.8rem !important; padding: 6px 12px !important; }
+  .memos-actions .responsive-btn { width: auto !important; }
+  .refresh-btn { width: 40px !important; height: 40px !important; min-width: 40px !important; padding: 0 !important; border-radius: 50% !important; }
+  .refresh-btn .text { display: none !important; }
+  .refresh-btn .svgWrapper { width: auto !important; margin: 0 !important; justify-content: center; }
+
+  /* Inbox rows stay inside the card (WhatsApp/Gmail style) */
+  .dashboard__meessage__contact { padding: 0 !important; }
+  .dashboard__meessage__contact ul { list-style: none; margin: 0 !important; padding: 0 !important; }
+  .dashboard__meessage__contact__wrap { padding: 12px 14px !important; gap: 12px; align-items: flex-start; }
+  .dashboard__meessage__chat__img img { width: 44px !important; height: 44px !important; }
+  .dashboard__meessage__meta { min-width: 0; }
+  .memo-participants { display: none !important; }
+  .memo-header { flex-wrap: nowrap; align-items: center; gap: 8px; min-width: 0; }
+  .memo-sender-info { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+  .memo-sender-info h5 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .memo-right-section { flex: 0 0 auto; }
+  .memo-right-badges { flex-shrink: 0; gap: 6px; }
+  .memo-status-badge { font-size: 10px !important; padding: 3px 8px !important; }
+  .memo-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .memo-footer { margin-top: 4px; }
+}
                                         </style>
 
                                         <script>
