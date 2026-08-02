@@ -3871,23 +3871,28 @@
      #inline-recipients-selector is shown/hidden by setReplyMode(); here we
      present it as a slide-up sheet. `display:flex !important` beats the JS
      inline display; visibility is driven by the transform + backdrop. */
+  /* Comment-to is a SIDE DRAWER (slides in from the right, full height) */
   #inline-recipients-selector {
     display: flex !important;
     flex-direction: column;
     position: fixed;
-    left: 0; right: 0; bottom: 0; top: auto;
+    top: 0; right: 0; bottom: 0; left: auto;
+    width: min(90vw, 400px); max-width: 90vw;
+    height: 100dvh;
     z-index: 1060;
     margin: 0;
-    max-height: 82dvh;
+    max-height: none;
     background: #fff;
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -18px 50px rgba(15, 23, 42, .3);
+    border-radius: 16px 0 0 16px;
+    box-shadow: -18px 0 50px rgba(15, 23, 42, .3);
     overflow: hidden;
-    transform: translateY(100%);
+    transform: translateX(100%);
     transition: transform .32s cubic-bezier(.4, 0, .2, 1);
     padding: 0;
   }
-  #inline-recipients-selector.rcp-sheet-open { transform: translateY(0); }
+  #inline-recipients-selector.rcp-sheet-open { transform: translateX(0); }
+  /* No bottom-sheet grab handle on a side drawer */
+  #inline-recipients-selector .rcp-sheet-topbar::before { display: none; }
   /* The recipients list is a FLAT, always-visible checklist inside the sheet —
      NOT the fixed JS-positioned dropdown (which conflicts with the sheet). The
      list is the only scrolling area; search stays on top, chips at the bottom. */

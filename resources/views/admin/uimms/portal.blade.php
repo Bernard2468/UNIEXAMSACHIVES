@@ -940,11 +940,16 @@
 @media (max-width: 767px) {
   /* ── FULL-WIDTH FIX ── the content column was collapsing to a shrink-wrapped
      left column (dead space on the right). Force it (and its wrappers) to fill. */
+  /* Bootstrap's .row has -15px side margins that are normally offset by the
+     container's 15px padding. We zeroed that padding, so the row now overflows/
+     shifts — zero the OUTER row's margins to fix the "squished/shifted" look. */
+  .dashboard > .container-fluid > .row { margin-left: 0 !important; margin-right: 0 !important; }
   .dashboard .row > .col-xl-9.col-lg-9.col-md-12 {
     flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important;
     padding-left: 0 !important; padding-right: 0 !important;
   }
-  .dashboard__message__content__main { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 16px !important; }
+  /* One clean, meaningful 14px gutter — nothing else adds side padding */
+  .dashboard__message__content__main { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 14px !important; }
   .dashboard__message__content__main > * { max-width: 100% !important; }
   .dashboard__meessage__wraper { width: 100% !important; }
   .dashboard__meessage__wraper .row { margin-left: 0 !important; margin-right: 0 !important; }

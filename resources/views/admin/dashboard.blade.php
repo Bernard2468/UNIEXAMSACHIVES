@@ -1010,6 +1010,38 @@
             font-size: 18px;
         }
     }
+
+/* ════════════════════════════════════════════════════════════
+   DASHBOARD — MOBILE-APP PASS (≤767): edge-to-edge (14px gutter, no squish),
+   compact 2×2 metric tiles. Same pattern as the compose/memo pages.
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* De-squish: kill container padding + Bootstrap's unoffset -15px row margins,
+     then one clean 14px gutter on the content wrapper (transparent, like compose). */
+  .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
+  .dashboard > .container-fluid > .row { margin-left: 0 !important; margin-right: 0 !important; }
+  .dashboard .row > .col-xl-9.col-lg-9.col-md-12 {
+    flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important;
+    padding-left: 0 !important; padding-right: 0 !important;
+  }
+  .dashboard__content__wraper { padding: 0 14px !important; background: transparent !important; box-shadow: none !important; border: none !important; }
+
+  /* Metric counters → a compact 2×2 tile grid (were full-width stacked) */
+  .row.counter-cards { margin-left: -5px !important; margin-right: -5px !important; }
+  .row.counter-cards > [class*="col-"] {
+    flex: 0 0 50% !important; max-width: 50% !important; width: 50% !important;
+    padding-left: 5px !important; padding-right: 5px !important; display: flex;
+  }
+  .dashboard__single__counter {
+    padding: 16px !important; margin-bottom: 10px !important;
+    border-radius: 14px; width: 100%; height: 100%; background: #fff !important;
+  }
+  .counterarea__text__wraper { gap: 12px; margin-bottom: 0 !important; }
+  .counterarea__text__wraper .counter__img { margin-right: 0 !important; flex-shrink: 0; }
+  .counter__img img, .counter__img i { width: 40px !important; height: 40px !important; font-size: 34px !important; object-fit: contain; }
+  .counterarea__text__wraper .counter__content__wraper .counter__number { font-size: 24px !important; }
+  .counter__content__wraper p { font-size: 12px !important; }
+}
 </style>
 @endpush
 

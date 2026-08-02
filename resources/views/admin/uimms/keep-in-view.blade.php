@@ -342,11 +342,12 @@
    ════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
   /* Full-width fix (same as portal) */
+  .dashboard > .container-fluid > .row { margin-left: 0 !important; margin-right: 0 !important; }
   .dashboard .row > .col-xl-9.col-lg-9.col-md-12 {
     flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important;
     padding-left: 0 !important; padding-right: 0 !important;
   }
-  .dashboard__message__content__main { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 16px !important; }
+  .dashboard__message__content__main { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 14px !important; }
   .dashboard__message__content__main > * { max-width: 100% !important; }
   .dashboard__meessage__wraper { width: 100% !important; }
   .dashboard__meessage__wraper .row { margin-left: 0 !important; margin-right: 0 !important; }
