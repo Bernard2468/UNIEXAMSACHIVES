@@ -129,8 +129,8 @@
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
-    justify-content: flex-start;
-    gap: 28px 48px;
+    justify-content: center;
+    gap: 28px 56px;
     padding: 36px 0 28px;
     border-bottom: 1.5px solid #eceff3;
 }
@@ -347,7 +347,12 @@
 
 /* Mobile ≤767 */
 @media (max-width: 767px) {
-    .ft-cols { flex-direction: column; gap: 24px; }
+    .ft-cols {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 24px;
+    }
     .ft-col--nav,
     .ft-col--support {
         flex: 1 1 auto;
