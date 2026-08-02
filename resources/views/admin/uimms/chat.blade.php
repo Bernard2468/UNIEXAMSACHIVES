@@ -1205,16 +1205,15 @@
                                                         @endif
                                                     @endif
                                                 </div>
-                                                <div class="message-header-right">
-                                                    <span class="message-time">{{ $message->created_at->format('M d, Y H:i') }}</span>
-                                                    @if($message->user_id === auth()->id() && !in_array($memo->memo_status, ['completed', 'archived']))
+                                                @if($message->user_id === auth()->id() && !in_array($memo->memo_status, ['completed', 'archived']))
+                                                    <div class="message-header-right">
                                                         <button type="button" class="message-delete-btn"
                                                                 onclick="deleteMessage({{ $message->id }}, this)"
                                                                 title="Delete message">
                                                             <i class="icofont-trash"></i>
                                                         </button>
-                                                    @endif
-                                                </div>
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="message-text">{!! $message->message !!}</div>
                                             @if($message->attachments && count($message->attachments) > 0)
@@ -1280,6 +1279,9 @@
                                                     @endforeach
                                                 </div>
                                             @endif
+                                            <div class="message-footer">
+                                                <span class="message-time">{{ $message->created_at->format('M d, Y H:i') }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach
@@ -2968,7 +2970,7 @@
     margin-bottom: 5px;
     font-size: 0.8rem;
     opacity: 0.8;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
 }
 
@@ -2992,6 +2994,21 @@
     align-items: center;
     gap: 6px;
     flex-shrink: 0;
+}
+
+/* WhatsApp/Telegram-style: timestamp lives inside the bubble, bottom-right */
+.message-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 4px;
+    line-height: 1;
+}
+
+.message-time {
+    font-size: 0.7rem;
+    opacity: 0.65;
+    white-space: nowrap;
 }
 
 .message-delete-btn {
@@ -4569,7 +4586,6 @@ function addMessageToChat(message) {
                         ${replyModeDisplay}
                     </div>
                     <div class="message-header-right">
-                        <span class="message-time">${new Date(message.created_at).toLocaleString()}</span>
                         <button type="button" class="message-delete-btn"
                                 onclick="deleteMessage(${message.id}, this)"
                                 title="Delete message">
@@ -4579,6 +4595,9 @@ function addMessageToChat(message) {
                 </div>
                 <div class="message-text">${message.message || ''}</div>
                 ${attachmentsHtml}
+                <div class="message-footer">
+                    <span class="message-time">${new Date(message.created_at).toLocaleString()}</span>
+                </div>
             </div>
         </div>
     `;
@@ -4741,7 +4760,7 @@ function addNewMessageToChat(message) {
     
     const messageClass = isOwnMessage ? 'message-sent' : 'message-received';
     const deleteBtnHtml = isOwnMessage
-        ? `<button type="button" class="message-delete-btn" onclick="deleteMessage(${message.id}, this)" title="Delete message"><i class="icofont-trash"></i></button>`
+        ? `<div class="message-header-right"><button type="button" class="message-delete-btn" onclick="deleteMessage(${message.id}, this)" title="Delete message"><i class="icofont-trash"></i></button></div>`
         : '';
     const messageHtml = `
         <div class="message ${messageClass} new-message" data-reply-id="${message.id}">
@@ -4755,13 +4774,13 @@ function addNewMessageToChat(message) {
                         <span class="message-sender">${message.user.first_name} ${message.user.last_name}</span>
                         ${replyModeDisplay}
                     </div>
-                    <div class="message-header-right">
-                        <span class="message-time">${new Date(message.created_at).toLocaleString()}</span>
-                        ${deleteBtnHtml}
-                    </div>
+                    ${deleteBtnHtml}
                 </div>
                 <div class="message-text">${message.message || ''}</div>
                 ${attachmentsHtml}
+                <div class="message-footer">
+                    <span class="message-time">${new Date(message.created_at).toLocaleString()}</span>
+                </div>
             </div>
         </div>
     `;
