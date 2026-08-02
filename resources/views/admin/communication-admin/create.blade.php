@@ -318,6 +318,11 @@
                                         </div>
 
                                         <div id="user-selector" class="user-selector" style="display: none;">
+                                            {{-- Mobile bottom-sheet top bar (hidden on desktop) --}}
+                                            <div class="rcp-sheet-topbar">
+                                                <span class="rcp-sheet-title">Select recipients</span>
+                                                <button type="button" class="rcp-sheet-done" onclick="closeRecipientSheet()">Done</button>
+                                            </div>
                                             <div class="user-selector-header">
                                                 <div class="search-container">
                                                     <div class="search-input-wrapper">
@@ -391,6 +396,8 @@
                                                 </button>
                                             </div>
                                         </div>
+                                        {{-- Dim backdrop for the mobile recipient bottom-sheet --}}
+                                        <div class="rcp-sheet-backdrop" onclick="closeRecipientSheet()" aria-hidden="true"></div>
 
                                                 {{-- ===== CC SECTION ===== --}}
                                                 <div class="cc-form-group mt-3">
@@ -2518,6 +2525,10 @@
   }
 }
 
+/* Recipient bottom-sheet — scaffolding hidden on desktop/tablet */
+.rcp-sheet-topbar { display: none; }
+.rcp-sheet-backdrop { display: none; }
+
 /* ============================================================
    COMPOSE — MOBILE APP-LIKE PASS (official breakpoint, ≤767)
    Layers on the 768/576 rules above. Goals: no-zoom inputs, a
@@ -2577,10 +2588,67 @@
 
   /* User / Cc picker — calmer, roomier rows; drop the noisy status line
      and clamp long emails so text never crowds the row */
-  .user-selector-header { padding: 16px; }
   .user-status { display: none; }
   .user-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .user-list-container { max-height: 48vh; }
+
+  /* ── Recipient selection = a BOTTOM-SHEET contact picker (app pattern) ──
+     #user-selector is shown/hidden by the existing radio JS; here we present
+     it as a slide-up sheet. Visibility is driven by the transform + backdrop
+     (added by JS), so `display:flex !important` beats the JS inline display. */
+  #user-selector {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    left: 0; right: 0; bottom: 0; top: auto;
+    z-index: 1055;
+    margin: 0 !important;
+    border-radius: 20px 20px 0 0;
+    max-height: 88dvh;
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+    box-shadow: 0 -18px 50px rgba(15, 23, 42, .3);
+  }
+  #user-selector.rcp-sheet-open { transform: translateY(0); }
+
+  .rcp-sheet-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    flex: 0 0 auto;
+    padding: 18px 16px 12px;
+    background: #fff;
+    border-bottom: 1px solid #eef1f6;
+  }
+  .rcp-sheet-topbar::before {
+    content: '';
+    position: absolute;
+    top: 7px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 4px; border-radius: 999px; background: #e2e8f0;
+  }
+  .rcp-sheet-title { font-weight: 700; font-size: 15px; color: #0f172a; }
+  .rcp-sheet-done {
+    border: none; background: #1a4a9b; color: #fff; font-weight: 600;
+    padding: 8px 20px; border-radius: 999px; font-size: 14px; cursor: pointer;
+  }
+
+  /* Inside the sheet: search fixed on top, list scrolls, actions fixed */
+  #user-selector .user-selector-header { flex: 0 0 auto; padding: 16px; }
+  #user-selector .user-list-container { flex: 1 1 auto; max-height: none; min-height: 120px; }
+  #user-selector .user-actions { flex: 0 0 auto; }
+
+  .rcp-sheet-backdrop {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, .5);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    z-index: 1054;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .3s ease, visibility .3s ease;
+  }
+  .rcp-sheet-backdrop.is-open { opacity: 1; visibility: visible; pointer-events: auto; }
+  body.rcp-sheet-lock { overflow: hidden; }
 
   /* Primary actions become full-width, thumb-sized */
   .form-actions { flex-direction: column; gap: 10px; }
@@ -3459,5 +3527,65 @@ function toggleCommittees() {
     caret.classList.toggle('open', !open);
     btn.setAttribute('aria-expanded', String(!open));
 }
+</script>
+
+<script>
+/* ═══ Recipient bottom-sheet (mobile ≤767 only) ═══
+   Presents #user-selector as a slide-up "contact picker" sheet on phones.
+   Reuses the existing checkboxes + radio JS untouched — this only manages the
+   sheet's open/close, so the form still submits selected_users[] identically. */
+(function () {
+    var mq = window.matchMedia('(max-width: 767px)');
+    function ready(fn){ if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+
+    ready(function () {
+        var sheet = document.getElementById('user-selector');
+        if (!sheet) return;
+        var backdrop      = document.querySelector('.rcp-sheet-backdrop');
+        var selectedRadio = document.getElementById('selected_users');
+        var selectedLabel = document.querySelector('label[for="selected_users"]');
+        var allRadio      = document.getElementById('all_users');
+
+        function open() {
+            if (!mq.matches) return;                 // desktop/tablet: leave the inline selector alone
+            sheet.classList.add('rcp-sheet-open');
+            if (backdrop) backdrop.classList.add('is-open');
+            document.body.classList.add('rcp-sheet-lock');
+        }
+        function close() {
+            sheet.classList.remove('rcp-sheet-open');
+            if (backdrop) backdrop.classList.remove('is-open');
+            document.body.classList.remove('rcp-sheet-lock');
+            updateSummary();
+        }
+        function updateSummary() {
+            if (!mq.matches || !selectedRadio) return;   // only touch the card text on mobile
+            var card = selectedRadio.closest('.option-card');
+            var desc = card ? card.querySelector('.option-desc') : null;
+            if (!desc) return;
+            if (!desc.getAttribute('data-default')) desc.setAttribute('data-default', desc.textContent.trim());
+            var n = sheet.querySelectorAll('.user-checkbox:checked').length;
+            desc.textContent = n > 0 ? (n + ' user' + (n === 1 ? '' : 's') + ' selected') : desc.getAttribute('data-default');
+        }
+
+        window.openRecipientSheet  = open;
+        window.closeRecipientSheet = close;
+
+        if (selectedRadio) selectedRadio.addEventListener('change', function () { if (this.checked) open(); });
+        if (selectedLabel) selectedLabel.addEventListener('click', function () {
+            if (selectedRadio && selectedRadio.checked) setTimeout(open, 0);
+        });
+        if (allRadio) allRadio.addEventListener('change', function () { if (this.checked) close(); });
+
+        sheet.addEventListener('change', function (e) {
+            if (e.target && e.target.classList && e.target.classList.contains('user-checkbox')) updateSummary();
+        });
+
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+        if (mq.addEventListener) mq.addEventListener('change', function () { if (!mq.matches) close(); });
+
+        updateSummary();
+    });
+})();
 </script>
 @endsection
