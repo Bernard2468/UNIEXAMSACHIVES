@@ -3888,9 +3888,23 @@
     padding: 0;
   }
   #inline-recipients-selector.rcp-sheet-open { transform: translateY(0); }
-  #inline-recipients-selector .recipients-dropdown { flex: 0 0 auto; padding: 12px 14px 0; }
-  #inline-recipients-selector .recipients-dropdown-menu { max-height: 46vh; overflow-y: auto; }
-  #inline-recipients-selector .selected-recipients { flex: 0 0 auto; padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); }
+  /* The recipients list is a FLAT, always-visible checklist inside the sheet —
+     NOT the fixed JS-positioned dropdown (which conflicts with the sheet). The
+     list is the only scrolling area; search stays on top, chips at the bottom. */
+  #inline-recipients-selector .recipients-dropdown {
+    flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 12px 14px 0;
+  }
+  #inline-recipients-selector .recipients-input-wrapper { flex: 0 0 auto; }
+  #inline-recipients-selector .recipients-dropdown-menu {
+    position: static !important;   /* was position:fixed — that's the conflict */
+    display: block !important;     /* always visible flat list, no dropdown toggle */
+    width: 100% !important;
+    flex: 1 1 auto; min-height: 0; max-height: none !important; overflow-y: auto;
+    border: none; box-shadow: none; margin-top: 8px; z-index: auto;
+  }
+  #inline-recipients-selector .selected-recipients {
+    flex: 0 0 auto; padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid #eef1f6;
+  }
   #inline-recipients-selector #recipients-search { font-size: 16px; }   /* no iOS zoom */
 
   .rcp-sheet-topbar {
@@ -3925,27 +3939,32 @@
     position: fixed; left: 0; right: 0; bottom: 0; top: auto;
     margin: 0; width: 100%; max-width: 100%;
   }
+  /* Flex-column sheet: ONLY the user list scrolls; the search, the optional
+     message and the footer stay put — so the message is never buried. */
   #assignModal .modal-content {
+    display: flex; flex-direction: column;
     border: none; border-radius: 20px 20px 0 0;
-    max-height: 90dvh;
+    max-height: 92dvh;
     box-shadow: 0 -18px 50px rgba(15, 23, 42, .3);
   }
   /* Slide up from the bottom (override Bootstrap's default drop-in transform) */
   #assignModal.fade .modal-dialog { transform: translateY(100%); transition: transform .32s cubic-bezier(.4, 0, .2, 1); }
   #assignModal.show .modal-dialog { transform: translateY(0); }
   /* Grab handle on the header */
-  #assignModal .modal-header { position: relative; padding-top: 20px; }
+  #assignModal .modal-header { flex: 0 0 auto; position: relative; padding-top: 20px; }
   #assignModal .modal-header::before {
     content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
     width: 40px; height: 4px; border-radius: 999px; background: #e2e8f0;
   }
-  /* List scrolls inside; footer pinned so Assign/Cancel are always reachable */
-  #assignModal .modal-body { overflow-y: auto; }
-  #assignModal .am-user-list { max-height: 40vh; overflow-y: auto; }
-  #assignModal .modal-footer {
-    position: sticky; bottom: 0; background: #fff;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  }
+  #assignModal form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #assignModal .modal-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  /* the "Assign to User(s)" block grows and holds the scrolling list */
+  #assignModal .modal-body > .mb-3:first-child { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #assignModal .am-user-list { flex: 1 1 auto; min-height: 120px; max-height: none !important; overflow-y: auto; }
+  /* the optional message block never grows/shrinks away */
+  #assignModal .modal-body > .mb-3:last-child { flex: 0 0 auto; margin-bottom: 0; }
+  #assignModal .modal-body textarea { min-height: 56px; }
+  #assignModal .modal-footer { flex: 0 0 auto; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
   #assignModal #user-search-input,
   #assignModal textarea { font-size: 16px; }   /* ≥16px so iOS doesn't zoom */
 }
