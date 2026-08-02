@@ -1363,109 +1363,131 @@ select.animated-input::-webkit-scrollbar-thumb:hover {
   height: 300px;
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
+/* ============================================================
+   AUTH PAGES — RESPONSIVE  (official breakpoints)
+   Mobile 0–767 · Tablet 768–1023 · Desktop 1024–1439 · Large 1440+
+   Same features on every device; only density + chrome change.
+   ============================================================ */
+
+/* ---- Tablet & below (≤1023px): stack the two panels ---- */
+@media (max-width: 1023px) {
   .modern-auth-container {
     flex-direction: column;
+    height: auto;
+    /* let the page scroll vertically (fixes clipped forms on short screens)
+       while still clipping the decorative orbit horizontally */
+    overflow-x: hidden;
+    overflow-y: visible;
   }
-  
+
   .auth-left-side {
-    padding: 2rem;
-    min-height: 350px;
+    flex: 0 0 auto;
+    padding: 2.5rem 2rem;
+    min-height: 320px;
   }
-  
+
   .auth-right-side {
-    border-radius: 24px;
-    margin: 1.5rem;
+    flex: 1 1 auto;
+    border-radius: 28px 28px 0 0;
+    margin: 0;
     padding: 2.5rem;
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.18);
   }
-  
-  .orbit-container {
-    width: 400px;
-    height: 400px;
-  }
-  
-  .orbit-path {
-    width: 300px;
-    height: 300px;
-  }
-  
-  .orbit-icon {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .orbit-icon i {
-    font-size: 24px;
-  }
-  
-  .orbit-title {
-    font-size: 3rem;
-  }
-  
+
+  .orbit-container { width: 380px; height: 380px; }
+  .orbit-path     { width: 300px; height: 300px; }
+  .orbit-icon     { width: 58px;  height: 58px; }
+  .orbit-icon i   { font-size: 22px; }
+  .orbit-title    { font-size: 2.5rem; }
   .orbit-subtitle {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-    min-height: 1.8rem;
+    font-size: 1.35rem;
+    margin-bottom: 1.25rem;
+    min-height: 1.7rem;
   }
 }
 
-@media (max-width: 768px) {
+/* ---- Mobile (≤767px): real, app-like experience ---- */
+@media (max-width: 767px) {
+  .modern-auth-container {
+    min-height: 100vh;
+    min-height: 100dvh;            /* true mobile viewport height */
+  }
+
+  /* Slim branded header — drop the heavy orbit/ripple animation on phones */
   .auth-left-side {
-    min-height: 200px;
+    min-height: 0;
+    padding: 2.25rem 1.5rem 2.75rem;
+    text-align: center;
   }
-  
+  .auth-left-side .ripple-background,
+  .auth-left-side .orbit-container {
+    display: none;
+  }
+  .tech-orbit-display { padding: 0; }
   .orbit-title {
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
+    font-size: 1.55rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
   }
-  
   .orbit-subtitle {
-    font-size: 1.2rem;
-    margin-bottom: 1.5rem;
-    min-height: 1.5rem;
+    font-size: 1rem;
+    margin-bottom: 0;
+    min-height: 1.4rem;
   }
-  
+
+  /* The form rises as a rounded sheet over the brand band */
+  .auth-right-side {
+    margin: -1.5rem 0 0;
+    padding: 1.75rem 1.25rem 2.25rem;
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 2;
+  }
+
+  .auth-tabs { max-width: 100%; }
+  .auth-tabs .tab-buttons { margin-bottom: 1.75rem; }
+  .auth-tabs .tab-btn { padding: 13px 16px; font-size: 0.95rem; }
+
+  /* The sheet IS the card — flatten the inner card chrome so it isn't card-in-card */
   .form-container {
-    padding: 1.5rem;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    border: none;
   }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .tab-buttons {
-    margin-bottom: 1.5rem;
-  }
-  
-  .auth-tabs .tab-btn {
-    padding: 10px 16px;
-    font-size: 0.9rem;
-  }
+  .form-header { margin-bottom: 1.75rem; }
+  .form-title { font-size: 1.6rem; }
+  .form-subtitle { font-size: 0.95rem; }
+
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+  .input-container { margin-bottom: 1.1rem; }
+  .animated-input { padding: 16px 18px; border-radius: 14px; }
+
+  .submit-btn { min-height: 54px; }
+
+  .admin-portal-notice { padding: 10px 14px; }
+  .admin-portal-notice p { font-size: 0.82rem; }
 }
 
-@media (max-width: 480px) {
-  .auth-left-side,
-  .auth-right-side {
-    padding: 1rem;
+/* ---- Large desktop (≥1440px): a touch more presence ---- */
+@media (min-width: 1440px) {
+  .auth-right-side { padding: 4rem; }
+  .auth-tabs { max-width: 480px; }
+  .orbit-title { font-size: 4rem; }
+}
+
+/* ---- Accessibility: honour reduced-motion preferences ---- */
+@media (prefers-reduced-motion: reduce) {
+  .ripple-circle,
+  .orbit-icon,
+  .auth-tabs .auth-form-panel.active {
+    animation: none !important;
   }
-  
-  .form-container {
-    padding: 1rem;
-  }
-  
-  .form-title {
-    font-size: 1.5rem;
-  }
-  
-  .orbit-container {
-    width: 250px;
-    height: 250px;
-  }
-  
-  .orbit-path {
-    width: 180px;
-    height: 180px;
+  .crest-image,
+  .animated-input,
+  .submit-btn {
+    transition: none !important;
   }
 }
 .uda-btn {
