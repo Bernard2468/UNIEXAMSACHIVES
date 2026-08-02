@@ -197,12 +197,13 @@
                                         <div class="uda-user-dropdown__sep"></div>
                                         <div class="uda-user-dropdown__label">Quick actions</div>
                                         <nav class="uda-user-dropdown__nav">
+                                            {{-- Same exam/file icons as the desktop "+ Create" dropdown, for consistency --}}
                                             <a href="{{ route('dashboard.create') }}">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                                                <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226060/1e7ab43a-082a-4fa2-bf5d-8cad70910469.png" alt="" aria-hidden="true">
                                                 Add Exam
                                             </a>
                                             <a href="{{ route('dashboard.file.create') }}">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                                                <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226720/a0bc05b8-6e1d-4338-b9bd-189fe64f6c6b.png" alt="" aria-hidden="true">
                                                 Add File
                                             </a>
                                             <button type="button" onclick="var p=this.closest('[data-uda-menu-panel]'); if(p){p.hidden=true;} if(typeof openCalendarModal==='function'){openCalendarModal();}">
@@ -975,6 +976,9 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     .uda-user-dropdown__nav a svg,
     .uda-user-dropdown__nav button svg,
     .uda-user-dropdown__logout svg { width: 19px; height: 19px; }
+    /* Image icons (Add Exam / Add File — same assets as the desktop Create menu),
+       sized to sit level with the 19px stroke icons around them */
+    .uda-user-dropdown__nav a img { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
 
     /* Dim backdrop behind the sheet (shown while the menu panel is open) */
     .uda-sheet-backdrop {
