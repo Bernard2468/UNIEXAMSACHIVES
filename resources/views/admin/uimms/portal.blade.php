@@ -931,6 +931,42 @@
                                             opacity: 0.6;
                                             cursor: not-allowed;
                                         }
+
+/* ════════════════════════════════════════════════════════════
+   MEMOS PORTAL — MOBILE-APP PASS (≤767), consistent with the memo pages:
+   16px gutter, shorter title, a compact 2×2 stat grid, compact toolbar/chips,
+   and tidy memo cards with trimmed text.
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
+  .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
+  .dashboard__message__content__main { padding-left: 16px !important; padding-right: 16px !important; }
+
+  /* Shorter, non-giant page title */
+  .dashboard__message__content__main__title h3 { font-size: 18px !important; margin-bottom: 14px !important; line-height: 1.3; }
+
+  /* Status cards → compact 2×2 grid (icon + count) */
+  .row > [class*="col-"]:has(.uimms-card) { flex: 0 0 50%; max-width: 50%; padding-left: 5px; padding-right: 5px; }
+  .row:has(.uimms-card) { margin-left: -5px !important; margin-right: -5px !important; }
+  .dashboard__card__content { padding: 14px !important; flex-direction: row !important; text-align: left !important; }
+  .dashboard__card__icon { font-size: 24px !important; margin: 0 10px 0 0 !important; }
+  .dashboard__card__text h5 { font-size: 0.74rem !important; margin: 0 0 2px !important; }
+  .dashboard__card__text h3 { font-size: 1.5rem !important; }
+  .dashboard__card__text p { display: none; }   /* "Pending conversations" sub-line is noise on mobile */
+
+  /* Toolbar + sub-tabs compact */
+  .memos-toolbar { padding: 12px 14px !important; gap: 8px; flex-wrap: wrap; }
+  .memos-badge { font-size: 0.8rem !important; padding: 6px 12px !important; }
+  .pending-sub-tabs { margin-left: 0 !important; }
+  .pending-sub-tab { padding: 6px 12px !important; font-size: 0.8rem !important; }
+  .memos-actions { gap: 8px; }
+
+  /* Memo cards: comfortable padding, trimmed one-line subject/sender */
+  .dashboard__meessage__contact__wrap { padding: 12px 14px !important; gap: 12px; }
+  .dashboard__meessage__chat__img img { width: 40px !important; height: 40px !important; }
+  .memo-subject,
+  .dashboard__meessage__meta h5 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
                                         </style>
 
                                         <script>

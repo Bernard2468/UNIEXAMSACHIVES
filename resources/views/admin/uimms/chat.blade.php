@@ -3782,6 +3782,80 @@
     color: #666;
     font-size: 0.9rem;
 }
+
+/* ════════════════════════════════════════════════════════════
+   MEMO CHAT — REAL MOBILE-APP PASS (≤767)
+   Messaging-app feel: 16px gutter (consistent with the memo list/compose),
+   an inner-scrolling thread (keeps the load-scroll-to-newest JS working),
+   a STICKY bottom composer (WhatsApp/GitHub), wider bubbles, compact
+   attachments, and trimmed long text. Desktop/tablet untouched.
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* De-squish → the same meaningful 16px gutter as the other memo pages */
+  .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
+  .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
+  .dashboard__content__wraper { padding: 0 16px !important; background: transparent !important; box-shadow: none !important; border: none !important; }
+
+  /* Subject/title never runs off — clamp to two lines */
+  .chat-title {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Thread: a comfortable, app-sized inner-scroll region */
+  .chat-container {
+    height: 56vh;
+    padding: 14px 8px;
+    border-left: none; border-right: none; border-radius: 0;
+  }
+  .chat-messages { gap: 12px; }
+
+  /* Bubbles use the width like a real chat app; smaller avatars */
+  .message { max-width: 88%; gap: 8px; }
+  .message-avatar img { width: 30px; height: 30px; }
+  .message-content { padding: 9px 12px; border-radius: 16px; }
+  .message-header { font-size: 0.72rem; gap: 6px; }
+  .message-sender { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; }
+  .reply-to-indicator {
+    display: inline-block; vertical-align: bottom; max-width: 34vw;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .message-time { font-size: 0.68rem; }
+  .message-text { font-size: 14.5px; }
+
+  /* Composer STICKS to the bottom of the screen — always reachable */
+  .chat-input-container {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid #e6e9ee;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+    border-radius: 0;
+  }
+  .reply-mode-selector {
+    gap: 6px; margin-bottom: 10px;
+    flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+  }
+  .reply-mode-selector::-webkit-scrollbar { display: none; }
+  .reply-mode-btn { padding: 7px 12px; font-size: 0.8rem; white-space: nowrap; flex: 0 0 auto; }
+
+  .telegram-style-input { padding: 6px; }
+  .attachment-btn, .send-btn { width: 38px; height: 38px; flex: 0 0 auto; }
+  .input-field-wrapper { padding: 6px 8px; }
+  .input-field-wrapper textarea { font-size: 16px; }   /* ≥16px so iOS doesn't zoom */
+
+  /* Attachments (original memo + message file cards): compact, never overflow */
+  .memo-attachments { gap: 8px; }
+  .attachment-item { padding: 10px 12px; }
+  .attachment-name {
+    display: inline-block; vertical-align: bottom; max-width: 52vw;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .attachment-image { max-width: 78vw !important; }
+
+  .chat-blocked-container { padding: 28px 16px; }
+}
 </style>
 
 <script>

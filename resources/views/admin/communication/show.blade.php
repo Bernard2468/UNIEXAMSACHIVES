@@ -673,6 +673,24 @@
     .memo-view .mv-actions { width: 100%; }
     .memo-view .mv-topbar { gap: 12px; }
 }
+
+/* ── Official mobile breakpoint (≤767): meaningful 16px gutter + extend the
+   phone treatment up from 600 so mid-size phones get it too. Consistent with
+   the rest of the memo system. ── */
+@media (max-width: 767px) {
+    .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
+    .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
+    .dashboard__content__wraper { padding: 0 16px !important; background: transparent !important; box-shadow: none !important; border: none !important; }
+
+    .memo-view .mv-hero, .memo-view .mv-card { padding: 16px; }
+    .memo-view .mv-title { font-size: 21px; }
+    .memo-view .mv-stat-grid { grid-template-columns: 1fr 1fr; }
+    .memo-view .mv-rrow { grid-template-columns: 36px minmax(0,1fr) auto; row-gap: 4px; }
+    .memo-view .mv-rrow .ava { width: 36px; height: 36px; }
+    .memo-view .mv-rrow .rwhen { display: none; }
+    .memo-view .mv-actions { width: 100%; flex-wrap: wrap; }
+    .memo-view .mv-topbar { gap: 12px; flex-wrap: wrap; }
+}
 </style>
 
 <script>

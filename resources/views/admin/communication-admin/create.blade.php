@@ -427,6 +427,11 @@
                                                     </div>
 
                                                     <div id="cc-section" class="cc-section" style="display:none;">
+                                                        {{-- Mobile bottom-sheet top bar (hidden on desktop) --}}
+                                                        <div class="rcp-sheet-topbar">
+                                                            <span class="rcp-sheet-title">Add Cc recipients</span>
+                                                            <button type="button" class="rcp-sheet-done" onclick="closeCcSheet()">Done</button>
+                                                        </div>
                                                         <div class="user-selector-header">
                                                             <div class="search-container">
                                                                 <div class="search-input-wrapper">
@@ -488,6 +493,8 @@
                                                             </button>
                                                         </div>
                                                     </div>
+                                                    {{-- Dim backdrop for the mobile Cc bottom-sheet --}}
+                                                    <div class="rcp-sheet-backdrop" id="cc-sheet-backdrop" onclick="closeCcSheet()" aria-hidden="true"></div>
                                                 </div>
                                                 {{-- ===== END CC SECTION ===== --}}
 
@@ -2689,6 +2696,21 @@
   #user-selector .user-list-container { flex: 1 1 auto; max-height: none; min-height: 120px; }
   #user-selector .user-actions { flex: 0 0 auto; }
 
+  /* Cc picker uses the SAME bottom-sheet mechanics — scoped to #cc-section by ID
+     so the Through panel (which also uses .cc-section) is left untouched. */
+  #cc-section {
+    display: flex !important; flex-direction: column;
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+    z-index: 1055; margin: 0 !important;
+    border-radius: 20px 20px 0 0; max-height: 88dvh; overflow: hidden;
+    transform: translateY(100%); transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+    box-shadow: 0 -18px 50px rgba(15, 23, 42, .3);
+  }
+  #cc-section.rcp-sheet-open { transform: translateY(0); }
+  #cc-section .user-selector-header { flex: 0 0 auto; padding: 16px; }
+  #cc-section .user-list-container { flex: 1 1 auto; max-height: none; min-height: 120px; }
+  #cc-section .user-actions { flex: 0 0 auto; }
+
   .rcp-sheet-backdrop {
     display: block;
     position: fixed; inset: 0;
@@ -3443,9 +3465,32 @@ document.addEventListener('DOMContentLoaded', function () {
 function toggleCcSection() {
     const sec = document.getElementById('cc-section');
     const btn = document.getElementById('cc-toggle-btn');
+    // On phones the Cc picker is a bottom-sheet (same pattern as the To picker).
+    if (window.matchMedia('(max-width: 767px)').matches) {
+        const willOpen = !sec.classList.contains('rcp-sheet-open');
+        const backdrop = document.getElementById('cc-sheet-backdrop');
+        sec.classList.toggle('rcp-sheet-open', willOpen);
+        if (backdrop) backdrop.classList.toggle('is-open', willOpen);
+        document.body.classList.toggle('rcp-sheet-lock', willOpen);
+        sec.style.display = willOpen ? 'block' : 'none';
+        btn.innerHTML = willOpen
+            ? '<i class="icofont-minus-circle"></i> Hide Cc'
+            : '<i class="icofont-plus-circle"></i> Add Cc Recipients';
+        return;
+    }
     const open = sec.style.display !== 'none';
     sec.style.display = open ? 'none' : 'block';
     btn.innerHTML = open ? '<i class="icofont-plus-circle"></i> Add Cc Recipients' : '<i class="icofont-minus-circle"></i> Hide Cc';
+}
+
+function closeCcSheet() {
+    const sec = document.getElementById('cc-section');
+    const btn = document.getElementById('cc-toggle-btn');
+    const backdrop = document.getElementById('cc-sheet-backdrop');
+    if (sec) { sec.classList.remove('rcp-sheet-open'); sec.style.display = 'none'; }
+    if (backdrop) backdrop.classList.remove('is-open');
+    document.body.classList.remove('rcp-sheet-lock');
+    if (btn) btn.innerHTML = '<i class="icofont-plus-circle"></i> Add Cc Recipients';
 }
 function filterCcList() {
     const q = document.getElementById('cc-search').value.toLowerCase();
