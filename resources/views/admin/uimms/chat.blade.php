@@ -140,19 +140,24 @@
                             {{-- Separator Line --}}
                             <div class="chat-header-separator"></div>
                             
-                            {{-- Bottom Section: Subject and Participants --}}
+                            {{-- Bottom Section: Participants only. The subject is intentionally NOT
+                                 shown here — it already appears in the memo's formal header
+                                 (TO/FROM/SUBJECT/DATE) below, so a second copy at the top is redundant. --}}
                             <div class="chat-header-bottom">
-                                <div class="chat-title">
-                                    Subject: <h4>{{ $memo->subject }}</h4>
-                                </div>
+                                @php $recipientCount = $memo->recipients->count(); @endphp
                                 <div class="chat-participants">
-                                    @foreach($memo->recipients as $participant)
-                                        <img src="{{ $participant->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}" 
-                                             alt="{{ $participant->user->first_name }}" 
-                                             class="participant-avatar"
-                                             title="{{ $participant->user->first_name }} {{ $participant->user->last_name }}">
-                                    @endforeach
-                                    <span class="recipients-count">{{ $memo->recipients->count() }} Recipients</span>
+                                    {{-- Avatars are only rendered for 5 or fewer recipients (so we never
+                                         list 100 avatars / fire 100 image requests). They're also hidden
+                                         on mobile via CSS. The "N Recipients" count always shows. --}}
+                                    @if($recipientCount <= 5)
+                                        @foreach($memo->recipients as $participant)
+                                            <img src="{{ $participant->user->profile_picture_url ?? asset('profile_pictures/default-profile.png') }}"
+                                                 alt="{{ $participant->user->first_name }}"
+                                                 class="participant-avatar"
+                                                 title="{{ $participant->user->first_name }} {{ $participant->user->last_name }}">
+                                        @endforeach
+                                    @endif
+                                    <span class="recipients-count">{{ $recipientCount }} Recipients</span>
                                 </div>
                             </div>
                         </div>
@@ -3812,6 +3817,8 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  /* Recipient avatars never show on mobile (the "N Recipients" count still does) */
+  .chat-participants .participant-avatar { display: none !important; }
 
   /* Thread: a comfortable, app-sized inner-scroll region */
   .chat-container {
