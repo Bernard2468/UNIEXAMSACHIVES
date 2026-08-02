@@ -129,8 +129,8 @@
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: 28px 64px;
+    justify-content: flex-start;
+    gap: 28px 48px;
     padding: 36px 0 28px;
     border-bottom: 1.5px solid #eceff3;
 }
