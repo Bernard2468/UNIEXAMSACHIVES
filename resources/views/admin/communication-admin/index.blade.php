@@ -1341,7 +1341,18 @@
   }
   .dashboard__section__title h4 { display: none; }
   .dashboard__section__actions { width: auto; margin: 0; }
-  .responsive-btn.compose-btn { width: auto; height: 44px; padding: 0 20px; border-radius: 999px; justify-content: center; }
+  /* A plain static pill on mobile — no press "squeeze" (:active translate) and
+     no hover width-expand animation. */
+  .responsive-btn.compose-btn,
+  .responsive-btn.compose-btn:hover,
+  .responsive-btn.compose-btn:active,
+  .responsive-btn.compose-btn:focus {
+    width: auto !important; height: 44px !important; padding: 0 20px;
+    border-radius: 999px !important; justify-content: center;
+    transform: none !important; transition: none !important;
+  }
+  .responsive-btn.compose-btn .svgWrapper,
+  .responsive-btn.compose-btn:hover .svgWrapper { width: auto !important; transition: none !important; }
 
   /* ── Stat tiles: compact 2×2 grid (was 4 giant stacked cards) ── */
   .metric-row { display: flex; flex-wrap: wrap; margin: 0 -5px 14px !important; }
