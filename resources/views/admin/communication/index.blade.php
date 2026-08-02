@@ -1330,16 +1330,18 @@
   .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
   .dashboard__content__wraper { padding: 0 16px !important; background: transparent !important; box-shadow: none !important; border: none !important; }
 
-  /* ── Header: stack the title + a clean full-width Compose button ── */
+  /* ── Header: drop the "Advanced Communication System" title on mobile (page
+     moves up) and show a neat, compact "Compose Memo" pill — auto width,
+     rounded, NOT edge-to-edge full width. ── */
   .dashboard__section__title {
     flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    margin-bottom: 16px;
+    align-items: flex-start;
+    gap: 0;
+    margin-bottom: 12px;
   }
-  .dashboard__section__title h4 { font-size: 20px; line-height: 1.25; margin: 0; }
-  .dashboard__section__actions { width: 100%; margin: 0; }
-  .responsive-btn.compose-btn { width: 100%; height: 46px; border-radius: 12px; justify-content: center; }
+  .dashboard__section__title h4 { display: none; }
+  .dashboard__section__actions { width: auto; margin: 0; }
+  .responsive-btn.compose-btn { width: auto; height: 44px; padding: 0 20px; border-radius: 999px; justify-content: center; }
 
   /* ── Stat tiles: compact 2×2 grid (was 4 giant stacked cards) ── */
   .metric-row { display: flex; flex-wrap: wrap; margin: 0 -5px 14px !important; }

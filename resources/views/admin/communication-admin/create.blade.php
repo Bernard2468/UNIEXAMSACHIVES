@@ -2557,13 +2557,18 @@
   .dashboard__content__wraper { padding: 0 16px !important; background: transparent !important; box-shadow: none !important; border: none !important; }
   .compose-panel { padding: 16px !important; border-radius: 16px; }
 
-  /* Header: page title with a compact, icon-only circular Back button above it */
-  .dashboard__section__title { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
-  .dashboard__section__title h4 { font-size: 20px; margin: 0; }
-  .dashboard__section__actions { order: -1; width: auto; margin: 0; }
-  .responsive-btn.back-btn { width: 40px; height: 40px; padding: 0; border-radius: 50%; justify-content: center; }
-  .responsive-btn.back-btn .text { display: none; }
-  .responsive-btn.back-btn .svgWrapper { width: auto; justify-content: center; margin: 0; }
+  /* Header: drop the "Compose Memo" title on mobile (frees the wasted header
+     space so the form moves up) and show a neat, compact "Back to Memos" pill —
+     auto width, rounded, NOT edge-to-edge. */
+  .dashboard__section__title { flex-direction: column; align-items: flex-start; gap: 0; margin-bottom: 10px; }
+  .dashboard__section__title h4 { display: none; }
+  .dashboard__section__actions { width: auto; margin: 0; }
+  .responsive-btn.back-btn {
+    width: auto; height: 40px; padding: 0 18px 0 14px;
+    border-radius: 999px; justify-content: center;
+  }
+  .responsive-btn.back-btn .svgWrapper { width: auto; display: inline-flex; align-items: center; margin: 0; }
+  .responsive-btn.back-btn .text { display: inline; position: static; opacity: 1; width: auto; margin-left: 8px; }
 
   /* Attachment: compact horizontal dropzone (was a huge centered block) */
   .file-upload-area { padding: 14px 16px !important; }
