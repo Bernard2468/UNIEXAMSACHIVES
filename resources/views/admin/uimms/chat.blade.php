@@ -3834,17 +3834,23 @@
   .message-time { font-size: 0.68rem; }
   .message-text { font-size: 14.5px; }
 
-  /* Composer STICKS to the bottom of the screen — always reachable */
+  /* Composer STICKS to the bottom of the screen — always reachable.
+     NOTE: no z-index here on purpose. A z-index on a sticky element creates a
+     stacking context that TRAPS the fixed Comment-to drawer inside the composer
+     (it then renders beneath the chat instead of over the whole screen). The
+     composer is last in the DOM, so it already paints above the messages. */
   .chat-input-container {
     position: sticky;
     bottom: 0;
-    z-index: 20;
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     border-top: 1px solid #e6e9ee;
     box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
     border-radius: 0;
   }
   .reply-mode-selector {
+    /* z-index:auto (keep position:relative) removes this element's stacking
+       context, which otherwise traps the fixed Comment-to drawer inside it. */
+    z-index: auto;
     gap: 6px; margin-bottom: 10px;
     flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
   }
@@ -4101,6 +4107,21 @@ function closeRecipientsSheet() {
     if (bd) bd.classList.remove('is-open');
     document.body.classList.remove('rcp-sheet-lock');
 }
+
+// ═══ Comment-to drawer: escape the composer's stacking context ═══
+// The composer is position:sticky, which ALWAYS creates a stacking context —
+// that traps the fixed drawer inside it (so it renders beneath the chat instead
+// of over the whole screen). On phones we lift the drawer + its backdrop out to
+// <body> so they live in the root stacking context and cover the full screen.
+// All their wiring is by id, and the selector sits OUTSIDE the chat form, so
+// moving it changes nothing functionally.
+document.addEventListener('DOMContentLoaded', function () {
+    if (!window.matchMedia('(max-width: 767px)').matches) return;
+    const sel = document.getElementById('inline-recipients-selector');
+    const bd  = document.getElementById('rcp-recipients-backdrop');
+    if (sel) document.body.appendChild(sel);
+    if (bd)  document.body.appendChild(bd);
+});
 
 function populateRecipientsList() {
     const dropdownMenu = document.getElementById('recipients-dropdown-menu');

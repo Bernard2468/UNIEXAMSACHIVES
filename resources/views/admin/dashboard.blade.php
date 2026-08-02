@@ -1026,11 +1026,18 @@
   }
   .dashboard__content__wraper { padding: 0 14px !important; background: transparent !important; box-shadow: none !important; border: none !important; }
 
-  /* Metric counters → a compact 2×2 tile grid (were full-width stacked) */
+  /* Metric counters → a compact 2×2 tile grid (were full-width stacked).
+     Section headings (.counter-section-title, e.g. "System Overview" /
+     "My Account") stay FULL-WIDTH so the cards flow in a 2×2 under each. */
   .row.counter-cards { margin-left: -5px !important; margin-right: -5px !important; }
-  .row.counter-cards > [class*="col-"] {
+  .row.counter-cards > [class*="col-"]:not(.counter-section-title) {
     flex: 0 0 50% !important; max-width: 50% !important; width: 50% !important;
     padding-left: 5px !important; padding-right: 5px !important; display: flex;
+  }
+  .row.counter-cards > .counter-section-title {
+    flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important;
+    padding-left: 5px !important; padding-right: 5px !important;
+    margin-bottom: 6px !important;
   }
   .dashboard__single__counter {
     padding: 16px !important; margin-bottom: 10px !important;
