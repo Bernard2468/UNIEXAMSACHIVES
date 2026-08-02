@@ -1323,11 +1323,12 @@
    as a card. Cues from modern banking apps (clean, roomy, no squish).
    ════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
-  /* De-squish: kill the nested container paddings so sections use the
-     full width and sit edge-to-edge on the page background */
-  .dashboardarea .full__width__padding { padding-left: 12px !important; padding-right: 12px !important; }
-  .dashboard__content__wraper { padding: 0 !important; background: transparent !important; box-shadow: none !important; border: none !important; }
+  /* De-squish, but keep a MEANINGFUL app-like side gutter (16px) so nothing
+     touches the screen edge. Zero the outer container/col paddings so the
+     gutter is exactly 16px on the content wrapper (not stacked/doubled). */
+  .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
   .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
+  .dashboard__content__wraper { padding: 0 16px !important; background: transparent !important; box-shadow: none !important; border: none !important; }
 
   /* ── Header: stack the title + a clean full-width Compose button ── */
   .dashboard__section__title {

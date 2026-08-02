@@ -317,6 +317,18 @@
                                             This is a <strong>Form Request Memo</strong> — address it to <strong>exactly one</strong> recipient (the approver). Add anyone else who should see it as <strong>Cc</strong>, and optionally route it <strong>Through</strong> someone or an office if necessary.
                                         </div>
 
+                                        {{-- Mobile recipient trigger: a button that opens the bottom-sheet
+                                             picker, with chips of who's already selected. Desktop keeps the
+                                             inline selector, so this is hidden there. --}}
+                                        <div id="rcp-trigger" class="rcp-trigger">
+                                            <button type="button" class="rcp-open-btn" onclick="openRecipientSheet()">
+                                                <span class="rcp-open-ic"><i class="icofont-users-alt-3"></i></span>
+                                                <span class="rcp-open-label">Select recipients</span>
+                                                <i class="icofont-simple-right rcp-open-caret"></i>
+                                            </button>
+                                            <div class="rcp-chips" id="rcp-chips"></div>
+                                        </div>
+
                                         <div id="user-selector" class="user-selector" style="display: none;">
                                             {{-- Mobile bottom-sheet top bar (hidden on desktop) --}}
                                             <div class="rcp-sheet-topbar">
@@ -2528,6 +2540,7 @@
 /* Recipient bottom-sheet — scaffolding hidden on desktop/tablet */
 .rcp-sheet-topbar { display: none; }
 .rcp-sheet-backdrop { display: none; }
+.rcp-trigger { display: none; }
 
 /* ============================================================
    COMPOSE — MOBILE APP-LIKE PASS (official breakpoint, ≤767)
@@ -2536,11 +2549,12 @@
    (less-crowded) recipient rows, and full-width primary actions.
    ============================================================ */
 @media (max-width: 767px) {
-  /* De-squish: pull the nested container paddings so the form uses the full
-     width instead of being pinched into the middle of the screen */
-  .dashboardarea .full__width__padding { padding-left: 12px !important; padding-right: 12px !important; }
-  .dashboard__content__wraper { padding: 0 !important; background: transparent !important; box-shadow: none !important; border: none !important; }
+  /* De-squish, but keep a MEANINGFUL app-like side gutter (16px) on the content
+     wrapper — nothing should touch the screen edge. Zero the outer container/col
+     paddings so the gutter is exactly 16px (not stacked/doubled). */
+  .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
   .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
+  .dashboard__content__wraper { padding: 0 16px !important; background: transparent !important; box-shadow: none !important; border: none !important; }
   .compose-panel { padding: 16px !important; border-radius: 16px; }
 
   /* Header: page title with a compact, icon-only circular Back button above it */
@@ -2583,13 +2597,45 @@
   .lhpk-preview-canvas { min-height: 96px; padding: 10px; }
   .lhpk-preview-canvas img { max-height: 130px; }
 
-  /* Recipient choice: stack the two option cards full-width */
+  /* Recipient choice: stack the two option cards full-width. Reset their flex —
+     `flex:1 1 0` (from the desktop ROW layout) collapses them to thin lines in a
+     column, which is the "I just see a line" bug. */
   .recipient-options { flex-direction: column; }
+  .recipient-options .option-card { flex: 0 0 auto; }
 
   /* User / Cc picker — calmer, roomier rows; drop the noisy status line
      and clamp long emails so text never crowds the row */
   .user-status { display: none; }
   .user-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── Recipient trigger button + selected-name chips (in the form flow) ── */
+  .rcp-trigger.is-active { display: block; margin-top: 4px; }
+  .rcp-open-btn {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 14px 16px; border: 1.5px solid #dbe3ef; background: #fff;
+    border-radius: 14px; cursor: pointer; text-align: left; font: inherit; color: #0f172a;
+  }
+  .rcp-open-btn:active { background: #f8fafc; }
+  .rcp-open-ic {
+    width: 38px; height: 38px; border-radius: 10px; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; font-size: 17px;
+  }
+  .rcp-open-label { flex: 1 1 auto; font-weight: 600; font-size: 14px; }
+  .rcp-open-caret { color: #94a3b8; font-size: 16px; flex: 0 0 auto; }
+  .rcp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .rcp-chips:empty { display: none; }
+  .rcp-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #eef3ff; color: #1a4a9b; border: 1px solid #d7e3fb;
+    border-radius: 999px; padding: 6px 6px 6px 12px; font-size: 12.5px; font-weight: 600; max-width: 100%;
+  }
+  .rcp-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 190px; }
+  .rcp-chip button {
+    border: none; background: #dbe6fb; color: #1a4a9b; cursor: pointer;
+    width: 18px; height: 18px; border-radius: 50%; line-height: 1; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 12px;
+  }
 
   /* ── Recipient selection = a BOTTOM-SHEET contact picker (app pattern) ──
      #user-selector is shown/hidden by the existing radio JS; here we present
@@ -3530,10 +3576,12 @@ function toggleCommittees() {
 </script>
 
 <script>
-/* ═══ Recipient bottom-sheet (mobile ≤767 only) ═══
-   Presents #user-selector as a slide-up "contact picker" sheet on phones.
-   Reuses the existing checkboxes + radio JS untouched — this only manages the
-   sheet's open/close, so the form still submits selected_users[] identically. */
+/* ═══ Recipient bottom-sheet + trigger (mobile ≤767 only) ═══
+   On phones the recipient picker is a button (#rcp-trigger) that opens a
+   slide-up sheet (#user-selector). Selected people show as removable chips
+   right in the form. Reuses the existing checkboxes + radio JS untouched —
+   the form still submits selected_users[] identically. Desktop/tablet keep
+   the original inline selector (this all no-ops there). */
 (function () {
     var mq = window.matchMedia('(max-width: 767px)');
     function ready(fn){ if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
@@ -3542,8 +3590,9 @@ function toggleCommittees() {
         var sheet = document.getElementById('user-selector');
         if (!sheet) return;
         var backdrop      = document.querySelector('.rcp-sheet-backdrop');
+        var trigger       = document.getElementById('rcp-trigger');
+        var chipsBox      = document.getElementById('rcp-chips');
         var selectedRadio = document.getElementById('selected_users');
-        var selectedLabel = document.querySelector('label[for="selected_users"]');
         var allRadio      = document.getElementById('all_users');
 
         function open() {
@@ -3556,35 +3605,66 @@ function toggleCommittees() {
             sheet.classList.remove('rcp-sheet-open');
             if (backdrop) backdrop.classList.remove('is-open');
             document.body.classList.remove('rcp-sheet-lock');
-            updateSummary();
+            refreshTrigger();
         }
-        function updateSummary() {
-            if (!mq.matches || !selectedRadio) return;   // only touch the card text on mobile
-            var card = selectedRadio.closest('.option-card');
-            var desc = card ? card.querySelector('.option-desc') : null;
-            if (!desc) return;
-            if (!desc.getAttribute('data-default')) desc.setAttribute('data-default', desc.textContent.trim());
-            var n = sheet.querySelectorAll('.user-checkbox:checked').length;
-            desc.textContent = n > 0 ? (n + ' user' + (n === 1 ? '' : 's') + ' selected') : desc.getAttribute('data-default');
-        }
-
         window.openRecipientSheet  = open;
         window.closeRecipientSheet = close;
 
-        if (selectedRadio) selectedRadio.addEventListener('change', function () { if (this.checked) open(); });
-        if (selectedLabel) selectedLabel.addEventListener('click', function () {
-            if (selectedRadio && selectedRadio.checked) setTimeout(open, 0);
-        });
-        if (allRadio) allRadio.addEventListener('change', function () { if (this.checked) close(); });
+        function buildChips() {
+            if (!chipsBox) return;
+            chipsBox.innerHTML = '';
+            sheet.querySelectorAll('.user-checkbox:checked').forEach(function (box) {
+                var item = box.closest('.user-item');
+                var nameEl = item ? item.querySelector('.user-name span') : null;
+                var name = nameEl ? nameEl.textContent.trim() : ('User ' + box.value);
+                var chip = document.createElement('span');
+                chip.className = 'rcp-chip';
+                var label = document.createElement('span');
+                label.textContent = name;
+                var rm = document.createElement('button');
+                rm.type = 'button';
+                rm.setAttribute('aria-label', 'Remove ' + name);
+                rm.innerHTML = '&times;';
+                rm.addEventListener('click', function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    box.checked = false;
+                    box.dispatchEvent(new Event('change', { bubbles: true }));
+                    refreshTrigger();
+                });
+                chip.appendChild(label);
+                chip.appendChild(rm);
+                chipsBox.appendChild(chip);
+            });
+        }
 
+        function refreshTrigger() {
+            if (!trigger || !selectedRadio) return;
+            if (selectedRadio.checked) {
+                trigger.classList.add('is-active');
+                buildChips();
+                var n = sheet.querySelectorAll('.user-checkbox:checked').length;
+                var label = trigger.querySelector('.rcp-open-label');
+                if (label) label.textContent = n > 0 ? ('Edit recipients (' + n + ')') : 'Select recipients';
+            } else {
+                trigger.classList.remove('is-active');
+                if (chipsBox) chipsBox.innerHTML = '';
+            }
+        }
+
+        // Choosing a mode just reveals/updates the trigger — it does NOT auto-open
+        // the sheet (user taps the button when ready).
+        if (selectedRadio) selectedRadio.addEventListener('change', function () { if (this.checked) refreshTrigger(); });
+        if (allRadio) allRadio.addEventListener('change', function () { if (this.checked) { refreshTrigger(); close(); } });
+
+        // Ticking boxes inside the sheet updates the chips + label live
         sheet.addEventListener('change', function (e) {
-            if (e.target && e.target.classList && e.target.classList.contains('user-checkbox')) updateSummary();
+            if (e.target && e.target.classList && e.target.classList.contains('user-checkbox')) refreshTrigger();
         });
 
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
         if (mq.addEventListener) mq.addEventListener('change', function () { if (!mq.matches) close(); });
 
-        updateSummary();
+        refreshTrigger();  // reflect any pre-selected state on load
     });
 })();
 </script>
