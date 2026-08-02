@@ -252,6 +252,18 @@
             display: block;
         }
 
+        /* Mobile (0–767): the 420px popover can't hang off the bell — pin it
+           full-width just below the pinned header instead */
+        @media (max-width: 767px) {
+            .notification-tray-popover {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                top: calc(var(--udts-header-h, 60px) + 8px);
+                width: auto;
+            }
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;

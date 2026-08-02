@@ -12,10 +12,9 @@
 --}}
 <div class="udsl" data-uds-launcher>
 
-    {{-- Mobile floating trigger (bottom-left to clear #scrollUp at bottom-right) --}}
-    <button type="button" class="uds-trigger uds-trigger--fab" data-udsl-open aria-label="Search everything">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-    </button>
+    {{-- (The old mobile floating trigger was removed — the pinned header now
+         shows the search icon on every breakpoint, so mobile uses the same
+         header trigger as desktop.) --}}
 
     {{-- Command-palette overlay --}}
     <div class="udsl__overlay" data-udsl-overlay hidden aria-hidden="true">
@@ -52,16 +51,6 @@
 }
 .uds-trigger--header:hover { background: #0c0c0c; color: #fff; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(12,12,12,.2); }
 .uds-trigger--header svg { width: 18px; height: 18px; }
-
-.uds-trigger--fab {
-    position: fixed; left: 20px; bottom: 24px; z-index: 1200;
-    width: 52px; height: 52px; border-radius: 50%;
-    background: #0c0c0c; color: #fff; box-shadow: 0 12px 30px rgba(12,12,12,.32);
-    animation: uds-trigger-in .25s ease;
-}
-.uds-trigger--fab:hover { transform: translateY(-2px); }
-.uds-trigger--fab svg { width: 22px; height: 22px; }
-@media (min-width: 992px) { .uds-trigger--fab { display: none !important; } }
 
 @keyframes uds-trigger-in { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
 

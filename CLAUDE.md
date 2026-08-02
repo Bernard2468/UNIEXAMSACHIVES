@@ -141,3 +141,25 @@ Stages can declare `branches: ['vc']` + a corresponding `vcReferralFieldName` ch
 
 ### Sidebar badge
 The "Forms Portal" sidebar badge (`$awaitingFormsCount`) is computed globally in the `View::composer('*')` block in [AppServiceProvider::boot()](app/Providers/AppServiceProvider.php) — alongside other sidebar counters like `unreadMemosCount`. Add new global view-data there, not in individual controllers.
+
+## Responsive Breakpoints (official)
+
+All new responsive CSS MUST use these breakpoints — do not invent ad-hoc widths:
+
+| Breakpoint | Min Width | Max Width |
+|------------|-----------|-----------|
+| Mobile | 0px | 767px |
+| Tablet | 768px | 1199px |
+| Desktop | 1200px | 1599px |
+| Large Desktop | 1600px+ | — |
+
+Goal (in progress): the system will become fully responsive with an app-like mobile
+experience — mobile and desktop must share the SAME features and flow (never a
+stripped-down mobile variant). Already done to this standard: the permanently pinned
+two-row header ([resources/views/frontend/header.blade.php](resources/views/frontend/header.blade.php))
+renders the same navbar (search, calendar, + Create, notifications, avatar menu) on
+every breakpoint — on Mobile the utility clock-bar hides, the title pill shows "UDTS",
+and the old bare-logo `mob_menu_wrapper` row is suppressed.
+
+Exception: widths tied to Bootstrap's grid classes (e.g. the dashboard sidebar column
+`col-lg-3` switches at 992px) must keep matching Bootstrap's own breakpoints.

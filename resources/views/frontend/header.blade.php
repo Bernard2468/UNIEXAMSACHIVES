@@ -31,17 +31,17 @@
                 </span>
             </div>
             <div class="clock-right">
-                <span class="clock-item">
+                <span class="clock-item clock-item--hotline">
                     <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 5.18 2 2 0 0 1 4.05 3h3a2 2 0 0 1 2 1.72 12.44 12.44 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 10.91a16 16 0 0 0 5 5l1.27-1.27a2 2 0 0 1 2.11-.45 12.44 12.44 0 0 0 2.81.7 2 2 0 0 1 1.72 2z"></path>
                     </svg>
                     Hotline: (+233) 352 094 658
                 </span>
-                <span class="clock-item">
+                <span class="clock-item clock-item--whatsapp">
                     <i class="icofont-brand-whatsapp" aria-hidden="true"></i>
                     WhatsApp: (+233) 249 260 857
                 </span>
-                <span class="clock-item">
+                <span class="clock-item clock-item--email">
                     <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <rect x="3" y="5" width="18" height="14" rx="2"></rect>
                         <polyline points="3 7 12 13 21 7"></polyline>
@@ -83,9 +83,9 @@
                         @endif
                     </div>
 
-                    <!-- Center: Title Pill -->
+                    <!-- Center: Title Pill (full name on tablet+, compact on mobile) -->
                     <div class="uda-nav-center">
-                        <div class="uda-title-pill">University Digital Transformation Suite (UDTS)</div>
+                        <div class="uda-title-pill"><span class="uda-title-pill__full">University Digital Transformation Suite (UDTS)</span><span class="uda-title-pill__short">UDTS</span></div>
                     </div>
 
                     <!-- Right: Auth Buttons & Notifications -->
@@ -129,9 +129,10 @@
                                     <svg class="uda-create-trigger__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                                 </button>
                                 <div class="uda-create-dropdown" data-uda-menu-panel hidden>
+                                    {{-- Same exam/file icons as the folder "Add items" drawer --}}
                                     <a href="{{ route('dashboard.create') }}">
                                         <span class="uda-create-dropdown__icon uda-create-dropdown__icon--exam">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226060/1e7ab43a-082a-4fa2-bf5d-8cad70910469.png" alt="" aria-hidden="true">
                                         </span>
                                         <span class="uda-create-dropdown__text">
                                             <span class="uda-create-dropdown__title">Add Exam</span>
@@ -140,7 +141,7 @@
                                     </a>
                                     <a href="{{ route('dashboard.file.create') }}">
                                         <span class="uda-create-dropdown__icon uda-create-dropdown__icon--file">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                                            <img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1782226720/a0bc05b8-6e1d-4338-b9bd-189fe64f6c6b.png" alt="" aria-hidden="true">
                                         </span>
                                         <span class="uda-create-dropdown__text">
                                             <span class="uda-create-dropdown__title">Add File</span>
@@ -313,24 +314,40 @@
 /* Old notification styles removed - now using notification-tray component */
 
 /* ═══ Permanently pinned header (no scroll animation / consolidation) ═══
-   Both rows — the utility clock bar and the main navbar — are always fixed
-   to the top of the viewport on desktop. The page content scrolls beneath
-   them. `--udts-header-h` is kept in sync by JS so the dashboard sidebar
-   and other sticky panels can position themselves just below the header. */
-@media (min-width: 992px) {
-    header.uda-header-sticky {
-        position: sticky;
-        top: 0;
-        z-index: 1030; /* above the dashboard sidebar (1020), below modals (1050) */
-        background: var(--whiteColor, #fff);
-        box-shadow: 0 1px 0 rgba(148, 163, 184, 0.16),
-                    0 10px 30px -18px rgba(15, 23, 42, 0.25);
-    }
-    /* Anchor jumps land below the pinned header */
-    html {
-        scroll-padding-top: calc(var(--udts-header-h, 116px) + 12px);
-    }
+   The header is always fixed to the top of the viewport on EVERY breakpoint —
+   mobile, tablet and desktop share the same experience. The page content
+   scrolls beneath it. `--udts-header-h` is kept in sync by JS so the dashboard
+   sidebar and other sticky panels can position themselves just below it.
+
+   Official breakpoints (see CLAUDE.md → Responsive breakpoints):
+   Mobile 0–767 · Tablet 768–1199 · Desktop 1200–1599 · Large Desktop 1600+ */
+header.uda-header-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 1030; /* above the dashboard sidebar (1020), below modals (1050) */
+    background: var(--whiteColor, #fff);
+    box-shadow: 0 1px 0 rgba(148, 163, 184, 0.16),
+                0 10px 30px -18px rgba(15, 23, 42, 0.25);
 }
+/* Anchor jumps land below the pinned header */
+html {
+    scroll-padding-top: calc(var(--udts-header-h, 116px) + 12px);
+}
+
+/* The real navbar (logo · title · actions) renders on ALL breakpoints —
+   mobile gets the same navbar as desktop, not the old bare-logo row. */
+header.uda-header-sticky .desktop__menu__wrapper { display: block; }
+header.uda-header-sticky .mob_menu_wrapper { display: none; }
+
+/* Title pill variants: full name on tablet+, compact "UDTS" on mobile */
+.uda-title-pill__short { display: none; }
+@media (max-width: 767px) {
+    .uda-title-pill__full { display: none; }
+    .uda-title-pill__short { display: inline; }
+}
+
+/* (Mobile + tablet header rules live at the END of this stylesheet so they
+   win the cascade over the .uda-clock-bar base rules defined below.) */
 
 /* ═══ Calendar icon button (matches the search trigger) ═══ */
 .uda-cal-trigger {
@@ -387,7 +404,8 @@
 .uda-create-trigger svg { width: 15px; height: 15px; }
 .uda-create-trigger__chevron { width: 13px !important; height: 13px !important; opacity: .8; transition: transform .18s ease; }
 .uda-create-trigger[aria-expanded="true"] .uda-create-trigger__chevron { transform: rotate(180deg); }
-@media (max-width: 1365px) {
+/* Tablet & below: icon-only Create button */
+@media (max-width: 1199px) {
     .uda-create-trigger__label { display: none; }
     .uda-create-trigger { padding: 0 10px; }
 }
@@ -424,9 +442,9 @@
     border-radius: 11px;
     flex-shrink: 0;
 }
-.uda-create-dropdown__icon svg { width: 19px; height: 19px; }
-.uda-create-dropdown__icon--exam { background: #ede9fe; color: #6d28d9; }
-.uda-create-dropdown__icon--file { background: #e0f2fe; color: #0369a1; }
+.uda-create-dropdown__icon img { width: 22px; height: 22px; object-fit: contain; }
+.uda-create-dropdown__icon--exam { background: #ede9fe; }
+.uda-create-dropdown__icon--file { background: #e0f2fe; }
 .uda-create-dropdown__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .uda-create-dropdown__title { font-size: 13.5px; font-weight: 600; color: #0f172a; line-height: 1.25; }
 .uda-create-dropdown__sub { font-size: 11.5px; color: #94a3b8; line-height: 1.3; }
@@ -585,7 +603,7 @@
     color: #b91c1c;
 }
 
-@media (max-width: 575px) {
+@media (max-width: 767px) {
     .uda-user-trigger__avatar { width: 36px; height: 36px; }
     .uda-user-dropdown { width: 260px; }
 }
@@ -639,7 +657,7 @@
   color: #6d28d9;
   border-color: #e4d9fb;
 }
-@media (max-width: 575px) {
+@media (max-width: 767px) {
   .role-badge {
     margin-right: 8px;
     padding: 0 9px;
@@ -733,60 +751,102 @@
     background: rgba(99, 102, 241, 0.3);
 }
 
-/* Medium desktop screens - ensure no wrapping */
-@media (min-width: 993px) and (max-width: 1400px) {
+/* ═══ Responsive header — official breakpoints ═══
+   Mobile 0–767 · Tablet 768–1199 · Desktop 1200–1599 · Large Desktop 1600+ */
+
+/* ── Desktop (1200–1599): slightly condensed utility bar, no wrapping ── */
+@media (min-width: 1200px) and (max-width: 1599px) {
     .uda-clock-bar {
         padding: 6px 16px;
         font-size: 12px;
     }
-    
     .uda-clock-bar .clock-left,
     .uda-clock-bar .clock-right {
         gap: 10px;
+        flex-shrink: 1;
+        min-width: 0;
     }
-    
     .uda-clock-bar .clock-item {
         gap: 4px;
     }
-    
     .uda-clock-bar .clock-item .lucide-icon,
     .uda-clock-bar .clock-item i {
         width: 14px;
         height: 14px;
         font-size: 14px;
     }
-    
-    /* Ensure clock-right doesn't overflow */
+}
+
+/* ── Tablet (768–1199): full navbar, slimmer single-row utility bar ── */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .uda-clock-bar {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        font-size: 11.5px;
+    }
+    .uda-clock-bar .clock-left,
     .uda-clock-bar .clock-right {
-        flex-shrink: 1;
+        flex-wrap: nowrap;
+        gap: 9px;
         min-width: 0;
     }
-    
-    .uda-clock-bar .clock-left {
-        flex-shrink: 1;
-        min-width: 0;
+    /* Email + social hide on tablet to keep the bar to one row */
+    .uda-clock-bar .clock-item--email,
+    .uda-clock-bar .clock-social { display: none; }
+    .uda-clock-bar .clock-item .lucide-icon,
+    .uda-clock-bar .clock-item i {
+        width: 13px;
+        height: 13px;
+        font-size: 13px;
     }
 }
 
-/* Tablet and below - allow wrapping */
-@media (max-width: 992px) {
-    .uda-clock-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 8px 16px;
-    }
-    
-    .uda-clock-bar .clock-left,
-    .uda-clock-bar .clock-right {
-        flex-wrap: wrap;
-        width: 100%;
-        gap: 10px;
-    }
-    
-    .uda-clock-bar .clock-right {
+/* ── Mobile (0–767): compact app-style single-row header ── */
+@media (max-width: 767px) {
+    /* Utility bar is a desktop/tablet affordance — top apps keep the mobile
+       header to a single compact row */
+    .uda-clock-bar { display: none; }
+
+    .uda-navbar {
+        display: flex;
+        align-items: center;
         justify-content: space-between;
+        gap: 8px;
+        padding: 8px 12px;
     }
+    .uda-nav-left { flex-shrink: 0; }
+    .uda-nav-left .uda-logo { max-height: 40px; max-width: 44px; object-fit: contain; }
+    .uda-nav-center { flex: 1; min-width: 0; display: flex; justify-content: center; }
+    .uda-title-pill {
+        font-size: 12.5px;
+        padding: 7px 14px;
+        white-space: nowrap;
+    }
+    .uda-nav-right {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    /* Role badge lives in the avatar dropdown on mobile */
+    .uda-nav-right > .role-badge { display: none; }
+
+    /* Tighter action cluster */
+    .uds-trigger--header,
+    .uda-cal-trigger {
+        width: 36px;
+        height: 36px;
+        margin-right: 8px;
+    }
+    .uda-create-menu { margin-right: 8px; }
+    .uda-create-trigger { height: 36px; }
+
+    /* Dropdowns stay on-screen on narrow viewports */
+    .uda-user-dropdown,
+    .uda-create-dropdown { max-width: calc(100vw - 24px); }
 }
 </style>
 
