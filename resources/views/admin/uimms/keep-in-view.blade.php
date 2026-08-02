@@ -342,6 +342,9 @@
    ════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
   /* Full-width fix (same as portal) */
+  /* Kill the container's base `padding: 0 30px` so it doesn't stack with the
+     14px content gutter (that stacking is the "padding in a padding" squish). */
+  .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
   .dashboard > .container-fluid > .row { margin-left: 0 !important; margin-right: 0 !important; }
   .dashboard .row > .col-xl-9.col-lg-9.col-md-12 {
     flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important;

@@ -940,6 +940,10 @@
 @media (max-width: 767px) {
   /* ── FULL-WIDTH FIX ── the content column was collapsing to a shrink-wrapped
      left column (dead space on the right). Force it (and its wrappers) to fill. */
+  /* Kill the container's base `padding: 0 30px` (style.css) — otherwise it STACKS
+     with the 14px content gutter (30 + 14 = 44px), which is the "padding in a
+     padding / squished in the middle" look. */
+  .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
   /* Bootstrap's .row has -15px side margins that are normally offset by the
      container's 15px padding. We zeroed that padding, so the row now overflows/
      shifts — zero the OUTER row's margins to fix the "squished/shifted" look. */
