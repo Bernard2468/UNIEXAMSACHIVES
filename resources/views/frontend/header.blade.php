@@ -189,6 +189,29 @@
                                             Settings
                                         </a>
                                     </nav>
+
+                                    {{-- Mobile-only quick actions: the Calendar + Create controls that
+                                         live in the header on desktop are relocated here on phones to keep
+                                         the top bar clean. Same routes / same calendar modal — no duplication. --}}
+                                    <div class="uda-user-dropdown__mobile-actions">
+                                        <div class="uda-user-dropdown__sep"></div>
+                                        <div class="uda-user-dropdown__label">Quick actions</div>
+                                        <nav class="uda-user-dropdown__nav">
+                                            <a href="{{ route('dashboard.create') }}">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                                                Add Exam
+                                            </a>
+                                            <a href="{{ route('dashboard.file.create') }}">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                                                Add File
+                                            </a>
+                                            <button type="button" onclick="var p=this.closest('[data-uda-menu-panel]'); if(p){p.hidden=true;} if(typeof openCalendarModal==='function'){openCalendarModal();}">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                                Calendar
+                                            </button>
+                                        </nav>
+                                    </div>
+
                                     <div class="uda-user-dropdown__sep"></div>
                                     <a class="uda-user-dropdown__logout" href="{{ route('logout') }}">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -596,6 +619,14 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     background: #f1f5f9;
     margin: 4px 8px;
 }
+.uda-user-dropdown__label {
+    padding: 6px 12px 2px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #94a3b8;
+}
 .uda-user-dropdown__nav {
     display: flex;
     flex-direction: column;
@@ -874,23 +905,39 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
         justify-content: flex-end;
     }
 
-    /* Role badge lives in the avatar dropdown on mobile */
+    /* ── Declutter: a clean, app-style top bar on phones ──
+       Top apps (Telecel, Ecobank, banking apps) keep the mobile header to
+       identity + 2–3 essential icons. So on mobile we keep ONLY the search,
+       notification bell and avatar on the right; the role badge, Calendar and
+       "+ Create" move into the avatar menu's "Quick actions" section (they stay
+       on desktop where there's room). Nothing is lost — same routes, same modal. */
     .uda-nav-right > .role-badge { display: none; }
+    .uda-cal-trigger { display: none; }
+    .uda-create-menu { display: none; }
 
-    /* Tighter action cluster */
-    .uds-trigger--header,
-    .uda-cal-trigger {
-        width: 36px;
-        height: 36px;
-        margin-right: 8px;
+    /* Essential icon cluster — evenly spaced, thumb-friendly */
+    .uds-trigger--header {
+        width: 38px;
+        height: 38px;
+        margin-right: 6px;
     }
-    .uda-create-menu { margin-right: 8px; }
-    .uda-create-trigger { height: 36px; }
+    .notification-tray-wrapper { margin-right: 6px !important; }
 
-    /* Dropdowns stay on-screen on narrow viewports */
-    .uda-user-dropdown,
-    .uda-create-dropdown { max-width: calc(100vw - 24px); }
+    /* Dropdown stays on-screen (and scrolls if the quick-actions make it tall) */
+    .uda-user-dropdown {
+        max-width: calc(100vw - 24px);
+        max-height: calc(100dvh - var(--udts-header-h, 60px) - 24px);
+        overflow-y: auto;
+    }
+
+    /* Quick-actions block inside the avatar menu is mobile-only.
+       Extra selector specificity (.uda-user-menu …) so this wins over the
+       default `display:none` below regardless of source order. */
+    .uda-user-menu .uda-user-dropdown__mobile-actions { display: block; }
 }
+
+/* Hidden by default (tablet+); the Calendar/Create actions live in the header there */
+.uda-user-dropdown__mobile-actions { display: none; }
 </style>
 
 <script>

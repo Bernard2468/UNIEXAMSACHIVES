@@ -23,6 +23,10 @@
         <div id="notification-tray-popover" class="notification-tray-popover">
             <!-- Header with toggle and mark all -->
             <div class="notification-tray-header">
+                {{-- Mobile-only close (the bell sits under the open slide-in panel) --}}
+                <button type="button" class="nt-panel-close" onclick="toggleNotificationTray(event)" aria-label="Close notifications">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
                 <h2 class="notification-tray-title">Notifications</h2>
                 <div class="notification-tray-header-actions">
                     <button class="notification-clear-btn" onclick="clearNotificationTray()" title="Clear all notifications">
@@ -113,6 +117,11 @@
                 </div>
             </div>
         </div>
+
+        {{-- Dim backdrop behind the mobile slide-in panel. Tapping it closes the
+             panel via the existing outside-click handler (it's outside the popover
+             and outside the trigger). Invisible on desktop. --}}
+        <div class="nt-backdrop" data-nt-backdrop aria-hidden="true"></div>
     </div>
 
     <style>
@@ -252,16 +261,90 @@
             display: block;
         }
 
-        /* Mobile (0–767): the 420px popover can't hang off the bell — pin it
-           full-width just below the pinned header instead */
+        /* Backdrop — only ever visible on mobile behind the slide-in panel */
+        .nt-backdrop { display: none; }
+        /* Panel close (X) — mobile-only */
+        .nt-panel-close { display: none; }
+
+        /* Mobile (0–767): a true right-side slide-in panel (top-app pattern),
+           not a hanging dropdown. Full height, slides in from the right over a
+           dim backdrop. Reuses all the same tray content + JS. */
         @media (max-width: 767px) {
             .notification-tray-popover {
                 position: fixed;
-                left: 12px;
-                right: 12px;
-                top: calc(var(--udts-header-h, 60px) + 8px);
-                width: auto;
+                top: 0;
+                right: 0;
+                left: auto;
+                bottom: 0;
+                width: min(88vw, 380px);
+                max-width: 380px;
+                height: 100%;
+                height: 100dvh;
+                border: none;
+                border-radius: 0;
+                box-shadow: -18px 0 50px rgba(15, 23, 42, 0.28);
+                /* Keep it in the DOM and animate the slide via transform */
+                display: block;
+                transform: translateX(105%);
+                transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+                animation: none;               /* override the desktop fadeIn */
+                z-index: 1060;                 /* above header (1030) + drawer (1045) */
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
             }
+            .notification-tray-popover.show {
+                transform: translateX(0);
+            }
+            /* The tray content can breathe over the full panel height */
+            .notification-tray-content,
+            .notification-list-view { max-height: none; }
+
+            /* Keep the header (title + actions + close) pinned as the panel scrolls */
+            .notification-tray-header {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                padding: 14px 14px calc(14px + env(safe-area-inset-top, 0px));
+            }
+            .nt-panel-close {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 34px;
+                height: 34px;
+                margin-right: 6px;
+                border: none;
+                background: transparent;
+                color: #374151;
+                border-radius: 8px;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            .nt-panel-close:active { background: #eef2f7; }
+            .notification-tray-title { font-size: 16px; }
+
+            .nt-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.5);
+                -webkit-backdrop-filter: blur(2px);
+                backdrop-filter: blur(2px);
+                z-index: 1059;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+                transition: opacity .3s ease, visibility .3s ease;
+            }
+            /* Sibling of the popover — light it up whenever the panel is open */
+            .notification-tray-popover.show ~ .nt-backdrop {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+            /* Lock the page behind the panel */
+            body.nt-panel-open { overflow: hidden; }
         }
 
         @keyframes fadeIn {
@@ -825,10 +908,12 @@
             notificationTrayState.isOpen = !notificationTrayState.isOpen;
             if (notificationTrayState.isOpen) {
                 popover.classList.add('show');
+                document.body.classList.add('nt-panel-open');   // scroll-lock (mobile panel)
                 refreshNotificationTray();
                 if (typeof ntRefreshPushButton === 'function') ntRefreshPushButton();
             } else {
                 popover.classList.remove('show');
+                document.body.classList.remove('nt-panel-open');
             }
         }
 
@@ -838,6 +923,7 @@
             const trigger = document.querySelector('.notification-tray-trigger');
             if (popover && !popover.contains(e.target) && !trigger?.contains(e.target)) {
                 popover.classList.remove('show');
+                document.body.classList.remove('nt-panel-open');
                 notificationTrayState.isOpen = false;
             }
         });
