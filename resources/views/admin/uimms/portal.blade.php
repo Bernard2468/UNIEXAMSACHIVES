@@ -933,39 +933,65 @@
                                         }
 
 /* ════════════════════════════════════════════════════════════
-   MEMOS PORTAL — MOBILE-APP PASS (≤767), consistent with the memo pages:
-   16px gutter, shorter title, a compact 2×2 stat grid, compact toolbar/chips,
-   and tidy memo cards with trimmed text.
+   MEMOS PORTAL — MOBILE-APP PASS (≤767)
+   Fixes the left-shift/narrow-column bug (forces true full width), a proper
+   vertical 2×2 stat grid, a single-scroll memo inbox, and a compact toolbar.
    ════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
-  .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
-  .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
-  .dashboard__message__content__main { padding-left: 16px !important; padding-right: 16px !important; }
+  /* ── FULL-WIDTH FIX ── the content column was collapsing to a shrink-wrapped
+     left column (dead space on the right). Force it (and its wrappers) to fill. */
+  .dashboard .row > .col-xl-9.col-lg-9.col-md-12 {
+    flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important;
+    padding-left: 0 !important; padding-right: 0 !important;
+  }
+  .dashboard__message__content__main { display: block !important; width: 100% !important; max-width: 100% !important; padding: 0 16px !important; }
+  .dashboard__message__content__main > * { max-width: 100% !important; }
+  .dashboard__meessage__wraper { width: 100% !important; }
+  .dashboard__meessage__wraper .row { margin-left: 0 !important; margin-right: 0 !important; }
+  .dashboard__meessage__wraper [class*="col-"] { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
 
   /* Shorter, non-giant page title */
   .dashboard__message__content__main__title h3 { font-size: 18px !important; margin-bottom: 14px !important; line-height: 1.3; }
 
-  /* Status cards → compact 2×2 grid (icon + count) */
-  .row > [class*="col-"]:has(.uimms-card) { flex: 0 0 50%; max-width: 50%; padding-left: 5px; padding-right: 5px; }
+  /* Status cards → a proper vertical 2×2 tile grid (icon top · label · count) */
   .row:has(.uimms-card) { margin-left: -5px !important; margin-right: -5px !important; }
-  .dashboard__card__content { padding: 14px !important; flex-direction: row !important; text-align: left !important; }
-  .dashboard__card__icon { font-size: 24px !important; margin: 0 10px 0 0 !important; }
-  .dashboard__card__text h5 { font-size: 0.74rem !important; margin: 0 0 2px !important; }
-  .dashboard__card__text h3 { font-size: 1.5rem !important; }
-  .dashboard__card__text p { display: none; }   /* "Pending conversations" sub-line is noise on mobile */
+  .row > [class*="col-"]:has(.uimms-card) { flex: 0 0 50% !important; max-width: 50% !important; width: 50% !important; padding-left: 5px !important; padding-right: 5px !important; }
+  .dashboard__card__content {
+    flex-direction: column !important; align-items: flex-start !important; text-align: left !important;
+    padding: 14px !important; gap: 4px;
+  }
+  .dashboard__card__icon { font-size: 22px !important; margin: 0 0 4px 0 !important; }
+  .dashboard__card__text h5 { font-size: 0.72rem !important; margin: 0 !important; line-height: 1.25; white-space: normal; }
+  .dashboard__card__text h3 { font-size: 1.7rem !important; margin: 0 !important; }
+  .dashboard__card__text p { display: none; }   /* sub-line ("Pending conversations") is noise on mobile */
 
-  /* Toolbar + sub-tabs compact */
-  .memos-toolbar { padding: 12px 14px !important; gap: 8px; flex-wrap: wrap; }
+  /* Memo inbox: one page scroll (drop the nested 600px scrollbox), edge-to-edge */
+  .dashboard__meessage {
+    min-width: 0 !important; width: 100% !important;
+    max-height: none !important; overflow: visible !important;
+    border: 1px solid #eef1f6 !important; border-radius: 14px !important;
+  }
+
+  /* Toolbar: tabs on the left, an icon-only Refresh on the right (compact).
+     Static here — it used to be sticky inside the memo scrollbox we just removed. */
+  .memos-toolbar { position: static !important; padding: 12px 14px !important; gap: 8px; flex-wrap: wrap; }
   .memos-badge { font-size: 0.8rem !important; padding: 6px 12px !important; }
   .pending-sub-tabs { margin-left: 0 !important; }
   .pending-sub-tab { padding: 6px 12px !important; font-size: 0.8rem !important; }
   .memos-actions { gap: 8px; }
+  .memos-actions .responsive-btn { width: auto !important; }
+  .refresh-btn { width: 40px !important; height: 40px !important; min-width: 40px !important; padding: 0 !important; border-radius: 50% !important; }
+  .refresh-btn .text { display: none !important; }
+  .refresh-btn .svgWrapper { width: auto !important; margin: 0 !important; justify-content: center; }
 
-  /* Memo cards: comfortable padding, trimmed one-line subject/sender */
+  /* Memo cards: comfortable padding, trimmed one-line subject/sender so the
+     status badge never gets pushed off the edge */
   .dashboard__meessage__contact__wrap { padding: 12px 14px !important; gap: 12px; }
   .dashboard__meessage__chat__img img { width: 40px !important; height: 40px !important; }
+  .memo-header { gap: 8px; }
   .memo-subject,
-  .dashboard__meessage__meta h5 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .memo-sender-info,
+  .dashboard__meessage__meta h5 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
                                         </style>
 
