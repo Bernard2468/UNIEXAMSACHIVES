@@ -3917,6 +3917,37 @@
   }
   .rcp-sheet-backdrop.is-open { opacity: 1; visibility: visible; pointer-events: auto; }
   body.rcp-sheet-lock { overflow: hidden; }
+
+  /* ── "Minute-To" (Assign Memo) modal → a BOTTOM SHEET on phones ──
+     Pure CSS restyle of the Bootstrap modal, so Bootstrap keeps handling
+     open/close/backdrop/Escape. Consistent with the Comment-to sheet. */
+  #assignModal .modal-dialog {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+    margin: 0; width: 100%; max-width: 100%;
+  }
+  #assignModal .modal-content {
+    border: none; border-radius: 20px 20px 0 0;
+    max-height: 90dvh;
+    box-shadow: 0 -18px 50px rgba(15, 23, 42, .3);
+  }
+  /* Slide up from the bottom (override Bootstrap's default drop-in transform) */
+  #assignModal.fade .modal-dialog { transform: translateY(100%); transition: transform .32s cubic-bezier(.4, 0, .2, 1); }
+  #assignModal.show .modal-dialog { transform: translateY(0); }
+  /* Grab handle on the header */
+  #assignModal .modal-header { position: relative; padding-top: 20px; }
+  #assignModal .modal-header::before {
+    content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 4px; border-radius: 999px; background: #e2e8f0;
+  }
+  /* List scrolls inside; footer pinned so Assign/Cancel are always reachable */
+  #assignModal .modal-body { overflow-y: auto; }
+  #assignModal .am-user-list { max-height: 40vh; overflow-y: auto; }
+  #assignModal .modal-footer {
+    position: sticky; bottom: 0; background: #fff;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  #assignModal #user-search-input,
+  #assignModal textarea { font-size: 16px; }   /* ≥16px so iOS doesn't zoom */
 }
 </style>
 
