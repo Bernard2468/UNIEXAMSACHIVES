@@ -1,4 +1,4 @@
-<div class="col-xl-3 col-lg-3 col-md-12">
+<div class="col-xl-3 col-lg-3 col-md-12 app-sidebar" id="appSidebarDrawer">
     <div class="dashboard__inner sticky-top">
         <div class="sidebar-section-header welcome-header">
             <div class="section-header-content">
@@ -490,6 +490,9 @@
     </div>
 </div>
 
+{{-- Off-canvas drawer backdrop (mobile/tablet <992px only) --}}
+<div class="app-sidebar-backdrop" id="appSidebarBackdrop" aria-hidden="true"></div>
+
 <!-- Logo Modal -->
 <div class="modal fade" id="myLogoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -765,4 +768,143 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: all .15s; font-family: 'Outfit', sans-serif !important;
 }
 .dm-modal__btn-save:hover { background: #1f2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(12,12,12,.18); }
+
+/* ════════════════════════════════════════════════════════════
+   OFF-CANVAS SIDEBAR DRAWER  (mobile + tablet, <992px)
+   Above 992px the sidebar is a normal sticky column (rules above).
+   Below 992px — where Bootstrap's grid already stacks it to col-md-12 —
+   it becomes a slide-in drawer opened by the header hamburger, so the
+   long menu no longer sits on top of every page.
+   Boundary is 991.98px to match Bootstrap's own lg breakpoint
+   (documented grid exception in CLAUDE.md).
+   ════════════════════════════════════════════════════════════ */
+.app-sidebar-backdrop { display: none; }
+
+@media (max-width: 991.98px) {
+    #appSidebarDrawer.app-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        height: 100dvh;
+        width: 300px;
+        max-width: 86vw;
+        z-index: 1045;              /* above header (1030), below modals (1050) */
+        background: #fff;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+        transform: translateX(-100%);
+        transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: 0;                 /* drop Bootstrap col gutter; inner owns padding */
+        will-change: transform;
+    }
+    #appSidebarDrawer.app-sidebar.is-open {
+        transform: translateX(0);
+    }
+    #appSidebarDrawer .dashboard__inner {
+        height: auto;
+        min-height: 100%;
+        padding: 18px 14px calc(28px + env(safe-area-inset-bottom));
+    }
+
+    .app-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+        z-index: 1044;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity .3s ease, visibility .3s ease;
+    }
+    .app-sidebar-backdrop.is-open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+/* Lock page scroll behind an open drawer */
+body.app-drawer-open { overflow: hidden; }
 </style>
+
+<script>
+/* ═══ Off-canvas sidebar drawer (mobile/tablet) ═══
+   Wires the header hamburger (#udaHamburger) to the sidebar drawer
+   (#appSidebarDrawer) + backdrop. No-ops safely if either is absent. */
+(function () {
+    function ready(fn) {
+        if (document.readyState !== 'loading') fn();
+        else document.addEventListener('DOMContentLoaded', fn);
+    }
+
+    ready(function () {
+        var drawer   = document.getElementById('appSidebarDrawer');
+        var backdrop = document.getElementById('appSidebarBackdrop');
+        var toggle   = document.getElementById('udaHamburger');
+        if (!drawer || !backdrop) return;
+
+        var MOBILE = '(max-width: 991.98px)';
+
+        function isDrawerMode() {
+            return window.matchMedia(MOBILE).matches;
+        }
+
+        function open() {
+            drawer.classList.add('is-open');
+            backdrop.classList.add('is-open');
+            document.body.classList.add('app-drawer-open');
+            if (toggle) toggle.setAttribute('aria-expanded', 'true');
+            backdrop.setAttribute('aria-hidden', 'false');
+        }
+
+        function close() {
+            drawer.classList.remove('is-open');
+            backdrop.classList.remove('is-open');
+            document.body.classList.remove('app-drawer-open');
+            if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            backdrop.setAttribute('aria-hidden', 'true');
+        }
+
+        function toggleDrawer() {
+            if (drawer.classList.contains('is-open')) close();
+            else open();
+        }
+
+        // The header hamburger lives in a separate component; wire it if present.
+        if (toggle) {
+            toggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleDrawer();
+            });
+        }
+
+        // Close on backdrop tap
+        backdrop.addEventListener('click', close);
+
+        // Close on Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && drawer.classList.contains('is-open')) close();
+        });
+
+        // Tapping a destination link closes the drawer (page will navigate anyway).
+        // Section headers (collapse toggles) must NOT close it.
+        drawer.addEventListener('click', function (e) {
+            var link = e.target.closest('a[href]');
+            if (link && !link.closest('.sidebar-section-header')) close();
+        });
+
+        // If the viewport grows back to desktop, ensure a clean state.
+        window.addEventListener('resize', function () {
+            if (!isDrawerMode()) close();
+        });
+    });
+})();
+</script>

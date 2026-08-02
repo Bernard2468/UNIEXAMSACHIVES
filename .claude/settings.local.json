@@ -123,7 +123,12 @@
       "Bash(sqlite3 --version)",
       "Bash(where php *)",
       "Bash(php -l app/Forms/Definitions/PaymentRequisitionForm.php)",
-      "Bash(php -l app/Forms/Definitions/PurchaseWorksAuthorizationForm.php)"
+      "Bash(php -l app/Forms/Definitions/PurchaseWorksAuthorizationForm.php)",
+      "Bash(git check-ignore *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(git --no-pager diff -- public/css/style.css)",
+      "Bash(git --no-pager log -2 --format=\"%h %ci %s\" -- public/css/style.css)",
+      "Bash(git --no-pager log -5 --format=\"%h %ci %s\")"
     ],
     "deny": [],
     "additionalDirectories": [

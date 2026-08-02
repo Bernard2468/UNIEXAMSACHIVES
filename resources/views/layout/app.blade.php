@@ -22,7 +22,9 @@
     <link rel="stylesheet" href="{{asset('css/icofont.min.css')}}">
     <link rel="stylesheet" href="{{asset('css/slick.css')}}">
     <link rel="stylesheet" href="{{asset('css/swiper-bundle.min.css')}}">
-    <link rel="stylesheet" href="{{asset('css/style.css')}}">
+    {{-- Cache-bust style.css by its own modified-time so a fresh deploy always
+         loads immediately (this file has no build hash and browsers cache it hard). --}}
+    <link rel="stylesheet" href="{{asset('css/style.css')}}?v={{ @filemtime(public_path('css/style.css')) ?: '1' }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <!-- DataTables CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.css">

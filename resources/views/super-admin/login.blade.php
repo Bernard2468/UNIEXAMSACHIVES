@@ -9,7 +9,7 @@
     <!-- Icofont -->
     <link rel="stylesheet" href="{{ asset('css/icofont.min.css') }}">
     <!-- Main CSS (includes modern-auth-container styles) -->
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}?v={{ @filemtime(public_path('css/style.css')) ?: '1' }}">
     
     <style>
         * {

@@ -68,6 +68,13 @@
             <div class="uda-navbar">
                     <!-- Left: Logo -->
                     <div class="uda-nav-left">
+                        @auth
+                            {{-- Hamburger — opens the off-canvas sidebar drawer on mobile/tablet (<992px).
+                                 Hidden on desktop and auto-hidden by JS on pages without a sidebar. --}}
+                            <button type="button" class="uda-hamburger" id="udaHamburger" aria-label="Open navigation menu" aria-controls="appSidebarDrawer" aria-expanded="false">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                            </button>
+                        @endauth
                         @if (Auth::check())
                             @if (count($systemDetail) > 0 && $systemDetail[0]->logo_image !== null)
                                 <a href="{{route('dashboard')}}"><img loading="lazy" src="{{asset('logo/'.$systemDetail[0]->logo_image)}}" class="uda-logo" alt="logo"></a>
@@ -344,6 +351,42 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
 @media (max-width: 767px) {
     .uda-title-pill__full { display: none; }
     .uda-title-pill__short { display: inline; }
+}
+
+/* ═══ Sidebar-drawer hamburger (mobile + tablet, <992px) ═══
+   Shown only where the page has a sidebar (JS removes it otherwise).
+   Boundary 991.98px matches Bootstrap's lg grid switch (the sidebar column
+   collapses to full-width there — documented grid exception in CLAUDE.md). */
+.uda-hamburger { display: none; }
+@media (max-width: 991.98px) {
+    .uda-nav-left {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .uda-hamburger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        padding: 0;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: #0f172a;
+        cursor: pointer;
+        transition: background .15s ease, transform .12s ease, box-shadow .15s ease;
+    }
+    .uda-hamburger:hover { background: #eef2f7; }
+    .uda-hamburger:active { transform: scale(.94); }
+    .uda-hamburger svg { width: 22px; height: 22px; }
+}
+@media (max-width: 767px) {
+    .uda-nav-left { gap: 8px; }
+    .uda-hamburger { width: 38px; height: 38px; border-radius: 10px; }
+    .uda-hamburger svg { width: 20px; height: 20px; }
 }
 
 /* (Mobile + tablet header rules live at the END of this stylesheet so they
@@ -1122,6 +1165,16 @@ document.addEventListener('DOMContentLoaded', function(){
   // Re-measure once fonts/images have settled
   setTimeout(udtsSyncHeaderHeight, 350);
   window.addEventListener('resize', udtsSyncHeaderHeight);
+});
+
+// ═══ Hide the hamburger on pages that have no sidebar drawer ═══
+// The drawer itself is wired up inside the sidebar component; here we only
+// remove the toggle when the current page didn't render a sidebar.
+document.addEventListener('DOMContentLoaded', function(){
+  var toggle = document.getElementById('udaHamburger');
+  if (toggle && !document.getElementById('appSidebarDrawer')) {
+    toggle.remove();
+  }
 });
 
 // ═══ Header dropdown menus (avatar account menu + "+ Create" menu) ═══
