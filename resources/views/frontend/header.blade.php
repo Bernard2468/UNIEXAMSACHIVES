@@ -219,6 +219,11 @@
                                     </a>
                                 </div>
                             </div>
+
+                            {{-- Dim backdrop for the mobile avatar bottom-sheet. Sits OUTSIDE
+                                 .uda-user-menu so tapping it closes the sheet via the existing
+                                 outside-click handler. Invisible on tablet/desktop. --}}
+                            <div class="uda-sheet-backdrop" aria-hidden="true"></div>
                         @else
                             <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary">Register / Login</a>
                         @endif
@@ -877,6 +882,13 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     }
 }
 
+/* Avatar bottom-sheet bits (activated only inside the mobile block below) */
+.uda-sheet-backdrop { display: none; }
+@keyframes uda-sheet-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
+
 /* ── Mobile (0–767): compact app-style single-row header ── */
 @media (max-width: 767px) {
     /* Utility bar is a desktop/tablet affordance — top apps keep the mobile
@@ -891,7 +903,10 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
         padding: 8px 12px;
     }
     .uda-nav-left { flex-shrink: 0; }
-    .uda-nav-left .uda-logo { max-height: 40px; max-width: 44px; object-fit: contain; }
+    /* Logo moves to the top of the sidebar drawer on mobile — hide the whole logo
+       link here so the header has room to breathe (left = just the hamburger).
+       nav-left holds only the hamburger (a <button>) + the logo <a>. */
+    .uda-nav-left a { display: none; }
     .uda-nav-center { flex: 1; min-width: 0; display: flex; justify-content: center; }
     .uda-title-pill {
         font-size: 12.5px;
@@ -923,11 +938,62 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     }
     .notification-tray-wrapper { margin-right: 6px !important; }
 
-    /* Dropdown stays on-screen (and scrolls if the quick-actions make it tall) */
+    /* ── Avatar menu as a BOTTOM SHEET (modern app pattern, thumb-reachable) ── */
     .uda-user-dropdown {
-        max-width: calc(100vw - 24px);
-        max-height: calc(100dvh - var(--udts-header-h, 60px) - 24px);
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 22px 22px 0 0;
+        max-height: 85dvh;
         overflow-y: auto;
+        padding: 6px 10px calc(16px + env(safe-area-inset-bottom));
+        box-shadow: 0 -18px 50px rgba(15, 23, 42, 0.28);
+        animation: uda-sheet-up .3s cubic-bezier(.4, 0, .2, 1);
+        z-index: 1050;
+    }
+    /* Grab handle */
+    .uda-user-dropdown::before {
+        content: '';
+        display: block;
+        width: 42px;
+        height: 4px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        margin: 8px auto 12px;
+    }
+    /* Thumb-friendly rows */
+    .uda-user-dropdown__nav a,
+    .uda-user-dropdown__nav button,
+    .uda-user-dropdown__logout {
+        padding: 13px 14px;
+        font-size: 15px;
+    }
+    .uda-user-dropdown__nav a svg,
+    .uda-user-dropdown__nav button svg,
+    .uda-user-dropdown__logout svg { width: 19px; height: 19px; }
+
+    /* Dim backdrop behind the sheet (shown while the menu panel is open) */
+    .uda-sheet-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity .28s ease, visibility .28s ease;
+    }
+    .uda-nav-right:has(.uda-user-menu [data-uda-menu-panel]:not([hidden])) .uda-sheet-backdrop {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
     }
 
     /* Quick-actions block inside the avatar menu is mobile-only.

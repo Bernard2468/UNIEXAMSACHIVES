@@ -266,23 +266,36 @@
         /* Panel close (X) — mobile-only */
         .nt-panel-close { display: none; }
 
-        /* Mobile (0–767): a true right-side slide-in panel (top-app pattern),
-           not a hanging dropdown. Full height, slides in from the right over a
-           dim backdrop. Reuses all the same tray content + JS. */
+        /* Mobile + tablet (≤1023): list only (drop the grid/carousel view), and
+           the action buttons go icon-only — "Mark all as read" is too long for a
+           touch header, so top apps (Gmail, Linear) use a double-check icon. */
+        @media (max-width: 1023px) {
+            .notification-view-toggle:not(.nt-push-toggle) { display: none !important; }
+            #notification-carousel-view { display: none !important; }
+            .notification-mark-all-btn span,
+            .notification-clear-btn span { display: none; }
+            .notification-mark-all-btn,
+            .notification-clear-btn { padding: 8px; }
+        }
+
+        /* Mobile (0–767): a FULL-SCREEN slide-in panel (top-app pattern), not a
+           hanging dropdown. Covers the whole screen, slides in from the right.
+           Closed via the X in its header (the bell sits underneath). Reuses all
+           the same tray content + JS. */
         @media (max-width: 767px) {
             .notification-tray-popover {
                 position: fixed;
                 top: 0;
                 right: 0;
-                left: auto;
+                left: 0;
                 bottom: 0;
-                width: min(88vw, 380px);
-                max-width: 380px;
+                width: 100%;
+                max-width: 100%;
                 height: 100%;
                 height: 100dvh;
                 border: none;
                 border-radius: 0;
-                box-shadow: -18px 0 50px rgba(15, 23, 42, 0.28);
+                box-shadow: none;
                 /* Keep it in the DOM and animate the slide via transform */
                 display: block;
                 transform: translateX(105%);
@@ -300,13 +313,17 @@
             .notification-tray-content,
             .notification-list-view { max-height: none; }
 
-            /* Keep the header (title + actions + close) pinned as the panel scrolls */
+            /* Keep the header (close + title + actions) pinned as the panel scrolls.
+               Layout: [X] Notifications ............ [clear][mark-all] */
             .notification-tray-header {
                 position: sticky;
                 top: 0;
                 z-index: 2;
+                justify-content: flex-start;
+                gap: 6px;
                 padding: 14px 14px calc(14px + env(safe-area-inset-top, 0px));
             }
+            .notification-tray-header-actions { margin-left: auto; }
             .nt-panel-close {
                 display: inline-flex;
                 align-items: center;

@@ -1,5 +1,15 @@
 <div class="col-xl-3 col-lg-3 col-md-12 app-sidebar" id="appSidebarDrawer">
     <div class="dashboard__inner sticky-top">
+        {{-- Brand — shown at the top of the sidebar on MOBILE only (the header logo
+             is hidden there to free up room). On tablet/desktop the logo stays in
+             the header, so this is hidden to avoid duplicate branding. --}}
+        <a href="{{ route('dashboard') }}" class="app-sidebar-brand" aria-label="Home">
+            @if (isset($systemDetail) && count($systemDetail) > 0 && $systemDetail[0]->logo_image !== null)
+                <img src="{{ asset('logo/'.$systemDetail[0]->logo_image) }}" alt="Catholic University of Ghana">
+            @else
+                <img src="{{ asset('img/cug_logo_new.jpeg') }}" alt="Catholic University of Ghana">
+            @endif
+        </a>
         <div class="sidebar-section-header welcome-header">
             <div class="section-header-content">
                 <div class="section-icon">
@@ -779,6 +789,24 @@ document.addEventListener('DOMContentLoaded', function() {
    (documented grid exception in CLAUDE.md).
    ════════════════════════════════════════════════════════════ */
 .app-sidebar-backdrop { display: none; }
+
+/* Sidebar brand (logo) — mobile only; header keeps the logo on tablet+ */
+.app-sidebar-brand { display: none; }
+@media (max-width: 767px) {
+    .app-sidebar-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 8px 16px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid #eef1f6;
+    }
+    .app-sidebar-brand img {
+        max-height: 54px;
+        max-width: 100%;
+        object-fit: contain;
+    }
+}
 
 @media (max-width: 991.98px) {
     #appSidebarDrawer.app-sidebar {
