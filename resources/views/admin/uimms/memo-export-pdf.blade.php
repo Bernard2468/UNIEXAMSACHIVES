@@ -15,12 +15,12 @@
         body, div, span, p, h1, h2, h3, h4, h5, h6,
         table, tr, td, th, img, hr, ul, ol, li, blockquote { margin: 0; padding: 0; }
 
-        /* Word-like page margins: ~1" top so continuation pages don't start at
-           the paper's edge, and a bottom margin so content never hugs the foot
-           of the page. Sides stay 0 — .page-body carries the side padding and
-           the letterhead band stays full-bleed. Units on every value, matching
-           the proven forms-PDF @page rules. */
-        @page { margin: 72pt 0pt 56pt 0pt; }
+        /* Word-like page margins: 48pt (⅔") top so continuation pages don't
+           start at the paper's edge, and a bottom margin so content never hugs
+           the foot of the page. Sides stay 0 — .page-body carries the side
+           padding and the letterhead band stays full-bleed. Units on every
+           value, matching the proven forms-PDF @page rules. */
+        @page { margin: 48pt 0pt 56pt 0pt; }
 
         body {
             /* Times core font (what MS Word memos use). It only covers cp1252 —
@@ -32,11 +32,11 @@
         }
 
         /* ── Letterhead ── */
-        /* -72pt cancels the @page top margin on page 1 exactly, so the band
+        /* -48pt cancels the @page top margin on page 1 exactly, so the band
            prints at the physical top of the sheet — same position as before
            the page margins were introduced. Must stay equal-and-opposite to
            the @page margin-top above. */
-        .letterhead-band { width: 100%; margin: -72pt 0pt 0pt 0pt; }
+        .letterhead-band { width: 100%; margin: -48pt 0pt 0pt 0pt; }
         .letterhead-img  { width: 100%; height: auto; display: block; }
 
         /* ── Page wrapper ── */

@@ -1716,6 +1716,19 @@ class HomeController extends Controller
             abort(403, 'Only the current assignee or active participants can manage this memo.');
         }
 
+        // Once minuted onward the memo has left this user's desk — they cannot
+        // minute it again until it is minuted back to them (mirrors the
+        // disabled "Minuted" button; enforced here so it can't be bypassed).
+        if (!$memo->isOnDeskOf($userId)) {
+            $withName = $memo->currentAssignee
+                ? trim($memo->currentAssignee->first_name . ' ' . $memo->currentAssignee->last_name)
+                : 'another user';
+            return response()->json([
+                'success' => false,
+                'message' => 'This memo is no longer on your desk — it is currently with ' . $withName . '. You can minute it again once it is minuted back to you.',
+            ], 422);
+        }
+
         $request->validate([
             'assignee_ids' => 'required|array|min:1',
             'assignee_ids.*' => 'required|exists:users,id',

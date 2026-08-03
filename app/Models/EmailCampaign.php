@@ -322,6 +322,44 @@ class EmailCampaign extends Model
         return $this->activeParticipants()->where('user_id', $userId)->exists();
     }
 
+    /**
+     * IDs of the user(s) the memo currently sits with — the targets of the
+     * most recent minute/assignment. Read from workflow history because with
+     * multiple assignees only the first lands in current_assignee_id, yet
+     * every target's desk now holds the memo.
+     */
+    public function currentAssigneeIds(): array
+    {
+        $last = collect($this->workflow_history ?? [])
+            ->filter(fn ($e) => in_array($e['action'] ?? '', ['assigned', 'assigned_multiple'], true))
+            ->last();
+
+        if ($last) {
+            $ids = array_values(array_filter(array_map(
+                'intval',
+                preg_split('/\s*,\s*/', (string) ($last['target_user_id'] ?? ''))
+            )));
+            if (!empty($ids)) {
+                return $ids;
+            }
+        }
+
+        return $this->current_assignee_id ? [(int) $this->current_assignee_id] : [];
+    }
+
+    /**
+     * Whether the memo is "on this user's desk" for minuting purposes.
+     * Once minuted onward, only the current assignee(s) may minute it again —
+     * the person who minuted it out must wait for it to be minuted back.
+     * Before any assignment exists, the memo sits with whoever can manage it.
+     */
+    public function isOnDeskOf($userId): bool
+    {
+        $ids = $this->currentAssigneeIds();
+
+        return empty($ids) || in_array((int) $userId, $ids, true);
+    }
+
     public function assignTo($userId, $assignedBy, $office = null)
     {
         // Deactivate current active participants EXCEPT the assigner

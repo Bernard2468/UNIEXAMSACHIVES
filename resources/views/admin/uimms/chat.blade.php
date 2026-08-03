@@ -74,10 +74,21 @@
                                                 <i class="icofont-clock-time"></i> Awaiting forward
                                             </span>
                                         @endif
-                                    @elseif(!in_array($memo->memo_status, ['completed', 'archived']) && $canManageMemo)
+                                    @elseif(!in_array($memo->memo_status, ['completed', 'archived']) && $canManageMemo && $memo->isOnDeskOf($userId))
                                         <button class="btn btn-sm btn-outline-primary" onclick="showAssignModal()">
                                             <i class="icofont-user"></i> Minute - To
                                         </button>
+                                    @elseif(!in_array($memo->memo_status, ['completed', 'archived']) && $canManageMemo)
+                                        {{-- Minuted onward: the memo has left this user's desk. The button
+                                             unlocks again only when it is minuted back to them. --}}
+                                        @php
+                                            $onDeskName = $memo->currentAssignee
+                                                ? trim($memo->currentAssignee->first_name . ' ' . $memo->currentAssignee->last_name)
+                                                : 'another user';
+                                        @endphp
+                                        <span class="btn btn-sm btn-outline-secondary disabled" title="Minuted to {{ $onDeskName }} — you can minute again when the memo returns to your desk">
+                                            <i class="icofont-check"></i> Minuted
+                                        </span>
                                     @else
                                         <span class="btn btn-sm btn-outline-primary disabled" title="{{ !$canManageMemo ? 'Only assignee or active participants can assign' : 'Memo is completed/archived' }}">
                                             <i class="icofont-user"></i> Minute - To
