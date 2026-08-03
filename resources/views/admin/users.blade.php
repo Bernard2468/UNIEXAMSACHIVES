@@ -323,64 +323,68 @@
     .uf-active-chip.uf-clear-all:hover { border-color: #94a3b8; color: #1e293b; }
     @keyframes chipIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
 
-    /* ---- Filter panel: popover (desktop) / bottom sheet (mobile) ---- */
-    .uf-sheet-backdrop {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(15,23,42,0.45);
-        -webkit-backdrop-filter: blur(3px);
-        backdrop-filter: blur(3px);
-        z-index: 10050;
-        opacity: 0;
-        transition: opacity 0.25s ease;
-    }
-    .uf-sheet-backdrop.open { display: block; opacity: 1; }
+    /* ---- Filter panel: LEFT side drawer (desktop) / bottom sheet (mobile) ----
+       Mirrors the folders "Share & Add-items" drawer (.mdrawer) chrome and the
+       header avatar bottom-sheet so the whole system feels consistent. */
+    body.uf-lock { overflow: hidden; }
 
-    .uf-sheet {
-        position: fixed;
-        z-index: 10060;
-        width: 380px;
-        max-width: calc(100vw - 32px);
-        background: #fff;
-        border: 1px solid #e9edf4;
-        border-radius: 18px;
-        box-shadow: 0 24px 64px -18px rgba(15,23,42,0.35);
-        display: none;
-        flex-direction: column;
-        overflow: hidden;
+    .uf-sheet-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(15, 23, 42, 0.42);
+        z-index: 10050;
+        opacity: 0; visibility: hidden;
+        transition: opacity .28s ease, visibility .28s ease;
     }
-    .uf-sheet.open { display: flex; animation: ufPop 0.2s cubic-bezier(0.2,0.8,0.2,1); }
-    @keyframes ufPop { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: none; } }
+    .uf-sheet-backdrop.open { opacity: 1; visibility: visible; }
+
+    /* Desktop: full-height drawer anchored to the LEFT, slides in from the edge */
+    .uf-sheet {
+        position: fixed; top: 0; left: 0; height: 100%;
+        width: 420px; max-width: 94vw;
+        z-index: 10060;
+        background: #fff;
+        display: flex; flex-direction: column;
+        box-shadow: 22px 0 50px rgba(15, 23, 42, 0.14);
+        transform: translateX(-100%);
+        transition: transform .34s cubic-bezier(.22, .61, .36, 1);
+        -webkit-font-smoothing: antialiased;
+    }
+    .uf-sheet.open { transform: translateX(0); }
 
     .uf-sheet__head {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 16px 18px;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 20px 22px;
+        border-bottom: 1px solid #eef2f7;
+        flex-shrink: 0;
     }
     .uf-sheet__grip { display: none; }
     .uf-sheet__head h4 {
         flex: 1;
         margin: 0;
-        font-size: 1.05rem;
+        font-size: 17px;
         font-weight: 700;
+        letter-spacing: -0.015em;
         color: #0f172a;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
     }
-    .uf-sheet__head h4 i { color: #94a3b8; font-size: 0.9rem; }
+    .uf-sheet__head h4 i { color: #64748b; font-size: 0.95rem; }
     .uf-sheet__close {
-        width: 34px; height: 34px;
+        width: 36px; height: 36px;
         display: grid; place-items: center;
-        border: 1px solid #ebedf1; border-radius: 10px;
-        background: #fff; color: #94a3b8; cursor: pointer; transition: 0.2s;
+        border: 1px solid #e2e8f0; border-radius: 10px;
+        background: #fff; color: #64748b; cursor: pointer; transition: .15s;
+        flex-shrink: 0;
     }
-    .uf-sheet__close:hover { background: #f5f6f8; color: #0f172a; }
+    .uf-sheet__close:hover { background: #f1f5f9; color: #0f172a; }
 
-    .uf-sheet__body { padding: 18px; overflow-y: auto; }
+    .uf-sheet__body { flex: 1; padding: 22px; overflow-y: auto; }
+    .uf-sheet__body::-webkit-scrollbar { width: 9px; }
+    .uf-sheet__body::-webkit-scrollbar-track { background: #f8fafc; }
+    .uf-sheet__body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
     .uf-group { margin-bottom: 20px; }
     .uf-group:last-child { margin-bottom: 0; }
     .uf-group__label {
@@ -425,8 +429,8 @@
     }
 
     .uf-sheet__foot {
-        display: flex; gap: 10px; padding: 14px 18px;
-        border-top: 1px solid #f1f5f9; background: #fafbfc;
+        display: flex; gap: 10px; padding: 14px 22px;
+        border-top: 1px solid #eef2f7; background: #fff; flex-shrink: 0;
     }
     .uf-btn {
         flex: 1; padding: 12px; border-radius: 12px;
@@ -629,25 +633,35 @@
     }
 
     /* Table View Styles */
+    /* Modern segmented grid/table toggle — matches the .uf-segment language */
     .view-toggle {
         display: inline-flex;
-        gap: 0.5rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 10px;
-        overflow: hidden;
-        background: white;
+        gap: 2px;
+        padding: 4px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #f1f5f9;
     }
     .view-toggle button {
-        padding: 8px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
         border: none;
         background: transparent;
-        color: #6b7280;
+        color: #64748b;
         font-weight: 600;
+        font-size: 0.85rem;
+        border-radius: 9px;
         cursor: pointer;
+        transition: all 0.18s ease;
     }
+    .view-toggle button i { font-size: 0.9rem; }
+    .view-toggle button:hover { color: #1e293b; }
     .view-toggle button.active {
-        background: #64748b;
-        color: white;
+        background: #fff;
+        color: #1e293b;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.12);
     }
     .users-table-wrapper {
         background: white;
@@ -959,24 +973,24 @@
         .user-actions .action-btn i { font-size: 1rem; }
         .user-actions form { display: inline-flex !important; }
 
-        /* Filter panel becomes a bottom sheet */
+        /* Filter drawer becomes a BOTTOM SHEET — same idiom as the header avatar
+           menu and the UIMMS "Minute-to" sheet, so it feels native across the app. */
         .uf-sheet {
-            position: fixed; left: 0; right: 0; bottom: 0; top: auto;
-            width: 100%; max-width: 100%;
+            top: auto; left: 0; right: 0; bottom: 0;
+            height: auto; width: 100%; max-width: 100%;
+            max-height: 85dvh;
             border-radius: 22px 22px 0 0;
             transform: translateY(100%);
-            transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
-            display: flex; max-height: 88vh;
-            box-shadow: 0 -12px 40px rgba(15,23,42,0.22);
+            transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+            box-shadow: 0 -18px 50px rgba(15, 23, 42, 0.28);
         }
-        .uf-sheet.open { transform: translateY(0); animation: none; }
+        .uf-sheet.open { transform: translateY(0); }
         .uf-sheet__grip {
             display: block; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-            width: 42px; height: 5px; border-radius: 999px; background: #d7dde5;
+            width: 42px; height: 4px; border-radius: 999px; background: #e2e8f0;
         }
-        .uf-sheet__head { padding-top: 22px; }
-        .uf-sheet__foot { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
-        .hero-title { font-size: 1.35rem; }
+        .uf-sheet__head { position: relative; padding-top: 20px; }
+        .uf-sheet__foot { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
     }
 
     /* Wide / landscape phones: two-up card grid */
@@ -1149,7 +1163,7 @@
                                 {{-- Row 3: active filter chips (rendered by JS) --}}
                                 <div class="uf-active-chips" id="activeChips" aria-live="polite"></div>
 
-                                {{-- Filter panel: popover on desktop, bottom sheet on mobile --}}
+                                {{-- Filter panel: left side-drawer on desktop, bottom sheet on mobile --}}
                                 <div class="uf-sheet-backdrop" id="filterBackdrop"></div>
                                 <div class="uf-sheet" id="filterSheet" role="dialog" aria-modal="true" aria-label="Filter users" aria-hidden="true">
                                     <div class="uf-sheet__head">
@@ -2002,6 +2016,58 @@
         transform: translateY(0);
     }
 }
+
+/* ============================================================
+   MOBILE (≤767px): Add User + Edit Info modals become BOTTOM SHEETS
+   — consistent with the header avatar sheet and the filter drawer.
+   Placed last so these overrides win by source order.
+   ============================================================ */
+@keyframes ufModalSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+@media (max-width: 767px) {
+    /* Dock the panels to the bottom of the screen */
+    .add-user-modal { align-items: flex-end; }
+
+    /* Add User */
+    .add-user-modal-content {
+        width: 100%;
+        max-width: 100%;
+        max-height: 92dvh;
+        border-radius: 22px 22px 0 0;
+        animation: ufModalSheetUp .3s cubic-bezier(.4, 0, .2, 1);
+        box-shadow: 0 -18px 50px rgba(15, 23, 42, 0.28);
+    }
+    .add-user-modal-content::before {
+        content: '';
+        display: block;
+        width: 42px; height: 4px; border-radius: 999px;
+        background: #e2e8f0; margin: 10px auto 0;
+    }
+    .add-user-modal-header { padding: 14px 20px; }
+    .add-user-modal-body { padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+    .form-row { grid-template-columns: 1fr; gap: 0; }
+
+    /* Edit Info */
+    #editInfoModal.efi-modal { align-items: flex-end; }
+    #editInfoModal .efi-card {
+        width: 100%;
+        max-width: 100%;
+        max-height: 92dvh;
+        border-radius: 22px 22px 0 0;
+        padding-top: 22px;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        animation: ufModalSheetUp .3s cubic-bezier(.4, 0, .2, 1);
+        box-shadow: 0 -18px 50px rgba(15, 23, 42, 0.28);
+    }
+    #editInfoModal .efi-card::before {
+        content: '';
+        display: block;
+        width: 42px; height: 4px; border-radius: 999px;
+        background: #e2e8f0;
+        position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    }
+    #editInfoModal .efi-close { top: 16px; }
+}
 </style>
 
 <script>
@@ -2420,24 +2486,10 @@ window.addEventListener('resize', closeUserActions);
         runLiveSearch();
     }
 
-    /* ---------- Filter sheet open/close (popover ⇄ bottom sheet) ---------- */
-    function positionPopover() {
-        const sheet = document.getElementById('filterSheet');
-        const btn = document.getElementById('openFiltersBtn');
-        if (!sheet || !btn) return;
-        if (window.matchMedia('(max-width: 767px)').matches) {
-            sheet.style.top = ''; sheet.style.left = ''; sheet.style.right = ''; sheet.style.bottom = '';
-            return; // CSS handles the bottom sheet
-        }
-        const r = btn.getBoundingClientRect();
-        const sw = sheet.offsetWidth || 380;
-        let left = r.right - sw;
-        if (left < 12) left = 12;
-        sheet.style.left = left + 'px';
-        sheet.style.top = (r.bottom + 8) + 'px';
-        sheet.style.right = 'auto';
-        sheet.style.bottom = 'auto';
-    }
+    /* ---------- Filter drawer open/close (left drawer ⇄ bottom sheet) ----------
+       Same mechanics as the folders .mdrawer / header avatar sheet: toggle .open
+       on the backdrop + panel and lock body scroll. CSS decides side-drawer vs
+       bottom-sheet by breakpoint. */
     function openFilterSheet() {
         const sheet = document.getElementById('filterSheet');
         const backdrop = document.getElementById('filterBackdrop');
@@ -2447,7 +2499,7 @@ window.addEventListener('resize', closeUserActions);
         sheet.setAttribute('aria-hidden', 'false');
         if (backdrop) backdrop.classList.add('open');
         if (btn) btn.setAttribute('aria-expanded', 'true');
-        positionPopover();
+        document.body.classList.add('uf-lock');
     }
     function closeFilterSheet() {
         const sheet = document.getElementById('filterSheet');
@@ -2458,6 +2510,7 @@ window.addEventListener('resize', closeUserActions);
         sheet.setAttribute('aria-hidden', 'true');
         if (backdrop) backdrop.classList.remove('open');
         if (btn) btn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('uf-lock');
     }
 
     function bindSmartFilters() {
@@ -2520,18 +2573,8 @@ window.addEventListener('resize', closeUserActions);
         if (applyBtn) applyBtn.addEventListener('click', function () { closeFilterSheet(); clearTimeout(searchDebounce); runLiveSearch(); });
         if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
 
-        // Dismiss desktop popover on outside click / escape
-        document.addEventListener('click', function (e) {
-            const sheet = document.getElementById('filterSheet');
-            if (!sheet || !sheet.classList.contains('open')) return;
-            if (window.matchMedia('(max-width: 767px)').matches) return; // backdrop handles mobile
-            if (!e.target.closest('#filterSheet') && !e.target.closest('#openFiltersBtn')) closeFilterSheet();
-        });
+        // Close on Escape (backdrop click already wired above)
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeFilterSheet(); });
-        window.addEventListener('resize', function () {
-            const sheet = document.getElementById('filterSheet');
-            if (sheet && sheet.classList.contains('open')) positionPopover();
-        });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
