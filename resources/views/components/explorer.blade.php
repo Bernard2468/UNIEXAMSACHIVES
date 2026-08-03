@@ -898,6 +898,34 @@
     margin-left: 0;
     margin-right: 0;
 }
+
+/* ============ EMBEDDED SPACING — MOBILE DE-SQUISH (≤767) ============
+   Official Mobile breakpoint (Mobile 0–767 per CLAUDE.md / responsive-rollout).
+   At ≤767 the sidebar is an off-canvas drawer, so the content column is
+   full-width and the container (0 30px) + Bootstrap column (0 15px) gutters
+   stack on top of the shell's own 0 24px and pinch the grid.
+
+   This is the standard dashboard "de-squish trio": zero the container padding,
+   zero the row's -15px side margins (else the row overflows/shifts), and zero
+   the column padding — leaving only the shell's own 24px as the single gutter.
+   Kept strictly inside the ≤767 query: above it the sidebar sits beside the
+   content and shares these gutters, so we must NOT touch them there (that is
+   what previously widened the sidebar). These rules only load on explorer pages
+   (the component pushes this <style> itself), so no other page is affected. */
+@media (max-width: 767px) {
+    .dashboardarea .container-fluid.full__width__padding {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .dashboardarea .dashboard > .container-fluid > .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    .dashboardarea .dashboard > .container-fluid > .row > [class*="col-"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
 </style>
 @endpush
 
