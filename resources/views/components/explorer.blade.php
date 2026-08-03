@@ -880,6 +880,34 @@
     .exp-tile .ico i { font-size: 40px; }
     .exp-search { min-width: 0; flex: 1 1 100%; max-width: none; }
 }
+
+/* ============ EMBEDDED-IN-DASHBOARD SPACING ============
+   When the explorer sits inside the dashboard grid (sidebar + content column),
+   three horizontal paddings used to stack up and pinch the content:
+   container .full__width__padding (0 30px, up to 0 150px on wide screens)
+   + Bootstrap column (0 15px) + the shell's own (0 24px).
+   Collapse the outer two so only the shell's 24px remains. Scoped via
+   :has(.exp-root) so every other dashboard page is untouched — and browsers
+   without :has() simply keep the original spacing (graceful, no breakage). */
+.dashboardarea:has(.exp-root) .container-fluid.full__width__padding {
+    padding-left: 0;
+    padding-right: 0;
+}
+.dashboardarea:has(.exp-root) .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+.dashboardarea:has(.exp-root) .row > [class*="col-"] {
+    padding-left: 0;
+    padding-right: 0;
+}
+/* On desktop the sidebar sits beside the content and just lost the container
+   gutter — hand it back a small inset so its card doesn't touch the edge. */
+@media (min-width: 992px) {
+    .dashboardarea:has(.exp-root) .app-sidebar {
+        padding-left: 24px;
+    }
+}
 </style>
 @endpush
 
