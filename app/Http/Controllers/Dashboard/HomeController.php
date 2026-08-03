@@ -905,7 +905,25 @@ class HomeController extends Controller
         $search = trim((string) $request->get('search', ''));
         $filter = $request->get('filter', 'all');
 
-        $query = User::with('position', 'secondaryDepartments:id');
+        // ----- Smart-filter inputs ------------------------------------------
+        // Staff category is multi-select; the rest are single scalars. Empty /
+        // missing values simply mean "don't filter on this facet".
+        $staffCategoryOptions = [
+            'Junior Staff',
+            'Senior Staff',
+            'Senior Member (Non-Teaching)',
+            'Senior Member (Teaching)',
+        ];
+        $selectedCategories = array_values(array_intersect(
+            $staffCategoryOptions,
+            (array) $request->get('staff_category', [])
+        ));
+        $departmentId = $request->get('department_id');
+        $positionId   = $request->get('position_id');
+        $accountType  = $request->get('account_type'); // '', 'individual', 'office'
+        $sort         = $request->get('sort', 'recent');
+
+        $query = User::with('position', 'department:id,name', 'secondaryDepartments:id');
 
         if ($search !== '') {
             $tokens = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
@@ -927,12 +945,57 @@ class HomeController extends Controller
             $query->where('is_approve', 0);
         }
 
-        $query->orderBy('created_at', 'desc');
+        // Staff category (any of the selected).
+        if (!empty($selectedCategories)) {
+            $query->whereIn('staff_category', $selectedCategories);
+        }
+
+        // Department: match the primary department OR any secondary attachment,
+        // so "show everyone in Nursing" catches cross-listed staff too.
+        if (!empty($departmentId)) {
+            $query->where(function ($q) use ($departmentId) {
+                $q->where('department_id', $departmentId)
+                  ->orWhereHas('secondaryDepartments', function ($sq) use ($departmentId) {
+                      $sq->where('departments.id', $departmentId);
+                  });
+            });
+        }
+
+        if (!empty($positionId)) {
+            $query->where('position_id', $positionId);
+        }
+
+        if ($accountType === 'individual' || $accountType === 'office') {
+            $query->where('account_type', $accountType);
+        }
+
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'name_asc':
+                $query->orderBy('first_name', 'asc')->orderBy('last_name', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('first_name', 'desc')->orderBy('last_name', 'desc');
+                break;
+            case 'recent':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
+        }
 
         $users = $query->paginate($perPage)->withQueryString();
         $totalUsers = User::count();
         $approvedCount = User::where('is_approve', 1)->count();
         $pendingCount = User::where('is_approve', 0)->count();
+
+        // How many "advanced" facets are active (drives the Filters badge).
+        $activeFacetCount = count($selectedCategories)
+            + (!empty($departmentId) ? 1 : 0)
+            + (!empty($positionId) ? 1 : 0)
+            + (($accountType === 'individual' || $accountType === 'office') ? 1 : 0);
+
         return view('admin.users',[
             'users' => $users,
             'totalUsers' => $totalUsers,
@@ -942,6 +1005,13 @@ class HomeController extends Controller
             'activeFilter' => $filter,
             'departments' => \App\Models\Department::orderBy('name')->get(),
             'positions' => \App\Models\Position::orderBy('name')->get(),
+            'staffCategoryOptions' => $staffCategoryOptions,
+            'selectedCategories' => $selectedCategories,
+            'selectedDepartmentId' => $departmentId,
+            'selectedPositionId' => $positionId,
+            'selectedAccountType' => $accountType,
+            'sort' => $sort,
+            'activeFacetCount' => $activeFacetCount,
         ]);
     }
 

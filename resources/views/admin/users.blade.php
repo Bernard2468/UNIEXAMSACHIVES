@@ -157,6 +157,287 @@
         text-decoration: none;
     }
 
+    /* ============================================================
+       SMART FILTER TOOLBAR
+       ============================================================ */
+    .uf-searchrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 760px;
+        margin: 0 auto;
+    }
+    .uf-searchrow .search-box { flex: 1; margin: 0; max-width: none; }
+
+    .uf-filter-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 13px 20px;
+        border: 2px solid #e5e7eb;
+        border-radius: 50px;
+        background: #fff;
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .uf-filter-btn:hover { border-color: #64748b; background: #f8fafc; }
+    .uf-filter-btn.has-filters { border-color: #64748b; color: #1e293b; }
+    .uf-filter-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: #64748b;
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .uf-filter-count[hidden] { display: none; }
+
+    .uf-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        max-width: 760px;
+        margin: 1.25rem auto 0;
+    }
+    .uf-controls__right { display: flex; align-items: center; gap: 10px; }
+
+    /* Segmented control (status + account type) */
+    .uf-segment {
+        display: inline-flex;
+        background: #f1f5f9;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 4px;
+        gap: 2px;
+    }
+    .uf-segment button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        border-radius: 9px;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        white-space: nowrap;
+    }
+    .uf-segment button:hover { color: #1e293b; }
+    .uf-segment button.active {
+        background: #fff;
+        color: #1e293b;
+        box-shadow: 0 1px 3px rgba(15,23,42,0.12);
+    }
+    .uf-segment button i { font-size: 0.8rem; }
+    .uf-segment--wide { display: flex; width: 100%; }
+    .uf-segment--wide button { flex: 1; justify-content: center; }
+
+    /* Sort select */
+    .uf-sort {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        height: 40px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        color: #64748b;
+    }
+    .uf-sort i { font-size: 0.85rem; }
+    .uf-sort select {
+        border: none;
+        background: transparent;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #1e293b;
+        cursor: pointer;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+        padding-right: 4px;
+    }
+
+    /* Active filter chips */
+    .uf-active-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        max-width: 760px;
+        margin: 1rem auto 0;
+    }
+    .uf-active-chips:empty { margin: 0; }
+    .uf-active-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px 6px 14px;
+        border-radius: 999px;
+        background: #eef2f7;
+        border: 1px solid #dbe2ea;
+        color: #334155;
+        font-size: 0.82rem;
+        font-weight: 600;
+        animation: chipIn 0.18s ease;
+    }
+    .uf-active-chip .uf-chip-x {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: none;
+        background: #cbd5e1;
+        color: #475569;
+        cursor: pointer;
+        font-size: 0.65rem;
+        transition: all 0.15s ease;
+    }
+    .uf-active-chip .uf-chip-x:hover { background: #94a3b8; color: #fff; }
+    .uf-active-chip.uf-clear-all {
+        background: transparent;
+        border: 1px dashed #cbd5e1;
+        color: #64748b;
+        cursor: pointer;
+    }
+    .uf-active-chip.uf-clear-all:hover { border-color: #94a3b8; color: #1e293b; }
+    @keyframes chipIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: none; } }
+
+    /* ---- Filter panel: popover (desktop) / bottom sheet (mobile) ---- */
+    .uf-sheet-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,0.45);
+        -webkit-backdrop-filter: blur(3px);
+        backdrop-filter: blur(3px);
+        z-index: 10050;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    .uf-sheet-backdrop.open { display: block; opacity: 1; }
+
+    .uf-sheet {
+        position: fixed;
+        z-index: 10060;
+        width: 380px;
+        max-width: calc(100vw - 32px);
+        background: #fff;
+        border: 1px solid #e9edf4;
+        border-radius: 18px;
+        box-shadow: 0 24px 64px -18px rgba(15,23,42,0.35);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .uf-sheet.open { display: flex; animation: ufPop 0.2s cubic-bezier(0.2,0.8,0.2,1); }
+    @keyframes ufPop { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+    .uf-sheet__head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 18px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .uf-sheet__grip { display: none; }
+    .uf-sheet__head h4 {
+        flex: 1;
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .uf-sheet__head h4 i { color: #94a3b8; font-size: 0.9rem; }
+    .uf-sheet__close {
+        width: 34px; height: 34px;
+        display: grid; place-items: center;
+        border: 1px solid #ebedf1; border-radius: 10px;
+        background: #fff; color: #94a3b8; cursor: pointer; transition: 0.2s;
+    }
+    .uf-sheet__close:hover { background: #f5f6f8; color: #0f172a; }
+
+    .uf-sheet__body { padding: 18px; overflow-y: auto; }
+    .uf-group { margin-bottom: 20px; }
+    .uf-group:last-child { margin-bottom: 0; }
+    .uf-group__label {
+        display: flex; align-items: center; gap: 7px;
+        margin-bottom: 10px;
+        font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+        text-transform: uppercase; color: #64748b;
+    }
+    .uf-group__label i { color: #94a3b8; font-size: 0.8rem; }
+
+    .uf-chipset { display: flex; flex-wrap: wrap; gap: 8px; }
+    .uf-chip {
+        display: inline-flex; align-items: center; margin: 0;
+        padding: 9px 14px; border-radius: 999px;
+        border: 1.5px solid #e2e8f0; background: #fff;
+        color: #475569; font-size: 0.85rem; font-weight: 600;
+        cursor: pointer; transition: all 0.15s ease; user-select: none;
+    }
+    .uf-chip input { position: absolute; opacity: 0; pointer-events: none; }
+    .uf-chip:hover { border-color: #cbd5e1; background: #f8fafc; }
+    .uf-chip.is-checked,
+    .uf-chip:has(input:checked) {
+        border-color: #64748b; background: #64748b; color: #fff;
+        box-shadow: 0 2px 8px rgba(100,116,139,0.3);
+    }
+
+    .uf-field { position: relative; }
+    .uf-field select {
+        width: 100%; box-sizing: border-box;
+        padding: 12px 40px 12px 14px;
+        border: 1.5px solid #e2e8f0; border-radius: 12px;
+        background: #fff; color: #0f172a;
+        font-size: 0.92rem; font-weight: 500;
+        cursor: pointer; outline: none;
+        -webkit-appearance: none; appearance: none;
+        transition: 0.2s;
+    }
+    .uf-field select:focus { border-color: #64748b; box-shadow: 0 0 0 3px rgba(100,116,139,0.12); }
+    .uf-field__chev {
+        position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+        font-size: 0.7rem; color: #94a3b8; pointer-events: none;
+    }
+
+    .uf-sheet__foot {
+        display: flex; gap: 10px; padding: 14px 18px;
+        border-top: 1px solid #f1f5f9; background: #fafbfc;
+    }
+    .uf-btn {
+        flex: 1; padding: 12px; border-radius: 12px;
+        font-weight: 700; font-size: 0.9rem; cursor: pointer;
+        border: 1px solid transparent; transition: 0.2s;
+    }
+    .uf-btn--ghost { background: #fff; border-color: #e2e8f0; color: #475569; }
+    .uf-btn--ghost:hover { background: #f5f6f8; color: #0f172a; }
+    .uf-btn--primary { background: #0f172a; color: #fff; }
+    .uf-btn--primary:hover { background: #1e293b; }
+
     /* Modern User Cards */
     .users-section {
         background: #f9fafb;
@@ -596,39 +877,111 @@
         opacity: 0.6;
     }
 
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .users-list {
-            grid-template-columns: 1fr;
-        }
+    /* Responsive Design — Tablet (768–1023px) */
+    @media (max-width: 1023px) {
+        .users-list { grid-template-columns: 1fr; }
+    }
 
-        .user-card {
-            padding: 1.5rem;
-        }
-
-        .user-card-header {
-            flex-direction: column;
-            text-align: center;
-            gap: 1rem;
-        }
-
-        .user-status-section {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .user-actions {
-            justify-content: center;
-        }
-
-        .hero-stats {
-            gap: 1.5rem;
-        }
-
+    /* ============================================================
+       MOBILE APP EXPERIENCE (≤ 767px)
+       ============================================================ */
+    @media (max-width: 767px) {
+        /* Compact, app-like hero */
+        .users-hero { padding: 20px 0 16px; background: #fff; }
+        .users-hero::before { display: none; }
+        .users-hero .container { padding-left: 16px; padding-right: 16px; }
+        .users-hero-content > div:first-child { align-items: center !important; }
         .hero-title {
-            font-size: 2rem;
+            font-size: 1.35rem; margin-bottom: 2px;
+            background: none; -webkit-text-fill-color: initial; color: #0f172a;
         }
+        .hero-subtitle { display: none; }
+
+        /* Add User becomes a compact icon pill */
+        .add-user-btn { padding: 11px 14px !important; border-radius: 12px !important; font-size: 0 !important; gap: 0 !important; }
+        .add-user-btn i { font-size: 16px; }
+
+        /* Stats as a horizontal scroll strip of pills */
+        .hero-stats {
+            gap: 10px; margin-top: 16px;
+            justify-content: flex-start;
+            overflow-x: auto; padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch; scrollbar-width: none;
+        }
+        .hero-stats::-webkit-scrollbar { display: none; }
+        .stat-item {
+            flex: 0 0 auto; min-width: 96px;
+            background: #f8fafc; border: 1px solid #eef2f7;
+            border-radius: 14px; padding: 12px 14px;
+        }
+        .stat-number { font-size: 1.4rem; }
+        .stat-label { font-size: 0.72rem; margin-top: 2px; }
+
+        /* Search / filter section */
+        .search-filter-section { padding: 14px 0; }
+        .search-filter-section .container { padding-left: 16px; padding-right: 16px; }
+        .uf-searchrow { gap: 8px; }
+        .search-input { padding: 12px 46px 12px 16px; font-size: 0.95rem; }
+        .uf-filter-btn { padding: 12px 14px; }
+        .uf-filter-btn__label { display: none; }
+
+        /* Status segmented control spans full width, scrolls if needed */
+        .uf-controls { margin-top: 12px; gap: 10px; }
+        .uf-segment { flex: 1; }
+        .uf-segment#statusSegment { width: 100%; }
+        .uf-segment#statusSegment button { flex: 1; justify-content: center; padding: 9px 8px; }
+        .uf-segment#statusSegment button span { display: none; }
+        .uf-segment#statusSegment button i { font-size: 0.95rem; }
+        .uf-controls__right { width: 100%; justify-content: space-between; }
+        .view-toggle button span { display: none; }
+
+        /* Cards: app list rows */
+        .users-section { padding: 16px 0 90px; }
+        .users-section .container { padding-left: 16px; padding-right: 16px; }
+        .users-list { gap: 12px; }
+        .user-card { padding: 16px; border-radius: 16px; }
+        .user-card::before { height: 3px; }
+        .user-card-header { flex-direction: row; text-align: left; gap: 12px; margin-bottom: 12px; align-items: center; }
+        .user-avatar { width: 52px; height: 52px; font-size: 1.15rem; }
+        .user-name { font-size: 1.05rem; margin-bottom: 2px; }
+        .user-email { font-size: 0.82rem; word-break: break-word; }
+
+        .user-status-section { flex-direction: row; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+        .status-badge, .staff-category-badge, .position-badge { margin-top: 0; padding: 5px 11px; font-size: 0.75rem; }
+
+        /* Icon-only action buttons on mobile */
+        .user-actions { justify-content: flex-start; gap: 10px; }
+        .user-actions .action-btn {
+            min-width: 0; width: 44px; height: 44px; padding: 0;
+            border-radius: 12px; flex: 0 0 auto;
+        }
+        .user-actions .action-btn .btn-label { display: none; }
+        .user-actions .action-btn i { font-size: 1rem; }
+        .user-actions form { display: inline-flex !important; }
+
+        /* Filter panel becomes a bottom sheet */
+        .uf-sheet {
+            position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+            width: 100%; max-width: 100%;
+            border-radius: 22px 22px 0 0;
+            transform: translateY(100%);
+            transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
+            display: flex; max-height: 88vh;
+            box-shadow: 0 -12px 40px rgba(15,23,42,0.22);
+        }
+        .uf-sheet.open { transform: translateY(0); animation: none; }
+        .uf-sheet__grip {
+            display: block; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+            width: 42px; height: 5px; border-radius: 999px; background: #d7dde5;
+        }
+        .uf-sheet__head { padding-top: 22px; }
+        .uf-sheet__foot { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+        .hero-title { font-size: 1.35rem; }
+    }
+
+    /* Wide / landscape phones: two-up card grid */
+    @media (max-width: 767px) and (min-width: 600px) {
+        .users-list { grid-template-columns: 1fr 1fr; }
     }
 
     /* ===== Users table actions: 3-dot kebab menu (all screen sizes) ===== */
@@ -742,34 +1095,123 @@
                         </div>
                     </div>
 
-                    <!-- Search and Filter Section -->
+                    <!-- Search and Smart Filter Section -->
                     <div class="search-filter-section">
                         <div class="container">
-                            <form method="GET" action="{{ route('dashboard.users') }}" class="search-box" role="search" id="usersSearchForm">
-                                <input type="text" name="search" class="search-input" id="searchInput" placeholder="Search users by name or email..." value="{{ $search ?? '' }}" autocomplete="off">
-                                <input type="hidden" name="filter" value="{{ $activeFilter ?? 'all' }}">
+                            <form method="GET" action="{{ route('dashboard.users') }}" role="search" id="usersSearchForm">
+                                <input type="hidden" name="filter" value="{{ $activeFilter ?? 'all' }}" id="statusFilterInput">
                                 <input type="hidden" name="per_page" value="{{ request('per_page', 15) }}">
-                                <div class="search-spinner" id="searchSpinner" aria-hidden="true"></div>
-                                <button type="button" class="search-btn" id="clearSearchBtn" style="right: 56px; background:#94a3b8; display: {{ !empty($search) ? 'flex' : 'none' }};" title="Clear search">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                                <button type="submit" class="search-btn">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </form>
 
-                            <div class="filter-tabs">
-                                <a href="{{ route('dashboard.users', ['filter' => 'all', 'search' => $search ?? null, 'per_page' => request('per_page', 15)]) }}" class="filter-tab {{ ($activeFilter ?? 'all') === 'all' ? 'active' : '' }}">All Users</a>
-                                <a href="{{ route('dashboard.users', ['filter' => 'approved', 'search' => $search ?? null, 'per_page' => request('per_page', 15)]) }}" class="filter-tab {{ ($activeFilter ?? '') === 'approved' ? 'active' : '' }}">Approved Only</a>
-                                <a href="{{ route('dashboard.users', ['filter' => 'pending', 'search' => $search ?? null, 'per_page' => request('per_page', 15)]) }}" class="filter-tab {{ ($activeFilter ?? '') === 'pending' ? 'active' : '' }}">Pending Only</a>
-                                <a href="{{ route('dashboard.users', ['filter' => 'recent', 'search' => $search ?? null, 'per_page' => request('per_page', 15)]) }}" class="filter-tab {{ ($activeFilter ?? '') === 'recent' ? 'active' : '' }}">Recently Added</a>
-                            </div>
-                            <div style="margin-top:1rem; display:flex; justify-content:center;">
-                                <div class="view-toggle" role="group" aria-label="View toggle">
-                                    <button type="button" id="gridViewBtn" class="active"><i class="fas fa-th-large"></i> Grid</button>
-                                    <button type="button" id="tableViewBtn"><i class="fas fa-table"></i> Table</button>
+                                {{-- Row 1: search + Filters trigger --}}
+                                <div class="uf-searchrow">
+                                    <div class="search-box">
+                                        <input type="text" name="search" class="search-input" id="searchInput" placeholder="Search users by name or email..." value="{{ $search ?? '' }}" autocomplete="off">
+                                        <div class="search-spinner" id="searchSpinner" aria-hidden="true"></div>
+                                        <button type="button" class="search-btn" id="clearSearchBtn" style="right: 56px; background:#94a3b8; display: {{ !empty($search) ? 'flex' : 'none' }};" title="Clear search">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <button type="submit" class="search-btn" title="Search">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <button type="button" class="uf-filter-btn" id="openFiltersBtn" aria-haspopup="dialog" aria-expanded="false">
+                                        <i class="fas fa-sliders-h"></i>
+                                        <span class="uf-filter-btn__label">Filters</span>
+                                        <span class="uf-filter-count" id="filterCountBadge" {{ ($activeFacetCount ?? 0) > 0 ? '' : 'hidden' }}>{{ $activeFacetCount ?? 0 }}</span>
+                                    </button>
                                 </div>
-                            </div>
+
+                                {{-- Row 2: status segmented control + sort + view toggle --}}
+                                <div class="uf-controls">
+                                    <div class="uf-segment" id="statusSegment" role="group" aria-label="Account status">
+                                        <button type="button" data-status="all" class="{{ ($activeFilter ?? 'all') === 'all' ? 'active' : '' }}"><i class="fas fa-users"></i><span>All</span></button>
+                                        <button type="button" data-status="approved" class="{{ ($activeFilter ?? '') === 'approved' ? 'active' : '' }}"><i class="fas fa-check-circle"></i><span>Approved</span></button>
+                                        <button type="button" data-status="pending" class="{{ ($activeFilter ?? '') === 'pending' ? 'active' : '' }}"><i class="fas fa-clock"></i><span>Pending</span></button>
+                                    </div>
+
+                                    <div class="uf-controls__right">
+                                        <div class="uf-sort">
+                                            <i class="fas fa-arrow-down-short-wide"></i>
+                                            <select name="sort" id="sortSelect" aria-label="Sort users">
+                                                <option value="recent" {{ ($sort ?? 'recent') === 'recent' ? 'selected' : '' }}>Newest first</option>
+                                                <option value="oldest" {{ ($sort ?? '') === 'oldest' ? 'selected' : '' }}>Oldest first</option>
+                                                <option value="name_asc" {{ ($sort ?? '') === 'name_asc' ? 'selected' : '' }}>Name A–Z</option>
+                                                <option value="name_desc" {{ ($sort ?? '') === 'name_desc' ? 'selected' : '' }}>Name Z–A</option>
+                                            </select>
+                                        </div>
+                                        <div class="view-toggle" role="group" aria-label="View toggle">
+                                            <button type="button" id="gridViewBtn" class="active" title="Grid view"><i class="fas fa-th-large"></i><span>Grid</span></button>
+                                            <button type="button" id="tableViewBtn" title="Table view"><i class="fas fa-table"></i><span>Table</span></button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Row 3: active filter chips (rendered by JS) --}}
+                                <div class="uf-active-chips" id="activeChips" aria-live="polite"></div>
+
+                                {{-- Filter panel: popover on desktop, bottom sheet on mobile --}}
+                                <div class="uf-sheet-backdrop" id="filterBackdrop"></div>
+                                <div class="uf-sheet" id="filterSheet" role="dialog" aria-modal="true" aria-label="Filter users" aria-hidden="true">
+                                    <div class="uf-sheet__head">
+                                        <span class="uf-sheet__grip" aria-hidden="true"></span>
+                                        <h4><i class="fas fa-sliders-h"></i> Filters</h4>
+                                        <button type="button" class="uf-sheet__close" id="closeFiltersBtn" aria-label="Close filters"><i class="fas fa-times"></i></button>
+                                    </div>
+                                    <div class="uf-sheet__body">
+                                        <div class="uf-group">
+                                            <span class="uf-group__label"><i class="fas fa-user-tag"></i> Staff Category</span>
+                                            <div class="uf-chipset">
+                                                @foreach(($staffCategoryOptions ?? []) as $cat)
+                                                    <label class="uf-chip">
+                                                        <input type="checkbox" name="staff_category[]" value="{{ $cat }}" {{ in_array($cat, $selectedCategories ?? []) ? 'checked' : '' }}>
+                                                        <span>{{ $cat }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        <div class="uf-group">
+                                            <span class="uf-group__label"><i class="fas fa-building-columns"></i> Department / Faculty / Unit</span>
+                                            <div class="uf-field">
+                                                <select name="department_id" id="deptFilter">
+                                                    <option value="">All departments</option>
+                                                    @foreach($departments as $d)
+                                                        <option value="{{ $d->id }}" {{ (string)($selectedDepartmentId ?? '') === (string)$d->id ? 'selected' : '' }}>{{ $d->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <i class="fas fa-chevron-down uf-field__chev"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="uf-group">
+                                            <span class="uf-group__label"><i class="fas fa-briefcase"></i> Position</span>
+                                            <div class="uf-field">
+                                                <select name="position_id" id="positionFilter">
+                                                    <option value="">Any position</option>
+                                                    @foreach($positions as $p)
+                                                        <option value="{{ $p->id }}" {{ (string)($selectedPositionId ?? '') === (string)$p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <i class="fas fa-chevron-down uf-field__chev"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="uf-group">
+                                            <span class="uf-group__label"><i class="fas fa-id-badge"></i> Account Type</span>
+                                            <div class="uf-segment uf-segment--wide" id="accountTypeSegment" role="group" aria-label="Account type">
+                                                <button type="button" data-account="" class="{{ empty($selectedAccountType) ? 'active' : '' }}">All</button>
+                                                <button type="button" data-account="individual" class="{{ ($selectedAccountType ?? '') === 'individual' ? 'active' : '' }}">Individual</button>
+                                                <button type="button" data-account="office" class="{{ ($selectedAccountType ?? '') === 'office' ? 'active' : '' }}">Office</button>
+                                            </div>
+                                            <input type="hidden" name="account_type" id="accountTypeInput" value="{{ $selectedAccountType ?? '' }}">
+                                        </div>
+                                    </div>
+                                    <div class="uf-sheet__foot">
+                                        <button type="button" class="uf-btn uf-btn--ghost" id="clearFiltersBtn">Clear all</button>
+                                        <button type="button" class="uf-btn uf-btn--primary" id="applyFiltersBtn">Show results</button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
 
@@ -813,32 +1255,32 @@
                                                 @if (!$user->is_approve)
                                                     <form action="{{ route('users.approve', $user->id) }}" method="post" style="display: inline;">
                                                         @csrf
-                                                        <button type="submit" class="action-btn approve">
+                                                        <button type="submit" class="action-btn approve" title="Approve">
                                                             <i class="fas fa-check"></i>
-                                                            Approve
+                                                            <span class="btn-label">Approve</span>
                                                         </button>
                                                     </form>
                                                 @else
                                                     <form action="{{ route('users.disapprove', $user->id) }}" method="post" style="display: inline;">
                                                         @csrf
-                                                        <button type="submit" class="action-btn disapprove">
+                                                        <button type="submit" class="action-btn disapprove" title="Disapprove">
                                                             <i class="fas fa-thumbs-down"></i>
-                                                            Disapprove
+                                                            <span class="btn-label">Disapprove</span>
                                                         </button>
                                                     </form>
                                                 @endif
 
-                                                <button type="button" class="action-btn" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}', '{{ $user->account_type ?? 'individual' }}', '{{ $user->secondaryDepartments->pluck('id')->join(',') }}')">
+                                                <button type="button" class="action-btn edit-info" title="Edit Info" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" onclick="openEditInfoModal({{ $user->id }}, '{{ addslashes($user->first_name . ' ' . $user->last_name) }}', '{{ addslashes($user->email) }}', '{{ $user->department_id }}', '{{ addslashes($user->staff_category ?? '') }}', '{{ $user->position_id }}', '{{ $user->account_type ?? 'individual' }}', '{{ $user->secondaryDepartments->pluck('id')->join(',') }}')">
                                                     <i class="fas fa-user-edit"></i>
-                                                    Edit Info
+                                                    <span class="btn-label">Edit Info</span>
                                                 </button>
 
                                                 <form action="{{ route('users.destroy', $user->id) }}" method="post" style="display: inline;" id="delete-user-form-{{ $user->id }}">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="button" class="action-btn delete" onclick="confirmDeleteUser({{ $user->id }}, '{{ $user->first_name }} {{ $user->last_name }}')">
+                                                    <button type="button" class="action-btn delete" title="Delete" onclick="confirmDeleteUser({{ $user->id }}, '{{ $user->first_name }} {{ $user->last_name }}')">
                                                         <i class="fas fa-trash"></i>
-                                                        Delete
+                                                        <span class="btn-label">Delete</span>
                                                     </button>
                                                 </form>
                                             </div>
@@ -1880,31 +2322,222 @@ window.addEventListener('resize', closeUserActions);
         clearBtn.style.display = input.value.trim() !== '' ? 'flex' : 'none';
     }
 
-    function bindFilterTabs() {
-        const tabs = document.querySelectorAll('.filter-tab');
-        const filterInput = document.querySelector('#usersSearchForm input[name="filter"]');
-        tabs.forEach(function(tab) {
-            tab.addEventListener('click', function(e) {
-                const href = tab.getAttribute('href');
-                if (!href || href === '#') return;
-                let tabFilter = 'all';
-                try {
-                    const tabUrl = new URL(href, window.location.origin);
-                    tabFilter = tabUrl.searchParams.get('filter') || 'all';
-                } catch (err) { return; }
-                e.preventDefault();
-                if (filterInput) filterInput.value = tabFilter;
-                tabs.forEach(function(t) { t.classList.remove('active'); });
-                tab.classList.add('active');
+    /* ---------- Smart filter: labels for active chips ---------- */
+    const CATEGORY_ICON = 'fa-user-tag';
+    function deptLabel(id) {
+        const opt = document.querySelector('#deptFilter option[value="' + CSS.escape(id) + '"]');
+        return opt ? opt.textContent.trim() : id;
+    }
+    function positionLabel(id) {
+        const opt = document.querySelector('#positionFilter option[value="' + CSS.escape(id) + '"]');
+        return opt ? opt.textContent.trim() : id;
+    }
+
+    function collectActiveFacets() {
+        const form = document.getElementById('usersSearchForm');
+        if (!form) return [];
+        const facets = [];
+        form.querySelectorAll('input[name="staff_category[]"]:checked').forEach(function (box) {
+            facets.push({ key: 'cat:' + box.value, icon: 'fa-user-tag', label: box.value,
+                clear: function () {
+                    box.checked = false;
+                    const l = box.closest('.uf-chip'); if (l) l.classList.remove('is-checked');
+                } });
+        });
+        const dept = document.getElementById('deptFilter');
+        if (dept && dept.value) {
+            facets.push({ key: 'dept', icon: 'fa-building-columns', label: deptLabel(dept.value),
+                clear: function () { dept.value = ''; } });
+        }
+        const pos = document.getElementById('positionFilter');
+        if (pos && pos.value) {
+            facets.push({ key: 'pos', icon: 'fa-briefcase', label: positionLabel(pos.value),
+                clear: function () { pos.value = ''; } });
+        }
+        const acct = document.getElementById('accountTypeInput');
+        if (acct && acct.value) {
+            const label = acct.value === 'office' ? 'Office accounts' : 'Individual accounts';
+            facets.push({ key: 'acct', icon: 'fa-id-badge', label: label, clear: function () {
+                acct.value = '';
+                document.querySelectorAll('#accountTypeSegment button').forEach(function (b) {
+                    b.classList.toggle('active', b.getAttribute('data-account') === '');
+                });
+            }});
+        }
+        return facets;
+    }
+
+    function updateFilterBadge(count) {
+        const badge = document.getElementById('filterCountBadge');
+        const btn = document.getElementById('openFiltersBtn');
+        if (!badge) return;
+        if (count > 0) { badge.textContent = count; badge.hidden = false; if (btn) btn.classList.add('has-filters'); }
+        else { badge.hidden = true; if (btn) btn.classList.remove('has-filters'); }
+    }
+
+    function renderActiveChips() {
+        const wrap = document.getElementById('activeChips');
+        if (!wrap) return;
+        const facets = collectActiveFacets();
+        updateFilterBadge(facets.length);
+        wrap.innerHTML = '';
+        if (!facets.length) return;
+        facets.forEach(function (f) {
+            const chip = document.createElement('span');
+            chip.className = 'uf-active-chip';
+            chip.innerHTML = '<i class="fas ' + f.icon + '"></i>' +
+                '<span>' + f.label.replace(/</g, '&lt;') + '</span>' +
+                '<button type="button" class="uf-chip-x" aria-label="Remove filter"><i class="fas fa-times"></i></button>';
+            chip.querySelector('.uf-chip-x').addEventListener('click', function () {
+                f.clear();
+                renderActiveChips();
                 clearTimeout(searchDebounce);
                 runLiveSearch();
             });
+            wrap.appendChild(chip);
+        });
+        const clearAll = document.createElement('button');
+        clearAll.type = 'button';
+        clearAll.className = 'uf-active-chip uf-clear-all';
+        clearAll.textContent = 'Clear all';
+        clearAll.addEventListener('click', clearAllFilters);
+        wrap.appendChild(clearAll);
+    }
+
+    function clearAllFilters() {
+        document.querySelectorAll('#usersSearchForm input[name="staff_category[]"]').forEach(function (b) {
+            b.checked = false;
+            const l = b.closest('.uf-chip'); if (l) l.classList.remove('is-checked');
+        });
+        const dept = document.getElementById('deptFilter'); if (dept) dept.value = '';
+        const pos = document.getElementById('positionFilter'); if (pos) pos.value = '';
+        const acct = document.getElementById('accountTypeInput'); if (acct) acct.value = '';
+        document.querySelectorAll('#accountTypeSegment button').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-account') === '');
+        });
+        renderActiveChips();
+        clearTimeout(searchDebounce);
+        runLiveSearch();
+    }
+
+    /* ---------- Filter sheet open/close (popover ⇄ bottom sheet) ---------- */
+    function positionPopover() {
+        const sheet = document.getElementById('filterSheet');
+        const btn = document.getElementById('openFiltersBtn');
+        if (!sheet || !btn) return;
+        if (window.matchMedia('(max-width: 767px)').matches) {
+            sheet.style.top = ''; sheet.style.left = ''; sheet.style.right = ''; sheet.style.bottom = '';
+            return; // CSS handles the bottom sheet
+        }
+        const r = btn.getBoundingClientRect();
+        const sw = sheet.offsetWidth || 380;
+        let left = r.right - sw;
+        if (left < 12) left = 12;
+        sheet.style.left = left + 'px';
+        sheet.style.top = (r.bottom + 8) + 'px';
+        sheet.style.right = 'auto';
+        sheet.style.bottom = 'auto';
+    }
+    function openFilterSheet() {
+        const sheet = document.getElementById('filterSheet');
+        const backdrop = document.getElementById('filterBackdrop');
+        const btn = document.getElementById('openFiltersBtn');
+        if (!sheet) return;
+        sheet.classList.add('open');
+        sheet.setAttribute('aria-hidden', 'false');
+        if (backdrop) backdrop.classList.add('open');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+        positionPopover();
+    }
+    function closeFilterSheet() {
+        const sheet = document.getElementById('filterSheet');
+        const backdrop = document.getElementById('filterBackdrop');
+        const btn = document.getElementById('openFiltersBtn');
+        if (!sheet) return;
+        sheet.classList.remove('open');
+        sheet.setAttribute('aria-hidden', 'true');
+        if (backdrop) backdrop.classList.remove('open');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function bindSmartFilters() {
+        const statusInput = document.getElementById('statusFilterInput');
+
+        // Status segmented control
+        document.querySelectorAll('#statusSegment button').forEach(function (b) {
+            b.addEventListener('click', function () {
+                if (statusInput) statusInput.value = b.getAttribute('data-status');
+                document.querySelectorAll('#statusSegment button').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                clearTimeout(searchDebounce);
+                runLiveSearch();
+            });
+        });
+
+        // Account type segmented control (writes to hidden input)
+        document.querySelectorAll('#accountTypeSegment button').forEach(function (b) {
+            b.addEventListener('click', function () {
+                const acct = document.getElementById('accountTypeInput');
+                if (acct) acct.value = b.getAttribute('data-account');
+                document.querySelectorAll('#accountTypeSegment button').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                renderActiveChips();
+                clearTimeout(searchDebounce);
+                runLiveSearch();
+            });
+        });
+
+        // Sort select
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) sortSelect.addEventListener('change', function () { clearTimeout(searchDebounce); runLiveSearch(); });
+
+        // Staff category chips + dept/position selects → live
+        document.querySelectorAll('#usersSearchForm input[name="staff_category[]"]').forEach(function (box) {
+            const label = box.closest('.uf-chip');
+            if (label) label.classList.toggle('is-checked', box.checked); // initial state (:has fallback)
+            box.addEventListener('change', function () {
+                if (label) label.classList.toggle('is-checked', box.checked);
+                renderActiveChips(); clearTimeout(searchDebounce); runLiveSearch();
+            });
+        });
+        ['deptFilter', 'positionFilter'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', function () { renderActiveChips(); clearTimeout(searchDebounce); runLiveSearch(); });
+        });
+
+        // Sheet triggers
+        const openBtn = document.getElementById('openFiltersBtn');
+        const closeBtn = document.getElementById('closeFiltersBtn');
+        const backdrop = document.getElementById('filterBackdrop');
+        const applyBtn = document.getElementById('applyFiltersBtn');
+        const clearBtn = document.getElementById('clearFiltersBtn');
+        if (openBtn) openBtn.addEventListener('click', function () {
+            const sheet = document.getElementById('filterSheet');
+            if (sheet && sheet.classList.contains('open')) closeFilterSheet(); else openFilterSheet();
+        });
+        if (closeBtn) closeBtn.addEventListener('click', closeFilterSheet);
+        if (backdrop) backdrop.addEventListener('click', closeFilterSheet);
+        if (applyBtn) applyBtn.addEventListener('click', function () { closeFilterSheet(); clearTimeout(searchDebounce); runLiveSearch(); });
+        if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
+
+        // Dismiss desktop popover on outside click / escape
+        document.addEventListener('click', function (e) {
+            const sheet = document.getElementById('filterSheet');
+            if (!sheet || !sheet.classList.contains('open')) return;
+            if (window.matchMedia('(max-width: 767px)').matches) return; // backdrop handles mobile
+            if (!e.target.closest('#filterSheet') && !e.target.closest('#openFiltersBtn')) closeFilterSheet();
+        });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeFilterSheet(); });
+        window.addEventListener('resize', function () {
+            const sheet = document.getElementById('filterSheet');
+            if (sheet && sheet.classList.contains('open')) positionPopover();
         });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
         bindViewToggle();
-        bindFilterTabs();
+        bindSmartFilters();
+        renderActiveChips();
         updateClearButton();
 
         const input = document.getElementById('searchInput');
