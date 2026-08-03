@@ -104,34 +104,6 @@ class HomeController extends Controller
         return view('admin.documents', compact('exams', 'files', 'folders', 'sharedFolders'));
     }
 
-    public function uploadedDocument(){
-        // Show every exam the user owns, including ones filed into a folder.
-        $user = Auth::user();
-        $exams = Exam::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-        $folders = Folder::where('user_id', $user->id)
-            ->withCount(['files', 'exams'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        $sharedFolders = Folder::sharedListingFor($user);
-        return view('admin.uploaded_documents', compact('exams', 'folders', 'sharedFolders'));
-    }
-
-    public function allUploadedDocument(){
-        // Show every exam the user owns, including ones filed into a folder.
-        $user = Auth::user();
-        $exams = Exam::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-        $folders = Folder::where('user_id', $user->id)
-            ->withCount(['files', 'exams'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        $sharedFolders = Folder::sharedListingFor($user);
-        return view('admin.all_uploaded_documents', compact('exams', 'folders', 'sharedFolders'));
-    }
-
     public function allExams(){
         // Show every exam the user owns — including ones they've placed in a
         // folder (e.g. via the folder "quick add" modal). An exam the user

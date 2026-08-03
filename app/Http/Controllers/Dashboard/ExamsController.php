@@ -14,11 +14,6 @@ use Illuminate\Support\Facades\DB;
 
 class ExamsController extends Controller
 {
-    public function upload()
-    {
-        $exams = Exam::all();
-        return view('admin.uploaded_documents', compact('exams'));
-    }
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -287,15 +282,6 @@ class ExamsController extends Controller
         $exam->delete();
 
         return redirect()->back()->with('success', 'Document deleted successfully');
-    }
-
-    public function delete(Exam $exam)
-    {
-        $this->authorizeManage($exam);
-
-        $exam->delete();
-
-        return redirect()->route('dashboard.upload.document')->with('success', 'Document deleted successfully');
     }
 
     /**

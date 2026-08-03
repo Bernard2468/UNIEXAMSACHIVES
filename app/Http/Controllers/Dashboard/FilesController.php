@@ -123,19 +123,6 @@ class FilesController extends Controller
             ->with('success', 'File has been updated successfully.');
     }
 
-    public function allUploadedFile(){
-        // Show every file the user owns, including ones filed into a folder.
-        $files = File::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
-        $folders = Folder::where('user_id', Auth::id())
-            ->withCount(['files', 'exams'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        $sharedFolders = Folder::sharedListingFor(Auth::user());
-        return view('admin.all_files', compact('files', 'folders', 'sharedFolders'));
-    }
-
     public function allFiles(){
         // Show every file the user owns — including ones they've placed in a
         // folder (e.g. via the folder "quick add" modal). A file the user
