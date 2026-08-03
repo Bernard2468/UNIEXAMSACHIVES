@@ -8,9 +8,11 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
-            font-size: 11pt;
-            color: #1f2937;
+            /* Times core font (what MS Word memos use). It only covers cp1252 —
+               no emoji/₵ glyphs — so decorative entities must stay out of markup. */
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            color: #111827;
             background: #fff;
         }
 
@@ -19,78 +21,66 @@
         .letterhead-img  { width: 100%; height: auto; display: block; }
 
         /* ── Page wrapper ── */
-        .page-body { padding: 20px 46px 40px 46px; }
+        .page-body { padding: 8px 46px 24px 46px; }
 
-        /* ── Masthead ── */
-        .masthead { text-align: center; padding: 14px 0 4px; }
-        .masthead .title {
-            font-size: 13pt;
-            font-weight: bold;
-            color: #16335b;
-            letter-spacing: 0.42em;
-            text-indent: 0.42em; /* re-centre after trailing letter-spacing */
-        }
-        .rule-strong { border: none; border-top: 2px solid #16335b; margin: 10px 0 1px; }
+        .rule-strong { border: none; border-top: 2px solid #16335b; margin: 8px 0 10px; }
         .rule-hair   { border: none; border-top: 0.6px solid #c7d0db; margin: 0; }
 
         /* ── Meta block (Ref / Date / From / To …) ── */
-        .meta { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        .meta { width: 100%; border-collapse: collapse; margin-top: 6px; }
         /* dompdf lines a label up with its value ONLY when they are the SAME font-size:
            with equal metrics a plain top-aligned label cell and value cell share one
            baseline, so "To" sits exactly on its recipient's line. dompdf CANNOT
            baseline-align two cells of different sizes, and it mis-baselines an
            inline-block label (it uses the box's bottom edge) — both make a small label
-           drift upward. So the label matches the value's 10.5pt and stays distinct by
-           being uppercase / grey / bold / letter-spaced instead of tiny. Multi-recipient
+           drift upward. So the label matches the value's 12pt and stays distinct by
+           being bold, like the label column of a Word-typed memo. Multi-recipient
            To/Cc print one row per name; continuation rows leave the label cell empty so
            the names line up under the value column. */
-        .meta td { padding: 4px 0; line-height: 1.5; vertical-align: top; }
+        .meta td { padding: 2px 0; line-height: 1.4; vertical-align: top; }
         .meta .k {
-            width: 116px;
-            font-size: 10.5pt;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: #6b7280;
+            width: 96px;
+            font-size: 12pt;
+            color: #111827;
             font-weight: bold;
             white-space: nowrap;
         }
-        .meta .v       { color: #111827; font-size: 10.5pt; word-wrap: break-word; overflow-wrap: break-word; }
+        .meta .v       { color: #111827; font-size: 12pt; word-wrap: break-word; overflow-wrap: break-word; }
         .meta .subject { font-weight: bold; color: #16335b; }
-        .meta .muted   { color: #9ca3af; font-size: 8.5pt; }
+        .meta .muted   { color: #9ca3af; font-size: 9pt; }
         /* Ref stands alone, right-aligned; the &nbsp;s hold a gap before its value. */
         .meta td.ref    { text-align: right; }
 
         /* ── Section heading (consistent everywhere) ── */
         .sec {
-            font-size: 8.5pt;
+            font-size: 9.5pt;
             font-weight: bold;
             color: #16335b;
             text-transform: uppercase;
-            letter-spacing: 0.13em;
+            letter-spacing: 0.1em;
             border-bottom: 1px solid #16335b;
-            padding-bottom: 4px;
-            margin: 26px 0 14px;
+            padding-bottom: 3px;
+            margin: 12px 0 8px;
         }
 
         /* ── Memo body ── */
         /* word-wrap/overflow-wrap break very long unbroken strings (pasted URLs,
            no-space text) so they stay inside the page instead of running off it. */
-        .body          { font-size: 11pt; line-height: 1.75; color: #1f2937; text-align: justify; word-wrap: break-word; overflow-wrap: break-word; }
-        .body p        { margin-bottom: 10px; word-wrap: break-word; overflow-wrap: break-word; }
-        .body table    { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 10.5pt; }
+        .body          { font-size: 12pt; line-height: 1.45; color: #111827; text-align: justify; word-wrap: break-word; overflow-wrap: break-word; }
+        .body p        { margin-bottom: 8px; word-wrap: break-word; overflow-wrap: break-word; }
+        .body table    { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11pt; }
         .body table th { background: #16335b; color: #fff; padding: 8px 10px; text-align: left; font-weight: bold; border: 1px solid #16335b; }
         .body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
 
         /* ── Minutes (people who minuted on the memo) ── */
-        .msg { margin-bottom: 15px; padding-left: 13px; border-left: 2px solid #d8dee7; }
-        .msg .who  { font-weight: bold; font-size: 10pt; color: #16335b; }
-        .msg .when { font-size: 8.5pt; color: #9ca3af; margin-left: 8px; }
-        .msg .text { font-size: 10.5pt; line-height: 1.6; color: #1f2937; margin-top: 3px; word-wrap: break-word; overflow-wrap: break-word; }
-        .msg .text p { margin-bottom: 6px; }
-        .empty-note { font-size: 10pt; color: #9ca3af; font-style: italic; }
+        .msg { margin-bottom: 10px; padding-left: 13px; border-left: 2px solid #d8dee7; }
+        .msg .who  { font-weight: bold; font-size: 11pt; color: #16335b; }
+        .msg .when { font-size: 9pt; color: #9ca3af; margin-left: 8px; }
+        .msg .text { font-size: 11pt; line-height: 1.45; color: #111827; margin-top: 2px; word-wrap: break-word; overflow-wrap: break-word; }
+        .msg .text p { margin-bottom: 5px; }
 
         /* ── Inline attachments (compact, no boxes) ── */
-        .att-image { text-align: center; margin: 12px 0; }
+        .att-image { text-align: center; margin: 10px 0; }
         .att-image img { max-width: 88%; max-height: 360px; border: 1px solid #e5e7eb; }
         .att-cap { font-size: 8pt; color: #9ca3af; margin-top: 4px; }
         .att-text {
@@ -105,14 +95,14 @@
             line-height: 1.55;
             margin: 9px 0;
         }
-        .clip { font-size: 9pt; color: #6b7280; margin: 4px 0; line-height: 1.5; }
+        .clip { font-size: 10pt; color: #6b7280; margin: 4px 0; line-height: 1.4; }
         .clip .nm  { color: #374151; font-weight: bold; }
         .clip .sz  { color: #9ca3af; font-size: 8.5pt; }
         .clip .tag { color: #16335b; font-weight: bold; }
 
         /* ── Enclosures list ── */
-        .encl { width: 100%; border-collapse: collapse; margin-top: 4px; }
-        .encl td { padding: 7px 0; border-bottom: 1px solid #eef1f4; font-size: 10pt; vertical-align: middle; }
+        .encl { width: 100%; border-collapse: collapse; margin-top: 2px; }
+        .encl td { padding: 4px 0; border-bottom: 1px solid #eef1f4; font-size: 10.5pt; vertical-align: middle; }
         .encl .no { width: 30px; color: #9ca3af; font-weight: bold; font-size: 9pt; }
         .encl .nm { color: #111827; }
         .encl .sz { color: #9ca3af; font-size: 8.5pt; }
@@ -124,7 +114,7 @@
 
         /* ── Footer ── */
         .foot {
-            margin-top: 34px;
+            margin-top: 16px;
             border-top: 1px solid #e5e7eb;
             padding-top: 9px;
             font-size: 8pt;
@@ -204,9 +194,9 @@
             case 'annex':
                 return ''; // listed in Enclosures and appended as a full annex
             case 'missing':
-                return '<div class="clip">&#9888; <span class="nm">' . e($att['name']) . '</span> &mdash; file not found on server</div>';
+                return '<div class="clip"><span class="nm">' . e($att['name']) . '</span> &mdash; file not found on server</div>';
             default: // 'file' — a document that could not be converted/appended
-                return '<div class="clip">&#128206; <span class="nm">' . e($att['name']) . '</span>'
+                return '<div class="clip">Attachment: <span class="nm">' . e($att['name']) . '</span>'
                      . ($att['size'] ? ' <span class="sz">(' . e($att['size']) . ')</span>' : '')
                      . ' <span class="sz">&mdash; available in the system</span></div>';
         }
@@ -268,10 +258,9 @@
         </tr>
     </table>
 
-    <hr class="rule-hair" style="margin-top:14px;">
+    <hr class="rule-strong">
 
     {{-- ══ MEMO BODY ══ --}}
-    <div class="sec">Memorandum</div>
     <div class="body">
         {!! $memo->message ?? '' !!}
     </div>
@@ -294,10 +283,8 @@
         $hasInline = fn ($item) => !empty(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex'));
         $renderableMinutes = array_values(array_filter($processedReplies, fn ($item) => $hasRemark($item) || $hasInline($item)));
     @endphp
-    <div class="sec">Minutes</div>
-    @if(empty($renderableMinutes))
-        <p class="empty-note">No minutes have been recorded on this memo.</p>
-    @else
+    @if(!empty($renderableMinutes))
+        <div class="sec">Minutes</div>
         @foreach($renderableMinutes as $item)
         <div class="msg">
             <div><span class="who">{{ $item['sender'] }}</span><span class="when">{{ $item['sent_at'] }}</span></div>
