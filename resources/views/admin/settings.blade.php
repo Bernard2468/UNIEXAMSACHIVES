@@ -276,7 +276,18 @@
                                 </div>
 
                                 <div class="fs-foot">
-                                    <span class="fs-status" id="fs-status" aria-live="polite">Saved automatically</span>
+                                    <span class="fs-status" id="fs-status" aria-live="polite">
+                                        <span class="fs-status__ico">
+                                            <svg class="fs-status__spin" width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="42" stroke-dashoffset="14"/>
+                                            </svg>
+                                            <svg class="fs-status__check" width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <circle class="fs-check-ring" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.4"/>
+                                                <path class="fs-check-tick" d="M7.2 12.5l3.2 3.2L16.9 8.9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </span>
+                                        <span class="fs-status__txt">Saved to your account</span>
+                                    </span>
                                     <button type="button" class="fs-reset" id="fs-reset">Reset to default</button>
                                 </div>
                             </div>
@@ -854,21 +865,69 @@
 .fs-status {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     font-size: 0.82rem;
     font-weight: 600;
-    color: #16a34a;
+    color: #16a34a;            /* idle / saved = green */
+    transition: color .25s ease;
 }
-.fs-status::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 0 3px rgba(22,163,74,.18);
+.fs-status.is-saving { color: #a3a8b4; }   /* muted grey while working */
+.fs-status.is-warn   { color: #d97706; }   /* amber = saved locally only */
+
+/* Icon stage — spinner and check are stacked; we cross-fade between them. */
+.fs-status__ico {
+    position: relative;
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
 }
-.fs-status--saving { color: #a3a8b4; }
-.fs-status--warn   { color: #d97706; }
+.fs-status__spin,
+.fs-status__check {
+    position: absolute;
+    inset: 0;
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+/* Spinner: hidden until saving, then rotates smoothly */
+.fs-status__spin  { opacity: 0; transform: scale(.6); animation: fs-spin .7s linear infinite; }
+.fs-status.is-saving .fs-status__spin  { opacity: 1; transform: scale(1); }
+.fs-status.is-saving .fs-status__check { opacity: 0; transform: scale(.6); }
+
+/* Check: the resting/confirmed state */
+.fs-check-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+.fs-check-tick {
+    stroke-dasharray: 22;
+    stroke-dashoffset: 0;      /* drawn by default (idle) */
+}
+
+/* On a fresh save the ring pops and the tick draws itself in.
+   JS re-adds .is-saved (with a reflow) so this replays every time. */
+.fs-status.is-saved .fs-check-ring,
+.fs-status.is-warn  .fs-check-ring { animation: fs-ring-pop .38s cubic-bezier(.34,1.56,.64,1) both; }
+.fs-status.is-saved .fs-check-tick,
+.fs-status.is-warn  .fs-check-tick { animation: fs-tick-draw .32s .13s ease both; }
+
+@keyframes fs-spin { to { transform: rotate(360deg); } }
+@keyframes fs-ring-pop {
+    0%   { transform: scale(.3); opacity: 0; }
+    60%  { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes fs-tick-draw {
+    from { stroke-dashoffset: 22; }
+    to   { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fs-status__spin { animation-duration: 1.2s; }
+    .fs-status.is-saved .fs-check-ring,
+    .fs-status.is-warn  .fs-check-ring,
+    .fs-status.is-saved .fs-check-tick,
+    .fs-status.is-warn  .fs-check-tick { animation: none; }
+}
 
 .fs-reset {
     background: none;
@@ -948,10 +1007,20 @@ function spTogglePw(fieldId, btn) {
     var indicator = document.getElementById('fs-indicator');
     var status    = document.getElementById('fs-status');
     var resetBtn  = document.getElementById('fs-reset');
+    var statusTxt = status ? status.querySelector('.fs-status__txt') : null;
     var scales    = steps.map(function (b) { return parseFloat(b.dataset.scale); });
     var saveUrl   = '{{ route('dashboard.settings.font-scale') }}';
     var csrf      = '{{ csrf_token() }}';
     var saveTimer = null;
+
+    // state: 'saving' → spinner rotates; 'saved'/'warn' → ring pops + tick draws
+    function setStatus(state, text) {
+        if (!status) return;
+        if (statusTxt) statusTxt.textContent = text;
+        status.classList.remove('is-saving', 'is-saved', 'is-warn');
+        void status.offsetWidth;              // reflow so the tick draw replays
+        status.classList.add('is-' + state);
+    }
 
     function nearestIndex(v) {
         var best = 0, bd = Infinity;
@@ -976,7 +1045,7 @@ function spTogglePw(fieldId, btn) {
     }
 
     function save(scale) {
-        if (status) { status.textContent = 'Saving…'; status.className = 'fs-status fs-status--saving'; }
+        setStatus('saving', 'Saving…');
         clearTimeout(saveTimer);
         saveTimer = setTimeout(function () {
             fetch(saveUrl, {
@@ -985,8 +1054,8 @@ function spTogglePw(fieldId, btn) {
                 body: JSON.stringify({ scale: scale })
             })
             .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
-            .then(function () { if (status) { status.textContent = 'Saved to your account'; status.className = 'fs-status'; } })
-            .catch(function () { if (status) { status.textContent = 'Saved on this device'; status.className = 'fs-status fs-status--warn'; } });
+            .then(function () { setStatus('saved', 'Saved to your account'); })
+            .catch(function () { setStatus('warn', 'Saved on this device'); });
         }, 250);
     }
 
