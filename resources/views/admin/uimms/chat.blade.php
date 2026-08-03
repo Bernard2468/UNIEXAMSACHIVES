@@ -1456,9 +1456,11 @@
     </div>
 </div>
 
-{{-- Minute-To Modal (official minuting: route the memo onward, signed) --}}
+{{-- Minute-To Modal (official minuting: route the memo onward, signed).
+     Restyled by CSS into a bottom sheet on phones and a LEFT side drawer on
+     tablet/desktop — Bootstrap still drives open/close/backdrop/Escape. --}}
 <div class="modal fade" id="assignModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Minute Memo To</h5>
@@ -4009,6 +4011,34 @@
   #assignModal #user-search-input,
   #assignModal .sigtyped-name__input,
   #assignModal textarea { font-size: 16px; }   /* ≥16px so iOS doesn't zoom */
+}
+
+/* ── "Minute-To" modal → LEFT SIDE DRAWER on tablet/desktop ──
+   Same pure-CSS restyle trick as the phone bottom sheet above: Bootstrap
+   keeps handling open/close/backdrop/Escape, we only reposition the dialog.
+   Matches the app's established side-drawer idiom (folders .mdrawer),
+   left-anchored per design: full height, fixed width, slide-in from the
+   left, shadow cast to the right. */
+@media (min-width: 768px) {
+  #assignModal .modal-dialog {
+    position: fixed; top: 0; bottom: 0; left: 0; right: auto;
+    margin: 0; width: 480px; max-width: 94vw;
+    display: flex;
+  }
+  /* Slide in from the left (overrides Bootstrap's default drop-in transform) */
+  #assignModal.fade .modal-dialog { transform: translateX(-100%); transition: transform .34s cubic-bezier(.22, .61, .36, 1); }
+  #assignModal.show .modal-dialog { transform: translateX(0); }
+  #assignModal .modal-content {
+    display: flex; flex-direction: column;
+    width: 100%; height: 100%;
+    border: none; border-radius: 0;
+    box-shadow: 22px 0 50px rgba(15, 23, 42, 0.14);
+  }
+  #assignModal .modal-header { flex: 0 0 auto; }
+  #assignModal form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #assignModal .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  #assignModal .am-user-list { max-height: 230px; overflow-y: auto; }
+  #assignModal .modal-footer { flex: 0 0 auto; }
 }
 </style>
 

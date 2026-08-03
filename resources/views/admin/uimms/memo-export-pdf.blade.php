@@ -7,6 +7,12 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* Word-like page margins: ~1" top so continuation pages don't start at
+           the paper's edge, and a bottom margin so content never hugs the foot
+           of the page. Sides stay 0 — .page-body carries the side padding and
+           the letterhead band stays full-bleed. */
+        @page { margin: 72pt 0 56pt 0; }
+
         body {
             /* Times core font (what MS Word memos use). It only covers cp1252 —
                no emoji/₵ glyphs — so decorative entities must stay out of markup. */
@@ -17,7 +23,10 @@
         }
 
         /* ── Letterhead ── */
-        .letterhead-band { width: 100%; margin-bottom: 0; }
+        /* -72pt cancels the @page top margin on page 1 exactly, so the band
+           prints at the physical top of the sheet — same position as before
+           the page margins were introduced. */
+        .letterhead-band { width: 100%; margin: -72pt 0 0 0; }
         .letterhead-img  { width: 100%; height: auto; display: block; }
 
         /* ── Page wrapper ── */
@@ -75,19 +84,24 @@
         /* ── Minutes (official, signed Minute-To actions) ──
            Modelled on how officers minute a paper memo: each minute takes the
            next free space under the body — "To" line, remark, signature, name
-           and date — and simply flows onto the next page when space runs out. */
-        .minutes { width: 100%; border-collapse: collapse; }
-        .minutes td { vertical-align: top; padding: 5px 0 9px; }
-        .minutes .mno { width: 28px; font-weight: bold; }
-        .minutes .mlab { font-weight: bold; }
-        .minutes .mrem { margin-top: 1px; }
-        .minutes .msig { height: 42px; margin: 3px 0 0; display: block; }
-        .minutes .mwho { font-weight: bold; }
-        .minutes .mwhen { font-size: 10pt; color: #6b7280; }
+           and date — and moves to the next page when it can't fit WHOLE.
+           page-break-inside: avoid keeps a minute (and, for the first block,
+           the MINUTES heading too) from being split or stranded at a page's
+           foot; a block taller than a page still breaks rather than vanish. */
+        .minute-block { page-break-inside: avoid; }
+        .sec--minutes { margin-top: 26px; }
+        .minute-tbl { width: 100%; border-collapse: collapse; }
+        .minute-tbl td { vertical-align: top; padding: 5px 0 9px; }
+        .minute-tbl .mno { width: 28px; font-weight: bold; }
+        .minute-tbl .mlab { font-weight: bold; }
+        .minute-tbl .mrem { margin-top: 1px; }
+        .minute-tbl .msig { height: 42px; margin: 3px 0 0; display: block; }
+        .minute-tbl .mwho { font-weight: bold; }
+        .minute-tbl .mwhen { font-size: 10pt; color: #6b7280; }
 
         /* ── Discussion (informal chat thread — printed plainly, on its own page) ── */
         .page-break { page-break-before: always; }
-        .msg { margin-bottom: 10px; }
+        .msg { margin-bottom: 10px; page-break-inside: avoid; }
         .msg .who  { font-weight: bold; font-size: 11pt; color: #111827; }
         .msg .when { font-size: 9pt; color: #6b7280; margin-left: 8px; }
         .msg .text { font-size: 11pt; line-height: 1.45; color: #111827; margin-top: 2px; word-wrap: break-word; overflow-wrap: break-word; }
@@ -289,30 +303,39 @@
     @endif
 
     {{-- ══ MINUTES (official signed Minute-To actions) ══ --}}
+    {{-- Each minute is its own unbreakable block; the heading rides inside the
+         first block so it can never be left alone at the bottom of a page. --}}
     @if(!empty($processedMinutes))
-        <div class="sec">Minutes</div>
-        <table class="minutes">
-            @foreach($processedMinutes as $m)
-            <tr>
-                <td class="mno">{{ $m['number'] }}.</td>
-                <td>
-                    <div><span class="mlab">To:</span> {{ $m['to'] !== '' ? $m['to'] : '—' }}</div>
-                    @if($m['remark'] !== '')
-                        <div class="mrem">{{ $m['remark'] }}</div>
-                    @endif
-                    @if($m['signature'])
-                        <img class="msig" src="{{ $m['signature'] }}" alt="Signature of {{ $m['signer'] }}">
-                    @endif
-                    <div class="mwho">{{ $m['signer'] }}@if($m['position']) &mdash; {{ $m['position'] }}@endif</div>
-                    <div class="mwhen">{{ $m['when'] }}</div>
-                </td>
-            </tr>
-            @endforeach
-        </table>
+        @foreach($processedMinutes as $m)
+        <div class="minute-block">
+            @if($loop->first)
+                <div class="sec sec--minutes">Minutes</div>
+            @endif
+            <table class="minute-tbl">
+                <tr>
+                    <td class="mno">{{ $m['number'] }}.</td>
+                    <td>
+                        <div><span class="mlab">To:</span> {{ $m['to'] !== '' ? $m['to'] : '—' }}</div>
+                        @if($m['remark'] !== '')
+                            <div class="mrem">{{ $m['remark'] }}</div>
+                        @endif
+                        @if($m['signature'])
+                            <img class="msig" src="{{ $m['signature'] }}" alt="Signature of {{ $m['signer'] }}">
+                        @endif
+                        <div class="mwho">{{ $m['signer'] }}@if($m['position']) &mdash; {{ $m['position'] }}@endif</div>
+                        <div class="mwhen">{{ $m['when'] }}</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        @endforeach
     @endif
 
     {{-- ══ ENCLOSURES (formal index of every appended document) ══ --}}
+    {{-- Wrapped so the heading + index list stay together instead of the
+         heading being stranded at the foot of a page (list is always short). --}}
     @if(!empty($annexes))
+    <div style="page-break-inside: avoid;">
     <div class="sec">Enclosures</div>
     <table class="encl">
         @foreach($annexes as $annex)
@@ -323,6 +346,7 @@
         </tr>
         @endforeach
     </table>
+    </div>
     @endif
 
     {{-- ══ DISCUSSION (informal chat thread — starts on its own page so the
