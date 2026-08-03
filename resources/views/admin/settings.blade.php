@@ -874,6 +874,9 @@
 .fs-status.is-saving { color: #a3a8b4; }   /* muted grey while working */
 .fs-status.is-warn   { color: #d97706; }   /* amber = saved locally only */
 
+/* Icon follows the state colour (currentColor); the label stays black. */
+.fs-status__txt { color: #0c0c0c; }
+
 /* Icon stage — spinner and check are stacked; we cross-fade between them. */
 .fs-status__ico {
     position: relative;
