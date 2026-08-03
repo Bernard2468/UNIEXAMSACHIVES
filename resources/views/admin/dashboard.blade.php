@@ -1,5 +1,9 @@
 @extends('layout.app')
 
+{{-- Keep the system footer on mobile here — the Dashboard home is the one place
+     the quick-nav / support footer earns its keep as a landing surface. --}}
+@section('footerClass', 'ft-keep-mobile')
+
 @push('styles')
 <!-- Font Awesome Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

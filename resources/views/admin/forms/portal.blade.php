@@ -33,19 +33,32 @@
 
                         <div class="form-tabs">
                             @php
+                                // [full label (desktop), count, short label (mobile bottom-nav)]
                                 $tabs = [
-                                    'awaiting'  => ['Awaiting My Action', $counts['awaiting']],
-                                    'mine'      => ['My Submitted', $counts['mine']],
-                                    'drafts'    => ['Drafts', $counts['drafts']],
-                                    'signed'    => ['Signed by Me', $counts['signed']],
-                                    'completed' => ['Completed', $counts['completed']],
+                                    'awaiting'  => ['Awaiting My Action', $counts['awaiting'], 'Awaiting'],
+                                    'mine'      => ['My Submitted', $counts['mine'], 'Submitted'],
+                                    'drafts'    => ['Drafts', $counts['drafts'], 'Drafts'],
+                                    'signed'    => ['Signed by Me', $counts['signed'], 'Signed'],
+                                    'completed' => ['Completed', $counts['completed'], 'Completed'],
+                                ];
+                                // Inline icons shown only in the mobile bottom-nav.
+                                $tabIcons = [
+                                    'awaiting'  => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+                                    'mine'      => '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>',
+                                    'drafts'    => '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>',
+                                    'signed'    => '<path d="M20 6 9 17l-5-5"/>',
+                                    'completed' => '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/>',
                                 ];
                             @endphp
-                            @foreach($tabs as $key => [$label, $count])
+                            @foreach($tabs as $key => [$label, $count, $short])
                                 <a href="{{ route('admin.forms.portal', ['tab' => $key]) }}"
                                    class="form-tab {{ $tab === $key ? 'form-tab--active' : '' }}">
-                                    {{ $label }}
-                                    <span class="form-tab__count">{{ $count }}</span>
+                                    <span class="form-tab__label">{{ $label }}</span>
+                                    <span class="form-tab__short">{{ $short }}</span>
+                                    <span class="form-tab__ico" aria-hidden="true">
+                                        <svg class="form-tab__svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{!! $tabIcons[$key] !!}</svg>
+                                        <span class="form-tab__count {{ $count == 0 ? 'form-tab__count--zero' : '' }}">{{ $count }}</span>
+                                    </span>
                                 </a>
                             @endforeach
                         </div>
@@ -162,6 +175,10 @@
 .form-tab--active { background: #fff; color: #1d4ed8; border-color: #e5e7eb; border-bottom: 2px solid #1d4ed8; margin-bottom: -2px; }
 .form-tab__count { background: #f3f4f6; color: #4b5563; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
 .form-tab--active .form-tab__count { background: #1d4ed8; color: #fff; }
+/* Desktop keeps the current text+count look — the mobile icon + short label are
+   hidden here; the count pill lives in the (otherwise invisible) icon wrapper. */
+.form-tab__short, .form-tab__svg { display: none; }
+.form-tab__ico { display: inline-flex; align-items: center; }
 
 .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; }
 .empty-state h5 { margin: 14px 0 6px; color: #111827; }
@@ -178,6 +195,63 @@
 .stale-pill { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }
 .stale-pill--warn   { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 .stale-pill--danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* ═════════════ MOBILE APP CHROME (≤767) ═════════════ */
+@media (max-width: 767px) {
+    /* De-squish trio + clearance for the fixed bottom nav (the system footer is
+       already auto-hidden on .dashboardarea pages at this width). */
+    .dashboardarea .container-fluid.full__width__padding { padding-left: 0; padding-right: 0; }
+    .dashboardarea .container-fluid.full__width__padding > .row { margin-left: 0; margin-right: 0; }
+    .dashboardarea .container-fluid.full__width__padding > .row > [class*="col-"] { padding-left: 0; padding-right: 0; }
+    .dashboard__content__wraper {
+        padding-left: 16px; padding-right: 16px;
+        padding-bottom: calc(94px + env(safe-area-inset-bottom));
+    }
+
+    /* Tabs → fixed BOTTOM NAVIGATION BAR (like Settings). Each item is a link
+       that loads its view; counts become notification-style corner badges.
+       Always displayed → anchors to the viewport bottom under root-`zoom`. */
+    .form-tabs {
+        position: fixed; left: 0; right: 0; bottom: 0;
+        z-index: 1040;
+        gap: 0; margin: 0; flex-wrap: nowrap;
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+        background: #fff;
+        border-top: 1.5px solid #e5e7eb; border-bottom: none;
+        box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07);
+    }
+    .form-tabs .form-tab {
+        flex: 1 1 0; flex-direction: column; gap: 3px;
+        padding: 8px 2px 4px; margin: 0;
+        border: none; border-radius: 12px;
+        font-size: 0.6rem; font-weight: 600; color: #9ca3af;
+        white-space: nowrap; position: relative;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .form-tabs .form-tab:hover { background: none; color: #9ca3af; }
+    .form-tab__label { display: none; }
+    .form-tab__short { display: inline; order: 2; }
+    .form-tab__svg { display: block; }
+    .form-tab__ico { order: 1; position: relative; display: inline-flex; }
+    .form-tabs .form-tab--active { background: none; color: #1d4ed8; border: none; margin: 0; }
+    .form-tabs .form-tab--active:hover { color: #1d4ed8; }
+    .form-tabs .form-tab--active::before {
+        content: ''; position: absolute; top: -6px; left: 50%;
+        transform: translateX(-50%);
+        width: 28px; height: 3px; background: #1d4ed8; border-radius: 0 0 4px 4px;
+    }
+    /* Count → notification badge riding the icon's top-right. */
+    .form-tab__count {
+        position: absolute; top: -6px; right: -10px;
+        min-width: 16px; height: 16px; padding: 0 4px;
+        background: #ef4444; color: #fff;
+        border-radius: 99px; font-size: 9.5px; font-weight: 700; line-height: 1;
+        display: flex; align-items: center; justify-content: center;
+        border: 1.5px solid #fff;
+    }
+    .form-tab__count--zero { display: none; }
+    .form-tabs .form-tab--active .form-tab__count { background: #1d4ed8; color: #fff; }
+}
 </style>
 
 @include('admin.forms.partials.shared-styles')

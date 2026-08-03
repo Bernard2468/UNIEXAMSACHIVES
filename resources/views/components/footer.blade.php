@@ -1,4 +1,4 @@
-<footer class="ft-root" id="ft-root">
+<footer class="ft-root @yield('footerClass')" id="ft-root">
     <div class="ft-inner">
 
         {{-- ── Top: two columns ── --}}
@@ -365,6 +365,16 @@
 
 @media (prefers-reduced-motion: reduce) {
     .ft-root, [data-ft-reveal] { transition: none !important; opacity: 1 !important; transform: none !important; }
+}
+
+/* ── Hide the app footer on mobile inside the authenticated dashboard shell ──
+   Its "Quick navigation" duplicates the mobile sidebar drawer, so it's redundant
+   mid-task. Scoped to pages whose content has .dashboardarea (the app shell), so
+   public landing/about/news + auth pages keep their footer. The Dashboard home
+   opts back in via .ft-keep-mobile. :has() degrades gracefully (footer stays)
+   on browsers without support. */
+@media (max-width: 767px) {
+    .main_wrapper:has(.dashboardarea) .ft-root:not(.ft-keep-mobile) { display: none !important; }
 }
 </style>
 
