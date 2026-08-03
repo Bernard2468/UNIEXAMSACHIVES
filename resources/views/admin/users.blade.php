@@ -2036,55 +2036,57 @@
 }
 
 /* ============================================================
-   MOBILE (≤767px): Add User + Edit Info modals become BOTTOM SHEETS
-   — consistent with the header avatar sheet and the filter drawer.
-   Placed last so these overrides win by source order.
+   MOBILE (≤767px): Add User + Edit Info → FULL-SCREEN slide-in DRAWER
+   (same idiom as the notification tray). These forms are long, so a
+   full-height right drawer beats a cramped bottom sheet. Placed last in
+   source so these overrides + the 16px anti-zoom rule win the cascade.
    ============================================================ */
-@keyframes ufModalSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes ufDrawerIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
 @media (max-width: 767px) {
-    /* Dock the panels to the bottom of the screen */
-    .add-user-modal { align-items: flex-end; }
+    /* Let the panel fill the screen instead of being centered */
+    .add-user-modal,
+    #editInfoModal.efi-modal { align-items: stretch; }
 
-    /* Add User */
-    .add-user-modal-content {
-        width: 100%;
-        max-width: 100%;
-        max-height: 92dvh;
-        border-radius: 22px 22px 0 0;
-        animation: ufModalSheetUp .3s cubic-bezier(.4, 0, .2, 1);
-        box-shadow: 0 -18px 50px rgba(15, 23, 42, 0.28);
-    }
-    .add-user-modal-content::before {
-        content: '';
-        display: block;
-        width: 42px; height: 4px; border-radius: 999px;
-        background: #e2e8f0; margin: 10px auto 0;
-    }
-    .add-user-modal-header { padding: 14px 20px; }
-    .add-user-modal-body { padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
-    .form-row { grid-template-columns: 1fr; gap: 0; }
-
-    /* Edit Info */
-    #editInfoModal.efi-modal { align-items: flex-end; }
+    /* The panel itself → full-height sheet, slides in from the right */
+    .add-user-modal-content,
     #editInfoModal .efi-card {
         width: 100%;
         max-width: 100%;
-        max-height: 92dvh;
-        border-radius: 22px 22px 0 0;
-        padding-top: 22px;
-        padding-bottom: calc(20px + env(safe-area-inset-bottom));
-        animation: ufModalSheetUp .3s cubic-bezier(.4, 0, .2, 1);
-        box-shadow: 0 -18px 50px rgba(15, 23, 42, 0.28);
+        height: 100dvh;
+        max-height: none;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        animation: ufDrawerIn .3s cubic-bezier(.4, 0, .2, 1);
     }
-    #editInfoModal .efi-card::before {
-        content: '';
-        display: block;
-        width: 42px; height: 4px; border-radius: 999px;
-        background: #e2e8f0;
-        position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+
+    /* iOS Safari zooms the whole page when a focused field is < 16px.
+       Force 16px on every control in these drawers (wins — last in cascade). */
+    .add-user-modal .animated-input,
+    .add-user-modal select,
+    #editInfoModal .efi-input,
+    #editInfoModal .efi-select { font-size: 16px; }
+
+    /* Add User — header pinned while the long form scrolls */
+    .add-user-modal-header {
+        position: sticky; top: 0; z-index: 3;
+        background: #fff;
+        padding: 16px 20px calc(16px + env(safe-area-inset-top, 0px));
     }
-    #editInfoModal .efi-close { top: 16px; }
+    .add-user-modal-body { padding: 20px; padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
+    .form-row { grid-template-columns: 1fr; gap: 0; }
+
+    /* Edit Info — full-height; close button stays fixed at the top-right */
+    #editInfoModal .efi-card {
+        padding: calc(24px + env(safe-area-inset-top, 0px)) 20px calc(28px + env(safe-area-inset-bottom));
+    }
+    #editInfoModal .efi-close {
+        position: fixed; top: 14px; right: 14px; z-index: 4;
+    }
 }
 </style>
 
