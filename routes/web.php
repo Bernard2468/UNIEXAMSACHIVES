@@ -269,6 +269,7 @@ Route::middleware(['auth'])->group(function () {
 
     #settings
     Route::get('/dashboard/settings',[HomeController::class, 'settings'])->name('dashboard.settings');
+    Route::post('/dashboard/settings/font-scale',[HomeController::class,'updateFontScale'])->name('dashboard.settings.font-scale');
     Route::post('/dashboard/update-user-info',[HomeController::class,'updateUserInfo'])->name('dashboard.user.info');
     Route::post('/dashboard/update-password',[HomeController::class,'updatePassword'])->name('dashboard.password.update');
 

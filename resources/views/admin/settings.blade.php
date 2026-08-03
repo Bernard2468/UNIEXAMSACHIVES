@@ -52,6 +52,10 @@
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                                 Password
                             </button>
+                            <button class="sp-tab" data-panel="sp-appearance" role="tab">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>
+                                Appearance
+                            </button>
                         </div>
 
                         {{-- ══════════════ PROFILE PANEL ══════════════ --}}
@@ -226,6 +230,55 @@
                                         </div>
                                     </div>
                                 </form>
+                            </div>
+                        </div>
+
+                        {{-- ══════════════ APPEARANCE PANEL ══════════════ --}}
+                        <div class="sp-panel" id="sp-appearance">
+                            <div class="sp-section" style="border-bottom:none; padding-bottom:0; margin-bottom:0;">
+                                <div class="sp-section__hd">
+                                    <h2 class="sp-section__title">Text &amp; display size<span class="sp-section__bar"></span></h2>
+                                    <p class="sp-section__hint">Make everything easier to read. This resizes all text and interface elements across the whole system and is saved to your account — it follows you on this device automatically.</p>
+                                </div>
+
+                                {{-- Segmented A·A·A size selector --}}
+                                <div class="fs-track" id="fs-track" role="radiogroup" aria-label="Text and display size">
+                                    <span class="fs-indicator" id="fs-indicator"></span>
+                                    <button type="button" class="fs-step" role="radio" data-scale="0.9"  aria-label="Small">
+                                        <span class="fs-a" style="font-size:13px">A</span><span class="fs-lbl">Small</span>
+                                    </button>
+                                    <button type="button" class="fs-step fs-step--active" role="radio" data-scale="1" aria-label="Default">
+                                        <span class="fs-a" style="font-size:16px">A</span><span class="fs-lbl">Default</span>
+                                    </button>
+                                    <button type="button" class="fs-step" role="radio" data-scale="1.1" aria-label="Large">
+                                        <span class="fs-a" style="font-size:19px">A</span><span class="fs-lbl">Large</span>
+                                    </button>
+                                    <button type="button" class="fs-step" role="radio" data-scale="1.2" aria-label="Larger">
+                                        <span class="fs-a" style="font-size:22px">A</span><span class="fs-lbl">Larger</span>
+                                    </button>
+                                    <button type="button" class="fs-step" role="radio" data-scale="1.35" aria-label="Largest">
+                                        <span class="fs-a" style="font-size:26px">A</span><span class="fs-lbl">Largest</span>
+                                    </button>
+                                </div>
+
+                                {{-- Live preview --}}
+                                <div class="fs-preview">
+                                    <span class="fs-preview__eyebrow">Live preview</span>
+                                    <h3 class="fs-preview__title">Reading comfortably matters</h3>
+                                    <p class="fs-preview__body">This is how text will look everywhere in the University Digital Transformation Suite — memos, forms, dashboards, and tables. Pick the size that feels right; the whole system updates instantly.</p>
+                                    <div class="fs-preview__row">
+                                        <button type="button" class="sp-btn" onclick="return false;">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                            Sample button
+                                        </button>
+                                        <span class="fs-preview__pill">Sample label</span>
+                                    </div>
+                                </div>
+
+                                <div class="fs-foot">
+                                    <span class="fs-status" id="fs-status" aria-live="polite">Saved automatically</span>
+                                    <button type="button" class="fs-reset" id="fs-reset">Reset to default</button>
+                                </div>
                             </div>
                         </div>
 
@@ -669,12 +722,176 @@
     line-height: 1.5;
 }
 
+/* ═════════════ Appearance: text size selector ═════════════ */
+.fs-track {
+    position: relative;
+    display: flex;
+    gap: 0;
+    padding: 5px;
+    background: #f4f5f7;
+    border: 1.5px solid #ebebeb;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    user-select: none;
+}
+
+/* Sliding pill — width is exactly one of 5 equal slots, so translateX(i*100%)
+   lands perfectly on each step without any JS measurement. */
+.fs-indicator {
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 5px;
+    width: calc((100% - 10px) / 5);
+    background: #0c0c0c;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(12,12,12,.22);
+    transition: transform .34s cubic-bezier(.34,1.56,.64,1);
+    z-index: 0;
+}
+
+.fs-step {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 74px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #7c828f;
+    transition: color .2s;
+    padding: 0;
+}
+
+.fs-step .fs-a {
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -.02em;
+    transition: transform .2s;
+}
+
+.fs-step .fs-lbl {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: .01em;
+}
+
+.fs-step:hover { color: #0c0c0c; }
+.fs-step:hover .fs-a { transform: translateY(-1px); }
+
+.fs-step--active { color: #fff; }
+.fs-step--active:hover { color: #fff; }
+
+/* ─────────────── Live preview card ─────────────── */
+.fs-preview {
+    background: #f9f9fb;
+    border: 1.5px solid #ebebeb;
+    border-radius: 16px;
+    padding: 22px 24px 24px;
+    margin-bottom: 20px;
+}
+
+.fs-preview__eyebrow {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #a3a8b4;
+    margin-bottom: 10px;
+}
+
+.fs-preview__title {
+    margin: 0 0 8px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0c0c0c;
+    letter-spacing: -.02em;
+}
+
+.fs-preview__body {
+    margin: 0 0 18px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #5b616e;
+}
+
+.fs-preview__row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.fs-preview__pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+/* ─────────────── Appearance footer ─────────────── */
+.fs-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding-top: 18px;
+    border-top: 1.5px solid #ebebeb;
+    flex-wrap: wrap;
+}
+
+.fs-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #16a34a;
+}
+.fs-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px rgba(22,163,74,.18);
+}
+.fs-status--saving { color: #a3a8b4; }
+.fs-status--warn   { color: #d97706; }
+
+.fs-reset {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 4px 2px;
+    transition: color .15s;
+}
+.fs-reset:hover { color: #0c0c0c; }
+
 /* ─────────────── Responsive ─────────────── */
 @media (max-width: 640px) {
     .sp-grid { grid-template-columns: 1fr; }
     .sp-field--full { grid-column: 1; }
     .sp-avatar-row { flex-direction: column; align-items: flex-start; gap: 14px; }
     .sp-page-title { font-size: 1.65rem; }
+    .fs-step { height: 66px; }
+    .fs-step .fs-lbl { font-size: 0.66rem; }
 }
 </style>
 
@@ -721,6 +938,74 @@ function spTogglePw(fieldId, btn) {
     if (showIco) showIco.style.display = isHidden ? 'none' : '';
     if (hideIco) hideIco.style.display = isHidden ? '' : 'none';
 }
+
+// ── Appearance: text / display size selector
+(function () {
+    var track = document.getElementById('fs-track');
+    if (!track) return;
+    var KEY       = 'udts_font_scale';
+    var steps     = [].slice.call(track.querySelectorAll('.fs-step'));
+    var indicator = document.getElementById('fs-indicator');
+    var status    = document.getElementById('fs-status');
+    var resetBtn  = document.getElementById('fs-reset');
+    var scales    = steps.map(function (b) { return parseFloat(b.dataset.scale); });
+    var saveUrl   = '{{ route('dashboard.settings.font-scale') }}';
+    var csrf      = '{{ csrf_token() }}';
+    var saveTimer = null;
+
+    function nearestIndex(v) {
+        var best = 0, bd = Infinity;
+        scales.forEach(function (s, i) {
+            var d = Math.abs(s - v);
+            if (d < bd) { bd = d; best = i; }
+        });
+        return best;
+    }
+
+    function paint(i) {
+        if (indicator) indicator.style.transform = 'translateX(calc(' + i + ' * 100%))';
+        steps.forEach(function (b, j) { b.classList.toggle('fs-step--active', j === i); });
+    }
+
+    function applyZoom(scale) {
+        try {
+            document.documentElement.style.zoom = (scale === 1) ? '' : scale;
+        } catch (e) {}
+        try { localStorage.setItem(KEY, String(scale)); } catch (e) {}
+        window.__udtsFontScale = scale;
+    }
+
+    function save(scale) {
+        if (status) { status.textContent = 'Saving…'; status.className = 'fs-status fs-status--saving'; }
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(function () {
+            fetch(saveUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                body: JSON.stringify({ scale: scale })
+            })
+            .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
+            .then(function () { if (status) { status.textContent = 'Saved to your account'; status.className = 'fs-status'; } })
+            .catch(function () { if (status) { status.textContent = 'Saved on this device'; status.className = 'fs-status fs-status--warn'; } });
+        }, 250);
+    }
+
+    function select(i, doSave) {
+        paint(i);
+        applyZoom(scales[i]);
+        if (doSave) save(scales[i]);
+    }
+
+    // Initialise from whatever the page loaded with.
+    select(nearestIndex(window.__udtsFontScale || 1), false);
+
+    steps.forEach(function (b, i) {
+        b.addEventListener('click', function () { select(i, true); });
+    });
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function () { select(nearestIndex(1), true); });
+    }
+})();
 
 // ── Auto-switch to password tab on validation errors
 @if($errors->has('current_password') || $errors->has('new_password'))

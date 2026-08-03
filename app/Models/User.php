@@ -28,6 +28,7 @@ class User extends Authenticatable
         'super_admin_access_granted_at',
         'super_admin_granted_by',
         'profile_picture',
+        'ui_font_scale',
         'department_id',
         'staff_category',
         'account_type',
@@ -69,6 +70,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'super_admin_access_granted_at' => 'datetime',
             'admin_access_requested_at' => 'datetime',
+            'ui_font_scale' => 'float',
         ];
     }
 

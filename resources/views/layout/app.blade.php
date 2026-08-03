@@ -38,6 +38,33 @@
         document.documentElement.classList.remove("is_dark");
         try { localStorage.removeItem("theme-color"); } catch (e) {}
     </script>
+
+    {{-- ── Per-user text / display size ──
+         Applied here, before <body> paints, so there is zero flicker on every
+         page. For logged-in users the server value is the source of truth; for
+         guests we fall back to the last value saved in this browser. Scales the
+         whole interface via a root `zoom` (browser-zoom-equivalent) so EVERY
+         text and element grows/shrinks consistently. See the Appearance tab on
+         the Profile Settings page. --}}
+    <script>
+        (function () {
+            var KEY = 'udts_font_scale';
+            var s = null;
+            @auth
+                s = '{{ (float) (auth()->user()->ui_font_scale ?? 1) }}';
+            @endauth
+            try {
+                if (s === null) { s = localStorage.getItem(KEY); }
+                else { localStorage.setItem(KEY, s); }
+            } catch (e) {}
+            var n = parseFloat(s);
+            if (!n || isNaN(n) || n < 0.8 || n > 1.6) { n = 1; }
+            if (n !== 1) {
+                try { document.documentElement.style.zoom = n; } catch (e) {}
+            }
+            window.__udtsFontScale = n;
+        })();
+    </script>
     <script src="https://cdn.tiny.cloud/1/29x31yy541lnbv7bhwkb8eehrwt7mzsc64d3yow8lw3v6y3v/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 
     <style>

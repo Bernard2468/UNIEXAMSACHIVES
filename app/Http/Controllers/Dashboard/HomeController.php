@@ -726,6 +726,27 @@ class HomeController extends Controller
     }
 
 
+    /**
+     * Persist the user's text / display size preference (Appearance tab).
+     * Stored as a multiplier applied via a root `zoom` on every page. The UI
+     * applies it live and calls this via fetch(); we just validate + save.
+     */
+    public function updateFontScale(Request $request)
+    {
+        $validated = $request->validate([
+            'scale' => 'required|numeric|min:0.8|max:1.6',
+        ]);
+
+        $user = Auth::user();
+        $user->ui_font_scale = round((float) $validated['scale'], 2);
+        $user->save();
+
+        return response()->json([
+            'ok'    => true,
+            'scale' => (float) $user->ui_font_scale,
+        ]);
+    }
+
     public function updateUserInfo(Request $request)
     {
         // SECURITY: department_id, staff_category and position_id are deliberately
