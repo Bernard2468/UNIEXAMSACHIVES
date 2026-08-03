@@ -2,6 +2,31 @@
 
 @push('styles')
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+/* ── Shared dashboard design language (ps-*). This page references these classes
+   for its header / alerts / section card but — unlike positions & offices — never
+   defined them locally, so they rendered unstyled. Bring in the same subset so the
+   page is polished and consistent on every breakpoint. ── */
+.ps-wrap, .ps-wrap * { font-family:'Outfit', sans-serif !important; box-sizing:border-box; }
+/* icofont glyphs must keep their own face, or the blanket Outfit rule above
+   renders every icon as an empty box (doubled selector beats `.ps-wrap *`). */
+.ps-wrap [class^="icofont-"], .ps-wrap [class*=" icofont-"] { font-family:IcoFont !important; }
+.ps-wrap { max-width:900px; padding:4px 0 60px; }
+.ps-page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:24px; padding-bottom:24px; border-bottom:1.5px solid #ebebeb; }
+.ps-page-title { font-size:2rem; font-weight:800; color:#0c0c0c; letter-spacing:-0.045em; line-height:1.1; margin:0 0 4px; display:inline-flex; flex-direction:column; }
+.ps-title-bar { display:block; width:2.4rem; height:3.5px; background:#0c0c0c; border-radius:3px; margin-top:9px; }
+.ps-page-sub { margin:12px 0 0; font-size:0.9rem; color:#8a8fa0; font-weight:400; }
+.ps-alert { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:0.875rem; font-weight:500; border:1.5px solid transparent; }
+.ps-alert--ok  { background:#f0fdf4; border-color:#bbf7d0; color:#15803d; }
+.ps-alert--err { background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
+.ps-alert__x { margin-left:auto; background:none; border:none; cursor:pointer; opacity:.45; color:inherit; padding:0; display:flex; align-items:center; font-size:20px; line-height:1; }
+.ps-alert__x:hover { opacity:1; }
+.ps-card { background:#fff; border:1.5px solid #ebebeb; border-radius:16px; overflow:hidden; }
+.ps-card__hd { padding:18px 24px 14px; border-bottom:1.5px solid #f5f5f5; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.ps-card__title { font-size:0.95rem; font-weight:700; color:#0c0c0c; letter-spacing:-0.02em; margin:0 0 4px; display:inline-flex; flex-direction:column; }
+.ps-card__bar { display:block; width:1.7rem; height:2.5px; background:#0c0c0c; border-radius:2px; margin-top:6px; }
+.ps-card__count { margin:8px 0 0; font-size:0.8rem; color:#b0b5c0; }
+
 .lh-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px; }
 .lh-card { border:1px solid #e2e8f0; border-radius:14px; overflow:hidden; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.05); display:flex; flex-direction:column; transition:all 0.2s ease; }
 .lh-card:hover { box-shadow:0 6px 20px rgba(0,0,0,0.08); transform:translateY(-2px); }
@@ -44,7 +69,9 @@
 .lh-field select:focus { outline:none; border-color:#1a4a9b; box-shadow:0 0 0 3px rgba(26,74,155,0.12); }
 .lh-upload-actions { display:flex; justify-content:flex-end; margin-top:16px; }
 
-/* Edit modal */
+/* Edit modal — lives outside .ps-wrap, so opt it into Outfit for parity with the
+   rest of the page (icofont icons keep their face via icofont.css's own !important). */
+.lh-modal, .lh-modal * { font-family:'Outfit', sans-serif; }
 .lh-modal-backdrop { display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px; }
 .lh-modal-backdrop.open { display:flex; }
 .lh-modal { background:#fff; border-radius:14px; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
@@ -60,8 +87,130 @@
 .lh-card[draggable=true] { cursor:grab; }
 .lh-card.dragging { opacity:0.4; }
 
+/* Mobile-only affordances — hidden on desktop (the upload form is inline there
+   and reordering is done by dragging cards). */
+.lh-upload-fab { display:none; }
+.lh-drawer-hd  { display:none; }
+.lh-reorder    { display:none; }
+
 @media (max-width: 600px) {
     .lh-upload-grid { grid-template-columns:1fr; }
+}
+
+/* ===================== MOBILE APP-LIKE LAYOUT (≤767) ===================== */
+@media (max-width: 767px) {
+    /* De-squish trio (official Mobile breakpoint). Below 992 the sidebar is an
+       off-canvas drawer, so the content column is full-width; collapse the
+       container/row/col gutters and give the wrap one clean 16px gutter. */
+    .dashboardarea .container-fluid.full__width__padding { padding-left:0; padding-right:0; }
+    .dashboardarea .dashboard > .container-fluid > .row { margin-left:0; margin-right:0; }
+    .dashboardarea .dashboard > .container-fluid > .row > [class*="col-"] { padding-left:0; padding-right:0; }
+    .ps-wrap { padding-left:16px; padding-right:16px; }
+
+    .lh-upload-grid { grid-template-columns:1fr; }
+
+    /* iOS Safari zooms on focus of any control < 16px — bump all controls. */
+    .lh-field input[type=text],
+    .lh-field input[type=file],
+    .lh-field select { font-size:16px; padding:12px 13px; }
+
+    /* ---- Upload: a prominent action button that opens the form as a
+            full-screen slide-in drawer, decluttering the top of the page. ---- */
+    .lh-upload-fab {
+        display:flex; align-items:center; justify-content:center; gap:9px;
+        width:100%; margin-bottom:18px;
+        padding:15px 18px; border:none; border-radius:14px;
+        background:linear-gradient(135deg, #1a4a9b, #143a7a); color:#fff;
+        font-size:15px; font-weight:700; cursor:pointer; font-family:inherit;
+        box-shadow:0 8px 22px rgba(26,74,155,0.28);
+    }
+    .lh-upload-fab i { font-size:17px; }
+
+    .lh-upload-card { display:none; }              /* hidden until opened */
+    .lh-upload-card.open {
+        display:flex; flex-direction:column;
+        position:fixed; inset:0; z-index:10000;
+        margin:0; padding:0; border:none; border-radius:0; background:#fff;
+        animation:lhDrawerIn .3s cubic-bezier(.22,.61,.36,1);
+    }
+    @keyframes lhDrawerIn { from { transform:translateX(100%); } to { transform:none; } }
+
+    .lh-drawer-hd {
+        display:flex; align-items:center; justify-content:space-between; gap:12px;
+        flex-shrink:0; padding:16px; border-bottom:1px solid #e2e8f0; background:#fff;
+    }
+    .lh-drawer-hd h3 { margin:0; font-size:17px; font-weight:700; color:#1e293b; }
+    .lh-drawer-x {
+        width:36px; height:36px; border-radius:10px; flex-shrink:0;
+        border:1px solid #e2e8f0; background:#fff; color:#64748b;
+        font-size:20px; line-height:1; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+    }
+    .lh-upload-card.open > h3 { display:none; }     /* redundant with drawer header */
+    .lh-upload-card.open > p  { margin:14px 16px 0 !important; }  /* beat the inline margin */
+    .lh-upload-card.open form {
+        flex:1; display:flex; flex-direction:column; min-height:0;
+        overflow-y:auto; padding:16px;
+    }
+    .lh-upload-card.open .lh-upload-actions {
+        position:sticky; bottom:0; margin:18px -16px 0;
+        padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+        border-top:1px solid #e2e8f0; background:#fff;
+    }
+    .lh-upload-card.open .lh-upload-actions .lh-btn { flex:1; justify-content:center; padding:13px; font-size:15px; }
+
+    /* Tighter section-card density on phones. */
+    .ps-card__hd { padding:16px 16px 12px; }
+    .lh-list-body { padding:14px !important; }   /* beat the inline padding:20px */
+
+    /* ---- Cards → clean single-column app list items ---- */
+    .lh-grid { grid-template-columns:1fr; gap:14px; }
+    .lh-card { position:relative; border-radius:16px; }
+    .lh-card-preview { height:130px; }
+    .lh-card-body { padding:14px 16px; }
+    .lh-card-title { font-size:16px; }
+
+    /* Reorder chevrons (top-right of the preview) — HTML5 drag doesn't work on
+       touch, so give a tap alternative that reuses the same persist endpoint. */
+    .lh-reorder {
+        display:flex; flex-direction:column; gap:4px;
+        position:absolute; top:10px; right:10px; z-index:2;
+    }
+    .lh-reorder button {
+        width:34px; height:30px; border:none; border-radius:9px;
+        background:rgba(255,255,255,0.92); color:#334155;
+        box-shadow:0 2px 8px rgba(15,23,42,0.16);
+        display:flex; align-items:center; justify-content:center; cursor:pointer;
+        -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+    }
+    .lh-reorder button:active { transform:scale(0.92); }
+    .lh-reorder button:disabled { opacity:0.35; cursor:default; }
+
+    /* Action buttons → icon-over-label, equal width (mobile toolbar feel) */
+    .lh-card-actions { gap:8px; padding:10px 12px; }
+    .lh-card-actions form { flex:1; display:flex; }
+    .lh-card-actions .lh-btn {
+        flex:1; width:100%; flex-direction:column; gap:4px;
+        padding:9px 4px; font-size:10.5px; line-height:1.2; border-radius:10px;
+    }
+    .lh-card-actions .lh-btn i { font-size:17px; }
+
+    /* Drag hint is desktop-only (touch can't HTML5-drag). */
+    .lh-reorder-hint { display:none; }
+
+    /* ---- Edit modal → full-screen slide-in drawer ---- */
+    .lh-modal-backdrop { padding:0; align-items:stretch; }
+    .lh-modal {
+        width:100%; max-width:100%; height:100dvh; max-height:100dvh;
+        border-radius:0; overflow:hidden;
+        display:flex; flex-direction:column;
+        animation:lhDrawerIn .3s cubic-bezier(.22,.61,.36,1);
+    }
+    .lh-modal-hd { flex-shrink:0; }
+    .lh-modal form { flex:1; display:flex; flex-direction:column; min-height:0; }
+    .lh-modal-bd { flex:1; overflow-y:auto; }
+    .lh-modal-ft { flex-shrink:0; padding-bottom:calc(14px + env(safe-area-inset-bottom)); }
+    .lh-modal-ft .lh-btn { flex:1; justify-content:center; padding:13px; font-size:15px; }
 }
 </style>
 @endpush
@@ -113,7 +262,16 @@
                         @endif
 
                         {{-- Upload form --}}
-                        <div class="lh-upload-card">
+                        {{-- Mobile: a prominent button opens the form as a full-screen drawer. --}}
+                        <button type="button" class="lh-upload-fab" onclick="openUploadPanel()">
+                            <i class="icofont-cloud-upload"></i> Upload new letterhead
+                        </button>
+                        <div class="lh-upload-card" id="lhUploadPanel">
+                            {{-- Mobile-only drawer header (hidden on desktop). --}}
+                            <div class="lh-drawer-hd">
+                                <h3>Upload letterhead</h3>
+                                <button type="button" class="lh-drawer-x" onclick="closeUploadPanel()" aria-label="Close">&times;</button>
+                            </div>
                             <h3 style="margin:0 0 4px 0; font-size:16px; font-weight:700; color:#1e293b;">
                                 <i class="icofont-cloud-upload"></i> Upload new letterhead
                             </h3>
@@ -187,12 +345,12 @@
                                         &middot; {{ $letterheads->where('is_active', true)->count() }} visible to staff
                                     </p>
                                 </div>
-                                <p style="margin:0; font-size:12px; color:#64748b;">
+                                <p class="lh-reorder-hint" style="margin:0; font-size:12px; color:#64748b;">
                                     <i class="icofont-info-circle"></i> Drag cards to reorder how they appear in the memo composer.
                                 </p>
                             </div>
 
-                            <div style="padding:20px;">
+                            <div class="lh-list-body" style="padding:20px;">
                             @if($letterheads->count() === 0)
                                 <div class="lh-empty">
                                     <i class="icofont-paper"></i>
@@ -204,6 +362,11 @@
                                     <div class="lh-card {{ $lh->is_active ? '' : 'inactive' }}" draggable="true" data-id="{{ $lh->id }}">
                                         <div class="lh-card-preview">
                                             <img src="{{ $lh->image_url }}" alt="{{ $lh->name }}">
+                                        </div>
+                                        {{-- Mobile-only reorder (touch can't HTML5-drag). --}}
+                                        <div class="lh-reorder">
+                                            <button type="button" class="lh-move-up" aria-label="Move up"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+                                            <button type="button" class="lh-move-down" aria-label="Move down"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
                                         </div>
                                         <div class="lh-card-body">
                                             <h4 class="lh-card-title">{{ $lh->name }}</h4>
@@ -350,13 +513,32 @@ function openEditModal(id, name, desc, imgUrl, scopeType, scopeId) {
     lhToggleScope('lh-edit');
 
     document.getElementById('lh-edit-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
 }
 function closeEditModal() {
     document.getElementById('lh-edit-modal').classList.remove('open');
+    document.body.style.overflow = '';
 }
 
-// Restore the upload form's scope fields after a validation redirect.
-document.addEventListener('DOMContentLoaded', () => lhToggleScope('lh'));
+/* Upload form: inline on desktop, full-screen slide-in drawer on mobile. */
+function openUploadPanel() {
+    document.getElementById('lhUploadPanel').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeUploadPanel() {
+    document.getElementById('lhUploadPanel').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Restore the upload form's scope fields after a validation redirect.
+    lhToggleScope('lh');
+    // If a failed upload bounced back with errors, reopen the drawer on mobile so
+    // the user sees the form (and the errors) rather than a hidden panel.
+    @if($errors->any() || old('name'))
+    if (window.matchMedia('(max-width: 767px)').matches) openUploadPanel();
+    @endif
+});
 
 /* Drag-and-drop reorder */
 (function() {
@@ -387,6 +569,37 @@ document.addEventListener('DOMContentLoaded', () => lhToggleScope('lh'));
         const before = (e.clientY - rect.top) < (rect.height / 2);
         grid.insertBefore(dragged, before ? target : target.nextSibling);
     });
+
+    /* Mobile tap-reorder — HTML5 drag events never fire on touch, so the up/down
+       chevrons move a card one step and persist via the same endpoint. */
+    grid.addEventListener('click', (e) => {
+        const upBtn = e.target.closest('.lh-move-up');
+        const downBtn = e.target.closest('.lh-move-down');
+        if (!upBtn && !downBtn) return;
+        const card = e.target.closest('.lh-card');
+        if (!card) return;
+        if (upBtn && card.previousElementSibling) {
+            grid.insertBefore(card, card.previousElementSibling);
+        } else if (downBtn && card.nextElementSibling) {
+            grid.insertBefore(card.nextElementSibling, card);
+        } else {
+            return; // already at an end — nothing moved
+        }
+        refreshMoveButtons();
+        persistOrder();
+    });
+
+    // Disable "up" on the first card and "down" on the last.
+    function refreshMoveButtons() {
+        const cards = Array.from(grid.querySelectorAll('.lh-card'));
+        cards.forEach((c, i) => {
+            const up = c.querySelector('.lh-move-up');
+            const down = c.querySelector('.lh-move-down');
+            if (up) up.disabled = (i === 0);
+            if (down) down.disabled = (i === cards.length - 1);
+        });
+    }
+    refreshMoveButtons();
 
     function persistOrder() {
         const ids = Array.from(grid.querySelectorAll('.lh-card')).map(c => parseInt(c.dataset.id, 10));
