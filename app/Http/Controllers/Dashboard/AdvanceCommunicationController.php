@@ -109,7 +109,8 @@ class AdvanceCommunicationController extends Controller
         // Get active committees for selection (for users who manage committees/boards)
         $committees = Committee::active()->withCount('users')->get();
 
-        $letterheads = SystemLetterhead::active()->ordered()->get();
+        // Only letterheads scoped to this user's affiliations (or global) are offered.
+        $letterheads = SystemLetterhead::active()->visibleTo(auth()->user())->ordered()->get();
 
         ['departments' => $departments, 'leadershipCounts' => $leadershipCounts] = $this->recipientDepartmentData();
 
@@ -170,7 +171,16 @@ class AdvanceCommunicationController extends Controller
             'recipient_departments.*' => ['integer', 'exists:departments,id'],
             'memo_category' => 'nullable|in:promotion,procurement,leave,other',
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
-            'letterhead' => 'nullable|string|exists:system_letterheads,slug',
+            'letterhead' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                // Must be an active letterhead the composing user is actually allowed to use.
+                $allowed = SystemLetterhead::active()
+                    ->visibleTo(auth()->user())
+                    ->where('slug', $value)
+                    ->exists();
+                if (!$allowed) {
+                    $fail('The selected letterhead is not available to you.');
+                }
+            }],
             'cc_users' => 'nullable|array',
             'cc_users.*' => 'exists:users,id',
             // "Through" routing intermediary — only valid in "selected" mode and must not
@@ -1031,7 +1041,8 @@ class AdvanceCommunicationController extends Controller
 
         $committees = Committee::active()->withCount('users')->get();
 
-        $letterheads = SystemLetterhead::active()->ordered()->get();
+        // Scoped the same as the user composer — admins only see their own affiliations + global.
+        $letterheads = SystemLetterhead::active()->visibleTo(auth()->user())->ordered()->get();
 
         ['departments' => $departments, 'leadershipCounts' => $leadershipCounts] = $this->recipientDepartmentData();
 
@@ -1091,7 +1102,16 @@ class AdvanceCommunicationController extends Controller
             'attachments.*' => 'nullable|file|max:10240|mimes:pdf,doc,docx,txt,xls,xlsx,csv,ppt,pptx,jpg,jpeg,png,gif,zip',
             'send_immediately' => 'boolean',
             'scheduled_at' => $isDraft ? 'nullable|date' : 'nullable|required_if:send_immediately,false|date|after:now',
-            'letterhead' => 'nullable|string|exists:system_letterheads,slug',
+            'letterhead' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                // Must be an active letterhead the composing user is actually allowed to use.
+                $allowed = SystemLetterhead::active()
+                    ->visibleTo(auth()->user())
+                    ->where('slug', $value)
+                    ->exists();
+                if (!$allowed) {
+                    $fail('The selected letterhead is not available to you.');
+                }
+            }],
             'cc_users' => 'nullable|array',
             'cc_users.*' => 'exists:users,id',
             // "Through" routing intermediary — only valid in "selected" mode and must not

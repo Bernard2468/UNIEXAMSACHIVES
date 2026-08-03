@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
+use App\Models\Office;
 use App\Models\SystemLetterhead;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -26,7 +28,11 @@ class SystemLetterheadController extends Controller
 
         $letterheads = SystemLetterhead::ordered()->get();
 
-        return view('admin.system-letterheads.index', compact('letterheads'));
+        // Scope options for the upload / edit forms.
+        $departments = Department::orderBy('type')->orderBy('name')->get(['id', 'name', 'type']);
+        $offices     = Office::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.system-letterheads.index', compact('letterheads', 'departments', 'offices'));
     }
 
     public function store(Request $request)
@@ -37,7 +43,10 @@ class SystemLetterheadController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:255',
             'image'       => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'scope_type'  => 'nullable|in:global,department,office',
         ]);
+
+        $scope = $this->resolveScope($request);
 
         $path = $this->moveImage($request->file('image'));
 
@@ -49,6 +58,8 @@ class SystemLetterheadController extends Controller
             'slug'          => $slug,
             'name'          => $request->name,
             'description'   => $request->description,
+            'scope_type'    => $scope['scope_type'],
+            'scope_id'      => $scope['scope_id'],
             'image_path'    => $path,
             'is_active'     => true,
             'display_order' => $maxOrder + 1,
@@ -67,11 +78,16 @@ class SystemLetterheadController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:255',
             'image'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'scope_type'  => 'nullable|in:global,department,office',
         ]);
+
+        $scope = $this->resolveScope($request);
 
         $payload = [
             'name'        => $request->name,
             'description' => $request->description,
+            'scope_type'  => $scope['scope_type'],
+            'scope_id'    => $scope['scope_id'],
         ];
 
         if ($request->hasFile('image')) {
@@ -134,6 +150,30 @@ class SystemLetterheadController extends Controller
 
         return redirect()->route('dashboard.system-letterheads.index')
                          ->with('success', 'Letterhead deleted successfully.');
+    }
+
+    /**
+     * Turn the submitted scope selection into stored columns. 'global' (or an
+     * absent selection) means the letterhead is visible to everyone. When a
+     * department/office scope is chosen, the matching id is required + validated.
+     *
+     * @return array{scope_type: ?string, scope_id: ?int}
+     */
+    private function resolveScope(Request $request): array
+    {
+        $type = $request->input('scope_type', 'global');
+
+        if ($type === 'department') {
+            $request->validate(['scope_department_id' => 'required|exists:departments,id']);
+            return ['scope_type' => 'department', 'scope_id' => (int) $request->scope_department_id];
+        }
+
+        if ($type === 'office') {
+            $request->validate(['scope_office_id' => 'required|exists:offices,id']);
+            return ['scope_type' => 'office', 'scope_id' => (int) $request->scope_office_id];
+        }
+
+        return ['scope_type' => null, 'scope_id' => null];
     }
 
     private function generateUniqueSlug(string $name): string

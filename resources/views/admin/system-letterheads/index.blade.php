@@ -16,6 +16,8 @@
 .lh-badge--active { background:#dcfce7; color:#15803d; }
 .lh-badge--inactive { background:#fee2e2; color:#b91c1c; }
 .lh-badge--order { background:#e0e7ff; color:#3730a3; }
+.lh-badge--scope { background:#fef3c7; color:#92400e; }
+.lh-badge--scope.is-global { background:#e0f2fe; color:#075985; }
 .lh-card-actions { padding:10px 16px; border-top:1px solid #f1f5f9; display:flex; gap:8px; flex-wrap:wrap; background:#fafbfc; }
 .lh-btn { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; border:1px solid transparent; cursor:pointer; transition:all 0.15s ease; text-decoration:none; }
 .lh-btn--primary { background:#1a4a9b; color:#fff; }
@@ -35,9 +37,11 @@
 .lh-upload-grid--single { grid-template-columns:1fr; }
 .lh-field label { display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.3px; }
 .lh-field input[type=text],
-.lh-field input[type=file] { width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; background:#fff; }
+.lh-field input[type=file],
+.lh-field select { width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; background:#fff; }
 .lh-field input[type=text]:focus,
-.lh-field input[type=file]:focus { outline:none; border-color:#1a4a9b; box-shadow:0 0 0 3px rgba(26,74,155,0.12); }
+.lh-field input[type=file]:focus,
+.lh-field select:focus { outline:none; border-color:#1a4a9b; box-shadow:0 0 0 3px rgba(26,74,155,0.12); }
 .lh-upload-actions { display:flex; justify-content:flex-end; margin-top:16px; }
 
 /* Edit modal */
@@ -128,6 +132,37 @@
                                         <input type="text" id="lh-desc" name="description" maxlength="255" value="{{ old('description') }}" placeholder="e.g. For engineering faculty memos">
                                     </div>
                                 </div>
+                                {{-- Scope: who is allowed to use this letterhead --}}
+                                <div class="lh-upload-grid" style="margin-top:14px;">
+                                    <div class="lh-field">
+                                        <label for="lh-scope-type">Who can use this?</label>
+                                        <select id="lh-scope-type" name="scope_type" onchange="lhToggleScope('lh')">
+                                            <option value="global" {{ old('scope_type', 'global') === 'global' ? 'selected' : '' }}>Everyone (global letterhead)</option>
+                                            <option value="department" {{ old('scope_type') === 'department' ? 'selected' : '' }}>A specific faculty / department / unit</option>
+                                            <option value="office" {{ old('scope_type') === 'office' ? 'selected' : '' }}>A specific office</option>
+                                        </select>
+                                        <p style="font-size:11px; color:#64748b; margin:6px 0 0 0;">Only members of the chosen unit (plus its parent faculty) will see it in the composer. Global appears for everyone.</p>
+                                    </div>
+                                    <div class="lh-field lh-scope-dep lh-scope-dep--department" data-prefix="lh" style="{{ old('scope_type') === 'department' ? '' : 'display:none;' }}">
+                                        <label for="lh-scope-department">Faculty / department / unit <span style="color:#dc2626">*</span></label>
+                                        <select id="lh-scope-department" name="scope_department_id">
+                                            <option value="">— Select —</option>
+                                            @foreach($departments as $d)
+                                                <option value="{{ $d->id }}" {{ (string) old('scope_department_id') === (string) $d->id ? 'selected' : '' }}>{{ $d->name }} ({{ ucfirst($d->type) }})</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="lh-field lh-scope-dep lh-scope-dep--office" data-prefix="lh" style="{{ old('scope_type') === 'office' ? '' : 'display:none;' }}">
+                                        <label for="lh-scope-office">Office <span style="color:#dc2626">*</span></label>
+                                        <select id="lh-scope-office" name="scope_office_id">
+                                            <option value="">— Select —</option>
+                                            @foreach($offices as $o)
+                                                <option value="{{ $o->id }}" {{ (string) old('scope_office_id') === (string) $o->id ? 'selected' : '' }}>{{ $o->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="lh-upload-grid lh-upload-grid--single" style="margin-top:14px;">
                                     <div class="lh-field">
                                         <label for="lh-image">Letterhead image <span style="color:#dc2626">*</span></label>
@@ -180,11 +215,14 @@
                                                     {{ $lh->is_active ? 'Active' : 'Hidden' }}
                                                 </span>
                                                 <span class="lh-badge lh-badge--order">Order #{{ $lh->display_order }}</span>
+                                                <span class="lh-badge lh-badge--scope {{ $lh->scope_type ? '' : 'is-global' }}">
+                                                    <i class="icofont-{{ $lh->scope_type ? 'building' : 'globe' }}"></i> {{ $lh->scope_label }}
+                                                </span>
                                             </div>
                                         </div>
                                         <div class="lh-card-actions">
                                             <button type="button" class="lh-btn lh-btn--ghost"
-                                                    onclick="openEditModal({{ $lh->id }}, '{{ addslashes($lh->name) }}', '{{ addslashes($lh->description ?? '') }}', '{{ $lh->image_url }}')">
+                                                    onclick="openEditModal({{ $lh->id }}, '{{ addslashes($lh->name) }}', '{{ addslashes($lh->description ?? '') }}', '{{ $lh->image_url }}', '{{ $lh->scope_type ?? 'global' }}', '{{ $lh->scope_id }}')">
                                                 <i class="icofont-edit"></i> Edit
                                             </button>
 
@@ -239,6 +277,32 @@
                     <label for="lh-edit-desc">Short description</label>
                     <input type="text" id="lh-edit-desc" name="description" maxlength="255">
                 </div>
+                <div class="lh-field" style="margin-bottom:14px;">
+                    <label for="lh-edit-scope-type">Who can use this?</label>
+                    <select id="lh-edit-scope-type" name="scope_type" onchange="lhToggleScope('lh-edit')">
+                        <option value="global">Everyone (global letterhead)</option>
+                        <option value="department">A specific faculty / department / unit</option>
+                        <option value="office">A specific office</option>
+                    </select>
+                </div>
+                <div class="lh-field lh-scope-dep lh-scope-dep--department" data-prefix="lh-edit" style="margin-bottom:14px; display:none;">
+                    <label for="lh-edit-scope-department">Faculty / department / unit <span style="color:#dc2626">*</span></label>
+                    <select id="lh-edit-scope-department" name="scope_department_id">
+                        <option value="">— Select —</option>
+                        @foreach($departments as $d)
+                            <option value="{{ $d->id }}">{{ $d->name }} ({{ ucfirst($d->type) }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="lh-field lh-scope-dep lh-scope-dep--office" data-prefix="lh-edit" style="margin-bottom:14px; display:none;">
+                    <label for="lh-edit-scope-office">Office <span style="color:#dc2626">*</span></label>
+                    <select id="lh-edit-scope-office" name="scope_office_id">
+                        <option value="">— Select —</option>
+                        @foreach($offices as $o)
+                            <option value="{{ $o->id }}">{{ $o->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="lh-field">
                     <label>Current image</label>
                     <div class="lh-current-preview"><img id="lh-edit-current" src="" alt="Current letterhead"></div>
@@ -265,17 +329,34 @@ const LH_UPDATE_URL = "{{ url('dashboard/system-letterheads') }}";
 const LH_REORDER_URL = "{{ route('dashboard.system-letterheads.reorder') }}";
 const LH_CSRF = "{{ csrf_token() }}";
 
-function openEditModal(id, name, desc, imgUrl) {
+/* Show only the scope-detail select that matches the chosen scope type. */
+function lhToggleScope(prefix) {
+    const type = document.getElementById(prefix + '-scope-type').value;
+    document.querySelectorAll('.lh-scope-dep[data-prefix="' + prefix + '"]').forEach(el => {
+        el.style.display = el.classList.contains('lh-scope-dep--' + type) ? '' : 'none';
+    });
+}
+
+function openEditModal(id, name, desc, imgUrl, scopeType, scopeId) {
     document.getElementById('lh-edit-form').action = LH_UPDATE_URL + '/' + id;
     document.getElementById('lh-edit-name').value = name;
     document.getElementById('lh-edit-desc').value = desc;
     document.getElementById('lh-edit-current').src = imgUrl;
     document.getElementById('lh-edit-image').value = '';
+
+    document.getElementById('lh-edit-scope-type').value = scopeType || 'global';
+    document.getElementById('lh-edit-scope-department').value = scopeType === 'department' ? (scopeId || '') : '';
+    document.getElementById('lh-edit-scope-office').value = scopeType === 'office' ? (scopeId || '') : '';
+    lhToggleScope('lh-edit');
+
     document.getElementById('lh-edit-modal').classList.add('open');
 }
 function closeEditModal() {
     document.getElementById('lh-edit-modal').classList.remove('open');
 }
+
+// Restore the upload form's scope fields after a validation redirect.
+document.addEventListener('DOMContentLoaded', () => lhToggleScope('lh'));
 
 /* Drag-and-drop reorder */
 (function() {
