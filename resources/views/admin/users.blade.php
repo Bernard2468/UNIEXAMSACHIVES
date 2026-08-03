@@ -350,6 +350,7 @@
         -webkit-font-smoothing: antialiased;
     }
     .uf-sheet.open { transform: translateX(0); }
+    @keyframes ufSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
     .uf-sheet__head {
         display: flex;
@@ -980,18 +981,30 @@
         .user-actions .action-btn i { font-size: 1rem; }
         .user-actions form { display: inline-flex !important; }
 
-        /* Filter drawer becomes a BOTTOM SHEET — same idiom as the header avatar
-           menu and the UIMMS "Minute-to" sheet, so it feels native across the app. */
+        /* Filter drawer becomes a BOTTOM SHEET — same idiom (and same
+           display-toggle mechanism) as the header avatar menu, so it feels
+           native across the app.
+
+           IMPORTANT: the app applies a root `zoom` for the per-user font scale,
+           and `zoom` makes <html> the containing block for position:fixed. That
+           turns `bottom:0` into the bottom of the whole DOCUMENT, so a sheet that
+           merely slid down via transform would park at the page bottom and peek.
+           Toggling `display` (like the avatar sheet) means the closed sheet is
+           never in the render tree, so it can never show. */
         .uf-sheet {
+            display: none;
             top: auto; left: 0; right: 0; bottom: 0;
             height: auto; width: 100%; max-width: 100%;
             max-height: 85dvh;
             border-radius: 22px 22px 0 0;
-            transform: translateY(100%);
-            transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+            transform: none;
             box-shadow: 0 -18px 50px rgba(15, 23, 42, 0.28);
         }
-        .uf-sheet.open { transform: translateY(0); }
+        .uf-sheet.open {
+            display: flex;
+            transform: none;
+            animation: ufSheetUp .3s cubic-bezier(.4, 0, .2, 1);
+        }
         .uf-sheet__grip {
             display: block; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
             width: 42px; height: 4px; border-radius: 999px; background: #e2e8f0;
