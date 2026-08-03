@@ -1028,6 +1028,73 @@
 }
 .fs-reset:hover { color: #0c0c0c; }
 
+/* ═════════════ MOBILE APP CHROME (≤767) ═════════════ */
+@media (max-width: 767px) {
+    /* De-squish trio (official Mobile breakpoint). Below 992 the sidebar is an
+       off-canvas drawer, so the content column is full-width — collapse the
+       container/row/col gutters and give .sp-wrap one clean 16px gutter. */
+    .dashboardarea .container-fluid.full__width__padding { padding-left: 0; padding-right: 0; }
+    .dashboardarea .dashboard > .container-fluid > .row { margin-left: 0; margin-right: 0; }
+    .dashboardarea .dashboard > .container-fluid > .row > [class*="col-"] { padding-left: 0; padding-right: 0; }
+    .sp-wrap {
+        padding-left: 16px;
+        padding-right: 16px;
+        /* clearance so the fixed bottom nav never hides the last field/button */
+        padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    }
+
+    /* iOS Safari zooms on focus of any control < 16px. */
+    .sp-input, .sp-select { font-size: 16px; }
+
+    /* ── Tabs → fixed BOTTOM NAVIGATION BAR (native-app pattern) ──
+       Always displayed (never transform-hidden), so it anchors to the viewport
+       bottom correctly even under the per-user root-`zoom` — same as the header
+       avatar bottom sheet. The existing tab JS keeps toggling `.sp-tab--active`,
+       so the bar's active state just works. */
+    .sp-tabs {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 1040;
+        gap: 0;
+        margin: 0;
+        padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+        background: #fff;
+        border-top: 1.5px solid #ececf0;
+        border-bottom: none;
+        box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.07);
+    }
+    .sp-tabs .sp-tab {
+        flex: 1 1 0;
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 4px 4px;
+        margin: 0;
+        border-bottom: none;
+        border-radius: 12px;
+        font-size: 0.63rem;
+        font-weight: 600;
+        line-height: 1.1;
+        color: #9ca3af;
+        position: relative;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .sp-tabs .sp-tab svg { width: 22px; height: 22px; opacity: 1; }
+    .sp-tabs .sp-tab--active { color: #0c0c0c; font-weight: 700; border-bottom: none; }
+    .sp-tabs .sp-tab--active svg { opacity: 1; }
+    /* Native-style active marker riding the top edge of the bar. */
+    .sp-tabs .sp-tab--active::before {
+        content: '';
+        position: absolute;
+        top: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px; height: 3px;
+        background: #0c0c0c;
+        border-radius: 0 0 4px 4px;
+    }
+}
+
 /* ─────────────── Responsive ─────────────── */
 @media (max-width: 640px) {
     .sp-grid { grid-template-columns: 1fr; }
@@ -1076,6 +1143,10 @@
             this.classList.add('sp-tab--active');
             var el = document.getElementById(target);
             if (el) el.classList.add('sp-panel--active');
+            // On mobile the tabs are a bottom nav — start each panel at the top.
+            if (window.matchMedia('(max-width: 767px)').matches) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         });
     });
 })();
