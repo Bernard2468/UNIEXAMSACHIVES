@@ -45,7 +45,26 @@
                                     @endif
 
                                     <div class="ed-field">
-                                        <label class="ed-label">Department / Faculty / Unit name</label>
+                                        <label class="ed-label">Type</label>
+                                        <select class="ed-input ed-type-select" name="type" required>
+                                            <option value="faculty"    {{ old('type', $department->type) === 'faculty' ? 'selected' : '' }}>Faculty / School</option>
+                                            <option value="department" {{ old('type', $department->type) === 'department' ? 'selected' : '' }}>Department (under a faculty/school)</option>
+                                            <option value="unit"       {{ old('type', $department->type) === 'unit' ? 'selected' : '' }}>Unit (standalone)</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="ed-field ed-parent-field" style="{{ old('type', $department->type) === 'department' ? '' : 'display:none;' }}">
+                                        <label class="ed-label">Parent faculty / school</label>
+                                        <select class="ed-input ed-parent-select" name="parent_id">
+                                            <option value="">— Select a faculty / school —</option>
+                                            @foreach($facultyOptions as $opt)
+                                            <option value="{{ $opt->id }}" {{ (int) old('parent_id', $department->parent_id) === $opt->id ? 'selected' : '' }}>{{ $opt->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="ed-field">
+                                        <label class="ed-label">Name</label>
                                         <input class="ed-input" type="text" name="name" value="{{ old('name', $department->name) }}" placeholder="e.g. Faculty of Engineering" required autofocus>
                                     </div>
 
@@ -149,5 +168,21 @@
 .ed-btn-save:hover { background: #1f2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(12,12,12,.18); }
 .ed-btn-save:active { transform: translateY(0); box-shadow: none; }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var typeSel   = document.querySelector('.ed-type-select');
+    var parentBox = document.querySelector('.ed-parent-field');
+    var parentSel = document.querySelector('.ed-parent-select');
+    if (!typeSel || !parentBox) return;
+    function sync() {
+        var isDept = typeSel.value === 'department';
+        parentBox.style.display = isDept ? '' : 'none';
+        if (parentSel) parentSel.required = isDept;
+    }
+    typeSel.addEventListener('change', sync);
+    sync();
+});
+</script>
 
 @endsection

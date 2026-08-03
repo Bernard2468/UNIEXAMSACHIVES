@@ -20,11 +20,11 @@
                         <div class="dp-page-header">
                             <div>
                                 <h1 class="dp-page-title">Department / Faculty<span class="dp-title-bar"></span></h1>
-                                <p class="dp-page-sub">Manage all departments, faculties, and units registered in the system.</p>
+                                <p class="dp-page-sub">Faculties &amp; schools hold departments; units stand on their own. {{ $total }} {{ $total === 1 ? 'entry' : 'entries' }} total.</p>
                             </div>
-                            <button class="dp-btn-primary" id="triggerDepartmentModal">
+                            <button class="dp-btn-primary" id="dpAddBtn" type="button">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                New department
+                                New entry
                             </button>
                         </div>
 
@@ -45,120 +45,161 @@
                         </div>
                         @endif
 
-                        {{-- Table card --}}
-                        <div class="dp-card">
-                            <div class="dp-card__hd">
-                                <div>
-                                    <h2 class="dp-card__title">All departments<span class="dp-card__bar"></span></h2>
-                                    <p class="dp-card__count">{{ $departments->total() }} {{ $departments->total() === 1 ? 'entry' : 'entries' }} total</p>
+                        {{-- Tabs --}}
+                        <div class="dp-tabs" role="tablist">
+                            <button class="dp-tab is-active" data-tab="faculty" type="button">
+                                Faculties &amp; Schools
+                                <span class="dp-tab__count">{{ $faculties->count() }}</span>
+                            </button>
+                            <button class="dp-tab" data-tab="unit" type="button">
+                                Units
+                                <span class="dp-tab__count">{{ $units->count() }}</span>
+                            </button>
+                        </div>
+
+                        {{-- ── Faculties / Schools tab ── --}}
+                        <div class="dp-panel is-active" data-panel="faculty">
+                            @forelse($faculties as $faculty)
+                            <div class="dp-fac">
+                                <div class="dp-fac__hd">
+                                    <div class="dp-fac__title">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                                        <span>{{ $faculty->name }}</span>
+                                        <span class="dp-badge dp-badge--fac">Faculty / School</span>
+                                    </div>
+                                    <div class="dp-fac__actions">
+                                        <button type="button" class="dp-action dp-action--add dp-add-dept-btn" data-parent="{{ $faculty->id }}" data-parent-name="{{ $faculty->name }}">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            Department
+                                        </button>
+                                        <button type="button" class="dp-action dp-action--edit dp-edit-btn"
+                                            data-name="{{ $faculty->name }}" data-type="faculty" data-parent=""
+                                            data-route="{{ route('departments.update', $faculty->id) }}">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                            Edit
+                                        </button>
+                                        <form action="{{ route('departments.destroy', $faculty->id) }}" method="POST" style="display:inline">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="dp-action dp-action--del" onclick="return confirm('Delete this faculty/school? This cannot be undone.')">
+                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
-                            </div>
 
-                            @if($departments->count() > 0)
-                            <div class="dp-table-shell">
-                                <table class="dp-table">
-                                    <thead>
-                                        <tr>
-                                            <th class="dp-th dp-th--id">#</th>
-                                            <th class="dp-th">Name</th>
-                                            <th class="dp-th dp-th--actions">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($departments as $dept)
-                                        <tr class="dp-tr">
-                                            <td class="dp-td dp-td--id">{{ $dept->id }}</td>
-                                            <td class="dp-td dp-td--name">{{ $dept->name }}</td>
-                                            <td class="dp-td dp-td--actions">
-                                                <button type="button" class="dp-action dp-action--edit dp-edit-btn"
-                                                    data-name="{{ $dept->name }}"
-                                                    data-route="{{ route('departments.update', $dept->id) }}">
-                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                                    Edit
+                                @if($faculty->departments->count() > 0)
+                                <ul class="dp-deptlist">
+                                    @foreach($faculty->departments as $dept)
+                                    <li class="dp-dept">
+                                        <span class="dp-dept__name">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-3"/></svg>
+                                            {{ $dept->name }}
+                                        </span>
+                                        <span class="dp-dept__actions">
+                                            <button type="button" class="dp-action dp-action--edit dp-edit-btn"
+                                                data-name="{{ $dept->name }}" data-type="department" data-parent="{{ $dept->parent_id }}"
+                                                data-route="{{ route('departments.update', $dept->id) }}">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                Edit
+                                            </button>
+                                            <form action="{{ route('departments.destroy', $dept->id) }}" method="POST" style="display:inline">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="dp-action dp-action--del" onclick="return confirm('Delete this department? This cannot be undone.')">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                                                    Delete
                                                 </button>
-                                                <form action="{{ route('departments.destroy', $dept->id) }}" method="POST" style="display:inline">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="dp-action dp-action--del" onclick="return confirm('Delete this department? This cannot be undone.')">
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-                                                        Delete
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                                @if($departments->hasPages())
-                <div class="pagination-wrapper">
-                    <div class="pagination-info">
-                        Showing <strong>{{ $departments->firstItem() }}</strong> to <strong>{{ $departments->lastItem() }}</strong> of <strong>{{ $departments->total() }}</strong> results
-                    </div>
-                    <div class="pagination-controls">
-                        <ul class="pagination">
-                            @if ($departments->onFirstPage())
-                                <li class="pagination-item"><span class="pagination-link icon disabled"><i class="icofont-arrow-left"></i></span></li>
-                            @else
-                                <li class="pagination-item"><a href="{{ $departments->previousPageUrl() }}" class="pagination-link icon"><i class="icofont-arrow-left"></i></a></li>
-                            @endif
-
-                            @php
-                                $currentPage = $departments->currentPage();
-                                $lastPage    = $departments->lastPage();
-                                $startPage   = max(1, $currentPage - 2);
-                                $endPage     = min($lastPage, $currentPage + 2);
-                            @endphp
-
-                            @if($startPage > 1)
-                                <li class="pagination-item"><a href="{{ $departments->url(1) }}" class="pagination-link">1</a></li>
-                                @if($startPage > 2)<li class="pagination-item"><span class="pagination-ellipsis">...</span></li>@endif
-                            @endif
-
-                            @for ($i = $startPage; $i <= $endPage; $i++)
-                                <li class="pagination-item">
-                                    @if ($i == $currentPage)
-                                        <span class="pagination-link active">{{ $i }}</span>
-                                    @else
-                                        <a href="{{ $departments->url($i) }}" class="pagination-link">{{ $i }}</a>
-                                    @endif
-                                </li>
-                            @endfor
-
-                            @if($endPage < $lastPage)
-                                @if($endPage < $lastPage - 1)<li class="pagination-item"><span class="pagination-ellipsis">...</span></li>@endif
-                                <li class="pagination-item"><a href="{{ $departments->url($lastPage) }}" class="pagination-link">{{ $lastPage }}</a></li>
-                            @endif
-
-                            @if ($departments->hasMorePages())
-                                <li class="pagination-item"><a href="{{ $departments->nextPageUrl() }}" class="pagination-link icon"><i class="icofont-arrow-right"></i></a></li>
-                            @else
-                                <li class="pagination-item"><span class="pagination-link icon disabled"><i class="icofont-arrow-right"></i></span></li>
-                            @endif
-                        </ul>
-                    </div>
-                    <div class="page-size-selector">
-                        <span class="page-size-label">Per page:</span>
-                        <select class="page-size-select" onchange="changePageSize(this.value)">
-                            <option value="5"  {{ request('per_page', 10) == 5  ? 'selected' : '' }}>5</option>
-                            <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
-                            <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
-                            <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
-                        </select>
-                    </div>
-                </div>
-                @endif
-            </div>
-                            @else
+                                            </form>
+                                        </span>
+                                    </li>
+                                    @endforeach
+                                </ul>
+                                @else
+                                <p class="dp-fac__none">No departments under this faculty/school yet.</p>
+                                @endif
+                            </div>
+                            @empty
                             <div class="dp-empty">
                                 <div class="dp-empty__icon">
-                                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                                 </div>
-                                <p class="dp-empty__text">No departments yet. Create your first one.</p>
-                                <button class="dp-btn-primary" id="triggerDepartmentModalEmpty">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    Create first department
-                                </button>
+                                <p class="dp-empty__text">No faculties or schools yet.</p>
+                            </div>
+                            @endforelse
+
+                            @if($unassignedDepartments->count() > 0)
+                            <div class="dp-fac dp-fac--warn">
+                                <div class="dp-fac__hd">
+                                    <div class="dp-fac__title">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                        <span>Departments needing a faculty</span>
+                                    </div>
+                                </div>
+                                <ul class="dp-deptlist">
+                                    @foreach($unassignedDepartments as $dept)
+                                    <li class="dp-dept">
+                                        <span class="dp-dept__name">{{ $dept->name }}</span>
+                                        <span class="dp-dept__actions">
+                                            <button type="button" class="dp-action dp-action--edit dp-edit-btn"
+                                                data-name="{{ $dept->name }}" data-type="department" data-parent="{{ $dept->parent_id }}"
+                                                data-route="{{ route('departments.update', $dept->id) }}">
+                                                Assign faculty
+                                            </button>
+                                        </span>
+                                    </li>
+                                    @endforeach
+                                </ul>
                             </div>
                             @endif
+                        </div>
+
+                        {{-- ── Units tab ── --}}
+                        <div class="dp-panel" data-panel="unit">
+                            <div class="dp-card">
+                                @if($units->count() > 0)
+                                <div class="dp-table-shell">
+                                    <table class="dp-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="dp-th dp-th--id">#</th>
+                                                <th class="dp-th">Name</th>
+                                                <th class="dp-th dp-th--actions">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($units as $unit)
+                                            <tr class="dp-tr">
+                                                <td class="dp-td dp-td--id">{{ $unit->id }}</td>
+                                                <td class="dp-td dp-td--name">{{ $unit->name }}</td>
+                                                <td class="dp-td dp-td--actions">
+                                                    <button type="button" class="dp-action dp-action--edit dp-edit-btn"
+                                                        data-name="{{ $unit->name }}" data-type="unit" data-parent=""
+                                                        data-route="{{ route('departments.update', $unit->id) }}">
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                                        Edit
+                                                    </button>
+                                                    <form action="{{ route('departments.destroy', $unit->id) }}" method="POST" style="display:inline">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="dp-action dp-action--del" onclick="return confirm('Delete this unit? This cannot be undone.')">
+                                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                                                            Delete
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @else
+                                <div class="dp-empty">
+                                    <div class="dp-empty__icon">
+                                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                    </div>
+                                    <p class="dp-empty__text">No units yet.</p>
+                                </div>
+                                @endif
+                            </div>
                         </div>
 
                     </div>
@@ -168,14 +209,67 @@
     </div>
 </div>
 
-{{-- ── Edit Department Modal ── --}}
-<div class="modal fade" id="dpEditModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+{{-- ── Create Modal ── --}}
+<div class="modal fade" id="dpAddModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
         <div class="dm-modal">
             <div class="dm-modal__hd">
                 <div>
-                    <h5 class="dm-modal__title">Edit department</h5>
-                    <p class="dm-modal__sub">Update the name of this department, faculty, or unit.</p>
+                    <h5 class="dm-modal__title">New entry</h5>
+                    <p class="dm-modal__sub">Create a faculty/school, a department, or a unit.</p>
+                </div>
+                <button type="button" class="dm-modal__close" data-bs-dismiss="modal">
+                    <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 3L3 11M3 3l8 8"/></svg>
+                </button>
+            </div>
+            <div class="dm-modal__body">
+                <form action="{{ route('departments.store') }}" method="POST">
+                    @csrf
+                    <div class="dm-modal__field">
+                        <label class="dm-modal__label">Type</label>
+                        <select class="dm-modal__input dp-type-select" name="type" required>
+                            <option value="faculty">Faculty / School</option>
+                            <option value="department">Department (under a faculty/school)</option>
+                            <option value="unit">Unit (standalone)</option>
+                        </select>
+                    </div>
+                    <div class="dm-modal__field dp-parent-field" style="display:none;">
+                        <label class="dm-modal__label">Parent faculty / school</label>
+                        <select class="dm-modal__input dp-parent-select" name="parent_id">
+                            <option value="">— Select a faculty / school —</option>
+                            @foreach($facultyOptions as $opt)
+                            <option value="{{ $opt['id'] }}">{{ $opt['name'] }}</option>
+                            @endforeach
+                        </select>
+                        @if($facultyOptions->isEmpty())
+                        <p class="dm-modal__hint">Create a faculty/school first, then add departments under it.</p>
+                        @endif
+                    </div>
+                    <div class="dm-modal__field">
+                        <label class="dm-modal__label">Name</label>
+                        <input class="dm-modal__input" type="text" name="name" placeholder="e.g. Faculty of Engineering" required>
+                    </div>
+                    <div class="dm-modal__foot">
+                        <button type="button" class="dm-modal__btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="dm-modal__btn-save">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Edit Modal ── --}}
+<div class="modal fade" id="dpEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+        <div class="dm-modal">
+            <div class="dm-modal__hd">
+                <div>
+                    <h5 class="dm-modal__title">Edit entry</h5>
+                    <p class="dm-modal__sub">Update the name, type, or parent.</p>
                 </div>
                 <button type="button" class="dm-modal__close" data-bs-dismiss="modal">
                     <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 3L3 11M3 3l8 8"/></svg>
@@ -186,8 +280,25 @@
                     @csrf
                     @method('PUT')
                     <div class="dm-modal__field">
-                        <label class="dm-modal__label">Department / Faculty / Unit name</label>
-                        <input class="dm-modal__input" type="text" id="dpEditName" name="name" placeholder="e.g. Faculty of Engineering" required autofocus>
+                        <label class="dm-modal__label">Type</label>
+                        <select class="dm-modal__input dp-type-select" id="dpEditType" name="type" required>
+                            <option value="faculty">Faculty / School</option>
+                            <option value="department">Department (under a faculty/school)</option>
+                            <option value="unit">Unit (standalone)</option>
+                        </select>
+                    </div>
+                    <div class="dm-modal__field dp-parent-field" style="display:none;">
+                        <label class="dm-modal__label">Parent faculty / school</label>
+                        <select class="dm-modal__input dp-parent-select" id="dpEditParent" name="parent_id">
+                            <option value="">— Select a faculty / school —</option>
+                            @foreach($facultyOptions as $opt)
+                            <option value="{{ $opt['id'] }}">{{ $opt['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="dm-modal__field">
+                        <label class="dm-modal__label">Name</label>
+                        <input class="dm-modal__input" type="text" id="dpEditName" name="name" placeholder="e.g. Faculty of Engineering" required>
                     </div>
                     <div class="dm-modal__foot">
                         <button type="button" class="dm-modal__btn-cancel" data-bs-dismiss="modal">Cancel</button>
@@ -241,17 +352,47 @@
 .dp-alert__x { margin-left: auto; background: none; border: none; cursor: pointer; opacity: .45; color: inherit; padding: 0; display: flex; align-items: center; }
 .dp-alert__x:hover { opacity: 1; }
 
-/* ── Card ── */
-.dp-card { background: #fff; border: 1.5px solid #ebebeb; border-radius: 16px; overflow: hidden; }
-.dp-card__hd { padding: 18px 24px 14px; border-bottom: 1.5px solid #f5f5f5; }
-.dp-card__title {
-    font-size: 0.95rem; font-weight: 700; color: #0c0c0c; letter-spacing: -0.02em;
-    margin: 0 0 4px; display: inline-flex; flex-direction: column;
+/* ── Tabs ── */
+.dp-tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1.5px solid #ebebeb; }
+.dp-tab {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 4px; margin-bottom: -1.5px;
+    background: none; border: none; border-bottom: 2.5px solid transparent; cursor: pointer;
+    font-size: 0.9rem; font-weight: 600; color: #9ca3af; font-family: 'Outfit', sans-serif !important;
+    margin-right: 22px; transition: color .15s, border-color .15s;
 }
-.dp-card__bar { display: block; width: 1.7rem; height: 2.5px; background: #0c0c0c; border-radius: 2px; margin-top: 6px; }
-.dp-card__count { margin: 8px 0 0; font-size: 0.8rem; color: #b0b5c0; }
+.dp-tab:hover { color: #374151; }
+.dp-tab.is-active { color: #0c0c0c; border-bottom-color: #0c0c0c; }
+.dp-tab__count {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px;
+    padding: 0 6px; border-radius: 999px; background: #f1f2f4; color: #6b7280;
+    font-size: 0.72rem; font-weight: 700;
+}
+.dp-tab.is-active .dp-tab__count { background: #0c0c0c; color: #fff; }
 
-/* ── Table ── */
+.dp-panel { display: none; }
+.dp-panel.is-active { display: block; }
+
+/* ── Faculty block ── */
+.dp-fac { background: #fff; border: 1.5px solid #ebebeb; border-radius: 14px; margin-bottom: 14px; overflow: hidden; }
+.dp-fac--warn { border-color: #fde68a; background: #fffbeb; }
+.dp-fac__hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1.5px solid #f5f5f5; flex-wrap: wrap; }
+.dp-fac--warn .dp-fac__hd { border-bottom-color: #fde68a; }
+.dp-fac__title { display: inline-flex; align-items: center; gap: 9px; font-size: 0.95rem; font-weight: 700; color: #111827; }
+.dp-fac__title > svg { color: #6b7280; flex-shrink: 0; }
+.dp-badge { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 3px 8px; border-radius: 6px; }
+.dp-badge--fac { background: #eef2ff; color: #4338ca; }
+.dp-fac__actions { display: inline-flex; align-items: center; gap: 6px; }
+.dp-fac__none { margin: 0; padding: 14px 18px; font-size: 0.83rem; color: #9ca3af; }
+
+.dp-deptlist { list-style: none; margin: 0; padding: 6px 0; }
+.dp-dept { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 18px; transition: background .1s; }
+.dp-dept:hover { background: #fafafa; }
+.dp-dept__name { display: inline-flex; align-items: center; gap: 9px; font-size: 0.88rem; font-weight: 500; color: #374151; }
+.dp-dept__name > svg { color: #b0b5c0; flex-shrink: 0; }
+.dp-dept__actions { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── Card + table (Units) ── */
+.dp-card { background: #fff; border: 1.5px solid #ebebeb; border-radius: 16px; overflow: hidden; }
 .dp-table-shell { overflow-x: auto; }
 .dp-table { width: 100%; border-collapse: collapse; }
 .dp-th {
@@ -276,89 +417,93 @@
     border: 1.5px solid transparent; transition: all .15s; text-decoration: none;
     background: none; font-family: 'Outfit', sans-serif !important; vertical-align: middle;
 }
+.dp-action--add  { color: #4338ca; border-color: #e0e7ff; }
+.dp-action--add:hover { background: #eef2ff; border-color: #c7d2fe; }
 .dp-action--edit { color: #374151; border-color: #e5e7eb; }
 .dp-action--edit:hover { background: #f3f4f6; border-color: #d1d5db; color: #111827; text-decoration: none; }
 .dp-action--del  { color: #ef4444; border-color: #fee2e2; }
 .dp-action--del:hover { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
-.dp-action + form { margin-left: 6px; display: inline; }
 
 /* ── Empty ── */
 .dp-empty { padding: 52px 24px; text-align: center; }
 .dp-empty__icon { display: inline-flex; padding: 18px; background: #f9fafb; border: 1.5px solid #ebebeb; border-radius: 16px; color: #d1d5db; margin-bottom: 16px; }
-.dp-empty__text { font-size: 0.9rem; color: #9ca3af; margin-bottom: 20px; }
+.dp-empty__text { font-size: 0.9rem; color: #9ca3af; margin-bottom: 0; }
 
-/* ── Pagination ── */
-.pagination-wrapper {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; border-top: 1.5px solid #f5f5f5;
-    gap: 1rem; flex-wrap: wrap;
-}
-.pagination-info { font-size: 0.875rem; color: #6b7280; white-space: nowrap; }
-.pagination-info strong { color: #1f2937; font-weight: 600; }
-.pagination-controls { display: flex; align-items: center; gap: 0.5rem; }
-.pagination { display: flex; list-style: none; margin: 0; padding: 0; gap: 0.25rem; }
-.pagination-item { display: inline-block; }
-.pagination-link {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 2rem; height: 2rem; padding: 0 0.5rem;
-    border: 1px solid #e5e7eb; border-radius: 0.375rem;
-    font-size: 0.875rem; color: #374151; text-decoration: none;
-    background: #fff; transition: all 0.2s; font-family: 'Outfit', sans-serif !important;
-}
-.pagination-link:hover:not(.disabled):not(.active) { background: #f3f4f6; border-color: #d1d5db; color: #1f2937; }
-.pagination-link.active { background: #3b82f6; color: #fff; border-color: #3b82f6; font-weight: 600; }
-.pagination-link.disabled { color: #9ca3af; cursor: not-allowed; background: #f9fafb; opacity: 0.5; }
-.pagination-link.icon { width: 2rem; padding: 0; }
-.pagination-ellipsis {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 2rem; height: 2rem; font-size: 0.875rem; color: #6b7280;
-}
-.page-size-selector { display: flex; align-items: center; gap: 0.5rem; }
-.page-size-label { font-size: 0.875rem; color: #6b7280; white-space: nowrap; }
-.page-size-select {
-    padding: 0.4rem 0.65rem; border: 1px solid #d1d5db; border-radius: 0.375rem;
-    font-size: 0.875rem; color: #374151; background: #fff; cursor: pointer;
-    font-family: 'Outfit', sans-serif !important; transition: all 0.2s;
-}
-.page-size-select:hover { border-color: #9ca3af; }
-.page-size-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
-@media (max-width: 768px) {
-    .pagination-wrapper { flex-direction: column; align-items: stretch; }
-    .pagination-controls { justify-content: center; }
-    .page-size-selector { justify-content: center; }
+/* ── Modal fields ── */
+.dm-modal__hint { margin: 8px 0 0; font-size: 0.78rem; color: #b45309; }
+
+@media (max-width: 767px) {
+    .dp-fac__hd { align-items: flex-start; }
+    .dp-fac__actions { width: 100%; }
 }
 </style>
 
 <script>
-function changePageSize(size) {
-    var url = new URL(window.location.href);
-    url.searchParams.set('per_page', size);
-    url.searchParams.set('page', '1');
-    window.location.href = url.toString();
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-    // ── Create modal triggers ──
-    var headerBtn = document.getElementById('triggerDepartmentModal');
-    var emptyBtn  = document.getElementById('triggerDepartmentModalEmpty');
-    var addModal  = document.getElementById('myDepartmentModal');
+    // ── Tabs ──
+    document.querySelectorAll('.dp-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            var target = tab.dataset.tab;
+            document.querySelectorAll('.dp-tab').forEach(t => t.classList.toggle('is-active', t === tab));
+            document.querySelectorAll('.dp-panel').forEach(p => p.classList.toggle('is-active', p.dataset.panel === target));
+        });
+    });
 
-    function openAddModal(e) {
-        e.preventDefault();
-        if (addModal) new bootstrap.Modal(addModal).show();
+    // ── Show/hide the parent picker based on selected type ──
+    function bindTypeToggle(form) {
+        var typeSel   = form.querySelector('.dp-type-select');
+        var parentBox = form.querySelector('.dp-parent-field');
+        var parentSel = form.querySelector('.dp-parent-select');
+        if (!typeSel || !parentBox) return;
+        function sync() {
+            var isDept = typeSel.value === 'department';
+            parentBox.style.display = isDept ? '' : 'none';
+            if (parentSel) parentSel.required = isDept;
+        }
+        typeSel.addEventListener('change', sync);
+        sync();
     }
-    if (headerBtn) headerBtn.addEventListener('click', openAddModal);
-    if (emptyBtn)  emptyBtn.addEventListener('click', openAddModal);
 
-    // ── Edit modal ──
+    var addModal  = document.getElementById('dpAddModal');
     var editModal = document.getElementById('dpEditModal');
+    var addForm   = addModal ? addModal.querySelector('form') : null;
     var editForm  = document.getElementById('dpEditForm');
-    var editName  = document.getElementById('dpEditName');
 
+    if (addForm)  bindTypeToggle(addForm);
+    if (editForm) bindTypeToggle(editForm);
+
+    function openAdd(presetType, presetParent) {
+        if (!addForm) return;
+        var typeSel   = addForm.querySelector('.dp-type-select');
+        var parentSel = addForm.querySelector('.dp-parent-select');
+        var nameInput = addForm.querySelector('input[name="name"]');
+        typeSel.value = presetType || 'faculty';
+        if (parentSel) parentSel.value = presetParent || '';
+        if (nameInput) nameInput.value = '';
+        typeSel.dispatchEvent(new Event('change'));
+        new bootstrap.Modal(addModal).show();
+    }
+
+    // New entry
+    var addBtn = document.getElementById('dpAddBtn');
+    if (addBtn) addBtn.addEventListener('click', function() { openAdd('faculty'); });
+
+    // Add department directly under a faculty
+    document.querySelectorAll('.dp-add-dept-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() { openAdd('department', btn.dataset.parent); });
+    });
+
+    // ── Edit ──
+    var editType   = document.getElementById('dpEditType');
+    var editParent = document.getElementById('dpEditParent');
+    var editName   = document.getElementById('dpEditName');
     document.querySelectorAll('.dp-edit-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            editName.value  = btn.dataset.name;
-            editForm.action = btn.dataset.route;
+            editName.value   = btn.dataset.name || '';
+            editType.value   = btn.dataset.type || 'unit';
+            if (editParent) editParent.value = btn.dataset.parent || '';
+            editForm.action  = btn.dataset.route;
+            editType.dispatchEvent(new Event('change'));
             new bootstrap.Modal(editModal).show();
         });
     });

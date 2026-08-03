@@ -558,7 +558,14 @@
                 <form action="{{route('departments.store')}}" method="POST">
                     @csrf
                     <div class="dm-modal__field">
-                        <label class="dm-modal__label">Department name</label>
+                        <label class="dm-modal__label">Type</label>
+                        <select class="dm-modal__input" name="type" required>
+                            <option value="faculty">Faculty / School</option>
+                            <option value="unit">Unit (standalone)</option>
+                        </select>
+                    </div>
+                    <div class="dm-modal__field">
+                        <label class="dm-modal__label">Name</label>
                         <input class="dm-modal__input" type="text" name="name" placeholder="e.g. Faculty of Engineering" required autofocus>
                     </div>
                     <div class="dm-modal__foot">
