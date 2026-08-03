@@ -900,10 +900,23 @@
        MOBILE APP EXPERIENCE (≤ 767px)
        ============================================================ */
     @media (max-width: 767px) {
+        /* ── Edge-to-edge, de-squished layout (same recipe as the memo/compose
+           pages). The page frame adds 30px (.full__width__padding) + 30px row
+           gutter + a centered Bootstrap .container max-width, which squeezes the
+           content into a narrow middle column. Zero those and give each section a
+           single clean 16px app gutter that runs to both edges. */
+        .dashboardarea .full__width__padding { padding-left: 0 !important; padding-right: 0 !important; }
+        .col-xl-9.col-lg-9.col-md-12 { padding-left: 0; padding-right: 0; }
+        .users-hero .container,
+        .search-filter-section .container,
+        .users-section .container {
+            max-width: none; width: 100%;
+            padding-left: 16px; padding-right: 16px;
+        }
+
         /* Compact, app-like hero */
         .users-hero { padding: 20px 0 16px; background: #fff; }
         .users-hero::before { display: none; }
-        .users-hero .container { padding-left: 16px; padding-right: 16px; }
         .users-hero-content > div:first-child { align-items: center !important; }
         .hero-title {
             font-size: 1.35rem; margin-bottom: 2px;
@@ -933,11 +946,17 @@
 
         /* Search / filter section */
         .search-filter-section { padding: 14px 0; }
-        .search-filter-section .container { padding-left: 16px; padding-right: 16px; }
         .uf-searchrow { gap: 8px; }
-        .search-input { padding: 12px 46px 12px 16px; font-size: 0.95rem; }
+        /* 16px keeps iOS Safari from auto-zooming the page on input focus */
+        .search-input { padding: 12px 46px 12px 16px; font-size: 16px; }
         .uf-filter-btn { padding: 12px 14px; }
         .uf-filter-btn__label { display: none; }
+
+        /* Same anti-zoom rule for every other focusable field on the page */
+        .uf-field select,
+        .uf-sort select,
+        .animated-input,
+        .efi-input, .efi-select { font-size: 16px; }
 
         /* Status segmented control spans full width, scrolls if needed */
         .uf-controls { margin-top: 12px; gap: 10px; }
