@@ -10,8 +10,11 @@
         /* Word-like page margins: ~1" top so continuation pages don't start at
            the paper's edge, and a bottom margin so content never hugs the foot
            of the page. Sides stay 0 — .page-body carries the side padding and
-           the letterhead band stays full-bleed. */
-        @page { margin: 72pt 0 56pt 0; }
+           the letterhead band stays full-bleed.
+           dompdf's CSS parser DROPS the whole declaration if any shorthand
+           value lacks a unit (unitless 0 included) — every value must carry
+           one, exactly like the forms PDFs' `margin: 14mm 14mm 14mm 14mm`. */
+        @page { margin: 72pt 0pt 56pt 0pt; }
 
         body {
             /* Times core font (what MS Word memos use). It only covers cp1252 —
@@ -25,8 +28,9 @@
         /* ── Letterhead ── */
         /* -72pt cancels the @page top margin on page 1 exactly, so the band
            prints at the physical top of the sheet — same position as before
-           the page margins were introduced. */
-        .letterhead-band { width: 100%; margin: -72pt 0 0 0; }
+           the page margins were introduced. Must stay equal-and-opposite to
+           the @page margin-top above. */
+        .letterhead-band { width: 100%; margin: -72pt 0pt 0pt 0pt; }
         .letterhead-img  { width: 100%; height: auto; display: block; }
 
         /* ── Page wrapper ── */
