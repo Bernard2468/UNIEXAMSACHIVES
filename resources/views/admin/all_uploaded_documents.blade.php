@@ -25,7 +25,14 @@
     });
 @endphp
 
-@include('components.explorer', [
+<div class="dashboardarea sp_bottom_100">
+    <div class="dashboard">
+        <div class="container-fluid full__width__padding">
+            <div class="row">
+                @include('components.sidebar')
+
+                <div class="col-xl-9 col-lg-9 col-md-12">
+                    @include('components.explorer', [
     'pageTitle' => 'My Uploaded Exams',
     'pageSubtitle' => 'All exam documents you have deposited. Right-click or use the menu to manage each one. Drag any item onto a folder to organize.',
     'folders' => $folders,
@@ -33,5 +40,10 @@
     'items' => $items,
     'itemKind' => 'exam',
 ])
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection

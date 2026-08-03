@@ -47,7 +47,14 @@
     $items = $fileItems->merge($examItems)->sortByDesc('date')->values();
 @endphp
 
-@include('components.explorer', [
+<div class="dashboardarea sp_bottom_100">
+    <div class="dashboard">
+        <div class="container-fluid full__width__padding">
+            <div class="row">
+                @include('components.sidebar')
+
+                <div class="col-xl-9 col-lg-9 col-md-12">
+                    @include('components.explorer', [
     'pageTitle' => 'All Documents',
     'pageSubtitle' => 'Everything you have uploaded — files and exam documents in one place. Drag any item onto a folder to organize. Right-click for options.',
     'folders' => $folders,
@@ -57,5 +64,10 @@
     'itemsSectionLabel' => 'Documents',
     'emptyStateText' => 'Upload a file or an exam document to see it here.',
 ])
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection

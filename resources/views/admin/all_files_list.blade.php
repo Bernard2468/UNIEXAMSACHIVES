@@ -24,7 +24,14 @@
     });
 @endphp
 
-@include('components.explorer', [
+<div class="dashboardarea sp_bottom_100">
+    <div class="dashboard">
+        <div class="container-fluid full__width__padding">
+            <div class="row">
+                @include('components.sidebar')
+
+                <div class="col-xl-9 col-lg-9 col-md-12">
+                    @include('components.explorer', [
     'pageTitle' => 'My Uploaded Files',
     'pageSubtitle' => 'Every file document you have deposited. Right-click any item for options, or drag it onto a folder to organize.',
     'folders' => $folders,
@@ -32,5 +39,10 @@
     'items' => $items,
     'itemKind' => 'file',
 ])
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection

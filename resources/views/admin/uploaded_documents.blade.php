@@ -25,7 +25,14 @@
     });
 @endphp
 
-@include('components.explorer', [
+<div class="dashboardarea sp_bottom_100">
+    <div class="dashboard">
+        <div class="container-fluid full__width__padding">
+            <div class="row">
+                @include('components.sidebar')
+
+                <div class="col-xl-9 col-lg-9 col-md-12">
+                    @include('components.explorer', [
     'pageTitle' => 'All Exams Archive',
     'pageSubtitle' => 'Browse and organize your exam documents. Drag any item onto a folder, or right-click for more options.',
     'folders' => $folders,
@@ -33,5 +40,10 @@
     'items' => $items,
     'itemKind' => 'exam',
 ])
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
