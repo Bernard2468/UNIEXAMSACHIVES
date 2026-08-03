@@ -1457,8 +1457,11 @@
 </div>
 
 {{-- Minute-To Modal (official minuting: route the memo onward, signed).
-     Restyled by CSS into a bottom sheet on phones and a LEFT side drawer on
-     tablet/desktop — Bootstrap still drives open/close/backdrop/Escape. --}}
+     Restyled by CSS into a bottom sheet on phones and a RIGHT side drawer on
+     tablet/desktop — Bootstrap still drives open/close/backdrop/Escape.
+     Sora + DM Sans complete the folders-drawer type pairing (Outfit is
+     already imported by this page). --}}
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <div class="modal fade" id="assignModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -4013,33 +4016,48 @@
   #assignModal textarea { font-size: 16px; }   /* ≥16px so iOS doesn't zoom */
 }
 
-/* ── "Minute-To" modal → LEFT SIDE DRAWER on tablet/desktop ──
+/* ── "Minute-To" modal → RIGHT SIDE DRAWER on tablet/desktop ──
    Same pure-CSS restyle trick as the phone bottom sheet above: Bootstrap
    keeps handling open/close/backdrop/Escape, we only reposition the dialog.
-   Matches the app's established side-drawer idiom (folders .mdrawer),
-   left-anchored per design: full height, fixed width, slide-in from the
-   left, shadow cast to the right. */
+   Matches the app's established side-drawer idiom (folders .mdrawer):
+   right-anchored, full height, fixed width, slide-in from the right,
+   shadow cast to the left, and the same Sora/Outfit/DM Sans type pairing. */
 @media (min-width: 768px) {
   #assignModal .modal-dialog {
-    position: fixed; top: 0; bottom: 0; left: 0; right: auto;
+    position: fixed; top: 0; bottom: 0; right: 0; left: auto;
     margin: 0; width: 480px; max-width: 94vw;
     display: flex;
   }
-  /* Slide in from the left (overrides Bootstrap's default drop-in transform) */
-  #assignModal.fade .modal-dialog { transform: translateX(-100%); transition: transform .34s cubic-bezier(.22, .61, .36, 1); }
+  /* Slide in from the right (overrides Bootstrap's default drop-in transform) */
+  #assignModal.fade .modal-dialog { transform: translateX(100%); transition: transform .34s cubic-bezier(.22, .61, .36, 1); }
   #assignModal.show .modal-dialog { transform: translateX(0); }
   #assignModal .modal-content {
     display: flex; flex-direction: column;
     width: 100%; height: 100%;
     border: none; border-radius: 0;
-    box-shadow: 22px 0 50px rgba(15, 23, 42, 0.14);
+    box-shadow: -22px 0 50px rgba(15, 23, 42, 0.14);
+    /* Folders .mdrawer type pairing: Sora = headline, Outfit = controls,
+       DM Sans = reading text; Outfit stays in every fallback chain. */
+    --font-display: 'Sora', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-text: 'DM Sans', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-text);
   }
+  #assignModal .modal-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  #assignModal .form-label { font-family: var(--font-ui); font-weight: 600; }
+  #assignModal button, #assignModal input, #assignModal textarea, #assignModal select { font-family: var(--font-ui); }
   #assignModal .modal-header { flex: 0 0 auto; }
   #assignModal form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   #assignModal .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #assignModal .am-user-list { max-height: 230px; overflow-y: auto; }
   #assignModal .modal-footer { flex: 0 0 auto; }
 }
+
+/* Signature pad inside the Minute-To panel: meaningful, not monumental —
+   on every breakpoint (the forms pages keep their own full-size pad). */
+#assignModal .sigpad canvas { height: 120px; }
+#assignModal .sigpad-saved__preview { width: 150px; height: 58px; }
+#assignModal .sigtyped-card { min-height: 92px; }
 </style>
 
 <script>

@@ -5,15 +5,21 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Memo – {{ $memo->reference ?? $memo->id }}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* dompdf implements @page margins as the root <html> frame's own
+           margins, merged BEFORE author rules — so a universal reset
+           `* { margin: 0 }` matches <html> and silently wipes them to zero
+           (dompdf 3.1.4 Stylesheet.php, "@page … applied to the very first
+           root frame before processing other styles"). Keep the margin reset
+           OFF the root element: box-sizing may stay universal, margins may not. */
+        * { box-sizing: border-box; }
+        body, div, span, p, h1, h2, h3, h4, h5, h6,
+        table, tr, td, th, img, hr, ul, ol, li, blockquote { margin: 0; padding: 0; }
 
         /* Word-like page margins: ~1" top so continuation pages don't start at
            the paper's edge, and a bottom margin so content never hugs the foot
            of the page. Sides stay 0 — .page-body carries the side padding and
-           the letterhead band stays full-bleed.
-           dompdf's CSS parser DROPS the whole declaration if any shorthand
-           value lacks a unit (unitless 0 included) — every value must carry
-           one, exactly like the forms PDFs' `margin: 14mm 14mm 14mm 14mm`. */
+           the letterhead band stays full-bleed. Units on every value, matching
+           the proven forms-PDF @page rules. */
         @page { margin: 72pt 0pt 56pt 0pt; }
 
         body {
