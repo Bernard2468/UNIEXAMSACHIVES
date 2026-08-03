@@ -911,7 +911,7 @@
         .search-filter-section .container,
         .users-section .container {
             max-width: none; width: 100%;
-            padding-left: 16px; padding-right: 16px;
+            padding-left: 20px; padding-right: 20px;
         }
 
         /* Compact, app-like hero */
@@ -970,7 +970,6 @@
 
         /* Cards: app list rows */
         .users-section { padding: 16px 0 90px; }
-        .users-section .container { padding-left: 16px; padding-right: 16px; }
         .users-list { gap: 12px; }
         .user-card { padding: 16px; border-radius: 16px; }
         .user-card::before { height: 3px; }
