@@ -624,6 +624,11 @@
     <button type="button" data-action="remove" style="display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; background:transparent; border:none; text-align:left; font-size:13.5px; font-weight:500; color:#dc2626; border-radius:7px; cursor:pointer; font-family:inherit;"><i class="fas fa-folder-minus" style="width:14px;"></i> Remove from folder</button>
     @endif
 </div>
+{{-- Dim behind the context menu when it becomes a bottom sheet on mobile.
+     Sibling AFTER #folderCtx so `#folderCtx.open ~ .fctx-backdrop` shows it via
+     CSS; a tap on it is "outside" the menu, so the existing document-click
+     handler closes it (and the backdrop absorbs the tap). Desktop: never shown. --}}
+<div class="fctx-backdrop" id="folderCtxBackdrop" aria-hidden="true"></div>
 
 
 {{-- ===== ADD ITEMS MODAL ===== --}}
@@ -890,6 +895,75 @@
     .qa-step-label { display:none; }
     .qa-step-line { width:22px; margin:0 7px; }
 }
+
+/* ============ QUICK-ADD (FILE / EXAM) → MOBILE DRAWER (≤767) ============
+   These were centered modals. A centered popup is not acceptable on mobile
+   (drawer-sheet-consistency memory), so they become FULL-SCREEN slide-in
+   drawers — matching this page's own .mdrawer (Add items / Share) idiom for one
+   consistent mobile overlay language. The backdrop already display-toggles
+   (.open → flex), so it is safe from the per-user root-`zoom` position:fixed
+   gotcha (never hide a fixed panel with transform alone — see the memory). */
+@media (max-width: 767px) {
+    .qa-backdrop { padding: 0; align-items: stretch; }
+    .qa-modal {
+        width: 100%;
+        max-width: 100%;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+        animation: qaDrawerIn .32s cubic-bezier(.22, .61, .36, 1);
+    }
+    @keyframes qaDrawerIn { from { transform: translateX(100%); } to { transform: none; } }
+    /* iOS Safari zooms on focus of any control < 16px — bump to 16px on mobile. */
+    .qa-field input[type=text],
+    .qa-field input[type=date],
+    .qa-field select { font-size: 16px; }
+
+    /* --- Tile context menu → bottom sheet (matches the explorer pages). The
+       menu's base look + coords are INLINE, so override with !important. It
+       display-toggles (block/none) and now also carries `.open` (added in JS),
+       which drives this sheet + its sibling backdrop; safe from the root-`zoom`
+       fixed gotcha. --- */
+    #folderCtx.open {
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        border-radius: 18px 18px 0 0 !important;
+        padding: 10px 12px calc(14px + env(safe-area-inset-bottom)) !important;
+        box-shadow: 0 -14px 44px rgba(15, 23, 42, 0.24) !important;
+        z-index: 10000 !important;
+        animation: fctxSheetUp .26s cubic-bezier(.22, .61, .36, 1);
+    }
+    @keyframes fctxSheetUp { from { transform: translateY(100%); } to { transform: none; } }
+    #folderCtx.open::before {
+        content: '';
+        display: block;
+        width: 42px; height: 4px;
+        border-radius: 999px;
+        background: #cbd5e1;
+        margin: 2px auto 12px;
+    }
+    #folderCtx.open a,
+    #folderCtx.open button {
+        padding: 14px 14px !important;
+        font-size: 15px !important;
+        border-radius: 11px !important;
+    }
+    #folderCtx.open ~ .fctx-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.42);
+        z-index: 9999;
+        animation: fctxBackdropIn .26s ease;
+    }
+    @keyframes fctxBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+}
+.fctx-backdrop { display: none; }
 </style>
 
 {{-- Quick-add: FILE --}}
@@ -1719,6 +1793,15 @@ body.mdrawer-lock { overflow: hidden; }
 @media (max-width: 520px) {
     .mdrawer { width: 100%; max-width: 100%; }
 }
+/* iOS Safari zooms the whole page when a focused control is < 16px. On mobile
+   bump every focusable control inside the Add-items / Share drawers to 16px
+   (drawer-sheet-consistency memory — applies to all overlays, not just the
+   newly converted quick-add modals). */
+@media (max-width: 767px) {
+    .mdrawer input,
+    .mdrawer select,
+    .mdrawer textarea { font-size: 16px; }
+}
 /* Larger, comfortable reading on big monitors without ballooning anything. */
 @media (min-width: 1600px) {
     .mdrawer { width: 520px; }
@@ -2165,8 +2248,11 @@ body.mdrawer-lock { overflow: hidden; }
         ctx.style.left = Math.min(x, window.innerWidth - 220) + 'px';
         ctx.style.top = Math.min(y, window.innerHeight - 220) + 'px';
         ctx.style.display = 'block';
+        // `.open` lets the ≤767 bottom-sheet CSS + its sibling backdrop kick in
+        // (mobile pins it to the bottom, overriding the inline left/top above).
+        ctx.classList.add('open');
     }
-    function closeCtx() { ctx.style.display = 'none'; active = null; }
+    function closeCtx() { ctx.style.display = 'none'; ctx.classList.remove('open'); active = null; }
 
     document.querySelectorAll('.folder-item').forEach(tile => {
         tile.addEventListener('contextmenu', e => { e.preventDefault(); openCtx(e.clientX, e.clientY, tile); });

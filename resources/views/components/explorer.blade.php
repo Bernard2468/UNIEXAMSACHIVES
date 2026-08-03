@@ -926,6 +926,88 @@
         padding-right: 0 !important;
     }
 }
+
+/* ============ NEW FOLDER MODAL → MOBILE DRAWER (≤767) ============
+   A centered modal is not acceptable on mobile (drawer-sheet-consistency
+   memory). The New Folder form is long (name, description, colour, optional
+   password + a searchable share-with-people list), so it becomes a FULL-SCREEN
+   slide-in drawer — the same "long form" idiom as the folder page's .mdrawer and
+   the notification tray. The backdrop already display-toggles (.open → flex), so
+   this is safe from the per-user root-`zoom` position:fixed gotcha (we never
+   rely on transform alone to hide a fixed panel — see font-size-preference). */
+@media (max-width: 767px) {
+    .nf-backdrop { padding: 0; align-items: stretch; }
+    .nf-modal {
+        width: 100%;
+        max-width: 100%;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+        animation: nfDrawerIn .32s cubic-bezier(.22, .61, .36, 1);
+    }
+    @keyframes nfDrawerIn { from { transform: translateX(100%); } to { transform: none; } }
+    /* iOS Safari zooms the whole page when a control with font-size < 16px is
+       focused — bump every focusable control in the sheet to 16px on mobile. */
+    .nf-input,
+    .nf-textarea,
+    .nf-share-search-box input,
+    .nf-share-perm { font-size: 16px; }
+}
+
+/* ============ TILE CONTEXT MENU → MOBILE BOTTOM SHEET (≤767) ============
+   The View/Download/Edit/Delete menu is coordinate-positioned by JS on desktop.
+   On mobile a floating menu near the tap point is fiddly, so it becomes a
+   bottom sheet (short action list → sheet, per drawer-sheet-consistency memory).
+   The JS still sets inline left/top, so we override with !important to pin it to
+   the bottom. It already display-toggles via `.open`, so it is safe from the
+   root-`zoom` position:fixed gotcha. The sibling backdrop dims the page and,
+   being "outside" the menu, is closed by the existing document-click handler. */
+@media (max-width: 767px) {
+    .exp-menu.open {
+        top: auto !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        border-radius: 18px 18px 0 0 !important;
+        padding: 10px 12px calc(14px + env(safe-area-inset-bottom)) !important;
+        box-shadow: 0 -14px 44px rgba(15, 23, 42, 0.24) !important;
+        z-index: 10000;
+        animation: expMenuSheetUp .26s cubic-bezier(.22, .61, .36, 1);
+    }
+    @keyframes expMenuSheetUp { from { transform: translateY(100%); } to { transform: none; } }
+    /* Grab handle for the sheet affordance. */
+    .exp-menu.open::before {
+        content: '';
+        display: block;
+        width: 42px; height: 4px;
+        border-radius: 999px;
+        background: #cbd5e1;
+        margin: 2px auto 12px;
+    }
+    /* Thumb-friendly rows. */
+    .exp-menu button,
+    .exp-menu a {
+        padding: 14px 14px;
+        font-size: 15px;
+        border-radius: 11px;
+    }
+    .exp-menu i { width: 18px; font-size: 15px; }
+    .exp-menu .divider { margin: 6px 0; }
+    /* Dim + tap-catcher shown only while the sheet is open. */
+    .exp-menu.open ~ .exp-menu-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.42);
+        z-index: 9999;
+        animation: expMenuBackdropIn .26s ease;
+    }
+    @keyframes expMenuBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+}
+.exp-menu-backdrop { display: none; }
 </style>
 @endpush
 
@@ -1174,6 +1256,12 @@
     <a href="#" data-action="edit"><i class="fas fa-pen"></i> Edit details</a>
     <button type="button" data-action="delete" class="danger"><i class="fas fa-trash"></i> Delete</button>
 </div>
+{{-- Dim behind the context menu when it becomes a bottom sheet on mobile.
+     Sibling AFTER the menu so `.exp-menu.open ~ .exp-menu-backdrop` can show it
+     with pure CSS; a tap on it is "outside the menu" so the existing
+     document-click handler closes the sheet (and the backdrop absorbs the tap,
+     so no tile/link underneath fires). Desktop: never shown. --}}
+<div class="exp-menu-backdrop" id="expMenuBackdrop" aria-hidden="true"></div>
 
 {{-- Hidden CSRF + delete form --}}
 <form id="expDeleteForm" method="POST" style="display:none;">
