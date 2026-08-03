@@ -1379,7 +1379,7 @@
                                     <div class="input-field-wrapper">
                                         <textarea id="message-input"
                                                   name="message"
-                                                  placeholder="Minute on Memo..."
+                                                  placeholder="Discussion on Memo..."
                                                   rows="1"></textarea>
                                     </div>
                                     
@@ -1456,19 +1456,19 @@
     </div>
 </div>
 
-{{-- Assignment Modal --}}
+{{-- Minute-To Modal (official minuting: route the memo onward, signed) --}}
 <div class="modal fade" id="assignModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Assign Memo</h5>
+                <h5 class="modal-title">Minute Memo To</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="assign-form">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Assign to User(s) <span class="text-muted">(Select one or more)</span></label>
+                        <label class="form-label">Minute to User(s) <span class="text-muted">(Select one or more)</span></label>
                         <div class="mb-2">
                             <input type="text" id="user-search-input" class="form-control" placeholder="Search by name or email..." autocomplete="off">
                         </div>
@@ -1501,13 +1501,20 @@
                         <!-- <small class="text-muted">Select at least one user to assign the memo.</small> -->
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Assignment Message (Optional)</label>
-                        <textarea name="message" class="form-control" rows="3" placeholder="Add a message explaining the assignment..."></textarea>
+                        <label class="form-label">Minute / Remark (Optional)</label>
+                        <textarea name="message" class="form-control" rows="3" placeholder="e.g. For your immediate action..."></textarea>
+                    </div>
+                    <div class="mb-3" id="minute-signature-block">
+                        <label class="form-label">Your Signature <span class="text-danger">*</span></label>
+                        <div class="text-muted" style="font-size:12.5px; margin-bottom:8px;">
+                            Minuting is an official action — sign to authorise it. Your signature, name, and the date will appear on the memo's PDF.
+                        </div>
+                        @include('admin.forms.partials.signature-pad', ['savedSignature' => auth()->user()->savedSignature])
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Assign Memo</button>
+                    <button type="submit" class="btn btn-primary">Sign &amp; Minute</button>
                 </div>
             </form>
         </div>
@@ -3992,15 +3999,15 @@
     width: 40px; height: 4px; border-radius: 999px; background: #e2e8f0;
   }
   #assignModal form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  #assignModal .modal-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-  /* the "Assign to User(s)" block grows and holds the scrolling list */
-  #assignModal .modal-body > .mb-3:first-child { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  #assignModal .am-user-list { flex: 1 1 auto; min-height: 120px; max-height: none !important; overflow-y: auto; }
-  /* the optional message block never grows/shrinks away */
-  #assignModal .modal-body > .mb-3:last-child { flex: 0 0 auto; margin-bottom: 0; }
+  /* The sheet body scrolls as a whole — with the mandatory signature pad
+     below the user list, everything (list, remark, pad, footer) must stay
+     reachable on a phone. The user list keeps its own inner scroll. */
+  #assignModal .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  #assignModal .am-user-list { max-height: 200px !important; overflow-y: auto; }
   #assignModal .modal-body textarea { min-height: 56px; }
   #assignModal .modal-footer { flex: 0 0 auto; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
   #assignModal #user-search-input,
+  #assignModal .sigtyped-name__input,
   #assignModal textarea { font-size: 16px; }   /* ≥16px so iOS doesn't zoom */
 }
 </style>
@@ -4910,16 +4917,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// The signature pad canvas is zero-width while the modal is hidden; poke a
+// resize once the modal is visible so it initialises at its real size.
+document.getElementById('assignModal').addEventListener('shown.bs.modal', function () {
+    window.dispatchEvent(new Event('resize'));
+});
+
 document.getElementById('assign-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     // Validate that at least one user is selected
     const checkedBoxes = this.querySelectorAll('input[name="assignee_ids[]"]:checked');
     if (checkedBoxes.length === 0) {
-        alert('Please select at least one user to assign the memo.');
+        alert('Please select at least one user to minute the memo to.');
         return;
     }
-    
+
+    // Minuting is an official action — a signature is mandatory.
+    const reuseSig = document.getElementById('reuse_saved_signature_input');
+    const sigData  = document.getElementById('signature_data_input');
+    const hasSignature = (reuseSig && reuseSig.value === '1') || (sigData && sigData.value !== '');
+    if (!hasSignature) {
+        alert('Please sign to minute this memo — draw, type, or tick "Use my saved signature".');
+        return;
+    }
+
     const formData = new FormData(this);
     
     fetch(`/dashboard/uimms/chat/${memoId}/assign`, {
@@ -4935,12 +4957,12 @@ document.getElementById('assign-form').addEventListener('submit', function(e) {
             bootstrap.Modal.getInstance(document.getElementById('assignModal')).hide();
             location.reload(); // Refresh to show new participant
         } else {
-            alert(data.message || 'Error assigning memo. Please try again.');
+            alert(data.message || 'Error minuting memo. Please try again.');
         }
     })
     .catch(error => {
-        console.error('Error assigning memo:', error);
-        alert('Error assigning memo. Please try again.');
+        console.error('Error minuting memo:', error);
+        alert('Error minuting memo. Please try again.');
     });
 });
 

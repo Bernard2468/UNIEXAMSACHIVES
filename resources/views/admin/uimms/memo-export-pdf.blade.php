@@ -72,10 +72,24 @@
         .body table th { background: #16335b; color: #fff; padding: 8px 10px; text-align: left; font-weight: bold; border: 1px solid #16335b; }
         .body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
 
-        /* ── Minutes (people who minuted on the memo) ── */
-        .msg { margin-bottom: 10px; padding-left: 13px; border-left: 2px solid #d8dee7; }
-        .msg .who  { font-weight: bold; font-size: 11pt; color: #16335b; }
-        .msg .when { font-size: 9pt; color: #9ca3af; margin-left: 8px; }
+        /* ── Minutes (official, signed Minute-To actions) ──
+           Modelled on how officers minute a paper memo: each minute takes the
+           next free space under the body — "To" line, remark, signature, name
+           and date — and simply flows onto the next page when space runs out. */
+        .minutes { width: 100%; border-collapse: collapse; }
+        .minutes td { vertical-align: top; padding: 5px 0 9px; }
+        .minutes .mno { width: 28px; font-weight: bold; }
+        .minutes .mlab { font-weight: bold; }
+        .minutes .mrem { margin-top: 1px; }
+        .minutes .msig { height: 42px; margin: 3px 0 0; display: block; }
+        .minutes .mwho { font-weight: bold; }
+        .minutes .mwhen { font-size: 10pt; color: #6b7280; }
+
+        /* ── Discussion (informal chat thread — printed plainly, on its own page) ── */
+        .page-break { page-break-before: always; }
+        .msg { margin-bottom: 10px; }
+        .msg .who  { font-weight: bold; font-size: 11pt; color: #111827; }
+        .msg .when { font-size: 9pt; color: #6b7280; margin-left: 8px; }
         .msg .text { font-size: 11pt; line-height: 1.45; color: #111827; margin-top: 2px; word-wrap: break-word; overflow-wrap: break-word; }
         .msg .text p { margin-bottom: 5px; }
 
@@ -262,7 +276,7 @@
 
     {{-- ══ MEMO BODY ══ --}}
     <div class="body">
-        {!! $memo->message ?? '' !!}
+        {!! $memoBodyHtml ?? ($memo->message ?? '') !!}
     </div>
 
     {{-- ══ MEMO-LEVEL ATTACHMENTS (inline content only; documents live under Enclosures) ══ --}}
@@ -274,28 +288,27 @@
         @foreach($memoInline as $att){!! $renderInline($att) !!}@endforeach
     @endif
 
-    {{-- ══ MINUTES (officials who minuted on this memo — text/content only; files are in Enclosures) ══ --}}
-    @php
-        // Show a minute only if it carries an actual remark or inline content. A minute
-        // that was just a document upload (now listed under Enclosures) would otherwise
-        // render as an empty, name-only entry — so skip those entirely.
-        $hasRemark = fn ($item) => trim(strip_tags($item['message'] ?? '')) !== '';
-        $hasInline = fn ($item) => !empty(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex'));
-        $renderableMinutes = array_values(array_filter($processedReplies, fn ($item) => $hasRemark($item) || $hasInline($item)));
-    @endphp
-    @if(!empty($renderableMinutes))
+    {{-- ══ MINUTES (official signed Minute-To actions) ══ --}}
+    @if(!empty($processedMinutes))
         <div class="sec">Minutes</div>
-        @foreach($renderableMinutes as $item)
-        <div class="msg">
-            <div><span class="who">{{ $item['sender'] }}</span><span class="when">{{ $item['sent_at'] }}</span></div>
-            @if($hasRemark($item))
-                {{-- Message is pre-sanitised for print (icons/pills stripped to clean
-                     minute text); nl2br restores the meaningful line breaks. --}}
-                <div class="text">{!! nl2br($item['message']) !!}</div>
-            @endif
-            @foreach(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex') as $att){!! $renderInline($att) !!}@endforeach
-        </div>
-        @endforeach
+        <table class="minutes">
+            @foreach($processedMinutes as $m)
+            <tr>
+                <td class="mno">{{ $m['number'] }}.</td>
+                <td>
+                    <div><span class="mlab">To:</span> {{ $m['to'] !== '' ? $m['to'] : '—' }}</div>
+                    @if($m['remark'] !== '')
+                        <div class="mrem">{{ $m['remark'] }}</div>
+                    @endif
+                    @if($m['signature'])
+                        <img class="msig" src="{{ $m['signature'] }}" alt="Signature of {{ $m['signer'] }}">
+                    @endif
+                    <div class="mwho">{{ $m['signer'] }}@if($m['position']) &mdash; {{ $m['position'] }}@endif</div>
+                    <div class="mwhen">{{ $m['when'] }}</div>
+                </td>
+            </tr>
+            @endforeach
+        </table>
     @endif
 
     {{-- ══ ENCLOSURES (formal index of every appended document) ══ --}}
@@ -310,6 +323,32 @@
         </tr>
         @endforeach
     </table>
+    @endif
+
+    {{-- ══ DISCUSSION (informal chat thread — starts on its own page so the
+         official memo + minutes stand alone, like the paper original) ══ --}}
+    @php
+        // Print a discussion entry only if it carries an actual remark or
+        // inline content. An entry that was just a document upload (now listed
+        // under Enclosures) would otherwise render as an empty, name-only row.
+        $hasRemark = fn ($item) => trim(strip_tags($item['message'] ?? '')) !== '';
+        $hasInline = fn ($item) => !empty(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex'));
+        $renderableDiscussion = array_values(array_filter($processedReplies, fn ($item) => $hasRemark($item) || $hasInline($item)));
+    @endphp
+    @if(!empty($renderableDiscussion))
+        <div class="page-break"></div>
+        <div class="sec">Discussion</div>
+        @foreach($renderableDiscussion as $item)
+        <div class="msg">
+            <div><span class="who">{{ $item['sender'] }}</span><span class="when">{{ $item['sent_at'] }}</span></div>
+            @if($hasRemark($item))
+                {{-- Message is pre-sanitised for print (icons/pills stripped to clean
+                     text); nl2br restores the meaningful line breaks. --}}
+                <div class="text">{!! nl2br($item['message']) !!}</div>
+            @endif
+            @foreach(array_filter($item['attachments'] ?? [], fn($a) => ($a['type'] ?? '') !== 'annex') as $att){!! $renderInline($att) !!}@endforeach
+        </div>
+        @endforeach
     @endif
 
     {{-- ══ FOOTER ══ --}}

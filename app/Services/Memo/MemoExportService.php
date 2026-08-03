@@ -44,6 +44,7 @@ class MemoExportService
         $memo->load([
             'creator.position', 'creator.department', 'currentAssignee',
             'toRecipients.user', 'ccRecipients.user', 'recipients.user', 'replies.user',
+            'minutes.user.position',
         ]);
 
         // ── Letterhead ──
@@ -74,6 +75,10 @@ class MemoExportService
                 'data'  => null,
                 'text'  => null,
             ];
+
+            // The PDF renders in the core Times font — emoji in filenames
+            // would come out as broken glyph boxes on an official document.
+            $entry['name'] = $this->stripUnsupportedGlyphs($entry['name']);
 
             if (!file_exists($filePath)) {
                 $entry['type'] = 'missing';
@@ -147,12 +152,18 @@ class MemoExportService
             $html = preg_replace('/[ \t]+/', ' ', $html);
             $html = preg_replace('/ *\n */', "\n", $html);
             $html = preg_replace('/\n{2,}/', "\n", $html);
+            // Emoji never belong on the official printout (and the Times core
+            // font cannot render them anyway).
+            $html = $this->stripUnsupportedGlyphs($html);
             return trim($html);
         };
 
-        // ── Process every reply and its attachments ──
+        // ── Process every discussion reply and its attachments ──
+        // Replies linked to a minute are the auto-posted "Minuted by …" chat
+        // notes; the export prints those once, signed, in the Minutes section,
+        // so they are excluded from the Discussion pages.
         $processedReplies = [];
-        foreach ($memo->replies->sortBy('created_at') as $reply) {
+        foreach ($memo->replies->filter(fn ($r) => empty($r->minute_id))->sortBy('created_at') as $reply) {
             $senderName = trim(($reply->user->first_name ?? '') . ' ' . ($reply->user->last_name ?? ''));
             if (!$senderName) $senderName = $reply->user->name ?? 'Unknown';
 
@@ -169,6 +180,33 @@ class MemoExportService
                 'sent_at'     => $reply->created_at ? $reply->created_at->format('d M Y, H:i') : '',
                 'message'     => $sanitizeMinuteForPdf($reply->message ?? ''),
                 'attachments' => $replyAttachments,
+            ];
+        }
+
+        // ── Official signed minutes (Minute-To actions) ──
+        // Each minute embeds its own signature snapshot; a missing/unreadable
+        // file degrades to a printed name + date rather than breaking export.
+        $processedMinutes = [];
+        foreach ($memo->minutes as $minute) {
+            $signerName = trim(($minute->user->first_name ?? '') . ' ' . ($minute->user->last_name ?? ''));
+            if (!$signerName) $signerName = $minute->user->name ?? 'Unknown';
+
+            $signatureBase64 = null;
+            if ($minute->signature_image_path) {
+                $sigAbs = storage_path('app/public/' . $minute->signature_image_path);
+                if (file_exists($sigAbs)) {
+                    $signatureBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($sigAbs));
+                }
+            }
+
+            $processedMinutes[] = [
+                'number'    => $minute->minute_no,
+                'to'        => $this->stripUnsupportedGlyphs($minute->to_names ?? ''),
+                'remark'    => $this->stripUnsupportedGlyphs(trim((string) $minute->remark)),
+                'signer'    => $signerName,
+                'position'  => optional($minute->user->position)->name,
+                'when'      => $minute->signed_at ? $minute->signed_at->format('d M Y, H:i') : '',
+                'signature' => $signatureBase64,
             ];
         }
 
@@ -194,9 +232,11 @@ class MemoExportService
         // ── Generate the memo PDF (memo content + chat thread + inline images) ──
         $pdf = Pdf::loadView('admin.uimms.memo-export-pdf', [
             'memo'                 => $memo,
+            'memoBodyHtml'         => $this->stripUnsupportedGlyphs((string) ($memo->message ?? '')),
             'letterheadBase64'     => $letterheadBase64,
             'hasLetterhead'        => (bool) $letterheadRecord,
             'processedAttachments' => $processedAttachments,
+            'processedMinutes'     => $processedMinutes,
             'processedReplies'     => $processedReplies,
             'annexes'              => $annexes,
             'toRecipients'         => $memo->toRecipients,
@@ -259,6 +299,32 @@ class MemoExportService
             }
             return $pdf->output();
         }
+    }
+
+    /**
+     * Remove emoji / pictographic characters before rendering to PDF. An
+     * official memo carries no emoji, and the Times core font used by the
+     * export cannot render them (they would print as broken glyph boxes).
+     * Operates on raw text or on HTML source — tags and entities are plain
+     * ASCII and pass through untouched.
+     */
+    protected function stripUnsupportedGlyphs(?string $text): string
+    {
+        if ($text === null || $text === '') {
+            return '';
+        }
+
+        return (string) preg_replace(
+            '/[\x{1F000}-\x{1FFFF}'   // emoji, symbols, flags, supplemental pictographs
+            . '\x{2190}-\x{21FF}'     // arrows
+            . '\x{2300}-\x{23FF}'     // technical (watch, hourglass, …)
+            . '\x{25A0}-\x{27BF}'     // geometric shapes, misc symbols, dingbats
+            . '\x{2B00}-\x{2BFF}'     // arrows & stars
+            . '\x{FE00}-\x{FE0F}'     // variation selectors
+            . '\x{200D}\x{20E3}]/u',  // zero-width joiner, keycap combiner
+            '',
+            $text
+        );
     }
 
     /**

@@ -56,6 +56,10 @@
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>
                                 Appearance
                             </button>
+                            <button class="sp-tab" data-panel="sp-signature" role="tab">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
+                                Signature
+                            </button>
                         </div>
 
                         {{-- ══════════════ PROFILE PANEL ══════════════ --}}
@@ -290,6 +294,76 @@
                                     </span>
                                     <button type="button" class="fs-reset" id="fs-reset">Reset to default</button>
                                 </div>
+                            </div>
+                        </div>
+
+                        {{-- ══════════════ SIGNATURE PANEL ══════════════ --}}
+                        <div class="sp-panel" id="sp-signature">
+                            <div class="sp-section" style="border-bottom:none; padding-bottom:0; margin-bottom:0;">
+                                <div class="sp-section__hd">
+                                    <h2 class="sp-section__title">My signature<span class="sp-section__bar"></span></h2>
+                                    <p class="sp-section__hint">Draw or upload your signature once — it is offered as "my saved signature" whenever you sign a form or minute a memo, and it appears on official PDFs exactly as saved here.</p>
+                                </div>
+
+                                @php $spSavedSig = auth()->user()->savedSignature; @endphp
+
+                                @if($spSavedSig && $spSavedSig->image_url)
+                                    <div class="sig-current">
+                                        <span class="sig-current__label">Current saved signature</span>
+                                        <div class="sig-current__row">
+                                            <div class="sig-current__box"><img src="{{ $spSavedSig->image_url }}" alt="Saved signature"></div>
+                                            <form action="{{ route('admin.forms.my-signature.destroy') }}" method="POST"
+                                                  onsubmit="return confirm('Remove your saved signature? You will have to draw or upload a new one the next time you sign or minute.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="sig-remove">Remove</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="sig-empty">No signature saved yet — add one below.</div>
+                                @endif
+
+                                <form action="{{ route('admin.forms.my-signature.update') }}" method="POST" id="sig-set-form">
+                                    @csrf
+                                    <input type="hidden" name="signature_data" id="sig-set-data" value="">
+
+                                    <div class="sig-cap">
+                                        <div class="sig-cap__tabs">
+                                            <button type="button" class="sig-cap__tab is-active" data-sigset-tab="draw">Draw</button>
+                                            <button type="button" class="sig-cap__tab" data-sigset-tab="upload">Upload</button>
+                                        </div>
+
+                                        <div data-sigset-panel="draw">
+                                            <div class="sig-cap__pad">
+                                                <canvas id="sig-set-canvas" width="640" height="200"></canvas>
+                                            </div>
+                                            <div class="sig-cap__row">
+                                                <button type="button" class="sig-clear" id="sig-set-clear">Clear</button>
+                                                <span class="sig-cap__hint">Sign above with your mouse, stylus or finger</span>
+                                            </div>
+                                        </div>
+
+                                        <div data-sigset-panel="upload" hidden>
+                                            <label class="sig-upload" for="sig-set-file">
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                                <span>Choose an image of your signature</span>
+                                            </label>
+                                            <input type="file" id="sig-set-file" accept="image/png,image/jpeg,image/jpg" hidden>
+                                            <div class="sig-cap__pad" id="sig-set-upreview" hidden>
+                                                <img id="sig-set-upimg" alt="Signature preview" style="max-width:100%; max-height:180px; display:block; margin:0 auto;">
+                                            </div>
+                                            <p class="sig-cap__hint" style="display:block; margin-top:8px;">PNG or JPG — ideally your signature in dark ink on a plain white background.</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="sp-form-foot">
+                                        <button type="submit" class="sp-btn" id="sig-set-save" disabled>
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                            {{ ($spSavedSig && $spSavedSig->image_url) ? 'Replace saved signature' : 'Save signature' }}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
 
@@ -963,6 +1037,29 @@
     .fs-step { height: 66px; }
     .fs-step .fs-lbl { font-size: 0.66rem; }
 }
+
+/* ═════════════ Signature panel ═════════════ */
+.sig-current { margin-bottom: 20px; }
+.sig-current__label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 8px; }
+.sig-current__row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.sig-current__box { width: 220px; height: 84px; background: #fff; border: 1.5px dashed #d4d7de; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 6px; }
+.sig-current__box img { max-width: 100%; max-height: 100%; }
+.sig-remove { background: #fff; border: 1.5px solid #fecaca; color: #b91c1c; font-size: 0.8rem; font-weight: 600; padding: 8px 14px; border-radius: 9px; cursor: pointer; transition: all .15s; }
+.sig-remove:hover { background: #fef2f2; }
+.sig-empty { font-size: 0.85rem; color: #8a8fa0; margin-bottom: 18px; padding: 12px 14px; background: #fafafa; border: 1.5px dashed #e5e7eb; border-radius: 10px; }
+
+.sig-cap { background: #fafafa; border: 1.5px solid #ebebeb; border-radius: 12px; padding: 14px; }
+.sig-cap__tabs { display: inline-flex; background: #fff; border: 1.5px solid #ebebeb; border-radius: 10px; padding: 4px; gap: 2px; margin-bottom: 12px; }
+.sig-cap__tab { padding: 7px 16px; background: transparent; border: none; border-radius: 7px; color: #6b7280; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all .15s; }
+.sig-cap__tab.is-active { background: #0c0c0c; color: #fff; }
+.sig-cap__pad { background: #fff; border: 2px dashed #d4d7de; border-radius: 10px; padding: 8px; }
+.sig-cap__pad canvas { width: 100%; height: 180px; touch-action: none; cursor: crosshair; background: #fff; border-radius: 6px; display: block; }
+.sig-cap__row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding: 0 4px; }
+.sig-clear { background: none; border: none; color: #0c0c0c; font-weight: 600; cursor: pointer; padding: 4px 10px; font-size: 0.82rem; border-radius: 6px; }
+.sig-clear:hover { background: #f3f4f6; }
+.sig-cap__hint { color: #b0b5c0; font-size: 0.74rem; font-style: italic; }
+.sig-upload { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 22px 14px; background: #fff; border: 2px dashed #d4d7de; border-radius: 10px; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: border-color .15s; margin-bottom: 10px; }
+.sig-upload:hover { border-color: #0c0c0c; }
 </style>
 
 {{-- ══════════════ SCRIPTS ══════════════ --}}
@@ -982,6 +1079,128 @@
         });
     });
 })();
+
+// ── Signature: draw / upload / save
+(function () {
+    var form = document.getElementById('sig-set-form');
+    if (!form) return;
+
+    var dataInput = document.getElementById('sig-set-data');
+    var saveBtn   = document.getElementById('sig-set-save');
+    var canvas    = document.getElementById('sig-set-canvas');
+    var ctx       = canvas.getContext('2d');
+    var clearBtn  = document.getElementById('sig-set-clear');
+    var fileInput = document.getElementById('sig-set-file');
+    var upPreview = document.getElementById('sig-set-upreview');
+    var upImg     = document.getElementById('sig-set-upimg');
+
+    var drawing = false, last = null, drawn = false;
+
+    function syncState() { saveBtn.disabled = !dataInput.value; }
+
+    function resizeCanvas() {
+        var ratio = Math.max(window.devicePixelRatio || 1, 1);
+        var rect  = canvas.getBoundingClientRect();
+        if (rect.width === 0) return; // panel hidden — retried when tab opens
+        canvas.width  = rect.width * ratio;
+        canvas.height = rect.height * ratio;
+        ctx.scale(ratio, ratio);
+        ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#111827';
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawn = false;
+        if (currentTab() === 'draw') { dataInput.value = ''; syncState(); }
+    }
+
+    function pos(e) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: (e.touches ? e.touches[0].clientX : e.clientX) - rect.left,
+            y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
+        };
+    }
+    canvas.addEventListener('mousedown',  function (e) { e.preventDefault(); drawing = true; last = pos(e); });
+    canvas.addEventListener('touchstart', function (e) { e.preventDefault(); drawing = true; last = pos(e); }, { passive: false });
+    function move(e) {
+        if (!drawing) return;
+        e.preventDefault();
+        var cur = pos(e);
+        ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(cur.x, cur.y); ctx.stroke();
+        last = cur; drawn = true;
+        dataInput.value = canvas.toDataURL('image/png');
+        syncState();
+    }
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('touchmove', move, { passive: false });
+    ['mouseup', 'mouseleave', 'touchend'].forEach(function (ev) {
+        canvas.addEventListener(ev, function () { drawing = false; });
+    });
+
+    clearBtn.addEventListener('click', function () {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawn = false; dataInput.value = ''; syncState();
+    });
+
+    // Upload: normalise any image onto a white 640×200 canvas so the stored
+    // signature has the same shape as drawn/typed ones on forms and PDFs.
+    fileInput.addEventListener('change', function () {
+        var f = this.files && this.files[0];
+        if (!f) return;
+        if (f.size > 4 * 1024 * 1024) { alert('Signature image must be less than 4 MB.'); this.value = ''; return; }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var img = new Image();
+            img.onload = function () {
+                var nc = document.createElement('canvas');
+                nc.width = 640; nc.height = 200;
+                var nctx = nc.getContext('2d');
+                nctx.fillStyle = '#fff';
+                nctx.fillRect(0, 0, 640, 200);
+                var scale = Math.min(640 / img.width, 200 / img.height);
+                var w = img.width * scale, h = img.height * scale;
+                nctx.drawImage(img, (640 - w) / 2, (200 - h) / 2, w, h);
+                dataInput.value = nc.toDataURL('image/png');
+                upImg.src = dataInput.value;
+                upPreview.hidden = false;
+                syncState();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(f);
+    });
+
+    // Draw ↔ Upload switch (resets the pending capture to avoid ambiguity).
+    var capTabs = form.querySelectorAll('[data-sigset-tab]');
+    var capPanels = form.querySelectorAll('[data-sigset-panel]');
+    function currentTab() {
+        var t = form.querySelector('.sig-cap__tab.is-active');
+        return t ? t.dataset.sigsetTab : 'draw';
+    }
+    capTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            capTabs.forEach(function (t) { t.classList.toggle('is-active', t === tab); });
+            capPanels.forEach(function (p) { p.hidden = p.dataset.sigsetPanel !== tab.dataset.sigsetTab; });
+            dataInput.value = ''; fileInput.value = ''; upPreview.hidden = true;
+            syncState();
+            if (tab.dataset.sigsetTab === 'draw') setTimeout(resizeCanvas, 30);
+        });
+    });
+
+    // The canvas is zero-width until the Signature tab is shown.
+    var sigMainTab = document.querySelector('.sp-tab[data-panel="sp-signature"]');
+    if (sigMainTab) sigMainTab.addEventListener('click', function () { setTimeout(resizeCanvas, 30); });
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+})();
+
+// ── Reopen the Signature tab after a signature save/remove round-trip
+@if(in_array(session('success'), ['Signature saved.', 'Saved signature removed.'], true))
+document.addEventListener('DOMContentLoaded', function () {
+    var t = document.querySelector('.sp-tab[data-panel="sp-signature"]');
+    if (t) t.click();
+});
+@endif
 
 // ── Avatar preview
 function spPreviewAvatar(input) {

@@ -13,6 +13,7 @@ class MemoReply extends Model
     protected $fillable = [
         'campaign_id',
         'user_id',
+        'minute_id',
         'message',
         'attachments',
         'is_read',

@@ -1720,6 +1720,9 @@ class HomeController extends Controller
             'assignee_ids' => 'required|array|min:1',
             'assignee_ids.*' => 'required|exists:users,id',
             'message' => 'nullable|string|max:1000',
+            'signature_data' => 'nullable|string',
+            'reuse_saved_signature' => 'nullable',
+            'save_as_my_signature' => 'nullable',
         ]);
 
         $assigneeIds = $request->assignee_ids;
@@ -1730,6 +1733,44 @@ class HomeController extends Controller
                 'success' => false,
                 'message' => 'One or more selected users were not found.',
             ], 422);
+        }
+
+        // ── Minuting requires a signature (drawn, typed, or the saved one). ──
+        // The signature is snapshotted into a per-minute file so replacing or
+        // deleting the saved signature later never rewrites signed history.
+        $signatureBinary = null;
+        if ($request->boolean('reuse_saved_signature')) {
+            $saved = Auth::user()->savedSignature;
+            if ($saved && $saved->signature_image_path
+                && Storage::disk('public')->exists($saved->signature_image_path)) {
+                $signatureBinary = Storage::disk('public')->get($saved->signature_image_path);
+            }
+        } elseif ($request->filled('signature_data')) {
+            $raw = $request->input('signature_data');
+            if (str_starts_with($raw, 'data:')) {
+                $commaPos = strpos($raw, ',');
+                $raw = $commaPos !== false ? substr($raw, $commaPos + 1) : '';
+            }
+            $decoded = base64_decode($raw, true);
+            if ($decoded !== false && $decoded !== '') {
+                $signatureBinary = $decoded;
+            }
+        }
+
+        if ($signatureBinary === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your signature is required to minute this memo. Draw, type, or use your saved signature.',
+            ], 422);
+        }
+
+        $signaturePath = 'memo-minute-signatures/' . $memo->id . '/' . $userId . '-' . Str::random(8) . '.png';
+        Storage::disk('public')->put($signaturePath, $signatureBinary);
+
+        if ($request->boolean('save_as_my_signature')
+            && !$request->boolean('reuse_saved_signature')
+            && $request->filled('signature_data')) {
+            \App\Models\UserSignature::saveFromBase64($userId, $request->input('signature_data'));
         }
 
         // Auto-derive office from the single assignee's department; null for multiple
@@ -1756,14 +1797,27 @@ class HomeController extends Controller
             $assigneeNames = implode(', ', $assigneeNamesList) . ', and ' . $lastName;
         }
         
-        $assignmentMessage = "<em> Memo Assigned by " . Auth::user()->first_name . " " . Auth::user()->last_name . " to " . $assigneeNames . "</em>";
+        // ── Record the official signed minute ──
+        $minute = \App\Models\MemoMinute::create([
+            'campaign_id' => $memo->id,
+            'user_id' => $userId,
+            'minute_no' => (int) $memo->minutes()->max('minute_no') + 1,
+            'to_user_ids' => array_values(array_map('intval', $assigneeIds)),
+            'to_names' => $assigneeNames,
+            'remark' => $request->message,
+            'signature_image_path' => $signaturePath,
+            'signed_at' => now(),
+        ]);
+
+        $assignmentMessage = "<em> Minuted by " . Auth::user()->first_name . " " . Auth::user()->last_name . " to " . $assigneeNames . "</em>";
         if ($request->message) {
             $assignmentMessage .= "<div style='margin: 8px 0; border-top: 1px solid rgba(0,0,0,0.1); width: 100%;'></div>" . nl2br(e($request->message));
         }
-        
+
         MemoReply::create([
             'campaign_id' => $memo->id,
             'user_id' => $userId,
+            'minute_id' => $minute->id,
             'message' => $assignmentMessage,
             'attachments' => [],
         ]);

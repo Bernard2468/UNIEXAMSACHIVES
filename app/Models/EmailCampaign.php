@@ -234,6 +234,14 @@ class EmailCampaign extends Model
         return $this->hasMany(MemoReply::class, 'campaign_id');
     }
 
+    /**
+     * Official signed minutes (Minute-To actions), in minuting order.
+     */
+    public function minutes(): HasMany
+    {
+        return $this->hasMany(MemoMinute::class, 'campaign_id')->orderBy('minute_no');
+    }
+
     public function getRepliesCountAttribute()
     {
         return $this->replies()->count();
