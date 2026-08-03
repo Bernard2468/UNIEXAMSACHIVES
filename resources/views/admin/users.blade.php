@@ -465,21 +465,11 @@
         background: white;
         border-radius: 20px;
         padding: 2rem;
-        border: 1px solid #f3f4f6;
+        border: 1px solid #e5e7eb;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
-    }
-
-    .user-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
     }
 
     .user-card:hover {
@@ -972,7 +962,6 @@
         .users-section { padding: 16px 0 90px; }
         .users-list { gap: 12px; }
         .user-card { padding: 16px; border-radius: 16px; }
-        .user-card::before { height: 3px; }
         .user-card-header { flex-direction: row; text-align: left; gap: 12px; margin-bottom: 12px; align-items: center; }
         .user-avatar { width: 52px; height: 52px; font-size: 1.15rem; }
         .user-name { font-size: 1.05rem; margin-bottom: 2px; }
