@@ -885,12 +885,20 @@
 .fs-status__check {
     position: absolute;
     inset: 0;
-    transition: opacity .2s ease, transform .2s ease;
 }
 
-/* Spinner: hidden until saving, then rotates smoothly */
-.fs-status__spin  { opacity: 0; transform: scale(.6); animation: fs-spin .7s linear infinite; }
-.fs-status.is-saving .fs-status__spin  { opacity: 1; transform: scale(1); }
+/* Spinner: opacity-only cross-fade so nothing competes with the rotation
+   transform (a `scale` here would blend to a matrix and kill the spin). */
+.fs-status__spin {
+    opacity: 0;
+    transform-origin: center;
+    animation: fs-spin .7s linear infinite;
+    transition: opacity .2s ease;
+}
+.fs-status.is-saving .fs-status__spin  { opacity: 1; }
+
+/* Check cross-fades out (scale is fine — it isn't rotating) */
+.fs-status__check { opacity: 1; transform: scale(1); transition: opacity .2s ease, transform .2s ease; }
 .fs-status.is-saving .fs-status__check { opacity: 0; transform: scale(.6); }
 
 /* Check: the resting/confirmed state */
@@ -910,7 +918,7 @@
 .fs-status.is-saved .fs-check-tick,
 .fs-status.is-warn  .fs-check-tick { animation: fs-tick-draw .32s .13s ease both; }
 
-@keyframes fs-spin { to { transform: rotate(360deg); } }
+@keyframes fs-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes fs-ring-pop {
     0%   { transform: scale(.3); opacity: 0; }
     60%  { transform: scale(1.12); opacity: 1; }
