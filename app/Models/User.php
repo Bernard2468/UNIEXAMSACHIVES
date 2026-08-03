@@ -130,16 +130,18 @@ class User extends Authenticatable
     }
 
     /**
-     * Department ids that drive letterhead visibility: the user's primary and
-     * secondary departments PLUS each of their parent faculties/schools, so a
-     * department member also sees their faculty's letterhead (the cascade).
-     * Consumed by SystemLetterhead::scopeVisibleTo().
+     * Department ids that drive letterhead visibility: ONLY the user's primary
+     * department PLUS its parent faculty/school (the cascade). Secondary
+     * departments are deliberately excluded — they grant folder visibility but
+     * are not the member's home unit, so they must not surface another unit's
+     * letterhead. Consumed by SystemLetterhead::scopeVisibleTo().
      *
      * @return \Illuminate\Support\Collection<int, int>
      */
     public function letterheadDepartmentIds(): \Illuminate\Support\Collection
     {
-        return $this->allDepartments()
+        return collect([$this->department])
+            ->filter()
             ->flatMap(fn ($d) => [$d->id, $d->parent_id])
             ->filter()
             ->unique()
