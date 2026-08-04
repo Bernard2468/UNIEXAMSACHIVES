@@ -3,20 +3,23 @@
 namespace App\Services\Bot;
 
 use App\Models\BotKnowledgeEntry;
+use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * The bot's local "brain".
  *
  * Two jobs:
- *  1. {@see systemMap()} — a complete, human-written description of the UDTS
- *     platform. This is fed to Gemini as the system prompt so the model answers
- *     accurately (the equivalent of GNRS's GNRS_SYSTEM_PROMPT).
+ *  1. {@see systemMap()} — a complete, ACCURATE description of the UDTS platform,
+ *     fed to Gemini as the grounding prompt so it never invents features or links.
  *  2. {@see search()} — a zero-cost retrieval layer. Built-in how-to/FAQ entries
- *     plus Super-Admin-editable {@see BotKnowledgeEntry} rows are scored against
- *     the user's question by token overlap. A confident match is answered
- *     instantly with NO API call — so the bot stays smart even when Gemini is
- *     off, keyless, or rate-limited.
+ *     plus Super-Admin-editable {@see BotKnowledgeEntry} rows are scored against the
+ *     user's question by token overlap; a confident match is answered instantly.
+ *
+ * ACCURACY IS THE CONTRACT: every link here mirrors the real sidebar navigation
+ * (resources/views/components/sidebar.blade.php). Some destinations differ by
+ * account type (reversed-role split), so those are resolved per-user via
+ * {@see memoComposeRoute()} etc.
  */
 class KnowledgeBase
 {
@@ -40,6 +43,17 @@ class KnowledgeBase
         }
     }
 
+    // The memo compose / list pages differ by account type (reversed-role split).
+    private function memoComposeRoute(?User $user): string
+    {
+        return ($user && $user->is_admin) ? 'admin.communication-admin.create' : 'admin.communication.create';
+    }
+
+    private function memoIndexRoute(?User $user): string
+    {
+        return ($user && $user->is_admin) ? 'admin.communication-admin.index' : 'admin.communication.index';
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     //  System map — fed to Gemini as the grounding system prompt
     // ─────────────────────────────────────────────────────────────────────────
@@ -47,49 +61,52 @@ class KnowledgeBase
     public function systemMap(): string
     {
         return <<<MAP
-You are **UDTS Assistant** — the official in-app AI guide for the University Digital Transformation Suite (UDTS)
-by Metascholar Consult. You are warm, concise, and you know every corner of this platform in detail. You help
-staff and administrators use the system, and you can point them to the exact page they need with a clickable link.
+You are **MetaGuide** — the official in-app AI guide for the University Digital Transformation Suite (UDTS)
+by Metascholar Consult. You are warm, concise, and accurate. You know every corner of this platform, and you can
+point a user to the exact page they need with a clickable link.
 
 ## What UDTS is
-UDTS is an internal institutional platform for a university/college. It combines a secure examinations & document
-archive, an organisational forms & e-signing workflow, an internal memo/messaging system (UIMMS), and institutional
-administration (offices, committees, departments, subscriptions).
+An internal institutional platform for a university/college: a secure examinations & document archive, an
+organisational Forms workflow with e-signing, an internal memo system (UIMMS), and institutional administration
+(offices, committees, departments, subscriptions).
 
-## Core areas & where to find them
-- **Dashboard** ({$this->link('dashboard')}) — the home page after signing in: quick stats and shortcuts.
-- **Exams archive** ({$this->link('dashboard.all.exams')}) — upload, browse and download past exam papers and answer keys. Create via the "+ Create" action.
-- **Files / Documents** ({$this->link('dashboard.all.files')}) — the general document archive (upload, organise, download).
-- **Folders** ({$this->link('dashboard.folders.index')}) — organise exams & files into folders, share them with departments/committees/offices, and set folder passwords for sensitive material.
-- **Forms Portal** ({$this->link('admin.forms.portal')}) — raise and track official forms. A form moves stage-by-stage between offices/leaders, each of whom signs it. Browse form types in the **Forms Gallery** ({$this->link('admin.forms.gallery')}).
-- **Memos / UIMMS** ({$this->link('dashboard.uimms.portal')}) — the University Internal Memo & Messaging System: send memos, reply in a chat thread, minute memos to others, and track read status.
-- **Notifications** ({$this->link('dashboard.notifications')}) — in-app alerts for memo replies, form assignments and more.
-- **Calendar** — events and reminders (opened from the header calendar button).
-- **Search** ({$this->link('search.index')}) — global search across the archive (also available via the ⌘K / Ctrl-K command palette).
+## Navigation — use the exact sidebar labels
+### Internal Memo Management System (UIMMS)
+- **Compose Memo** — this is where you WRITE and SEND a memo (pick recipients, attach files, send). Composing is NOT done from the portal.
+- **Memos Portal** ({$this->link('dashboard.uimms.portal')}) — READ memos, reply in a chat thread, **minute** a memo to a colleague for action, and see who has read it.
+- **Keep in View** ({$this->link('dashboard.uimms.keep-in-view')}) — memos you bookmarked to follow up.
+- **Memos** — the list of memos you have sent.
+> When asked how to compose/send a memo, tell the user to click **Compose Memo** in the sidebar's Internal Memo Management System section. (The exact page differs slightly by account type, so name the button rather than a raw URL.)
+
+### Forms Workflow
+- **All Forms** ({$this->link('admin.forms.gallery')}) — the gallery of form types. To RAISE a form, open this, choose a form (e.g. Payment Requisition or Purchase/Works Authorization), fill it in and submit.
+- **Forms Portal** ({$this->link('admin.forms.portal')}) — track your forms and act on ones assigned to you (sign, reject, comment). A form moves stage-by-stage between offices/leaders; each signs in turn and every signature is tamper-evident.
+
+### Exams & Files archive
+- **Exams** ({$this->link('dashboard.all.exams')}) — browse/download exam papers & answer keys.
+- **Files** ({$this->link('dashboard.all.files')}) — browse/download general documents.
+- **Uploading:** use the **+ Create** button in the top header to add an exam or a file. (There is no separate upload link in the sidebar.)
+- **My Folders** ({$this->link('dashboard.folders.index')}) and **Departmental Folders** ({$this->link('dashboard.departmental-folders')}) — organise items into folders and share them with a department, committee or office. Sensitive folders can be locked with a password.
+
+### Organisation & account
+- **Committees** — manage committees; **My Committees** ({$this->link('committees.my-committees')}) shows the ones you belong to.
 - **Offices** ({$this->link('offices.index')}) — institutional offices (Finance, Internal Audit, Registrar, VC, Procurement Committee, Director of Finance) that forms route through.
-- **Committees** and **Departments** — organisational structure used for sharing and leadership routing.
-- **Payment history / Billing** ({$this->link('dashboard.payment-history.index')}) — the institution's subscription invoices and receipts.
-- **Profile & Settings** ({$this->link('dashboard.settings')}) — personal details, password, e-signature, memo salutation, and the Appearance tab (per-user text size).
+- **Billing / Payment History** ({$this->link('dashboard.payment-history.index')}) — the institution's subscription invoices and receipts.
+- **Settings** ({$this->link('dashboard.settings')}) — change password, set your **e-signature**, set your **memo salutation**, and adjust **text size** on the Appearance tab.
+- **Profile** ({$this->link('dashboard.profile')}) — your personal details.
+- **Notifications** ({$this->link('dashboard.notifications')}) — in-app alerts. **Search** ({$this->link('search.index')}) — global search (also ⌘K / Ctrl-K).
 - **System Documentation** ({$this->link('dashboard.system-documentation')}) and **User Manual** ({$this->link('dashboard.user-manual')}) — official guides.
 
-## Forms workflow (important)
-- Two families ship today: **Payment Requisition (PR)** and **Purchase/Works Authorization (PWA)**, plus leave forms (Annual, Casual, Resumption), Vehicle Maintenance Allowance, Renewal of Appointment, Employee Personal Records, and Promotion forms.
-- A form is composed by a user, then routed through a sequence of **stages**. Each stage is an **office** (e.g. Finance) or a **leadership** role (HOD / Dean / Director). The current assignee signs, and it advances to the next stage.
-- Every signature is tamper-evident (hash-chained), so a signed stage can't be altered without breaking later stages.
-- To act on a form it must be **in progress** and assigned to you. You can then **sign**, **reject**, **comment**, or **reassign** where permitted.
+## Roles
+Always use the friendly UI labels only — "Super Admin", "Admin", "User". Never expose raw database role values.
+Only a **Super Admin** manages system settings, subscriptions, payments, and this bot.
 
-## Roles (UI labels)
-This system uses reversed role labels internally, but as the assistant you should ALWAYS use the friendly UI labels:
-"Super Admin", "Admin", and "User". Never expose raw database role values. Only a **Super Admin** manages system settings,
-subscriptions, payments, and this AI bot's controls.
-
-## Your behaviour
-1. Be concise — usually 2–5 sentences. Use short markdown (bold, bullet lists) when it helps.
-2. When you point someone to a feature, include a clickable markdown link like [Forms Portal]({$this->link('admin.forms.portal')}).
-3. Only discuss THIS platform and general university-admin help. If asked something unrelated or outside the system, gently steer back.
-4. Never invent features, routes, prices, or data you weren't given. If unsure, say what you do know and suggest where to look.
-5. Never reveal another user's private data. You only know the current user's own context when it is provided to you.
-6. You are a real, live assistant embedded in the app — never call yourself a demo or simulation.
+## Your behaviour — accuracy first
+1. Be concise (usually 2–5 sentences). Use short markdown (bold, bullets) when it helps.
+2. Point people to features with a clickable markdown link, e.g. [Forms Portal]({$this->link('admin.forms.portal')}). Use ONLY the pages listed above — never invent a page, route, price or feature.
+3. If you are not certain a link is correct, name the sidebar button instead of guessing a URL.
+4. Never reveal another user's private data; you only know the current user's own context when it is provided.
+5. Discuss only this platform and general university-admin help. You are a real, live assistant — never call yourself a demo.
 MAP;
     }
 
@@ -98,127 +115,236 @@ MAP;
     // ─────────────────────────────────────────────────────────────────────────
 
     /** @return array<int,array{key:string,category:string,title:string,keywords:string,answer:string,links:array}> */
-    public function builtinEntries(): array
+    public function builtinEntries(?User $user = null): array
     {
+        $memoCompose = $this->memoComposeRoute($user);
+        $memoIndex   = $this->memoIndexRoute($user);
+
         return [
+            // ── meta / small-talk ──────────────────────────────────────────
             [
                 'key' => 'greeting', 'category' => 'meta', 'title' => 'Greeting',
                 'keywords' => 'hi hello hey good morning good afternoon good evening yo greetings howdy',
-                'answer' => "Hello! 👋 I'm the **UDTS Assistant**. I know every corner of this platform — ask me about **forms**, **memos**, the **exams & files archive**, your **subscription**, or how to get anything done. I can also take you straight to the right page.",
+                'answer' => "Hello! 👋 I'm **MetaGuide**. I can help with **memos**, **forms**, the **exams & files archive**, your **subscription**, or settings — and take you straight to the right page. What do you need?",
                 'links' => [],
             ],
             [
                 'key' => 'thanks', 'category' => 'meta', 'title' => 'Thanks',
                 'keywords' => 'thanks thank you appreciate cheers thankyou nice great awesome',
-                'answer' => "You're welcome! 😊 If there's anything else about UDTS — forms, memos, files, or settings — just ask.",
+                'answer' => "You're welcome! 😊 Anything else I can help with?",
                 'links' => [],
             ],
             [
                 'key' => 'who_are_you', 'category' => 'meta', 'title' => 'Who are you',
-                'keywords' => 'who are you what are you your name about you bot assistant powered which ai model',
-                'answer' => "I'm the **UDTS Assistant**, the built-in guide for your University Digital Transformation Suite. I can explain any feature, answer questions using your own live data (like how many forms are awaiting you), and link you straight to the page you need.",
+                'keywords' => 'who are you what are you your name about you assistant powered which ai model metaguide',
+                'answer' => "I'm **MetaGuide**, the built-in assistant for UDTS. I can explain any feature, answer questions from your own live data (like how many forms are awaiting you), and take you straight to the page you need.",
                 'links' => [],
             ],
             [
                 'key' => 'capabilities', 'category' => 'meta', 'title' => 'What can I do here',
                 'keywords' => 'what can i do here capabilities features overview help menu options what is this getting started guide tour',
-                'answer' => "Here's what you can do in UDTS:\n\n- **Forms** — raise and sign official forms (Payment Requisition, Purchase/Works Authorization, leave, and more) and track them stage by stage.\n- **Memos (UIMMS)** — send internal memos, reply in threads, and minute them to colleagues.\n- **Archive** — upload, organise and download exam papers, answer keys and documents, grouped into shareable folders.\n- **Notifications & Calendar** — stay on top of assignments and events.\n- **Profile & Settings** — set your e-signature, memo salutation and text size.\n\nWhere would you like to start?",
+                'answer' => "Here's what UDTS covers:\n\n- **Memos (UIMMS)** — compose, send, reply in threads, minute to colleagues, track reads.\n- **Forms** — raise official forms (Payment Requisition, Purchase/Works Authorization, leave, etc.) and sign them stage by stage.\n- **Archive** — upload, organise and download exam papers, answer keys and documents, grouped into shareable folders.\n- **Notifications, Calendar & Search** — stay on top of everything.\n- **Settings** — your e-signature, memo salutation and text size.\n\nWhere would you like to start?",
+                'links' => [
+                    ['label' => 'Compose Memo', 'route' => $memoCompose],
+                    ['label' => 'All Forms', 'route' => 'admin.forms.gallery'],
+                    ['label' => 'Files', 'route' => 'dashboard.all.files'],
+                ],
+            ],
+
+            // ── memos ──────────────────────────────────────────────────────
+            [
+                'key' => 'compose_memo', 'category' => 'memos', 'title' => 'Compose / send a memo',
+                'keywords' => 'compose memo write memo send memo new memo create memo draft memo start memo message someone circulate internal memo',
+                'answer' => "To compose a memo, open **Compose Memo** in the *Internal Memo Management System* section of the sidebar. There you write the memo, pick recipients, attach files if needed, and send it. To read, reply or track memos afterwards, use the **Memos Portal**.",
+                'links' => [
+                    ['label' => 'Compose Memo', 'route' => $memoCompose],
+                    ['label' => 'Memos Portal', 'route' => 'dashboard.uimms.portal'],
+                ],
+            ],
+            [
+                'key' => 'memo_portal', 'category' => 'memos', 'title' => 'Read / reply to memos',
+                'keywords' => 'read memo reply memo respond memo chat thread memo portal inbox received memos view memos who read read receipt',
+                'answer' => "Open the **Memos Portal** to read your memos, reply in the chat thread, and see who has read each one. Your **sent** memos are under the **Memos** list.",
+                'links' => [
+                    ['label' => 'Memos Portal', 'route' => 'dashboard.uimms.portal'],
+                    ['label' => 'My Sent Memos', 'route' => $memoIndex],
+                ],
+            ],
+            [
+                'key' => 'minute_memo', 'category' => 'memos', 'title' => 'Minute / forward a memo',
+                'keywords' => 'minute memo forward memo assign memo refer memo delegate memo action memo pass to colleague',
+                'answer' => "Inside a memo in the **Memos Portal**, you can **minute** it to a colleague for action — an official, signed instruction — or forward it through an intermediary. Everyone sees the trail.",
+                'links' => [
+                    ['label' => 'Memos Portal', 'route' => 'dashboard.uimms.portal'],
+                ],
+            ],
+            [
+                'key' => 'keep_in_view', 'category' => 'memos', 'title' => 'Bookmark a memo (Keep in View)',
+                'keywords' => 'keep in view bookmark memo follow up flag memo save memo watch memo pin',
+                'answer' => "Use **Keep in View** to bookmark memos you want to follow up on — they're collected on their own page so nothing slips through.",
+                'links' => [
+                    ['label' => 'Keep in View', 'route' => 'dashboard.uimms.keep-in-view'],
+                ],
+            ],
+
+            // ── forms ──────────────────────────────────────────────────────
+            [
+                'key' => 'raise_form', 'category' => 'forms', 'title' => 'Raise / submit a form',
+                'keywords' => 'raise form submit form new form create form fill form request form payment requisition purchase works authorization pr pwa leave application start form apply',
+                'answer' => "To raise a form, open **All Forms**, choose the form type you need (e.g. **Payment Requisition** or **Purchase/Works Authorization**), fill it in and submit. It's then routed to the first approver automatically. Track its progress any time in the **Forms Portal**.",
+                'links' => [
+                    ['label' => 'All Forms', 'route' => 'admin.forms.gallery'],
+                    ['label' => 'Forms Portal', 'route' => 'admin.forms.portal'],
+                ],
+            ],
+            [
+                'key' => 'sign_form', 'category' => 'forms', 'title' => 'Sign / approve / reject a form',
+                'keywords' => 'sign form approve form reject form endorse form awaiting me pending my signature approval action review a form comment on form',
+                'answer' => "A form shows a **Sign** action only when it's *in progress* and currently assigned to you. Open it from the **Forms Portal**, review it, then **Sign** to advance it — or **Reject** with a reason. You can also add a **comment** without signing.",
                 'links' => [
                     ['label' => 'Forms Portal', 'route' => 'admin.forms.portal'],
-                    ['label' => 'Memos', 'route' => 'dashboard.uimms.portal'],
+                ],
+            ],
+            [
+                'key' => 'track_form', 'category' => 'forms', 'title' => 'Track a form / where is it',
+                'keywords' => 'track form form status where is my form form progress stage of form who has it pending approval outstanding form pdf download form',
+                'answer' => "The **Forms Portal** shows every form you raised or are involved in, and which stage it's at. Open a form to see its full history and download its **PDF**.",
+                'links' => [
+                    ['label' => 'Forms Portal', 'route' => 'admin.forms.portal'],
+                ],
+            ],
+
+            // ── signature / salutation ─────────────────────────────────────
+            [
+                'key' => 'set_signature', 'category' => 'profile', 'title' => 'Set up my e-signature',
+                'keywords' => 'signature e-signature esign set signature upload signature draw signature my signature how do i sign',
+                'answer' => "Your saved **e-signature** is used when you sign forms and minute memos. Set or update it on your **Settings** page — you can draw or upload it.",
+                'links' => [
+                    ['label' => 'Settings', 'route' => 'dashboard.settings'],
+                ],
+            ],
+            [
+                'key' => 'memo_salutation', 'category' => 'profile', 'title' => 'Set my memo salutation',
+                'keywords' => 'memo salutation signature block sign off title on memo my salutation how i appear on memos',
+                'answer' => "Your **memo salutation** (how your name/title appears on memos you minute) is set on your **Settings** page.",
+                'links' => [
+                    ['label' => 'Settings', 'route' => 'dashboard.settings'],
+                ],
+            ],
+
+            // ── archive ────────────────────────────────────────────────────
+            [
+                'key' => 'upload_exam', 'category' => 'archive', 'title' => 'Upload an exam / past question',
+                'keywords' => 'upload exam add exam new exam past question answer key exam paper store exam add paper',
+                'answer' => "Use the **+ Create** button in the top header to add an **exam** (with an optional answer key). Your uploaded exams then appear under **Exams**, and you can drop them into folders to organise and share.",
+                'links' => [
+                    ['label' => '+ Create an exam', 'route' => 'dashboard.create'],
+                    ['label' => 'Exams', 'route' => 'dashboard.all.exams'],
+                ],
+            ],
+            [
+                'key' => 'upload_file', 'category' => 'archive', 'title' => 'Upload a file / document',
+                'keywords' => 'upload file add document new file store document attach document add file upload paperwork',
+                'answer' => "Use the **+ Create** button in the top header to add a **file/document**. It then appears under **Files**, ready to organise into folders.",
+                'links' => [
+                    ['label' => '+ Create a file', 'route' => 'dashboard.file.create'],
                     ['label' => 'Files', 'route' => 'dashboard.all.files'],
                 ],
             ],
             [
-                'key' => 'raise_form', 'category' => 'forms', 'title' => 'Raise / submit a form',
-                'keywords' => 'raise form submit form new form create form fill form payment requisition purchase works authorization pr pwa compose form request start form apply',
-                'answer' => "To raise a form:\n\n1. Open the **Forms Gallery** and choose a form type (e.g. **Payment Requisition** or **Purchase/Works Authorization**).\n2. Fill in the fields and submit — it's then routed to the first office/approver automatically.\n3. Track its progress any time from the **Forms Portal**.\n\nEach approver signs in turn, and every signature is tamper-evident.",
-                'links' => [
-                    ['label' => 'Forms Gallery', 'route' => 'admin.forms.gallery'],
-                    ['label' => 'Forms Portal', 'route' => 'admin.forms.portal'],
-                ],
-            ],
-            [
-                'key' => 'sign_form', 'category' => 'forms', 'title' => 'Sign / approve a form',
-                'keywords' => 'sign form approve form awaiting me pending my signature approval action review reject a form endorse',
-                'answer' => "A form only shows a **Sign** action when it's *in progress* and currently assigned to you. Open it from the **Forms Portal**, review the details, then **Sign** to advance it to the next stage — or **Reject** with a reason. You can also add a **comment** without signing.",
-                'links' => [
-                    ['label' => 'Forms Portal', 'route' => 'admin.forms.portal'],
-                ],
-            ],
-            [
-                'key' => 'set_signature', 'category' => 'profile', 'title' => 'Set up my e-signature',
-                'keywords' => 'signature e-signature esign set signature upload signature draw signature my signature sign setup salutation',
-                'answer' => "Your saved **e-signature** is used when you sign forms and minute memos. Set or update it on your **Profile / Settings** page — you can draw or upload it. You can also set your **memo salutation** there.",
-                'links' => [
-                    ['label' => 'Profile & Settings', 'route' => 'dashboard.settings'],
-                ],
-            ],
-            [
-                'key' => 'send_memo', 'category' => 'memos', 'title' => 'Send / reply to a memo',
-                'keywords' => 'memo send memo write memo reply memo minute uimms message internal memo compose memo chat thread forward',
-                'answer' => "Memos live in **UIMMS** (the Internal Memo & Messaging System). From the **Memos** portal you can compose a new memo, reply in its chat thread, **minute** it to a colleague for action, and see who has read it.",
-                'links' => [
-                    ['label' => 'Memos (UIMMS)', 'route' => 'dashboard.uimms.portal'],
-                ],
-            ],
-            [
-                'key' => 'upload_file', 'category' => 'archive', 'title' => 'Upload a file or exam',
-                'keywords' => 'upload file upload exam add document add paper answer key new file store document past question attach archive',
-                'answer' => "Use the **+ Create** action to add an item. **Exam papers** (with optional answer keys) go into the **Exams** archive; general documents go into **Files**. After uploading you can drop items into **Folders** to organise and share them.",
+                'key' => 'browse_archive', 'category' => 'archive', 'title' => 'Find / download exams & files',
+                'keywords' => 'find exam download exam browse files download file where are my files my exams open document search archive',
+                'answer' => "Browse and download from **Exams** and **Files**. For anything specific, the global **Search** (or ⌘K / Ctrl-K) looks across the whole archive.",
                 'links' => [
                     ['label' => 'Exams', 'route' => 'dashboard.all.exams'],
                     ['label' => 'Files', 'route' => 'dashboard.all.files'],
-                    ['label' => 'Folders', 'route' => 'dashboard.folders.index'],
+                    ['label' => 'Search', 'route' => 'search.index'],
                 ],
             ],
             [
-                'key' => 'folders_share', 'category' => 'archive', 'title' => 'Folders & sharing',
-                'keywords' => 'folder folders share sharing organise organize group password protect lock folder department committee office access permission',
-                'answer' => "**Folders** let you group exams and files and share them with a whole **department, committee or office** at once. For sensitive material you can lock a folder with a password. Manage everything from the **Folders** page.",
+                'key' => 'folders', 'category' => 'archive', 'title' => 'Folders & sharing',
+                'keywords' => 'folder folders share sharing organise organize group my folders departmental folders department committee office access give access',
+                'answer' => "**Folders** group exams and files so you can share them with a whole **department, committee or office** at once. Use **My Folders** for your own, or **Departmental Folders** for shared team spaces.",
                 'links' => [
-                    ['label' => 'Folders', 'route' => 'dashboard.folders.index'],
+                    ['label' => 'My Folders', 'route' => 'dashboard.folders.index'],
+                    ['label' => 'Departmental Folders', 'route' => 'dashboard.departmental-folders'],
+                ],
+            ],
+            [
+                'key' => 'folder_password', 'category' => 'archive', 'title' => 'Lock a folder with a password',
+                'keywords' => 'folder password lock folder protect folder secure folder sensitive folder restrict folder',
+                'answer' => "For sensitive material you can lock a folder with a password from its security settings in **My Folders** — only people with the password (and access) can open it.",
+                'links' => [
+                    ['label' => 'My Folders', 'route' => 'dashboard.folders.index'],
+                ],
+            ],
+
+            // ── organisation ───────────────────────────────────────────────
+            [
+                'key' => 'committees', 'category' => 'org', 'title' => 'Committees',
+                'keywords' => 'committee committees my committees join committee members of committee',
+                'answer' => "**My Committees** shows the committees you belong to and their shared spaces. Committee membership is also used when sharing folders.",
+                'links' => [
+                    ['label' => 'My Committees', 'route' => 'committees.my-committees'],
+                ],
+            ],
+            [
+                'key' => 'offices', 'category' => 'org', 'title' => 'Offices',
+                'keywords' => 'office offices finance registrar internal audit procurement vc director of finance who is in office routing office',
+                'answer' => "**Offices** are the institutional offices (Finance, Internal Audit, Registrar, VC, Procurement Committee, Director of Finance) that forms route through. You can view offices and their active members on the Offices page.",
+                'links' => [
+                    ['label' => 'Offices', 'route' => 'offices.index'],
+                ],
+            ],
+
+            // ── account / help ─────────────────────────────────────────────
+            [
+                'key' => 'subscription', 'category' => 'billing', 'title' => 'Subscription & billing',
+                'keywords' => 'subscription licence license billing invoice receipt payment history renew expiry expire plan cost pay when does it expire',
+                'answer' => "Your institution's **subscription**, invoices and receipts are under **Billing / Payment History**. If access is ever blocked, the subscription may have lapsed — a Super Admin can renew it.",
+                'links' => [
+                    ['label' => 'Payment History', 'route' => 'dashboard.payment-history.index'],
                 ],
             ],
             [
                 'key' => 'text_size', 'category' => 'profile', 'title' => 'Change text size / appearance',
-                'keywords' => 'text size font size bigger smaller zoom appearance display accessibility readable larger',
-                'answer' => "You can scale the whole interface to your comfort on the **Appearance** tab of your **Settings** — it adjusts every text and element and remembers your choice.",
+                'keywords' => 'text size font size bigger smaller zoom appearance display accessibility readable larger interface size',
+                'answer' => "Scale the whole interface to your comfort on the **Appearance** tab of **Settings** — it adjusts every text and element and remembers your choice.",
                 'links' => [
                     ['label' => 'Settings', 'route' => 'dashboard.settings'],
                 ],
             ],
             [
                 'key' => 'password', 'category' => 'profile', 'title' => 'Change my password',
-                'keywords' => 'password change password reset password update password security credentials login',
-                'answer' => "Change your password on your **Settings** page under the security section. If you're locked out at the login screen, use the **Forgot password** link there instead.",
+                'keywords' => 'password change password reset password update password security credentials',
+                'answer' => "Change your password on your **Settings** page. If you're locked out at the login screen, use the **Forgot password** link there instead.",
                 'links' => [
                     ['label' => 'Settings', 'route' => 'dashboard.settings'],
                 ],
             ],
             [
-                'key' => 'subscription', 'category' => 'billing', 'title' => 'Subscription & billing',
-                'keywords' => 'subscription licence license billing invoice receipt payment history renew expiry expire plan cost pay renewal',
-                'answer' => "Your institution's **subscription**, invoices and receipts are under **Payment History / Billing**. If access is blocked, the subscription may have lapsed — a Super Admin can renew it.",
+                'key' => 'notifications', 'category' => 'help', 'title' => 'Notifications',
+                'keywords' => 'notification notifications alerts unread bell updates',
+                'answer' => "**Notifications** collect your memo replies, form assignments and other alerts. Open the notifications page to review and mark them read.",
                 'links' => [
-                    ['label' => 'Payment History', 'route' => 'dashboard.payment-history.index'],
+                    ['label' => 'Notifications', 'route' => 'dashboard.notifications'],
+                ],
+            ],
+            [
+                'key' => 'search', 'category' => 'help', 'title' => 'Search the system',
+                'keywords' => 'search find lookup command palette ctrl k cmd k global search look for',
+                'answer' => "Use the global **Search** — or press **⌘K / Ctrl-K** anywhere — to find files, folders, exams, memos, forms, people and pages.",
+                'links' => [
+                    ['label' => 'Search', 'route' => 'search.index'],
                 ],
             ],
             [
                 'key' => 'docs', 'category' => 'help', 'title' => 'Documentation & manual',
                 'keywords' => 'documentation manual guide user manual system documentation instructions handbook reference how does the system work',
-                'answer' => "There are two official guides: the **System Documentation** and the **User Manual**. Both are downloadable from your dashboard.",
+                'answer' => "Two official guides are available: the **System Documentation** and the **User Manual**, both downloadable from your dashboard.",
                 'links' => [
                     ['label' => 'System Documentation', 'route' => 'dashboard.system-documentation'],
                     ['label' => 'User Manual', 'route' => 'dashboard.user-manual'],
-                ],
-            ],
-            [
-                'key' => 'notifications', 'category' => 'help', 'title' => 'Notifications',
-                'keywords' => 'notification notifications alerts unread bell updates',
-                'answer' => "In-app **Notifications** collect your memo replies, form assignments and other alerts. Open the notifications page to review and mark them read.",
-                'links' => [
-                    ['label' => 'Notifications', 'route' => 'dashboard.notifications'],
                 ],
             ],
         ];
@@ -233,7 +359,7 @@ MAP;
      *
      * @return array{answer:string,links:array,matched_key:string,score:float}|null
      */
-    public function search(string $question): ?array
+    public function search(string $question, ?User $user = null): ?array
     {
         $qTokens = $this->tokenize($question);
         if (empty($qTokens)) {
@@ -243,7 +369,7 @@ MAP;
         $best = null;
         $bestScore = 0.0;
 
-        foreach ($this->allEntries() as $entry) {
+        foreach ($this->allEntries($user) as $entry) {
             $score = $this->score($qTokens, $question, $entry);
             if ($score > $bestScore) {
                 $bestScore = $score;
@@ -264,9 +390,9 @@ MAP;
     }
 
     /** Built-in entries merged with the Super-Admin-editable DB entries. */
-    private function allEntries(): array
+    private function allEntries(?User $user = null): array
     {
-        $builtin = $this->builtinEntries();
+        $builtin = $this->builtinEntries($user);
 
         $db = Cache::remember('bot_kb_db_entries', 300, function () {
             if (!\Illuminate\Support\Facades\Schema::hasTable('bot_knowledge_entries')) {

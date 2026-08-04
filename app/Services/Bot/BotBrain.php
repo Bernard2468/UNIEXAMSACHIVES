@@ -42,8 +42,9 @@ class BotBrain
             return $this->shape($hit['answer'], 'live', $hit['links'], $hit['matched_key']);
         }
 
-        // 2) Knowledge base (how-to, FAQ, small-talk).
-        if ($hit = $this->kb->search($message)) {
+        // 2) Knowledge base (how-to, FAQ, small-talk). Pass the user so role-specific
+        //    links (e.g. the memo compose page) resolve correctly.
+        if ($hit = $this->kb->search($message, $user)) {
             return $this->shape($hit['answer'], 'kb', $hit['links'], $hit['matched_key']);
         }
 

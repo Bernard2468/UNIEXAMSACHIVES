@@ -268,11 +268,20 @@
 
 {{-- ── Knowledge base ─────────────────────────────────────────────────── --}}
 <div class="card">
-    <div class="card-header"><span class="section-title">Knowledge base — feed the bot</span></div>
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <span class="section-title">Knowledge base — feed the bot</span>
+        <form method="POST" action="{{ route('super-admin.bot.kb.seed') }}" class="mini-form"
+              onsubmit="return confirm('Load the comprehensive starter knowledge pack? This only adds entries that are missing and never overwrites your edits.');">
+            @csrf
+            <button class="btn btn-sm btn-outline-primary"><i class="fas fa-magic"></i> Load starter knowledge pack</button>
+        </form>
+    </div>
     <div class="card-body">
         <p style="color:#64748b;font-size:13px;">
-            Add institution-specific answers here. These are matched against user questions <strong>before</strong> any API call,
-            so a well-fed knowledge base keeps the bot smart and free. Keywords drive matching; links are optional deep-links.
+            The bot already ships with a full built-in guide to UDTS. Add institution-specific answers here to extend it —
+            these are matched against user questions <strong>before</strong> any API call, so a well-fed knowledge base keeps the
+            bot smart and free. Keywords drive matching; links are optional deep-links. Use <strong>Load starter knowledge pack</strong>
+            for a comprehensive, ready-to-edit set covering forms, memos, folders and more (safe to click anytime — it never overwrites your edits).
         </p>
 
         @forelse($kbEntries as $entry)

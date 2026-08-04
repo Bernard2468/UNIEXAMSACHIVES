@@ -533,6 +533,7 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin'])-
     Route::post('/bot/keys/{key}/test', [\App\Http\Controllers\SuperAdmin\BotController::class, 'testKey'])->name('bot.keys.test');
     Route::delete('/bot/keys/{key}', [\App\Http\Controllers\SuperAdmin\BotController::class, 'destroyKey'])->name('bot.keys.destroy');
     // Knowledge base
+    Route::post('/bot/kb/seed', [\App\Http\Controllers\SuperAdmin\BotController::class, 'seedKnowledge'])->name('bot.kb.seed');
     Route::post('/bot/kb', [\App\Http\Controllers\SuperAdmin\BotController::class, 'storeEntry'])->name('bot.kb.store');
     Route::put('/bot/kb/{entry}', [\App\Http\Controllers\SuperAdmin\BotController::class, 'updateEntry'])->name('bot.kb.update');
     Route::delete('/bot/kb/{entry}', [\App\Http\Controllers\SuperAdmin\BotController::class, 'destroyEntry'])->name('bot.kb.destroy');

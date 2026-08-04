@@ -276,6 +276,169 @@ class BotController extends Controller
         ];
     }
 
+    /**
+     * One-click loader for a comprehensive, security-cautious starter knowledge
+     * base. Idempotent (firstOrCreate by title) so re-running never overwrites
+     * entries you've edited — it only fills in ones that are missing.
+     */
+    public function seedKnowledge()
+    {
+        $created = 0;
+        foreach ($this->starterKnowledge() as $e) {
+            $entry = BotKnowledgeEntry::firstOrCreate(
+                ['title' => $e['title']],
+                [
+                    'category'  => $e['category'] ?? 'general',
+                    'keywords'  => $e['keywords'],
+                    'answer'    => $e['answer'],
+                    'links'     => $e['links'] ?? [],
+                    'priority'  => $e['priority'] ?? 5,
+                    'is_active' => true,
+                ],
+            );
+            if ($entry->wasRecentlyCreated) {
+                $created++;
+            }
+        }
+        Cache::forget('bot_kb_db_entries');
+
+        return back()->with('success', $created > 0
+            ? "Loaded {$created} new knowledge entries. Edit or delete any of them below."
+            : 'Starter knowledge is already loaded — nothing to add. Your existing entries were left untouched.');
+    }
+
+    private function u(string $route, array $params = []): string
+    {
+        try { return route($route, $params, false); } catch (\Throwable $e) { return '/'; }
+    }
+
+    /**
+     * Comprehensive starter pack. Guidance only — no sensitive data, credentials
+     * or internal secrets — so it is safe to expose to every signed-in user.
+     * These extend the bot's built-in knowledge with deeper, form-by-form detail.
+     *
+     * @return array<int,array{category:string,title:string,keywords:string,answer:string,links:array,priority?:int}>
+     */
+    private function starterKnowledge(): array
+    {
+        $forms = [['label' => 'All Forms', 'url' => $this->u('admin.forms.gallery')], ['label' => 'Forms Portal', 'url' => $this->u('admin.forms.portal')]];
+        $portal = [['label' => 'Forms Portal', 'url' => $this->u('admin.forms.portal')]];
+        $memoPortal = [['label' => 'Memos Portal', 'url' => $this->u('dashboard.uimms.portal')]];
+        $myFolders = [['label' => 'My Folders', 'url' => $this->u('dashboard.folders.index')]];
+        $settings = [['label' => 'Settings', 'url' => $this->u('dashboard.settings')]];
+
+        return [
+            [
+                'category' => 'forms', 'title' => 'Payment Requisition (PR) form',
+                'keywords' => 'payment requisition pr request payment money reimbursement claim funds pay vendor',
+                'answer' => "A **Payment Requisition (PR)** is how you request a payment. Raise it from **All Forms**, enter the amount and details, and submit — it then routes through the relevant offices (e.g. Finance) for signing. Track it in the **Forms Portal**.",
+                'links' => $forms,
+            ],
+            [
+                'category' => 'forms', 'title' => 'Purchase / Works Authorization (PWA) form',
+                'keywords' => 'purchase works authorization pwa buy procurement order works authorise purchase request',
+                'answer' => "A **Purchase/Works Authorization (PWA)** authorises a purchase or works. Raise it from **All Forms**, fill in the items/works, and submit for approval through the required offices. Follow its progress in the **Forms Portal**.",
+                'links' => $forms,
+            ],
+            [
+                'category' => 'forms', 'title' => 'Leave application (annual, casual, resumption)',
+                'keywords' => 'leave annual leave casual leave apply for leave time off vacation resumption resume from leave leave form',
+                'answer' => "Apply for leave from **All Forms** — choose **Annual Leave**, **Casual Leave**, or **Leave Resumption** (to report back). Submit it and it routes to your approver; watch it in the **Forms Portal**.",
+                'links' => $forms,
+            ],
+            [
+                'category' => 'forms', 'title' => 'Vehicle Maintenance Allowance form',
+                'keywords' => 'vehicle maintenance allowance car allowance transport maintenance claim',
+                'answer' => "The **Vehicle Maintenance Allowance** form is raised from **All Forms**. Complete the details and submit for the usual approval route.",
+                'links' => $forms,
+            ],
+            [
+                'category' => 'forms', 'title' => 'Renewal of Appointment & Promotion forms',
+                'keywords' => 'renewal of appointment promotion appointment renew contract promote staff academic non-academic employee personal records',
+                'answer' => "**Renewal of Appointment**, **Promotion** and **Employee Personal Records** forms are all raised from **All Forms** (academic and non-academic variants where applicable). Complete and submit; they route to the appropriate approvers.",
+                'links' => $forms,
+            ],
+            [
+                'category' => 'forms', 'title' => 'Reassign a form to someone else',
+                'keywords' => 'reassign form forward form pass form wrong person delegate form send to another handoff',
+                'answer' => "If a form reached you but should go to a colleague, open it in the **Forms Portal** and use **Reassign** (where your role permits). The form then moves to that person with the trail intact.",
+                'links' => $portal,
+            ],
+            [
+                'category' => 'forms', 'title' => 'Cancel or withdraw a form',
+                'keywords' => 'cancel form withdraw form delete form stop form mistake recall form',
+                'answer' => "The person who raised a form can **cancel** it from the **Forms Portal** while it's still in progress. Once cancelled it stops moving through the workflow.",
+                'links' => $portal,
+            ],
+            [
+                'category' => 'forms', 'title' => 'Save a form as a draft',
+                'keywords' => 'draft form save form finish later incomplete form save progress continue form',
+                'answer' => "While composing a form you can **save a draft** and finish later — your entries are kept until you submit.",
+                'links' => $forms,
+            ],
+            [
+                'category' => 'forms', 'title' => "Why can't I sign or edit a form?",
+                'keywords' => 'cannot sign form cant edit form no sign button locked form not assigned why cant i sign disabled',
+                'answer' => "You can only **sign or edit** a form when it is *in progress* **and** currently assigned to you. If the Sign button is missing, it's with someone else in the chain, or already completed/rejected — check its stage in the **Forms Portal**.",
+                'links' => $portal,
+            ],
+            [
+                'category' => 'forms', 'title' => 'Download a form as PDF',
+                'keywords' => 'form pdf download form print form export form save form as pdf hard copy',
+                'answer' => "Open any form from the **Forms Portal** and use its **PDF** option to download a clean, signed copy for printing or records.",
+                'links' => $portal,
+            ],
+            [
+                'category' => 'privacy', 'title' => 'Who can see my forms and memos?',
+                'keywords' => 'who can see my form who sees my memo privacy visibility confidential can others read access to my form',
+                'answer' => "A form is visible to its creator, its current handler, anyone who has signed a stage, and active members of the office handling it — no one else. Memos are visible to their sender and recipients. The system enforces this everywhere.",
+                'links' => [],
+            ],
+            [
+                'category' => 'memos', 'title' => 'Send an urgency alert on a memo',
+                'keywords' => 'urgent memo urgency alert escalate memo remind recipient nudge chase memo priority',
+                'answer' => "From a memo in the **Memos Portal** you can send an **urgency alert** to prompt the recipient when something is time-sensitive.",
+                'links' => $memoPortal,
+            ],
+            [
+                'category' => 'memos', 'title' => 'Archive old memos',
+                'keywords' => 'archive memo clear memos tidy inbox archive completed remove old memos declutter',
+                'answer' => "You can archive completed memos (individually or in bulk) from the **Memos Portal** to keep your list tidy; archived memos can be reactivated later.",
+                'links' => $memoPortal,
+            ],
+            [
+                'category' => 'memos', 'title' => 'Export a memo conversation as PDF',
+                'keywords' => 'export memo pdf download memo thread print memo conversation save memo chat',
+                'answer' => "Open the memo's chat thread in the **Memos Portal** and export it as a **PDF** for your records.",
+                'links' => $memoPortal,
+            ],
+            [
+                'category' => 'archive', 'title' => 'Open a password-protected folder',
+                'keywords' => 'unlock folder folder password locked folder cant open folder enter folder password protected folder',
+                'answer' => "If a folder is locked, open it from **My Folders** and enter its password when prompted. You also need access to the folder — if you don't have the password, ask the folder owner.",
+                'links' => $myFolders,
+            ],
+            [
+                'category' => 'archive', 'title' => 'Share a folder with a department, committee or office',
+                'keywords' => 'share folder give access department committee office team share files grant folder access add members to folder',
+                'answer' => "Open a folder in **My Folders** and use its sharing/members options to share it with a whole **department, committee or office** at once, so everyone in that group gets access.",
+                'links' => $myFolders,
+            ],
+            [
+                'category' => 'profile', 'title' => 'Update my profile details or picture',
+                'keywords' => 'profile picture update profile change details photo avatar edit profile my information',
+                'answer' => "Update your personal details from your **Profile**, and your password, e-signature, memo salutation and text size from **Settings**.",
+                'links' => [['label' => 'Profile', 'url' => $this->u('dashboard.profile')], $settings[0]],
+            ],
+            [
+                'category' => 'help', 'title' => 'Getting help / who to contact',
+                'keywords' => 'help support contact who do i ask stuck problem report issue assistance it support',
+                'answer' => "Start with the **System Documentation** and **User Manual** on your dashboard. *(Super Admin: edit this entry to add your institution's IT/support contact.)*",
+                'links' => [['label' => 'System Documentation', 'url' => $this->u('dashboard.system-documentation')], ['label' => 'User Manual', 'url' => $this->u('dashboard.user-manual')]],
+            ],
+        ];
+    }
+
     // ── Analytics (privacy-safe: counts only) ────────────────────────────────
 
     private function aggregate(string $from, string $to): array
