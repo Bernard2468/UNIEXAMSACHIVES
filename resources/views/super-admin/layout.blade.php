@@ -404,6 +404,12 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('super-admin.bot.index') }}" class="{{ request()->routeIs('super-admin.bot.*') ? 'active' : '' }}">
+                    <i class="fas fa-robot"></i>
+                    <span>Bot</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('super-admin.settings.index') }}" class="{{ request()->routeIs('super-admin.settings.*') ? 'active' : '' }}">
                     <i class="icofont-settings-alt"></i>
                     <span>Settings</span>

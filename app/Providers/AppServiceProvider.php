@@ -146,6 +146,25 @@ class AppServiceProvider extends ServiceProvider
                     ->where('current_assignee_id', $userId)
                     ->count();
 
+                // AI Assistant bot: master switch + this user's remaining daily Gemini allowance.
+                // Memoised per-request (the composer fires for every partial) and wrapped so a
+                // not-yet-migrated bot table can never break every page.
+                static $botData = [];
+                if (!array_key_exists($userId, $botData)) {
+                    $be = false; $br = null;
+                    try {
+                        $be = (bool) \App\Models\SystemSetting::get('bot_enabled', true);
+                        $cap = (int) \App\Models\SystemSetting::get('bot_daily_user_cap', 40);
+                        if ($cap > 0) {
+                            $br = max(0, $cap - \App\Models\BotUsageDaily::apiCallsToday($userId));
+                        }
+                    } catch (\Throwable $e) {
+                        $be = false;
+                    }
+                    $botData[$userId] = ['botEnabled' => $be, 'botRemaining' => $br];
+                }
+                $view->with($botData[$userId]);
+
                 if (Auth::user()->is_admin) {
                     // Regular users (is_admin = 1) - see only their own exams/files
                     $myExams = Exam::where('user_id', Auth::user()->id)->count();

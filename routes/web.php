@@ -96,6 +96,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/search',         [GlobalSearchController::class, 'index'])->name('search.index');
     Route::get('/dashboard/search/suggest', [GlobalSearchController::class, 'suggest'])->name('search.suggest');
 
+    # UDTS Assistant bot — ask + 👍/👎 feedback (throttled to curb abuse)
+    Route::post('/bot/ask',      [\App\Http\Controllers\BotController::class, 'ask'])->middleware('throttle:30,1')->name('bot.ask');
+    Route::post('/bot/feedback', [\App\Http\Controllers\BotController::class, 'feedback'])->middleware('throttle:60,1')->name('bot.feedback');
+
     #Documents
     Route::get('/dashboard/create',[HomeController::class, 'create'])->name('dashboard.create');
     Route::get('/dashboard/file/create',[HomeController::class, 'createFile'])->name('dashboard.file.create');
@@ -518,6 +522,20 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin'])-
     Route::get('/settings/export', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'export'])->name('settings.export');
     Route::post('/settings/import', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'import'])->name('settings.import');
     Route::post('/settings/reset', [\App\Http\Controllers\SuperAdmin\SystemSettingsController::class, 'reset'])->name('settings.reset');
+
+    // AI Assistant Bot — control center (master switch, key vault, analytics, knowledge base)
+    Route::get('/bot', [\App\Http\Controllers\SuperAdmin\BotController::class, 'index'])->name('bot.index');
+    Route::post('/bot/settings', [\App\Http\Controllers\SuperAdmin\BotController::class, 'updateSettings'])->name('bot.settings');
+    Route::post('/bot/toggle', [\App\Http\Controllers\SuperAdmin\BotController::class, 'toggle'])->name('bot.toggle');
+    // Key vault
+    Route::post('/bot/keys', [\App\Http\Controllers\SuperAdmin\BotController::class, 'storeKey'])->name('bot.keys.store');
+    Route::post('/bot/keys/{key}/toggle', [\App\Http\Controllers\SuperAdmin\BotController::class, 'toggleKey'])->name('bot.keys.toggle');
+    Route::post('/bot/keys/{key}/test', [\App\Http\Controllers\SuperAdmin\BotController::class, 'testKey'])->name('bot.keys.test');
+    Route::delete('/bot/keys/{key}', [\App\Http\Controllers\SuperAdmin\BotController::class, 'destroyKey'])->name('bot.keys.destroy');
+    // Knowledge base
+    Route::post('/bot/kb', [\App\Http\Controllers\SuperAdmin\BotController::class, 'storeEntry'])->name('bot.kb.store');
+    Route::put('/bot/kb/{entry}', [\App\Http\Controllers\SuperAdmin\BotController::class, 'updateEntry'])->name('bot.kb.update');
+    Route::delete('/bot/kb/{entry}', [\App\Http\Controllers\SuperAdmin\BotController::class, 'destroyEntry'])->name('bot.kb.destroy');
 });
 
 // Webhook endpoints (no auth required)

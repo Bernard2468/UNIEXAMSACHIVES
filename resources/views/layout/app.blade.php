@@ -120,6 +120,14 @@
         @include('components.footer')
     </main>
 
+    {{-- UDTS Assistant — floating AI bot. Signed-in users only, and only when the
+         Super Admin master switch is on ($botEnabled from the global View composer). --}}
+    @auth
+        @if(!empty($botEnabled))
+            @include('components.bot-assistant')
+        @endif
+    @endauth
+
    <!-- JS here -->
    <script src="{{asset('js/vendor/modernizr-3.5.0.min.js')}}"></script>
    <script src="{{asset('js/vendor/jquery-3.6.0.min.js')}}"></script>
