@@ -52,7 +52,9 @@
 @verbatim
 <style>
 /* ===== UDTS Assistant — scoped styles (prefix: ub-) ===================== */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+/* Same font stack + weights as the folders page drawer (.exp-root) so the bot
+   reads as part of the same product. */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 #udtsbot-root, #udtsbot-root * { box-sizing: border-box; }
 #udtsbot-root {
@@ -63,27 +65,54 @@
     --ub-user:#18181b; --ub-charcoal:#3f3f46; --ub-link:#52525b;
     --ub-chip-border:#e4e4e7; --ub-chip-text:#52525b; --ub-chip-hover:#f4f4f5; --ub-chip-hover-bdr:#d4d4d8;
     --ub-fill:#3f3f46; --ub-warn:#f59e0b; --ub-over:#ef4444;
-    font-family:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-family:'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
+/* Browsers default form controls to the system UI font — force them to inherit
+   Outfit, exactly like the drawer does. */
+#udtsbot-root input, #udtsbot-root button, #udtsbot-root textarea, #udtsbot-root select { font-family: inherit; }
 
-/* ---- Floating launcher ------------------------------------------------- */
-.ub-launcher{ position:fixed; bottom:100px; right:24px; z-index:2147483000; }
+/* ---- Floating launcher -------------------------------------------------
+   Stacked ABOVE the app's scroll-to-top button (#scrollUp: right:20px,
+   bottom:60px, 50px tall → its top edge is at 110px). Same right edge (20px)
+   and a bottom of 126px keeps a clean ~16px gap so the two never collide.
+   The GNRS bounce combines translateY (button hop) + rotate (icon wobble) +
+   hover scale — three transforms. CSS can't animate two transforms on one
+   element, so they live on nested elements: .ub-btn (scale) → .ub-floater
+   (hop) → img (wobble). The pulsing ring is box-shadow on .ub-ring. */
+.ub-launcher{ position:fixed; bottom:126px; right:20px; z-index:2147483000; }
 .ub-ring{ border-radius:50%; display:inline-flex; animation:ub-ring 2.6s ease-in-out infinite; }
 @keyframes ub-ring{
     0%,100%{ box-shadow:0 0 0 2.5px rgba(139,92,246,.75),0 0 0 5px rgba(139,92,246,.18),0 0 18px rgba(139,92,246,.18); }
     50%    { box-shadow:0 0 0 2.5px rgba(139,92,246,.75),0 0 0 11px rgba(139,92,246,.04),0 0 32px rgba(139,92,246,.08); }
 }
 .ub-btn{ background:none; border:none; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;
-    width:64px; height:64px; animation:ub-float 8.8s ease-in-out infinite; transition:transform .15s; }
+    width:64px; height:64px; transition:transform .15s; }
 .ub-btn:hover{ transform:scale(1.1); }
 .ub-btn:active{ transform:scale(.94); }
-.ub-btn img{ width:64px; height:64px; object-fit:contain; display:block; animation:ub-wobble 8.8s ease-in-out infinite; }
+.ub-floater{ display:flex; animation:ub-float 8.8s linear infinite; }
+.ub-floater img{ width:64px; height:64px; object-fit:contain; display:block; animation:ub-wobble 8.8s ease-in-out infinite; }
+/* GNRS uses framer's alternating cubic-beziers per segment (snappy rise,
+   accelerating fall) — replicated here with per-keyframe timing functions so
+   the bounce feels identical, then rests flat during the 5s repeat delay. */
 @keyframes ub-float{
-    0%{transform:translateY(0)} 4.75%{transform:translateY(-40px)} 9.5%{transform:translateY(0)}
-    12.96%{transform:translateY(-32px)} 16.4%{transform:translateY(0)} 19%{transform:translateY(-24px)}
-    21.6%{transform:translateY(0)} 24.2%{transform:translateY(-16px)} 26.4%{transform:translateY(0)}
-    28.1%{transform:translateY(-10px)} 29.8%{transform:translateY(0)} 31.1%{transform:translateY(-5px)}
-    32.4%{transform:translateY(0)} 33.7%{transform:translateY(-2px)} 35%{transform:translateY(0)} 100%{transform:translateY(0)}
+    0%    {transform:translateY(0);    animation-timing-function:cubic-bezier(.25,.46,.45,.94)}
+    4.75% {transform:translateY(-40px);animation-timing-function:cubic-bezier(.55,.06,.68,.19)}
+    9.5%  {transform:translateY(0);    animation-timing-function:cubic-bezier(.25,.46,.45,.94)}
+    12.96%{transform:translateY(-32px);animation-timing-function:cubic-bezier(.55,.06,.68,.19)}
+    16.4% {transform:translateY(0);    animation-timing-function:cubic-bezier(.25,.46,.45,.94)}
+    19%   {transform:translateY(-24px);animation-timing-function:cubic-bezier(.55,.06,.68,.19)}
+    21.6% {transform:translateY(0);    animation-timing-function:cubic-bezier(.25,.46,.45,.94)}
+    24.2% {transform:translateY(-16px);animation-timing-function:cubic-bezier(.55,.06,.68,.19)}
+    26.4% {transform:translateY(0);    animation-timing-function:cubic-bezier(.25,.46,.45,.94)}
+    28.1% {transform:translateY(-10px);animation-timing-function:cubic-bezier(.55,.06,.68,.19)}
+    29.8% {transform:translateY(0);    animation-timing-function:cubic-bezier(.25,.46,.45,.94)}
+    31.1% {transform:translateY(-5px); animation-timing-function:cubic-bezier(.55,.06,.68,.19)}
+    32.4% {transform:translateY(0);    animation-timing-function:cubic-bezier(.25,.46,.45,.94)}
+    33.7% {transform:translateY(-2px); animation-timing-function:cubic-bezier(.55,.06,.68,.19)}
+    35%   {transform:translateY(0);    animation-timing-function:linear}
+    100%  {transform:translateY(0)}
 }
 @keyframes ub-wobble{
     0%{transform:rotate(0)} 4.75%{transform:rotate(-18deg)} 9.5%{transform:rotate(18deg)}
@@ -91,9 +120,9 @@
     21.6%{transform:rotate(10deg)} 24.2%{transform:rotate(-6deg)} 26.4%{transform:rotate(6deg)}
     28.1%{transform:rotate(-3deg)} 29.8%{transform:rotate(3deg)} 32.4%{transform:rotate(0)} 100%{transform:rotate(0)}
 }
-@media (min-width:1600px){ .ub-btn,.ub-btn img{ width:72px; height:72px; } }
-@media (max-width:1199px){ .ub-btn,.ub-btn img{ width:58px; height:58px; } }
-@media (max-width:767px){  .ub-btn,.ub-btn img{ width:52px; height:52px; } .ub-launcher{ right:16px; bottom:88px; } }
+@media (min-width:1600px){ .ub-btn,.ub-floater img{ width:72px; height:72px; } .ub-launcher{ bottom:128px; } }
+@media (max-width:1199px){ .ub-btn,.ub-floater img{ width:58px; height:58px; } .ub-launcher{ bottom:124px; } }
+@media (max-width:767px){  .ub-btn,.ub-floater img{ width:52px; height:52px; } .ub-launcher{ right:16px; bottom:120px; } }
 
 .ub-tooltip{ position:absolute; bottom:100%; right:0; margin-bottom:10px; white-space:nowrap; border-radius:10px;
     background:var(--ub-user); padding:8px 12px; box-shadow:0 8px 24px rgba(0,0,0,.18);
@@ -109,8 +138,8 @@
     opacity:0; transition:opacity .2s; }
 .ub-open .ub-overlay{ opacity:1; }
 
-.ub-window{ position:fixed; bottom:100px; right:24px; z-index:2147483002; width:420px; max-width:calc(100vw - 24px);
-    height:600px; max-height:calc(85vh - 100px); display:flex; flex-direction:column; background:var(--ub-surface);
+.ub-window{ position:fixed; bottom:126px; right:20px; z-index:2147483002; width:420px; max-width:calc(100vw - 40px);
+    height:600px; max-height:calc(85vh - 126px); display:flex; flex-direction:column; background:var(--ub-surface);
     border-radius:20px; border:1px solid var(--ub-border); overflow:hidden;
     box-shadow:0 24px 64px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.06);
     opacity:0; transform:translateY(20px) scale(.94); transition:opacity .22s, transform .28s cubic-bezier(.2,.9,.3,1.2);
@@ -314,7 +343,7 @@
     var launcher=document.createElement('div'); launcher.className='ub-launcher';
     launcher.innerHTML =
         '<div class="ub-tooltip"><b>Need help?</b><span>Ask me anything about UDTS</span></div>'+
-        '<div class="ub-ring"><button class="ub-btn" aria-label="Open assistant"><img src="'+CFG.robot+'" alt="UDTS Assistant"></button></div>';
+        '<div class="ub-ring"><button class="ub-btn" aria-label="Open assistant"><span class="ub-floater"><img src="'+CFG.robot+'" alt="UDTS Assistant"></span></button></div>';
     root.appendChild(launcher);
 
     var shell=document.createElement('div'); shell.style.display='none'; root.appendChild(shell);
