@@ -55,7 +55,7 @@
     // An admin may set a custom greeting ({name}/{greeting} tokens supported). The
     // old canned default is treated as "unset" so this upgrade takes effect.
     $botCustom     = trim((string) \App\Models\SystemSetting::get('bot_greeting', ''));
-    $botOldDefault = "Hi there! I'm your UDTS Assistant. I know every corner of this platform — ask me about forms, memos, the archive, or how to get anything done. I can also take you straight to where you need to go.";
+    $botOldDefault = "Hi there! I'm MetaGuide. I know every corner of this platform — ask me about forms, memos, the archive, or how to get anything done. I can also take you straight to where you need to go.";
 
     if ($botCustom !== '' && $botCustom !== $botOldDefault) {
         $botGreeting = strtr($botCustom, ['{name}' => $botFirst, '{first_name}' => $botFirst, '{greeting}' => $botTod]);
@@ -72,10 +72,10 @@
         }
 
         if (!empty($botNudges)) {
-            $botGreeting = "{$botTod}, {$botFirst} — I'm your UDTS Assistant. You have "
+            $botGreeting = "{$botTod}, {$botFirst} — I'm MetaGuide. You have "
                 . implode(' and ', $botNudges) . ". Jump to " . implode(' or ', $botJumps) . ", or ask me anything.";
         } else {
-            $botGreeting = "{$botTod}, {$botFirst} — I'm your UDTS Assistant. "
+            $botGreeting = "{$botTod}, {$botFirst} — I'm MetaGuide. "
                 . "Ask me about forms, memos or the archive, or just tell me what you need and I'll take you straight there.";
         }
     }
@@ -307,7 +307,7 @@
         csrf: root.dataset.csrf,
         page: root.dataset.page || 'UDTS',
         robot: root.dataset.robot,
-        greeting: root.dataset.greeting || "Hi! I'm your UDTS Assistant.",
+        greeting: root.dataset.greeting || "Hi! I'm MetaGuide.",
         remaining: root.dataset.remaining === '' ? null : parseInt(root.dataset.remaining,10),
         limit: root.dataset.limit === '' ? null : parseInt(root.dataset.limit,10),
     };
@@ -395,7 +395,7 @@
     var launcher=document.createElement('div'); launcher.className='ub-launcher';
     launcher.innerHTML =
         '<div class="ub-tooltip"><b>Need help?</b><span>Ask me anything about UDTS</span></div>'+
-        '<div class="ub-ring"><button class="ub-btn" aria-label="Open assistant"><span class="ub-floater"><img src="'+CFG.robot+'" alt="UDTS Assistant"></span></button></div>';
+        '<div class="ub-ring"><button class="ub-btn" aria-label="Open MetaGuide"><span class="ub-floater"><img src="'+CFG.robot+'" alt="MetaGuide"></span></button></div>';
     root.appendChild(launcher);
 
     var shell=document.createElement('div'); shell.style.display='none'; root.appendChild(shell);
@@ -404,7 +404,7 @@
         '<div class="ub-window">'+
           '<div class="ub-header">'+
             '<div class="ub-id"><img src="'+CFG.robot+'" alt=""><div>'+
-              '<p class="ub-name">UDTS Assistant</p>'+
+              '<p class="ub-name">MetaGuide</p>'+
               '<div class="ub-status"><span class="ub-dot"></span><span>Online · Powered by Metascholar</span></div>'+
             '</div></div>'+
             '<div class="ub-tools">'+
@@ -424,7 +424,7 @@
               '<button class="ub-retry" data-retry title="Retry last">'+ICONS.rotate+'</button>'+
               '<button class="ub-send" data-send>'+ICONS.send+'</button>'+
             '</div>'+
-            '<p class="ub-footnote">UDTS AI · Knows every feature of this platform</p>'+
+            '<p class="ub-footnote">MetaGuide · Ask · Navigate · Get unstuck</p>'+
           '</div>'+
         '</div>';
 
