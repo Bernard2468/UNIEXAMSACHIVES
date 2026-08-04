@@ -46,12 +46,27 @@
                             </div>
                         </div>
 
-                        {{-- Filter tabs --}}
+                        {{-- Filter tabs — inline on desktop, fixed bottom-nav on mobile --}}
                         <div class="sib-tabs" id="sibTabs">
-                            <button class="sib-tab active" data-filter="open">Open <span class="sib-c" data-c="open">0</span></button>
-                            <button class="sib-tab" data-filter="unassigned">Unassigned <span class="sib-c" data-c="unassigned">0</span></button>
-                            <button class="sib-tab" data-filter="mine">Mine <span class="sib-c" data-c="mine">0</span></button>
-                            <button class="sib-tab" data-filter="resolved">Resolved</button>
+                            <button class="sib-tab active" data-filter="open">
+                                <svg class="sib-tab__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                                <span class="sib-tab__label">Open</span>
+                                <span class="sib-c" data-c="open">0</span>
+                            </button>
+                            <button class="sib-tab" data-filter="unassigned">
+                                <svg class="sib-tab__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                <span class="sib-tab__label">Unassigned</span>
+                                <span class="sib-c" data-c="unassigned">0</span>
+                            </button>
+                            <button class="sib-tab" data-filter="mine">
+                                <svg class="sib-tab__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                <span class="sib-tab__label">Mine</span>
+                                <span class="sib-c" data-c="mine">0</span>
+                            </button>
+                            <button class="sib-tab" data-filter="resolved">
+                                <svg class="sib-tab__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <span class="sib-tab__label">Resolved</span>
+                            </button>
                         </div>
 
                         {{-- Two-pane workspace --}}

@@ -44,7 +44,7 @@
     function updateCounts(c){
         ['open','unassigned','mine'].forEach(function(k){
             var n = root.querySelector('.sib-c[data-c="'+k+'"]');
-            if(n) n.textContent = (c[k]!=null? c[k] : 0);
+            if(n){ var v = (c[k]!=null? c[k] : 0); n.textContent = v; n.classList.toggle('sib-c--zero', !v); }
         });
     }
     function renderList(rows){
@@ -230,6 +230,14 @@
         clearTimeout(searchTimer);
         searchTimer = setTimeout(function(){ state.q = el.search.value.trim(); fetchList(); }, 300);
     });
+
+    // ---------- app-like: disable pinch / double-tap zoom on this page ----------
+    // Page-scoped — a normal navigation reloads the global viewport meta.
+    (function(){
+        var vp = document.querySelector('meta[name="viewport"]');
+        if(vp){ vp.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'); }
+        document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, {passive:false});
+    })();
 
     // ---------- boot ----------
     fetchList();
