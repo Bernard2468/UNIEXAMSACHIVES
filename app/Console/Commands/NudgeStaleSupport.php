@@ -44,8 +44,8 @@ class NudgeStaleSupport extends Command
             return self::SUCCESS;
         }
 
-        if (!$dryRun && !$support->isWithinSupportHours()) {
-            $this->info('Outside support hours — no live agents to page.');
+        if (!$dryRun && !$support->isSupportOnline()) {
+            $this->info('Support desk is offline (no agent present, outside hours) — nothing to page.');
             return self::SUCCESS;
         }
 

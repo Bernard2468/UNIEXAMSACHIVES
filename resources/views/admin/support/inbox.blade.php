@@ -37,7 +37,7 @@
                                 <h2 class="sib-title">Support Inbox</h2>
                                 <span class="sib-hours">
                                     <span class="sib-dot {{ $online ? 'on' : 'off' }}"></span>
-                                    {{ $online ? 'Online' : 'Offline' }} · {{ $hoursText }}
+                                    {{ $online ? 'Online' : 'After hours' }} · {{ $hoursText }}
                                 </span>
                             </div>
                             <div class="sib-search">

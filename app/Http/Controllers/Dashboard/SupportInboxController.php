@@ -25,16 +25,21 @@ class SupportInboxController extends Controller
 
     public function index(Request $request)
     {
+        // The agent is here → the desk is staffed. Mark presence before reading it.
+        $this->support->touchAgentPresence();
+
         return view('admin.support.inbox', [
             'preselect' => (int) $request->query('c', 0),
             'hoursText' => $this->support->hoursText(),
-            'online'    => $this->support->isWithinSupportHours(),
+            'online'    => $this->support->isSupportOnline(),
         ]);
     }
 
     /** Conversation list for the inbox rail (filterable + searchable). */
     public function list(Request $request)
     {
+        $this->support->touchAgentPresence(); // keep the desk marked online while polling
+
         $filter = $request->query('filter', 'open');
         $search = trim((string) $request->query('q', ''));
         $me = Auth::id();
@@ -164,6 +169,7 @@ class SupportInboxController extends Controller
     /** Badge counts for the sidebar / inbox header. */
     public function counts(Request $request)
     {
+        $this->support->touchAgentPresence();
         return response()->json($this->badgeCounts());
     }
 

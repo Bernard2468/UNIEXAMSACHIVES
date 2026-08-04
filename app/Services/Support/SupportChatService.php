@@ -11,6 +11,7 @@ use App\Models\Office;
 use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -107,6 +108,47 @@ class SupportChatService
         return "{$dayText}, {$fmt($this->hoursStart())} – {$fmt($this->hoursEnd())}";
     }
 
+    // ===== Live presence =====
+    //
+    // "Online" reflects whether an agent is ACTUALLY here, not just a static
+    // schedule — so an agent viewing the inbox always reads as online, and users
+    // only see "online" when someone is really watching the queue. A single
+    // cache key (driver-agnostic) is refreshed by the inbox's own polling.
+
+    private const PRESENCE_KEY    = 'support:last_agent_activity';
+    private const PRESENCE_WINDOW = 300; // seconds an agent still counts as "present"
+
+    /** Called by the agent inbox (page load + each poll) to mark the desk staffed. */
+    public function touchAgentPresence(): void
+    {
+        try {
+            Cache::put(self::PRESENCE_KEY, now()->getTimestamp(), 900);
+        } catch (\Throwable $e) {
+            // presence is best-effort — never let it break a request
+        }
+    }
+
+    /** True when a support agent has been active within the presence window. */
+    public function agentPresent(): bool
+    {
+        try {
+            $ts = Cache::get(self::PRESENCE_KEY);
+            return $ts && (now()->getTimestamp() - (int) $ts) <= self::PRESENCE_WINDOW;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * The status users and agents actually see. An agent physically present wins;
+     * otherwise we fall back to the staffed schedule so it still reads "online"
+     * during normal hours before anyone has opened the inbox that day.
+     */
+    public function isSupportOnline(): bool
+    {
+        return $this->agentPresent() || $this->isWithinSupportHours();
+    }
+
     // ===== Agent pool =====
 
     /**
@@ -164,7 +206,7 @@ class SupportChatService
             }
 
             $office = $this->supportOffice();
-            $online = $this->isWithinSupportHours();
+            $online = $this->isSupportOnline();
 
             $conv = BotConversation::create([
                 'user_id'      => $user->id,
@@ -567,7 +609,7 @@ class SupportChatService
             'resolved'    => $conv->isResolved(),
             'agent_name'  => $agent ? (trim($agent->first_name . ' ' . $agent->last_name) ?: 'Support') : null,
             'agent_avatar' => $agent?->profile_picture_url,
-            'online'      => $this->isWithinSupportHours(),
+            'online'      => $this->isSupportOnline(),
             'hours'       => $this->hoursText(),
             'updated'     => optional($conv->updated_at)->toIso8601String(),
         ];

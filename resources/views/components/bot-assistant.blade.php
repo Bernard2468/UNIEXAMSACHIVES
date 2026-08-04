@@ -95,7 +95,7 @@
     try {
         $supportSvc = app(\App\Services\Support\SupportChatService::class);
         $botSupportEnabled = $supportSvc->isEnabled();
-        $botSupportOnline  = $supportSvc->isWithinSupportHours();
+        $botSupportOnline  = $supportSvc->isSupportOnline();
         $botSupportHours   = $supportSvc->hoursText();
     } catch (\Throwable $e) {
         $botSupportEnabled = false;
@@ -726,12 +726,12 @@
 
     function updateSupportStatus(conv){
         if(!conv) return;
-        if(statusText){ statusText.textContent = conv.agent_name ? ('with '+conv.agent_name) : (conv.online ? 'Online' : 'Offline'); }
+        if(statusText){ statusText.textContent = conv.agent_name ? ('with '+conv.agent_name) : (conv.online ? 'Online' : 'Away'); }
         var s = msgs.querySelector('[data-sup-status]');
         if(s){
             if(conv.resolved){ s.textContent = 'Resolved · reply to reopen'; }
             else if(conv.agent_name){ s.textContent = 'You’re chatting with '+conv.agent_name; }
-            else { s.textContent = conv.online ? ('We’re online · '+(conv.hours||'')) : ('Offline · we’ll email you · '+(conv.hours||'')); }
+            else { s.textContent = conv.online ? ('We’re online · typically reply in a few minutes') : ('We’re away right now · we’ll email you · '+(conv.hours||'')); }
         }
     }
 
