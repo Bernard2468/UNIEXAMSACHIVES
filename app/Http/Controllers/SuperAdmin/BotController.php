@@ -32,7 +32,8 @@ class BotController extends Controller
             ['key' => 'bot_daily_user_cap',    'value' => '40',  'data_type' => 'integer', 'label' => 'Daily Gemini messages per user (0 = unlimited)'],
             ['key' => 'bot_store_transcripts', 'value' => '0',   'data_type' => 'boolean', 'label' => 'Store full conversation transcripts'],
             ['key' => 'bot_model_cascade',     'value' => json_encode(GeminiClient::DEFAULT_MODELS), 'data_type' => 'json', 'label' => 'Gemini model cascade'],
-            ['key' => 'bot_greeting',          'value' => "Hi there! I'm your UDTS Assistant. I know every corner of this platform — ask me about forms, memos, the archive, or how to get anything done. I can also take you straight to where you need to go.", 'data_type' => 'string', 'label' => 'Welcome greeting'],
+            // NB: the opening greeting is generated dynamically per user (see the
+            // bot-assistant widget) — there is intentionally no stored greeting.
             ['key' => 'bot_temperature',       'value' => '0.6', 'data_type' => 'string',  'label' => 'Answer creativity (temperature)'],
         ];
 

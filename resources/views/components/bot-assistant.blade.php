@@ -52,32 +52,39 @@
     $botFormsUrl = $botSafeRoute('admin.forms.portal');
     $botMemoUrl  = $botSafeRoute('dashboard.uimms.portal');
 
-    // An admin may set a custom greeting ({name}/{greeting} tokens supported). The
-    // old canned default is treated as "unset" so this upgrade takes effect.
-    $botCustom     = trim((string) \App\Models\SystemSetting::get('bot_greeting', ''));
-    $botOldDefault = "Hi there! I'm MetaGuide. I know every corner of this platform — ask me about forms, memos, the archive, or how to get anything done. I can also take you straight to where you need to go.";
+    // Always generate a fresh greeting — no stored/canned value is ever read, so the
+    // old line can never reappear. A variant is chosen at random each load, so it
+    // feels alive and never repeats the same words.
+    $botNudges = [];
+    $botJumps  = [];
+    if ($botAwaiting > 0) {
+        $botNudges[] = "**{$botAwaiting} form" . ($botAwaiting === 1 ? '' : 's') . "** awaiting your action";
+        $botJumps[]  = "[Forms Portal]({$botFormsUrl})";
+    }
+    if ($botUnread > 0) {
+        $botNudges[] = "**{$botUnread} unread memo" . ($botUnread === 1 ? '' : 's') . "**";
+        $botJumps[]  = "[Memos]({$botMemoUrl})";
+    }
 
-    if ($botCustom !== '' && $botCustom !== $botOldDefault) {
-        $botGreeting = strtr($botCustom, ['{name}' => $botFirst, '{first_name}' => $botFirst, '{greeting}' => $botTod]);
+    if (!empty($botNudges)) {
+        $botOpeners = [
+            "{$botTod}, {$botFirst} — MetaGuide here.",
+            "Hi {$botFirst}, MetaGuide here.",
+            "{$botTod}, {$botFirst}.",
+            "Welcome back, {$botFirst} — MetaGuide here.",
+        ];
+        $botGreeting = $botOpeners[array_rand($botOpeners)]
+            . " You have " . implode(' and ', $botNudges)
+            . ". Jump to " . implode(' or ', $botJumps) . ", or ask me anything.";
     } else {
-        $botNudges = [];
-        $botJumps  = [];
-        if ($botAwaiting > 0) {
-            $botNudges[] = "**{$botAwaiting} form" . ($botAwaiting === 1 ? '' : 's') . "** awaiting your action";
-            $botJumps[]  = "[Forms Portal]({$botFormsUrl})";
-        }
-        if ($botUnread > 0) {
-            $botNudges[] = "**{$botUnread} unread memo" . ($botUnread === 1 ? '' : 's') . "**";
-            $botJumps[]  = "[Memos]({$botMemoUrl})";
-        }
-
-        if (!empty($botNudges)) {
-            $botGreeting = "{$botTod}, {$botFirst} — I'm MetaGuide. You have "
-                . implode(' and ', $botNudges) . ". Jump to " . implode(' or ', $botJumps) . ", or ask me anything.";
-        } else {
-            $botGreeting = "{$botTod}, {$botFirst} — I'm MetaGuide. "
-                . "Ask me about forms, memos or the archive, or just tell me what you need and I'll take you straight there.";
-        }
+        $botVariants = [
+            "{$botTod}, {$botFirst} — I'm MetaGuide. What can I help you with across forms, memos and the archive?",
+            "Hi {$botFirst}, MetaGuide here. Ask me anything about the system, or just tell me what you need and I'll take you straight there.",
+            "{$botTod}, {$botFirst}. I'm MetaGuide — need a form raised, a memo found or a file located? Just ask.",
+            "Welcome back, {$botFirst}. I'm MetaGuide, ready to help with forms, memos, files or anything else here.",
+            "{$botTod}, {$botFirst} — MetaGuide at your service. Where would you like to start?",
+        ];
+        $botGreeting = $botVariants[array_rand($botVariants)];
     }
 
     $botCap = (int) \App\Models\SystemSetting::get('bot_daily_user_cap', 40);
