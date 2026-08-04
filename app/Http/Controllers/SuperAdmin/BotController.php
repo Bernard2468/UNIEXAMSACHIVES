@@ -41,7 +41,10 @@ class BotController extends Controller
                 ['key' => $d['key']],
                 [
                     'value'       => $d['value'],
-                    'category'    => 'ai_bot',
+                    // 'category' is an ENUM on system_settings; 'ai_bot' is not a member.
+                    // Bot settings are looked up by key (never grouped by category), so we
+                    // file them under the existing 'api' category to satisfy the schema.
+                    'category'    => 'api',
                     'label'       => $d['label'],
                     'description' => '',
                     'data_type'   => $d['data_type'],
