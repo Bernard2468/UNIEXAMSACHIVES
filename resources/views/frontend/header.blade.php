@@ -1,4 +1,4 @@
-<header class="uda-header-sticky">
+<header class="uda-header-sticky{{ (Route::currentRouteName() === 'frontend.welcome' && !Auth::check()) ? ' is-welcome' : '' }}">
     {{-- `header__sticky` removed: the theme JS used to bolt a fixed clone-style
          `.sticky` state onto it at 245px scroll (fadeInDown animation). The header
          is now PERMANENTLY pinned via position: sticky below — no scroll
@@ -226,7 +226,17 @@
                                  outside-click handler. Invisible on tablet/desktop. --}}
                             <div class="uda-sheet-backdrop" aria-hidden="true"></div>
                         @else
-                            <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary">Register / Login</a>
+                            @if (Route::currentRouteName() === 'frontend.welcome')
+                                {{-- Public homepage (logged out): a compact login icon instead of the
+                                     text button. Clicking it smooth-scrolls to the hero "Access System"
+                                     CTA (which routes to the auth form). The href still points at the
+                                     login route so the control degrades gracefully if JS is unavailable. --}}
+                                <a href="{{ route('frontend.login') }}" class="uda-login-icon" data-scroll-to="#accessSystem" aria-label="Login" title="Login">
+                                    <img loading="lazy" src="https://img.icons8.com/dotty/80/login-rounded-down.png" alt="Login" width="30" height="30">
+                                </a>
+                            @else
+                                <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary">Register / Login</a>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -381,6 +391,65 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     .uda-title-pill__full { display: none; }
     .uda-title-pill__short { display: inline; }
 }
+
+/* ═══ Public homepage only (logged out): keep the FULL suite name on mobile ═══
+   On the welcome page the header has room (no hamburger, logo hidden on phones),
+   so we show the complete "University Digital Transformation Suite (UDTS)" name
+   instead of the compact "UDTS". It wraps to two lines with a tighter font. */
+@media (max-width: 767px) {
+    .uda-header-sticky.is-welcome .uda-title-pill__full { display: inline; }
+    .uda-header-sticky.is-welcome .uda-title-pill__short { display: none; }
+    .uda-header-sticky.is-welcome .uda-title-pill {
+        font-size: 11px;
+        line-height: 1.25;
+        padding: 6px 12px;
+        white-space: normal;
+        text-align: center;
+    }
+}
+
+/* ═══ Login icon (public homepage, logged out) ═══
+   Replaces the "Register / Login" text button on the welcome page. Clicking it
+   smooth-scrolls to the hero "Access System" CTA (JS below). */
+.uda-login-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #f3f0ff;
+    border: 1px solid #d9ccff;
+    box-shadow: 0 2px 8px rgba(95, 45, 237, 0.12);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .18s ease, transform .15s ease, box-shadow .18s ease;
+}
+.uda-login-icon:hover {
+    background: #ece5ff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(95, 45, 237, 0.22);
+}
+.uda-login-icon:active { transform: translateY(0); }
+.uda-login-icon img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+}
+@media (max-width: 767px) {
+    .uda-login-icon { width: 40px; height: 40px; }
+    .uda-login-icon img { width: 25px; height: 25px; }
+}
+
+/* Brief pulse on the hero CTA after the header login icon scrolls to it */
+@keyframes uda-cta-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(95, 45, 237, 0.45); }
+    70%  { box-shadow: 0 0 0 14px rgba(95, 45, 237, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(95, 45, 237, 0); }
+}
+.uda-cta-pulse { animation: uda-cta-pulse 1s ease-out 2; }
 
 /* ═══ Sidebar-drawer hamburger (mobile + tablet, <992px) ═══
    Shown only where the page has a sidebar (JS removes it otherwise).
@@ -1336,6 +1405,24 @@ document.addEventListener('DOMContentLoaded', function(){
     menus.forEach(function(menu){
       const panel = panelOf(menu), trigger = triggerOf(menu);
       if (panel && !panel.hidden) { setOpen(menu, false); if (trigger) trigger.focus(); }
+    });
+  });
+});
+
+// ═══ Welcome-page login icon → smooth-scroll to the hero "Access System" CTA ═══
+// Progressive enhancement: the anchor's href already points at the login route,
+// so if this handler never runs the icon still works as a plain link.
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.uda-login-icon[data-scroll-to]').forEach(function(icon){
+    icon.addEventListener('click', function(e){
+      var target = document.querySelector(icon.getAttribute('data-scroll-to'));
+      if (!target) return; // no CTA on this page → let the link navigate to login
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.remove('uda-cta-pulse');
+      void target.offsetWidth; // reflow so the pulse can replay
+      target.classList.add('uda-cta-pulse');
+      setTimeout(function(){ target.classList.remove('uda-cta-pulse'); }, 2100);
     });
   });
 });

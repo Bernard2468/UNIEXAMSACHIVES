@@ -382,7 +382,7 @@
                     </p>
                     
                     <div class="cta-buttons">
-                        <a href="{{ route('frontend.login') }}" class="btn-primary-modern">
+                        <a href="{{ route('frontend.login') }}" id="accessSystem" class="btn-primary-modern">
                             <i class="icofont-login me-2"></i>
                             Access System
                         </a>
