@@ -325,8 +325,14 @@
 .ub-footnote{ margin:8px 0 0; text-align:center; font-size:10px; color:var(--ub-text3); letter-spacing:.02em; }
 
 /* ---- Support (human handoff) layer — additive, does not touch bot styles ---- */
-.ub-human{ padding:3px; }
-.ub-human img{ width:20px; height:20px; object-fit:contain; display:block; }
+/* The "Talk to a person" icon is a colour image and a key call-to-action, so it
+   is deliberately larger than the utility (new/close) icons and scales up on
+   bigger screens for clear visibility. */
+.ub-human{ padding:2px; }
+.ub-human img{ width:30px; height:30px; object-fit:contain; display:block; }
+@media (min-width:1600px){ .ub-human img{ width:34px; height:34px; } }
+@media (max-width:1199px){ .ub-human img{ width:28px; height:28px; } }
+@media (max-width:767px){  .ub-human img{ width:27px; height:27px; } }
 .ub-handoff{ margin-left:34px; max-width:92%; border-radius:14px; padding:12px 14px; background:#eef3ff; border:1px solid #dbe4f5; }
 .ub-handoff-t{ font-size:12.5px; color:var(--ub-charcoal); line-height:1.5; margin-bottom:9px; }
 .ub-handoff-b{ background:var(--ub-user); color:#fff; border:none; border-radius:9px; font-size:12.5px; font-weight:600; padding:8px 14px; cursor:pointer; font-family:inherit; transition:background .15s; }
