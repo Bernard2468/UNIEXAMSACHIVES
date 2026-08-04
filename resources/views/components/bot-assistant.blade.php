@@ -87,6 +87,22 @@
     }
 
     $botCap = (int) \App\Models\SystemSetting::get('bot_daily_user_cap', 40);
+
+    // ── Support Chat (bot → human handoff) config for the widget ──
+    // Resolved via the service so hours / online state stay in one place. Wrapped
+    // so a not-yet-migrated support layer can never break the widget or the page.
+    $botSupportEnabled = false; $botSupportOnline = false; $botSupportHours = '';
+    try {
+        $supportSvc = app(\App\Services\Support\SupportChatService::class);
+        $botSupportEnabled = $supportSvc->isEnabled();
+        $botSupportOnline  = $supportSvc->isWithinSupportHours();
+        $botSupportHours   = $supportSvc->hoursText();
+    } catch (\Throwable $e) {
+        $botSupportEnabled = false;
+    }
+    $botSupportSafe = function (string $route, array $params = []) {
+        try { return route($route, $params, false); } catch (\Throwable $e) { return ''; }
+    };
 @endphp
 
 <div id="udtsbot-root"
@@ -97,7 +113,15 @@
      data-remaining="{{ $botRemaining ?? '' }}"
      data-limit="{{ $botCap > 0 ? $botCap : '' }}"
      data-greeting="{{ $botGreeting }}"
-     data-robot="https://res.cloudinary.com/dsypclqxk/image/upload/v1777022316/Pngtree_friendly_ai_assistant_robot_icon_21334634_lyqp0d.png"></div>
+     data-robot="https://res.cloudinary.com/dsypclqxk/image/upload/v1777022316/Pngtree_friendly_ai_assistant_robot_icon_21334634_lyqp0d.png"
+     data-support-enabled="{{ $botSupportEnabled ? '1' : '0' }}"
+     data-support-online="{{ $botSupportOnline ? '1' : '0' }}"
+     data-support-hours="{{ $botSupportHours }}"
+     data-support-escalate="{{ $botSupportSafe('bot.support.escalate') }}"
+     data-support-active="{{ $botSupportSafe('bot.support.active') }}"
+     data-support-thread="{{ $botSupportSafe('bot.support.thread', ['conversation' => '__CID__']) }}"
+     data-support-message="{{ $botSupportSafe('bot.support.message', ['conversation' => '__CID__']) }}"
+     data-support-resolve="{{ $botSupportSafe('bot.support.resolve', ['conversation' => '__CID__']) }}"></div>
 
 @verbatim
 <style>
@@ -299,6 +323,21 @@
     opacity:.4; transition:color .15s; }
 .ub-retry.on{ opacity:1; } .ub-retry.on:hover{ color:var(--ub-icon-hover); }
 .ub-footnote{ margin:8px 0 0; text-align:center; font-size:10px; color:var(--ub-text3); letter-spacing:.02em; }
+
+/* ---- Support (human handoff) layer — additive, does not touch bot styles ---- */
+.ub-human svg{ width:16px; height:16px; }
+.ub-handoff{ margin-left:34px; max-width:92%; border-radius:14px; padding:12px 14px; background:#eef3ff; border:1px solid #dbe4f5; }
+.ub-handoff-t{ font-size:12.5px; color:var(--ub-charcoal); line-height:1.5; margin-bottom:9px; }
+.ub-handoff-b{ background:var(--ub-user); color:#fff; border:none; border-radius:9px; font-size:12.5px; font-weight:600; padding:8px 14px; cursor:pointer; font-family:inherit; transition:background .15s; }
+.ub-handoff-b:hover{ background:#27272a; }
+.ub-suphead{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--ub-surface-alt); border:1px solid var(--ub-border-light); border-radius:12px; padding:9px 12px; margin-bottom:4px; }
+.ub-suphead-i{ display:flex; flex-direction:column; min-width:0; }
+.ub-suphead-i b{ font-size:12.5px; color:var(--ub-text); }
+.ub-suphead-i span{ font-size:11px; color:var(--ub-text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ub-supback{ flex:0 0 auto; background:none; border:1px solid var(--ub-chip-border); border-radius:8px; font-size:11.5px; color:var(--ub-chip-text); padding:5px 9px; cursor:pointer; font-family:inherit; }
+.ub-supback:hover{ background:var(--ub-chip-hover); }
+.ub-sup-sys{ align-self:center; text-align:center; font-size:11px; color:var(--ub-text3); background:var(--ub-surface-alt); border:1px solid var(--ub-border-light); border-radius:20px; padding:4px 12px; margin:2px auto; max-width:90%; }
+.ub-agent-name{ display:block; font-size:10.5px; font-weight:700; color:#1a4a9b; margin-bottom:2px; }
 </style>
 
 <script>
@@ -316,6 +355,16 @@
         greeting: root.dataset.greeting || "Hi! I'm MetaGuide.",
         remaining: root.dataset.remaining === '' ? null : parseInt(root.dataset.remaining,10),
         limit: root.dataset.limit === '' ? null : parseInt(root.dataset.limit,10),
+    };
+    CFG.support = {
+        enabled:  root.dataset.supportEnabled === '1',
+        escalate: root.dataset.supportEscalate,
+        active:   root.dataset.supportActive,
+        thread:   root.dataset.supportThread,
+        message:  root.dataset.supportMessage,
+        resolve:  root.dataset.supportResolve,
+        hours:    root.dataset.supportHours || '',
+        online:   root.dataset.supportOnline === '1'
     };
 
     var SUGGESTIONS = [
@@ -343,7 +392,8 @@
     };
 
     // ---- state ----
-    var state = { open:false, loading:false, history:[], remaining:CFG.remaining, limit:(CFG.limit||CFG.remaining), unlimited:CFG.remaining===null, greeted:false };
+    var state = { open:false, loading:false, history:[], remaining:CFG.remaining, limit:(CFG.limit||CFG.remaining), unlimited:CFG.remaining===null, greeted:false,
+                  mode:'bot', convId:0, supportLastId:0, supportTimer:null, supportSending:false };
 
     // ---- helpers ----
     function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -414,6 +464,7 @@
               '<div class="ub-status"><span class="ub-dot"></span><span>Online · Powered by Metascholar</span></div>'+
             '</div></div>'+
             '<div class="ub-tools">'+
+              '<button class="ub-iconbtn ub-human" data-human title="Talk to a person"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/></svg></button>'+
               '<button class="ub-iconbtn" data-new title="New conversation">'+ICONS.rotate+'</button>'+
               '<button class="ub-iconbtn" data-close title="Close">'+ICONS.x+'</button>'+
             '</div>'+
@@ -521,6 +572,7 @@
 
     // ---- greet / reset ----
     function greet(){
+        restoreBotChrome();
         msgs.innerHTML='';
         var row=addAssistantShell();
         row.querySelector('[data-body]').innerHTML=markdown(CFG.greeting);
@@ -533,7 +585,9 @@
     // ---- send ----
     function send(text){
         text=(text||input.value).trim();
-        if(!text || state.loading) return;
+        if(!text) return;
+        if(state.mode==='support'){ input.value=''; setActive(); return sendSupportMessage(text); }
+        if(state.loading) return;
         clearSuggestions();
         input.value=''; setActive();
         addUser(text);
@@ -558,6 +612,7 @@
             state.history.push({role:'assistant',content:j.answer});
             var row=addAssistantShell();
             reveal(row.querySelector('[data-body]'), j.answer, {source:j.source, matched_key:j.matched_key, question:text, answer:j.answer});
+            if(j.source==='fallback' && CFG.support && CFG.support.enabled){ showHandoffChip(); }
         })
         .catch(function(){
             if(tRow) tRow.remove(); state.loading=false;
@@ -574,7 +629,7 @@
     }
 
     // ---- open / close ----
-    function open(){ if(state.open) return; state.open=true; shell.style.display=''; requestAnimationFrame(function(){ root.classList.add('ub-open'); }); if(!state.greeted) greet(); setTimeout(function(){ input.focus(); },120); }
+    function open(){ if(state.open) return; state.open=true; shell.style.display=''; requestAnimationFrame(function(){ root.classList.add('ub-open'); }); if(!state.greeted) greet(); resumeSupportIfAny(); setTimeout(function(){ input.focus(); },120); }
     function close(){ state.open=false; root.classList.remove('ub-open'); setTimeout(function(){ if(!state.open) shell.style.display='none'; },260); }
 
     // ---- wire events ----
@@ -594,6 +649,147 @@
     input.addEventListener('blur', function(){ inputRow.classList.remove('focus'); });
     input.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
     document.addEventListener('keydown', function(e){ if(e.key==='Escape' && state.open) close(); });
+
+    // ===== Support (human handoff) — additive layer; the bot flow above is untouched =====
+    var nameEl = shell.querySelector('.ub-name');
+    var statusText = shell.querySelector('.ub-status span:last-of-type');
+    var origName = nameEl ? nameEl.textContent : 'MetaGuide';
+    var origStatus = statusText ? statusText.textContent : 'Online';
+    var origPlaceholder = input ? input.getAttribute('placeholder') : '';
+
+    var humanBtn = $('[data-human]');
+    if(humanBtn){
+        if(!CFG.support.enabled){ humanBtn.style.display='none'; }
+        else { humanBtn.addEventListener('click', function(){ startSupport(); }); }
+    }
+
+    function supUrl(tpl, id){ return String(tpl||'').replace('__CID__', id); }
+    function supCid(p){ return (p||'u') + Date.now() + Math.random().toString(36).slice(2,7); }
+
+    function restoreBotChrome(){
+        state.mode='bot'; stopSupportPoll();
+        if(nameEl) nameEl.textContent = origName;
+        if(statusText) statusText.textContent = origStatus;
+        if(input) input.setAttribute('placeholder', origPlaceholder);
+        if(retryBtn) retryBtn.style.display='';
+        refreshUsage();
+    }
+
+    function showHandoffChip(){
+        if(state.mode==='support' || !CFG.support.enabled) return;
+        var wrap=document.createElement('div'); wrap.className='ub-handoff';
+        wrap.innerHTML='<div class="ub-handoff-t">Prefer a person? Talk to a support admin — I’ll pass along what we’ve covered.</div><button class="ub-handoff-b" type="button">Talk to a person</button>';
+        wrap.querySelector('button').addEventListener('click', function(){ startSupport(); });
+        msgs.appendChild(wrap); scrollDown();
+    }
+
+    function startSupport(){
+        if(!CFG.support.enabled) return;
+        var ctx=[];
+        for(var i=0;i<state.history.length;i++){ ctx.push({role:state.history[i].role, content:state.history[i].content}); }
+        ctx = ctx.slice(-12);
+        var tRow=typing();
+        fetch(CFG.support.escalate,{method:'POST',headers:hdrs(),body:JSON.stringify({page:CFG.page, bot_context:ctx})})
+            .then(function(r){return r.json();})
+            .then(function(d){ if(tRow) tRow.remove(); if(d && d.conversation){ enterSupportUI(d); } })
+            .catch(function(){ if(tRow) tRow.remove(); });
+    }
+
+    function enterSupportUI(payload){
+        state.mode='support';
+        state.convId = payload.conversation.id;
+        state.supportLastId = 0;
+        clearSuggestions();
+        if(progWrap) progWrap.style.display='none';
+        if(retryBtn) retryBtn.style.display='none';
+        if(nameEl) nameEl.textContent = 'Support Team';
+        input.setAttribute('placeholder','Message the support team…');
+        renderSupportThread(payload, false);
+        startSupportPoll();
+        setTimeout(function(){ input.focus(); }, 60);
+    }
+
+    function renderSupportThread(payload, append){
+        if(!append){ msgs.innerHTML=''; addSupportBanner(payload.conversation); }
+        (payload.messages||[]).forEach(addSupportBubble);
+        if(payload.messages && payload.messages.length){ state.supportLastId = payload.messages[payload.messages.length-1].id; }
+        updateSupportStatus(payload.conversation);
+        scrollDown();
+    }
+
+    function addSupportBanner(conv){
+        var b=document.createElement('div'); b.className='ub-suphead';
+        b.innerHTML='<div class="ub-suphead-i"><b>Support desk</b><span data-sup-status></span></div><button class="ub-supback" type="button">← Assistant</button>';
+        b.querySelector('.ub-supback').addEventListener('click', function(){ greet(); });
+        msgs.appendChild(b);
+    }
+
+    function updateSupportStatus(conv){
+        if(!conv) return;
+        if(statusText){ statusText.textContent = conv.agent_name ? ('with '+conv.agent_name) : (conv.online ? 'Online' : 'Offline'); }
+        var s = msgs.querySelector('[data-sup-status]');
+        if(s){
+            if(conv.resolved){ s.textContent = 'Resolved · reply to reopen'; }
+            else if(conv.agent_name){ s.textContent = 'You’re chatting with '+conv.agent_name; }
+            else { s.textContent = conv.online ? ('We’re online · '+(conv.hours||'')) : ('Offline · we’ll email you · '+(conv.hours||'')); }
+        }
+    }
+
+    function addSupportBubble(m){
+        if(m.sender==='system'){
+            var sys=document.createElement('div'); sys.className='ub-sup-sys'; sys.textContent=m.body;
+            msgs.appendChild(sys); return;
+        }
+        var isUser = (m.sender==='user');
+        var row=document.createElement('div'); row.className='ub-row'+(isUser?' user':'');
+        if(isUser){
+            row.innerHTML='<div class="ub-bubble"><p></p><p class="ub-time">'+esc(m.time_h||'')+'</p></div>';
+            row.querySelector('p').textContent=m.body;
+        } else {
+            var src = m.avatar ? esc(m.avatar) : CFG.robot;
+            row.innerHTML='<img class="ub-av" src="'+src+'" alt=""><div class="ub-bubble"><span class="ub-agent-name">'+esc(m.name||'Support')+'</span><p></p><p class="ub-time">'+esc(m.time_h||'')+'</p></div>';
+            row.querySelectorAll('p')[0].textContent=m.body;
+        }
+        msgs.appendChild(row);
+    }
+
+    function sendSupportMessage(text){
+        if(state.supportSending || !state.convId) return;
+        addSupportBubble({sender:'user', body:text, time_h:nowTime()}); scrollDown();
+        state.supportSending=true;
+        var cid=supCid('u');
+        fetch(supUrl(CFG.support.message, state.convId),{method:'POST',headers:hdrs(),body:JSON.stringify({body:text, client_id:cid})})
+            .then(function(r){return r.json();})
+            .then(function(d){ if(d && d.message && d.message.id){ state.supportLastId=Math.max(state.supportLastId, d.message.id); } state.supportSending=false; })
+            .catch(function(){ state.supportSending=false; });
+    }
+
+    function startSupportPoll(){
+        stopSupportPoll();
+        state.supportTimer=setInterval(function(){
+            if(document.hidden || state.mode!=='support' || !state.convId || state.supportSending) return;
+            fetch(supUrl(CFG.support.thread, state.convId)+'?after='+state.supportLastId,{headers:hdrs()})
+                .then(function(r){return r.json();})
+                .then(function(d){
+                    if(d.messages && d.messages.length){
+                        var atBottom=(msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight) < 80;
+                        d.messages.forEach(addSupportBubble);
+                        state.supportLastId=d.messages[d.messages.length-1].id;
+                        if(atBottom) scrollDown();
+                    }
+                    if(d.conversation) updateSupportStatus(d.conversation);
+                }).catch(function(){});
+        }, 4000);
+    }
+    function stopSupportPoll(){ if(state.supportTimer){ clearInterval(state.supportTimer); state.supportTimer=null; } }
+
+    function resumeSupportIfAny(){
+        if(!CFG.support.enabled || state.mode==='support') return;
+        fetch(CFG.support.active,{headers:hdrs()})
+            .then(function(r){return r.json();})
+            .then(function(d){ if(d && d.conversation && !d.conversation.resolved){ enterSupportUI(d); } })
+            .catch(function(){});
+    }
 
     refreshUsage();
 })();

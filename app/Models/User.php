@@ -468,6 +468,39 @@ class User extends Authenticatable
     }
 
     /**
+     * True when this user may staff the human Support Chat (see the shared
+     * Support Inbox). In this system's reversed role terminology the pool is:
+     *   - Super Admins (role 'super_admin'), and
+     *   - Institutional Admins — UI "Admin", i.e. is_admin = false, and
+     *   - any active member of the designated Support office (slug configurable).
+     *
+     * Memoised per request so the sidebar / view-composer / middleware can call
+     * it freely without repeating the office lookup. Role checks short-circuit
+     * first, so only a plain UI-"User" ever incurs the office query.
+     */
+    public function isSupportAgent(): bool
+    {
+        static $memo = [];
+        if (array_key_exists($this->id, $memo)) {
+            return $memo[$this->id];
+        }
+
+        if ($this->isSuperAdmin() || !(bool) $this->is_admin) {
+            return $memo[$this->id] = true;
+        }
+
+        $slug = \App\Models\SystemSetting::get('support_office_slug', 'it-support');
+        $inOffice = false;
+        try {
+            $inOffice = $this->activeOffices()->where('offices.slug', $slug)->exists();
+        } catch (\Throwable $e) {
+            $inOffice = false;
+        }
+
+        return $memo[$this->id] = $inOffice;
+    }
+
+    /**
      * Form submissions this user created.
      */
     public function formSubmissions()

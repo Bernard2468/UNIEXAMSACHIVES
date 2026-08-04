@@ -100,6 +100,26 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bot/ask',      [\App\Http\Controllers\BotController::class, 'ask'])->middleware('throttle:30,1')->name('bot.ask');
     Route::post('/bot/feedback', [\App\Http\Controllers\BotController::class, 'feedback'])->middleware('throttle:60,1')->name('bot.feedback');
 
+    # ===== Support Chat (bot → human handoff) — user-facing, inside the widget =====
+    Route::post('/support/escalate',              [\App\Http\Controllers\Dashboard\SupportChatController::class, 'escalate'])->middleware('throttle:20,1')->name('bot.support.escalate');
+    Route::get('/support/active',                 [\App\Http\Controllers\Dashboard\SupportChatController::class, 'active'])->name('bot.support.active');
+    Route::get('/support/{conversation}/thread',  [\App\Http\Controllers\Dashboard\SupportChatController::class, 'thread'])->name('bot.support.thread');
+    Route::post('/support/{conversation}/message',[\App\Http\Controllers\Dashboard\SupportChatController::class, 'message'])->middleware('throttle:60,1')->name('bot.support.message');
+    Route::post('/support/{conversation}/resolve',[\App\Http\Controllers\Dashboard\SupportChatController::class, 'resolve'])->name('bot.support.resolve');
+
+    # ===== Support Inbox — agents only (Support office + Institutional Admins + Super Admins) =====
+    Route::middleware('support_agent')->prefix('dashboard/support')->name('dashboard.support.')->group(function () {
+        Route::get('/',                        [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'index'])->name('inbox');
+        Route::get('/list',                    [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'list'])->name('list');
+        Route::get('/counts',                  [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'counts'])->name('counts');
+        Route::get('/{conversation}',          [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'show'])->name('show');
+        Route::get('/{conversation}/messages', [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'messages'])->name('messages');
+        Route::post('/{conversation}/reply',   [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'reply'])->middleware('throttle:120,1')->name('reply');
+        Route::post('/{conversation}/claim',   [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'claim'])->name('claim');
+        Route::post('/{conversation}/resolve', [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'resolve'])->name('resolve');
+        Route::post('/{conversation}/reopen',  [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'reopen'])->name('reopen');
+    });
+
     #Documents
     Route::get('/dashboard/create',[HomeController::class, 'create'])->name('dashboard.create');
     Route::get('/dashboard/file/create',[HomeController::class, 'createFile'])->name('dashboard.file.create');

@@ -29,9 +29,11 @@ use App\Models\FormSubmission;
 use App\Models\Message;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaign;
+use App\Models\BotConversation;
 use App\Models\Notification;
 use App\Observers\NotificationObserver;
 use App\Policies\FormSubmissionPolicy;
+use App\Policies\SupportConversationPolicy;
 use App\Services\Signing\InAppSignatureProvider;
 use App\Services\Signing\SignatureService;
 use Illuminate\Support\Facades\Auth;
@@ -105,6 +107,9 @@ class AppServiceProvider extends ServiceProvider
         // regardless of Laravel's auto-discovery conventions.
         Gate::policy(FormSubmission::class, FormSubmissionPolicy::class);
 
+        // Support Chat authorisation (bot → human handoff threads).
+        Gate::policy(BotConversation::class, SupportConversationPolicy::class);
+
         // Mirror every newly-created Notification to the user's browser push
         // subscriptions (no-op when VAPID keys aren't configured).
         Notification::observe(NotificationObserver::class);
@@ -164,6 +169,25 @@ class AppServiceProvider extends ServiceProvider
                     $botData[$userId] = ['botEnabled' => $be, 'botRemaining' => $br];
                 }
                 $view->with($botData[$userId]);
+
+                // Support Inbox badge — open human-support threads awaiting an
+                // agent. Only computed for agents; wrapped so a not-yet-migrated
+                // support column can never break every page.
+                static $supportData = [];
+                if (!array_key_exists($userId, $supportData)) {
+                    $count = 0;
+                    $isAgent = false;
+                    try {
+                        $isAgent = Auth::user()->isSupportAgent();
+                        if ($isAgent) {
+                            $count = \App\Models\BotConversation::support()->open()->count();
+                        }
+                    } catch (\Throwable $e) {
+                        $isAgent = false;
+                    }
+                    $supportData[$userId] = ['supportAwaitingCount' => $count, 'isSupportAgent' => $isAgent];
+                }
+                $view->with($supportData[$userId]);
 
                 if (Auth::user()->is_admin) {
                     // Regular users (is_admin = 1) - see only their own exams/files

@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscription.active' => \App\Http\Middleware\SubscriptionActiveMiddleware::class,
             'maintenance.check' => \App\Http\Middleware\CheckMaintenanceMode::class,
             'institutional_admin' => \App\Http\Middleware\InstitutionalAdminMiddleware::class,
+            'support_agent' => \App\Http\Middleware\SupportAgentMiddleware::class,
         ]);
 
         // Apply subscription check to web middleware group (except for exempt routes)

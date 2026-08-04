@@ -69,3 +69,12 @@ Schedule::command('forms:nudge-stale')
     ->name('forms-nudge-stale')
     ->withoutOverlapping()
     ->runInBackground();
+
+// Support chat — re-alert agents about chats still waiting in the queue.
+// Runs every 15 minutes; the command self-limits to staffed hours and enforces
+// a per-conversation cooldown, so this cadence is safe.
+Schedule::command('support:nudge-stale')
+    ->everyFifteenMinutes()
+    ->name('support-nudge-stale')
+    ->withoutOverlapping()
+    ->runInBackground();
