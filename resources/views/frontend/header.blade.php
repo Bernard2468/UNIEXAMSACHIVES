@@ -227,12 +227,9 @@
                             <div class="uda-sheet-backdrop" aria-hidden="true"></div>
                         @else
                             @if (Route::currentRouteName() === 'frontend.welcome')
-                                {{-- Public homepage (logged out). MOBILE: a neat circular login icon
-                                     that smooth-scrolls to the hero "Access System" CTA (which routes to
-                                     the auth form). The href still points at the login route so it
-                                     degrades gracefully without JS. TABLET/DESKTOP keep the full
-                                     "Register / Login" button; CSS shows exactly one per breakpoint. --}}
-                                <a href="{{ route('frontend.login') }}" class="uda-login-icon" data-scroll-to="#accessSystem" aria-label="Login" title="Login">
+                                {{-- Public homepage (logged out). MOBILE: circular login icon → auth page.
+                                     TABLET/DESKTOP: full "Register / Login" button. CSS shows exactly one. --}}
+                                <a href="{{ route('frontend.login') }}" class="uda-login-icon" aria-label="Login" title="Login">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                                 </a>
                                 <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary uda-login-btn-desktop">Register / Login</a>
@@ -398,8 +395,8 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
    Standard landing-page pattern: the navbar carries ONE identity element (the
    compact "UDTS" pill) + ONE action. The full suite name is NOT repeated here —
    it lives in the hero H1 below. Tablet/desktop show the full "Register / Login"
-   button; mobile shows a neat circular login icon that smooth-scrolls to the hero
-   "Access System" CTA (JS below). Exactly one of the two renders per breakpoint. */
+   button; mobile shows a circular login icon that goes to the auth page.
+   Exactly one of the two renders per breakpoint. */
 .uda-login-icon {
     display: none;
     align-items: center;
@@ -442,14 +439,6 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     /* Logged in: drop the "UDTS" title from the mobile bar entirely. */
     .uda-header-sticky.is-authed .uda-nav-center { display: none; }
 }
-
-/* Brief pulse on the hero CTA after the header login button scrolls to it */
-@keyframes uda-cta-pulse {
-    0%   { box-shadow: 0 0 0 0 rgba(95, 45, 237, 0.45); }
-    70%  { box-shadow: 0 0 0 14px rgba(95, 45, 237, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(95, 45, 237, 0); }
-}
-.uda-cta-pulse { animation: uda-cta-pulse 1s ease-out 2; }
 
 /* ═══ Sidebar-drawer hamburger (mobile + tablet, <992px) ═══
    Shown only where the page has a sidebar (JS removes it otherwise).
@@ -1409,22 +1398,5 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 
-// ═══ Welcome-page login button → smooth-scroll to the hero "Access System" CTA ═══
-// Progressive enhancement: the anchor's href already points at the login route,
-// so if this handler never runs the button still works as a plain link.
-document.addEventListener('DOMContentLoaded', function(){
-  document.querySelectorAll('a[data-scroll-to]').forEach(function(icon){
-    icon.addEventListener('click', function(e){
-      var target = document.querySelector(icon.getAttribute('data-scroll-to'));
-      if (!target) return; // no CTA on this page → let the link navigate to login
-      e.preventDefault();
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      target.classList.remove('uda-cta-pulse');
-      void target.offsetWidth; // reflow so the pulse can replay
-      target.classList.add('uda-cta-pulse');
-      setTimeout(function(){ target.classList.remove('uda-cta-pulse'); }, 2100);
-    });
-  });
-});
 </script>
 
