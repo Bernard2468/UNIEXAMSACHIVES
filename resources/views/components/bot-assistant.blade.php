@@ -325,7 +325,8 @@
 .ub-footnote{ margin:8px 0 0; text-align:center; font-size:10px; color:var(--ub-text3); letter-spacing:.02em; }
 
 /* ---- Support (human handoff) layer — additive, does not touch bot styles ---- */
-.ub-human svg{ width:16px; height:16px; }
+.ub-human{ padding:3px; }
+.ub-human img{ width:20px; height:20px; object-fit:contain; display:block; }
 .ub-handoff{ margin-left:34px; max-width:92%; border-radius:14px; padding:12px 14px; background:#eef3ff; border:1px solid #dbe4f5; }
 .ub-handoff-t{ font-size:12.5px; color:var(--ub-charcoal); line-height:1.5; margin-bottom:9px; }
 .ub-handoff-b{ background:var(--ub-user); color:#fff; border:none; border-radius:9px; font-size:12.5px; font-weight:600; padding:8px 14px; cursor:pointer; font-family:inherit; transition:background .15s; }
@@ -464,7 +465,7 @@
               '<div class="ub-status"><span class="ub-dot"></span><span>Online · Powered by Metascholar</span></div>'+
             '</div></div>'+
             '<div class="ub-tools">'+
-              '<button class="ub-iconbtn ub-human" data-human title="Talk to a person"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/></svg></button>'+
+              '<button class="ub-iconbtn ub-human" data-human title="Talk to a person"><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1785866774/1dee6f70-14e1-4867-8cbb-7a8df642750d.png" alt="Talk to a person"></button>'+
               '<button class="ub-iconbtn" data-new title="New conversation">'+ICONS.rotate+'</button>'+
               '<button class="ub-iconbtn" data-close title="Close">'+ICONS.x+'</button>'+
             '</div>'+
