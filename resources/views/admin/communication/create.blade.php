@@ -1627,10 +1627,22 @@
 .editor-content ul,
 .editor-content ol {
   margin: 12px 0;
-  padding-left: 24px;
+  padding-left: 28px;
 }
 
+/* The dashboard theme resets list markers globally (list-style: none), which
+   left bullets/numbers invisible — only the indent showed. Restore real
+   markers inside the editor, Word-style, including nested levels. */
+.editor-content ul { list-style: disc outside !important; }
+.editor-content ul ul { list-style: circle outside !important; }
+.editor-content ul ul ul { list-style: square outside !important; }
+.editor-content ol { list-style: decimal outside !important; }
+.editor-content ol ol { list-style: lower-alpha outside !important; }
+.editor-content ol ol ol { list-style: lower-roman outside !important; }
+
 .editor-content li {
+  display: list-item !important;
+  list-style: inherit !important;
   margin: 4px 0;
   line-height: 1.5;
 }

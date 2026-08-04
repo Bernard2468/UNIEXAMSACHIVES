@@ -545,8 +545,13 @@
 .memo-view .mv-prose { font-size: 15px; color: #28303f; line-height: 1.72; word-break: break-word; }
 .memo-view .mv-prose p { margin: 0 0 14px; }
 .memo-view .mv-prose p:last-child { margin-bottom: 0; }
-.memo-view .mv-prose ul, .memo-view .mv-prose ol { margin: 14px 0; padding-left: 22px; }
-.memo-view .mv-prose li { margin: 6px 0; }
+.memo-view .mv-prose ul, .memo-view .mv-prose ol { margin: 14px 0; padding-left: 26px; }
+/* Restore list markers hidden by the dashboard theme's global list-style reset. */
+.memo-view .mv-prose ul { list-style: disc outside !important; }
+.memo-view .mv-prose ul ul { list-style: circle outside !important; }
+.memo-view .mv-prose ol { list-style: decimal outside !important; }
+.memo-view .mv-prose ol ol { list-style: lower-alpha outside !important; }
+.memo-view .mv-prose li { display: list-item !important; list-style: inherit !important; margin: 6px 0; }
 .memo-view .mv-prose h1, .memo-view .mv-prose h2, .memo-view .mv-prose h3 { font-family: 'Sora', sans-serif; margin: 22px 0 10px; line-height: 1.3; }
 .memo-view .mv-prose a { color: var(--accent); }
 .memo-view .mv-prose img { max-width: 100%; height: auto; border-radius: 10px; }

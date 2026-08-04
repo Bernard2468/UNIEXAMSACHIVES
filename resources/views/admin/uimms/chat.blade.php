@@ -2857,6 +2857,26 @@
     word-break: break-word;
 }
 
+/* Bullet / numbered lists inside the memo body: the dashboard theme resets
+   list markers globally (list-style: none), so restore them here — the memo
+   must read exactly as it did in the compose editor. */
+.memo-message-content ul,
+.memo-message-content ol {
+    margin: 10px 0;
+    padding-left: 28px;
+}
+.memo-message-content ul { list-style: disc outside !important; }
+.memo-message-content ul ul { list-style: circle outside !important; }
+.memo-message-content ul ul ul { list-style: square outside !important; }
+.memo-message-content ol { list-style: decimal outside !important; }
+.memo-message-content ol ol { list-style: lower-alpha outside !important; }
+.memo-message-content ol ol ol { list-style: lower-roman outside !important; }
+.memo-message-content li {
+    display: list-item !important;
+    list-style: inherit !important;
+    margin: 3px 0;
+}
+
 .memo-message-content table {
     width: 100%;
     border-collapse: collapse;

@@ -90,6 +90,13 @@
         .body table    { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11pt; }
         .body table th { background: #16335b; color: #fff; padding: 8px 10px; text-align: left; font-weight: bold; border: 1px solid #16335b; }
         .body table td { padding: 7px 10px; border: 1px solid #c8d3df; vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+        /* Lists: the element reset above zeroes ul/ol/li margins, so restore
+           Word-like markers + indentation for the memo body here. */
+        .body ul { list-style: disc outside; margin: 6px 0 8px; padding-left: 26px; }
+        .body ul ul { list-style: circle outside; margin: 2px 0; }
+        .body ol { list-style: decimal outside; margin: 6px 0 8px; padding-left: 26px; }
+        .body ol ol { list-style: lower-alpha outside; margin: 2px 0; }
+        .body li { margin: 2px 0; }
 
         /* ── Minutes (official, signed Minute-To actions) ──
            Modelled on how officers minute a paper memo: each minute takes the
