@@ -33,6 +33,9 @@ class EmailCampaign extends Model
         // "Through" routing (intermediary who must forward before recipients receive it)
         'through_user_id',
         'through_status',
+        'through_signature_path',
+        'through_signed_at',
+        'through_remark',
         // UIMMS fields
         'memo_status',
         'current_assignee_id',
@@ -60,6 +63,7 @@ class EmailCampaign extends Model
         'cc_users' => 'array',
         'scheduled_at' => 'datetime',
         'sent_at' => 'datetime',
+        'through_signed_at' => 'datetime',
         // UIMMS casts
         'workflow_history' => 'array',
         'due_date' => 'datetime',

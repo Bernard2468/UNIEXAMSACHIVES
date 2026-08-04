@@ -318,6 +318,29 @@
         @foreach($memoInline as $att){!! $renderInline($att) !!}@endforeach
     @endif
 
+    {{-- ══ THROUGH (signed endorsement by the intermediary — not a minute) ══ --}}
+    @if(!empty($processedThrough))
+    <div class="minute-block">
+        <div class="sec sec--minutes">Through</div>
+        <table class="minute-tbl">
+            <tr>
+                <td class="mno"></td>
+                <td>
+                    <div><span class="mlab">Through:</span> {{ $processedThrough['who'] }}@if($processedThrough['to'] !== '') &nbsp;<span class="mlab">To:</span> {{ $processedThrough['to'] }}@endif</div>
+                    @if($processedThrough['remark'] !== '')
+                        <div class="mrem">{{ $processedThrough['remark'] }}</div>
+                    @endif
+                    @if($processedThrough['signature'])
+                        <img class="msig" src="{{ $processedThrough['signature'] }}" alt="Signature of {{ $processedThrough['who'] }}">
+                    @endif
+                    <div class="mwho">{{ $processedThrough['who'] }}@if($processedThrough['position']) &mdash; {{ $processedThrough['position'] }}@endif</div>
+                    <div class="mwhen">{{ $processedThrough['when'] }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    @endif
+
     {{-- ══ MINUTES (official signed Minute-To actions) ══ --}}
     {{-- Each minute is its own unbreakable block; the heading rides inside the
          first block so it can never be left alone at the bottom of a page. --}}

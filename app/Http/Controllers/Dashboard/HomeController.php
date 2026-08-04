@@ -1895,7 +1895,47 @@ class HomeController extends Controller
 
         $request->validate([
             'message' => 'nullable|string|max:5000',
+            'signature_data' => 'nullable|string',
+            'reuse_saved_signature' => 'nullable',
+            'save_as_my_signature' => 'nullable',
         ]);
+
+        // ── Forwarding is an official endorsement — it requires a signature
+        // (drawn, typed, or the saved one), snapshotted per-event like minutes. ──
+        $signatureBinary = null;
+        if ($request->boolean('reuse_saved_signature')) {
+            $saved = Auth::user()->savedSignature;
+            if ($saved && $saved->signature_image_path
+                && Storage::disk('public')->exists($saved->signature_image_path)) {
+                $signatureBinary = Storage::disk('public')->get($saved->signature_image_path);
+            }
+        } elseif ($request->filled('signature_data')) {
+            $raw = $request->input('signature_data');
+            if (str_starts_with($raw, 'data:')) {
+                $commaPos = strpos($raw, ',');
+                $raw = $commaPos !== false ? substr($raw, $commaPos + 1) : '';
+            }
+            $decoded = base64_decode($raw, true);
+            if ($decoded !== false && $decoded !== '') {
+                $signatureBinary = $decoded;
+            }
+        }
+
+        if ($signatureBinary === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your signature is required to forward this memo. Draw, type, or use your saved signature.',
+            ], 422);
+        }
+
+        $throughSignaturePath = 'memo-minute-signatures/' . $memo->id . '/through-' . $userId . '-' . Str::random(8) . '.png';
+        Storage::disk('public')->put($throughSignaturePath, $signatureBinary);
+
+        if ($request->boolean('save_as_my_signature')
+            && !$request->boolean('reuse_saved_signature')
+            && $request->filled('signature_data')) {
+            \App\Models\UserSignature::saveFromBase64($userId, $request->input('signature_data'));
+        }
 
         // Recipients are locked to the sender's original addressing.
         $toIds = collect($memo->selected_users ?? [])->map(fn ($id) => (int) $id)
@@ -1939,8 +1979,14 @@ class HomeController extends Controller
             $this->sendMemoEmailTo($memo, $ccUser, $resendService, '[Cc] ' . $memo->subject, 'cc');
         }
 
-        // Flip state + record the hand-off.
-        $memo->update(['through_status' => 'forwarded']);
+        // Flip state + record the hand-off, including the signed endorsement
+        // (snapshot path + remark + timestamp) shown on the memo's PDF.
+        $memo->update([
+            'through_status' => 'forwarded',
+            'through_signature_path' => $throughSignaturePath,
+            'through_signed_at' => now(),
+            'through_remark' => $request->message,
+        ]);
         $memo->addToWorkflowHistory('through_forwarded', $userId, $toUsers->pluck('id')->implode(','));
 
         // Post a chat note (visible to the now-active recipients). The tag names
@@ -2194,6 +2240,65 @@ class HomeController extends Controller
             ]);
         } catch (\Throwable $e) {
             \Log::warning('approveFormAccess: notification failed: ' . $e->getMessage());
+        }
+
+        // Procurement memos: keep the Director of Finance in the loop. When a
+        // procurement request is approved & unlocked it will flow into Finance
+        // downstream (via the linked PR / PWA forms), so alert every active
+        // member of the Director of Finance office by in-app notification + email
+        // to take note. Best-effort — never let this abort the approval.
+        if ($memo->memo_category === 'procurement') {
+            try {
+                $financeOffice = \App\Models\Office::where('slug', 'director-of-finance')
+                    ->where('is_active', true)
+                    ->first();
+
+                $financeMembers = $financeOffice
+                    ? $financeOffice->activeUsers()->where('is_approve', true)->get()
+                    : collect();
+
+                foreach ($financeMembers as $member) {
+                    // Skip the approver if they happen to sit in Finance — they
+                    // just performed the action and don't need to notify themselves.
+                    if ((int) $member->id === (int) $userId) {
+                        continue;
+                    }
+
+                    try {
+                        \App\Models\Notification::create([
+                            'user_id'  => $member->id,
+                            'actor_id' => $userId,
+                            'type'     => 'memo',
+                            'category' => \App\Models\Notification::CATEGORY_MEMO,
+                            'title'    => 'Procurement Memo Approved',
+                            'message'  => $actorName . ' approved the procurement memo "' . $memo->subject . '". Please take note — it will proceed to the ' . $formLabel . '.',
+                            'url'      => route('dashboard.uimms.chat', $memo->id),
+                            'data'     => [
+                                'memo_id'       => $memo->id,
+                                'memo_category' => $memo->memo_category,
+                                'form_slugs'    => $memo->linkedFormSlugs(),
+                            ],
+                        ]);
+                    } catch (\Throwable $e) {
+                        \Log::warning('approveFormAccess: finance notification failed: ' . $e->getMessage());
+                    }
+
+                    if (!empty($member->email)) {
+                        try {
+                            Mail::to($member->email)->send(new \App\Mail\ProcurementApprovedFinanceNotification(
+                                $memo,
+                                $actor,
+                                $member,
+                                $formLabel
+                            ));
+                        } catch (\Throwable $e) {
+                            \Log::warning('approveFormAccess: finance email failed: ' . $e->getMessage());
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('approveFormAccess: finance alert block failed: ' . $e->getMessage());
+            }
         }
 
         return response()->json([

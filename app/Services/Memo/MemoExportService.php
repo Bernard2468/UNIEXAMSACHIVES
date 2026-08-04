@@ -44,7 +44,7 @@ class MemoExportService
         $memo->load([
             'creator.position', 'creator.department', 'currentAssignee',
             'toRecipients.user', 'ccRecipients.user', 'recipients.user', 'replies.user',
-            'minutes.user.position',
+            'minutes.user.position', 'throughUser.position',
         ]);
 
         // ── Letterhead ──
@@ -210,6 +210,37 @@ class MemoExportService
             ];
         }
 
+        // ── Signed "Through" endorsement (one-time forward by the intermediary) ──
+        // Not a minute: rendered as its own block on the PDF. Older memos
+        // forwarded before signing existed have no snapshot and omit the block.
+        $processedThrough = null;
+        if ($memo->hasThrough() && $memo->through_signature_path) {
+            $tu = $memo->throughUser;
+            $tuName = $tu ? trim(($tu->first_name ?? '') . ' ' . ($tu->last_name ?? '')) : '';
+            if ($tuName === '') $tuName = $tu->name ?? 'Unknown';
+
+            $throughSigBase64 = null;
+            $throughSigAbs = storage_path('app/public/' . $memo->through_signature_path);
+            if (file_exists($throughSigAbs)) {
+                $throughSigBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($throughSigAbs));
+            }
+
+            $throughToNames = !empty($memo->selected_users)
+                ? \App\Models\User::whereIn('id', $memo->selected_users)->get()
+                    ->map(fn ($u) => trim(($u->first_name ?? '') . ' ' . ($u->last_name ?? '')) ?: ($u->name ?? ''))
+                    ->implode('; ')
+                : '';
+
+            $processedThrough = [
+                'who'       => $tuName,
+                'position'  => optional($tu?->position)->name,
+                'to'        => $this->stripUnsupportedGlyphs($throughToNames),
+                'remark'    => $this->stripUnsupportedGlyphs(trim((string) $memo->through_remark)),
+                'when'      => $memo->through_signed_at ? $memo->through_signed_at->format('d M Y, H:i') : '',
+                'signature' => $throughSigBase64,
+            ];
+        }
+
         // ── Letterhead as base64 for DomPDF ──
         $letterheadBase64 = null;
         if ($letterheadRecord) {
@@ -236,6 +267,7 @@ class MemoExportService
             'letterheadBase64'     => $letterheadBase64,
             'hasLetterhead'        => (bool) $letterheadRecord,
             'processedAttachments' => $processedAttachments,
+            'processedThrough'     => $processedThrough,
             'processedMinutes'     => $processedMinutes,
             'processedReplies'     => $processedReplies,
             'annexes'              => $annexes,

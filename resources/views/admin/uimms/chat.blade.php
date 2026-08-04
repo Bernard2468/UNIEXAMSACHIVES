@@ -1532,7 +1532,12 @@
                         <div class="text-muted" style="font-size:12.5px; margin-bottom:8px;">
                             Minuting is an official action — sign to authorise it. Your signature, name, and the date will appear on the memo's PDF.
                         </div>
-                        @include('admin.forms.partials.signature-pad', ['savedSignature' => auth()->user()->savedSignature])
+                        {{-- The pad partial has unique element IDs, so only ONE instance may
+                             exist per page. While a Through memo awaits forwarding, the pad
+                             lives in the Forward modal instead (Minute-To is hidden then). --}}
+                        @unless($memo->isThroughPending())
+                            @include('admin.forms.partials.signature-pad', ['savedSignature' => auth()->user()->savedSignature])
+                        @endunless
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1571,10 +1576,19 @@
                         <label class="form-label">Minute / Remark (Optional)</label>
                         <textarea name="message" class="form-control" rows="3" placeholder="Add a note for the recipient(s)..."></textarea>
                     </div>
+                    <div class="mb-3" id="through-signature-block">
+                        <label class="form-label">Your Signature <span class="text-danger">*</span></label>
+                        <div class="text-muted" style="font-size:12.5px; margin-bottom:8px;">
+                            Forwarding is an official endorsement — sign to release the memo to its recipients. Your signature, name, and the date will appear on the memo's PDF.
+                        </div>
+                        @if($memo->isThroughPending())
+                            @include('admin.forms.partials.signature-pad', ['savedSignature' => auth()->user()->savedSignature])
+                        @endif
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="icofont-paper-plane"></i> Forward Now</button>
+                    <button type="submit" class="btn btn-primary"><i class="icofont-paper-plane"></i> Sign &amp; Forward</button>
                 </div>
             </form>
         </div>
@@ -3997,59 +4011,76 @@
   .rcp-sheet-backdrop.is-open { opacity: 1; visibility: visible; pointer-events: auto; }
   body.rcp-sheet-lock { overflow: hidden; }
 
-  /* ── "Minute-To" (Assign Memo) modal → a BOTTOM SHEET on phones ──
-     Pure CSS restyle of the Bootstrap modal, so Bootstrap keeps handling
+  /* ── "Minute-To" + "Forward (Through)" modals → BOTTOM SHEETS on phones ──
+     Pure CSS restyle of the Bootstrap modals, so Bootstrap keeps handling
      open/close/backdrop/Escape. Consistent with the Comment-to sheet. */
-  #assignModal .modal-dialog {
+  #assignModal .modal-dialog,
+  #forwardThroughModal .modal-dialog {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto;
     margin: 0; width: 100%; max-width: 100%;
   }
   /* Flex-column sheet: ONLY the user list scrolls; the search, the optional
      message and the footer stay put — so the message is never buried. */
-  #assignModal .modal-content {
+  #assignModal .modal-content,
+  #forwardThroughModal .modal-content {
     display: flex; flex-direction: column;
     border: none; border-radius: 20px 20px 0 0;
     max-height: 92dvh;
     box-shadow: 0 -18px 50px rgba(15, 23, 42, .3);
   }
   /* Slide up from the bottom (override Bootstrap's default drop-in transform) */
-  #assignModal.fade .modal-dialog { transform: translateY(100%); transition: transform .32s cubic-bezier(.4, 0, .2, 1); }
-  #assignModal.show .modal-dialog { transform: translateY(0); }
+  #assignModal.fade .modal-dialog,
+  #forwardThroughModal.fade .modal-dialog { transform: translateY(100%); transition: transform .32s cubic-bezier(.4, 0, .2, 1); }
+  #assignModal.show .modal-dialog,
+  #forwardThroughModal.show .modal-dialog { transform: translateY(0); }
   /* Grab handle on the header */
-  #assignModal .modal-header { flex: 0 0 auto; position: relative; padding-top: 20px; }
-  #assignModal .modal-header::before {
+  #assignModal .modal-header,
+  #forwardThroughModal .modal-header { flex: 0 0 auto; position: relative; padding-top: 20px; }
+  #assignModal .modal-header::before,
+  #forwardThroughModal .modal-header::before {
     content: ''; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
     width: 40px; height: 4px; border-radius: 999px; background: #e2e8f0;
   }
-  #assignModal form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #assignModal form,
+  #forwardThroughModal form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   /* The sheet body scrolls as a whole — with the mandatory signature pad
      below the user list, everything (list, remark, pad, footer) must stay
      reachable on a phone. The user list keeps its own inner scroll. */
-  #assignModal .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  #assignModal .modal-body,
+  #forwardThroughModal .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   #assignModal .am-user-list { max-height: 200px !important; overflow-y: auto; }
-  #assignModal .modal-body textarea { min-height: 56px; }
-  #assignModal .modal-footer { flex: 0 0 auto; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  #assignModal .modal-body textarea,
+  #forwardThroughModal .modal-body textarea { min-height: 56px; }
+  #assignModal .modal-footer,
+  #forwardThroughModal .modal-footer { flex: 0 0 auto; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
   #assignModal #user-search-input,
   #assignModal .sigtyped-name__input,
-  #assignModal textarea { font-size: 16px; }   /* ≥16px so iOS doesn't zoom */
+  #forwardThroughModal .sigtyped-name__input,
+  #assignModal textarea,
+  #forwardThroughModal textarea { font-size: 16px; }   /* ≥16px so iOS doesn't zoom */
 }
 
-/* ── "Minute-To" modal → RIGHT SIDE DRAWER on tablet/desktop ──
-   Same pure-CSS restyle trick as the phone bottom sheet above: Bootstrap
-   keeps handling open/close/backdrop/Escape, we only reposition the dialog.
-   Matches the app's established side-drawer idiom (folders .mdrawer):
-   right-anchored, full height, fixed width, slide-in from the right,
-   shadow cast to the left, and the same Sora/Outfit/DM Sans type pairing. */
+/* ── "Minute-To" + "Forward (Through)" modals → RIGHT SIDE DRAWERS on
+   tablet/desktop ── Same pure-CSS restyle trick as the phone bottom sheet
+   above: Bootstrap keeps handling open/close/backdrop/Escape, we only
+   reposition the dialog. Matches the app's established side-drawer idiom
+   (folders .mdrawer): right-anchored, full height, fixed width, slide-in
+   from the right, shadow cast to the left, and the same Sora/Outfit/DM Sans
+   type pairing. */
 @media (min-width: 768px) {
-  #assignModal .modal-dialog {
+  #assignModal .modal-dialog,
+  #forwardThroughModal .modal-dialog {
     position: fixed; top: 0; bottom: 0; right: 0; left: auto;
     margin: 0; width: 480px; max-width: 94vw;
     display: flex;
   }
   /* Slide in from the right (overrides Bootstrap's default drop-in transform) */
-  #assignModal.fade .modal-dialog { transform: translateX(100%); transition: transform .34s cubic-bezier(.22, .61, .36, 1); }
-  #assignModal.show .modal-dialog { transform: translateX(0); }
-  #assignModal .modal-content {
+  #assignModal.fade .modal-dialog,
+  #forwardThroughModal.fade .modal-dialog { transform: translateX(100%); transition: transform .34s cubic-bezier(.22, .61, .36, 1); }
+  #assignModal.show .modal-dialog,
+  #forwardThroughModal.show .modal-dialog { transform: translateX(0); }
+  #assignModal .modal-content,
+  #forwardThroughModal .modal-content {
     display: flex; flex-direction: column;
     width: 100%; height: 100%;
     border: none; border-radius: 0;
@@ -4061,21 +4092,31 @@
     --font-text: 'DM Sans', 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-family: var(--font-text);
   }
-  #assignModal .modal-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
-  #assignModal .form-label { font-family: var(--font-ui); font-weight: 600; }
-  #assignModal button, #assignModal input, #assignModal textarea, #assignModal select { font-family: var(--font-ui); }
-  #assignModal .modal-header { flex: 0 0 auto; }
-  #assignModal form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-  #assignModal .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  #assignModal .modal-title,
+  #forwardThroughModal .modal-title { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+  #assignModal .form-label,
+  #forwardThroughModal .form-label { font-family: var(--font-ui); font-weight: 600; }
+  #assignModal button, #assignModal input, #assignModal textarea, #assignModal select,
+  #forwardThroughModal button, #forwardThroughModal input, #forwardThroughModal textarea, #forwardThroughModal select { font-family: var(--font-ui); }
+  #assignModal .modal-header,
+  #forwardThroughModal .modal-header { flex: 0 0 auto; }
+  #assignModal form,
+  #forwardThroughModal form { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  #assignModal .modal-body,
+  #forwardThroughModal .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #assignModal .am-user-list { max-height: 230px; overflow-y: auto; }
-  #assignModal .modal-footer { flex: 0 0 auto; }
+  #assignModal .modal-footer,
+  #forwardThroughModal .modal-footer { flex: 0 0 auto; }
 }
 
-/* Signature pad inside the Minute-To panel: meaningful, not monumental —
-   on every breakpoint (the forms pages keep their own full-size pad). */
-#assignModal .sigpad canvas { height: 120px; }
-#assignModal .sigpad-saved__preview { width: 150px; height: 58px; }
-#assignModal .sigtyped-card { min-height: 92px; }
+/* Signature pad inside the Minute-To / Forward panels: meaningful, not
+   monumental — on every breakpoint (forms pages keep their full-size pad). */
+#assignModal .sigpad canvas,
+#forwardThroughModal .sigpad canvas { height: 120px; }
+#assignModal .sigpad-saved__preview,
+#forwardThroughModal .sigpad-saved__preview { width: 150px; height: 58px; }
+#assignModal .sigtyped-card,
+#forwardThroughModal .sigtyped-card { min-height: 92px; }
 </style>
 
 <script>
@@ -5038,10 +5079,29 @@ function showForwardThroughModal() {
     if (el) new bootstrap.Modal(el).show();
 }
 
+// The signature pad canvas is zero-width while the modal is hidden; poke a
+// resize once the modal is visible so it initialises at its real size.
+const forwardThroughModalEl = document.getElementById('forwardThroughModal');
+if (forwardThroughModalEl) {
+    forwardThroughModalEl.addEventListener('shown.bs.modal', function () {
+        window.dispatchEvent(new Event('resize'));
+    });
+}
+
 const forwardThroughForm = document.getElementById('forward-through-form');
 if (forwardThroughForm) {
     forwardThroughForm.addEventListener('submit', function (e) {
         e.preventDefault();
+
+        // Forwarding is an official endorsement — a signature is mandatory.
+        const reuseSig = document.getElementById('reuse_saved_signature_input');
+        const sigData  = document.getElementById('signature_data_input');
+        const hasSignature = (reuseSig && reuseSig.value === '1') || (sigData && sigData.value !== '');
+        if (!hasSignature) {
+            alert('Please sign to forward this memo — draw, type, or tick "Use my saved signature".');
+            return;
+        }
+
         const submitBtn = this.querySelector('button[type="submit"]');
         if (submitBtn) submitBtn.disabled = true;
 
