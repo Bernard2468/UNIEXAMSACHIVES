@@ -15,7 +15,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('email_campaigns', function (Blueprint $table) {
+        // NB: the EmailCampaign model's table is comm_campaigns (NOT the
+        // legacy email_campaigns table) — same target as the migration that
+        // added through_user_id / through_status.
+        Schema::table('comm_campaigns', function (Blueprint $table) {
             $table->string('through_signature_path')->nullable()->after('through_status');
             $table->timestamp('through_signed_at')->nullable()->after('through_signature_path');
             $table->text('through_remark')->nullable()->after('through_signed_at');
@@ -24,7 +27,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('email_campaigns', function (Blueprint $table) {
+        Schema::table('comm_campaigns', function (Blueprint $table) {
             $table->dropColumn(['through_signature_path', 'through_signed_at', 'through_remark']);
         });
     }
