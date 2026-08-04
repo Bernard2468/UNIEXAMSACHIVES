@@ -1,4 +1,4 @@
-<header class="uda-header-sticky">
+<header class="uda-header-sticky{{ Auth::check() ? ' is-authed' : '' }}{{ (Route::currentRouteName() === 'frontend.welcome' && !Auth::check()) ? ' is-welcome-guest' : '' }}">
     {{-- `header__sticky` removed: the theme JS used to bolt a fixed clone-style
          `.sticky` state onto it at 245px scroll (fadeInDown animation). The header
          is now PERMANENTLY pinned via position: sticky below — no scroll
@@ -227,12 +227,14 @@
                             <div class="uda-sheet-backdrop" aria-hidden="true"></div>
                         @else
                             @if (Route::currentRouteName() === 'frontend.welcome')
-                                {{-- Public homepage (logged out). MOBILE: a compact "Login" pill that
-                                     smooth-scrolls to the hero "Access System" CTA (which routes to the
-                                     auth form). The href still points at the login route so it degrades
-                                     gracefully without JS. TABLET/DESKTOP keep the full "Register / Login"
-                                     button; CSS shows exactly one of the two per breakpoint. --}}
-                                <a href="{{ route('frontend.login') }}" class="uda-btn uda-btn-primary uda-login-btn-mobile" data-scroll-to="#accessSystem">Login</a>
+                                {{-- Public homepage (logged out). MOBILE: a neat circular login icon
+                                     that smooth-scrolls to the hero "Access System" CTA (which routes to
+                                     the auth form). The href still points at the login route so it
+                                     degrades gracefully without JS. TABLET/DESKTOP keep the full
+                                     "Register / Login" button; CSS shows exactly one per breakpoint. --}}
+                                <a href="{{ route('frontend.login') }}" class="uda-login-icon" data-scroll-to="#accessSystem" aria-label="Login" title="Login">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                                </a>
                                 <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary uda-login-btn-desktop">Register / Login</a>
                             @else
                                 <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary">Register / Login</a>
@@ -396,18 +398,49 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
    Standard landing-page pattern: the navbar carries ONE identity element (the
    compact "UDTS" pill) + ONE action. The full suite name is NOT repeated here —
    it lives in the hero H1 below. Tablet/desktop show the full "Register / Login"
-   button; mobile shows a compact "Login" pill that smooth-scrolls to the hero
+   button; mobile shows a neat circular login icon that smooth-scrolls to the hero
    "Access System" CTA (JS below). Exactly one of the two renders per breakpoint. */
-.uda-login-btn-mobile {
+.uda-login-icon {
     display: none;
-    padding: 8px 16px;
-    min-height: 38px;
-    font-size: 13.5px;
-    border-radius: 999px;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #5f2ded;
+    color: #fff;
+    border: none;
+    box-shadow: 0 3px 10px rgba(95, 45, 237, 0.28);
+    text-decoration: none;
+    transition: transform .15s ease, box-shadow .18s ease, filter .18s ease;
 }
+.uda-login-icon:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(95, 45, 237, 0.34);
+    filter: brightness(1.05);
+}
+.uda-login-icon:active { transform: translateY(0); }
+.uda-login-icon svg { width: 20px; height: 20px; }
+
 @media (max-width: 767px) {
-    .uda-login-btn-mobile { display: inline-flex; }
+    /* Mobile: show the login icon, hide the desktop text button */
+    .uda-login-icon { display: inline-flex; }
     .uda-login-btn-desktop { display: none; }
+
+    /* Welcome page (guest): the "UDTS" pill sits DEAD CENTER of the header,
+       independent of the login icon on the right. */
+    .uda-header-sticky.is-welcome-guest .uda-navbar { position: relative; }
+    .uda-header-sticky.is-welcome-guest .uda-nav-center {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: auto;
+        max-width: 70%;
+        pointer-events: none;
+    }
+
+    /* Logged in: drop the "UDTS" title from the mobile bar entirely. */
+    .uda-header-sticky.is-authed .uda-nav-center { display: none; }
 }
 
 /* Brief pulse on the hero CTA after the header login button scrolls to it */
