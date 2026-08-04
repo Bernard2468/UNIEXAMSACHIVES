@@ -227,13 +227,16 @@
                             <div class="uda-sheet-backdrop" aria-hidden="true"></div>
                         @else
                             @if (Route::currentRouteName() === 'frontend.welcome')
-                                {{-- Public homepage (logged out): a compact login icon instead of the
-                                     text button. Clicking it smooth-scrolls to the hero "Access System"
-                                     CTA (which routes to the auth form). The href still points at the
-                                     login route so the control degrades gracefully if JS is unavailable. --}}
+                                {{-- Public homepage (logged out). MOBILE ONLY: a compact login icon
+                                     instead of the text button — clicking it smooth-scrolls to the hero
+                                     "Access System" CTA (which routes to the auth form). The href still
+                                     points at the login route so it degrades gracefully without JS.
+                                     TABLET/DESKTOP keep the normal "Register / Login" button below;
+                                     CSS shows exactly one of the two per breakpoint. --}}
                                 <a href="{{ route('frontend.login') }}" class="uda-login-icon" data-scroll-to="#accessSystem" aria-label="Login" title="Login">
                                     <img loading="lazy" src="https://img.icons8.com/dotty/80/login-rounded-down.png" alt="Login" width="30" height="30">
                                 </a>
+                                <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary uda-login-btn-desktop">Register / Login</a>
                             @else
                                 <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary">Register / Login</a>
                             @endif
@@ -408,15 +411,17 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     }
 }
 
-/* ═══ Login icon (public homepage, logged out) ═══
-   Replaces the "Register / Login" text button on the welcome page. Clicking it
-   smooth-scrolls to the hero "Access System" CTA (JS below). */
+/* ═══ Login icon (public homepage, logged out) — MOBILE ONLY ═══
+   On phones (≤767px) the welcome page swaps the "Register / Login" text button
+   for this compact icon; clicking it smooth-scrolls to the hero "Access System"
+   CTA (JS below). Tablet/desktop keep the text button, so the icon is hidden by
+   default and only revealed inside the mobile media query. */
 .uda-login-icon {
-    display: inline-flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: #f3f0ff;
     border: 1px solid #d9ccff;
@@ -432,15 +437,16 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
 }
 .uda-login-icon:active { transform: translateY(0); }
 .uda-login-icon img {
-    width: 28px;
-    height: 28px;
+    width: 25px;
+    height: 25px;
     object-fit: contain;
     display: block;
     pointer-events: none;
 }
 @media (max-width: 767px) {
-    .uda-login-icon { width: 40px; height: 40px; }
-    .uda-login-icon img { width: 25px; height: 25px; }
+    /* Mobile: show the icon, hide the text button */
+    .uda-login-icon { display: inline-flex; }
+    .uda-login-btn-desktop { display: none; }
 }
 
 /* Brief pulse on the hero CTA after the header login icon scrolls to it */
