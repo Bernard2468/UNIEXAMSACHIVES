@@ -414,7 +414,6 @@
               '<div class="ub-status"><span class="ub-dot"></span><span>Online · Powered by Metascholar</span></div>'+
             '</div></div>'+
             '<div class="ub-tools">'+
-              '<div class="ub-pill" data-pill><span data-pillicon>'+ICONS.zap+'</span><span data-pilltext></span></div>'+
               '<button class="ub-iconbtn" data-new title="New conversation">'+ICONS.rotate+'</button>'+
               '<button class="ub-iconbtn" data-close title="Close">'+ICONS.x+'</button>'+
             '</div>'+
@@ -436,18 +435,16 @@
 
     var $=function(s){ return shell.querySelector(s); };
     var msgs=$('[data-msgs]'), input=$('[data-input]'), sendBtn=$('[data-send]'), retryBtn=$('[data-retry]'),
-        inputRow=$('[data-inputrow]'), pill=$('[data-pill]'), pillText=$('[data-pilltext]'),
+        inputRow=$('[data-inputrow]'),
         progWrap=$('[data-progwrap]'), progText=$('[data-progtext]'), progFill=$('[data-progfill]');
 
     // ---- pill / progress ----
     function refreshUsage(){
         if(state.unlimited || state.remaining===null){
-            pill.className='ub-pill'; pillText.textContent='Unlimited'; progWrap.style.display='none'; return;
+            progWrap.style.display='none'; return;
         }
         var lim = state.limit || (state.remaining||0);
         var used = Math.max(0, lim - state.remaining);
-        pill.className='ub-pill'+(state.remaining<=0?' over':(state.remaining<=1?' warn':''));
-        pillText.textContent = state.remaining<=0 ? 'Limit reached' : (state.remaining+' left');
         progWrap.style.display='';
         progText.textContent = used+'/'+lim;
         var pct = lim>0 ? Math.round(used/lim*100) : 0;
