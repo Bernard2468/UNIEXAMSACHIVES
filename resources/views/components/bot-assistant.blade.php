@@ -34,8 +34,52 @@
     foreach ($labelMap as $prefix => $lbl) {
         if ($rn !== '' && str_starts_with($rn, $prefix)) { $botPageLabel = $lbl; break; }
     }
-    $botGreeting = \App\Models\SystemSetting::get('bot_greeting',
-        "Hi there! I'm your UDTS Assistant. I know every corner of this platform — ask me about forms, memos, the archive, or how to get anything done. I can also take you straight to where you need to go.");
+    // ── Smart, personalised opening greeting ──────────────────────────────
+    // Uses the person's name + time of day, and surfaces a live, actionable nudge
+    // (forms awaiting them / unread memos) with jump links. Brief and professional,
+    // never the same vague canned line. Falls back cleanly when nothing is pending.
+    $botUser  = auth()->user();
+    $botFirst = trim((string) ($botUser->first_name ?? '')) ?: 'there';
+    $botHour  = (int) now()->format('G');
+    $botTod   = $botHour < 12 ? 'Good morning' : ($botHour < 17 ? 'Good afternoon' : 'Good evening');
+
+    $botAwaiting = (int) ($awaitingFormsCount ?? 0);
+    $botUnread   = (int) ($unreadMemosCount ?? 0);
+
+    $botSafeRoute = function (string $route) {
+        try { return route($route, [], false); } catch (\Throwable $e) { return '/'; }
+    };
+    $botFormsUrl = $botSafeRoute('admin.forms.portal');
+    $botMemoUrl  = $botSafeRoute('dashboard.uimms.portal');
+
+    // An admin may set a custom greeting ({name}/{greeting} tokens supported). The
+    // old canned default is treated as "unset" so this upgrade takes effect.
+    $botCustom     = trim((string) \App\Models\SystemSetting::get('bot_greeting', ''));
+    $botOldDefault = "Hi there! I'm your UDTS Assistant. I know every corner of this platform — ask me about forms, memos, the archive, or how to get anything done. I can also take you straight to where you need to go.";
+
+    if ($botCustom !== '' && $botCustom !== $botOldDefault) {
+        $botGreeting = strtr($botCustom, ['{name}' => $botFirst, '{first_name}' => $botFirst, '{greeting}' => $botTod]);
+    } else {
+        $botNudges = [];
+        $botJumps  = [];
+        if ($botAwaiting > 0) {
+            $botNudges[] = "**{$botAwaiting} form" . ($botAwaiting === 1 ? '' : 's') . "** awaiting your action";
+            $botJumps[]  = "[Forms Portal]({$botFormsUrl})";
+        }
+        if ($botUnread > 0) {
+            $botNudges[] = "**{$botUnread} unread memo" . ($botUnread === 1 ? '' : 's') . "**";
+            $botJumps[]  = "[Memos]({$botMemoUrl})";
+        }
+
+        if (!empty($botNudges)) {
+            $botGreeting = "{$botTod}, {$botFirst} — I'm your UDTS Assistant. You have "
+                . implode(' and ', $botNudges) . ". Jump to " . implode(' or ', $botJumps) . ", or ask me anything.";
+        } else {
+            $botGreeting = "{$botTod}, {$botFirst} — I'm your UDTS Assistant. "
+                . "Ask me about forms, memos or the archive, or just tell me what you need and I'll take you straight there.";
+        }
+    }
+
     $botCap = (int) \App\Models\SystemSetting::get('bot_daily_user_cap', 40);
 @endphp
 
@@ -69,9 +113,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
-/* Browsers default form controls to the system UI font — force them to inherit
-   Outfit, exactly like the drawer does. */
-#udtsbot-root input, #udtsbot-root button, #udtsbot-root textarea, #udtsbot-root select { font-family: inherit; }
+/* Force EVERY text element inside the widget to inherit Outfit. The theme +
+   Bootstrap set font-family directly on p/a/div/button/etc, and inheritance is
+   weak, so those win inside the bot unless we override them. These ID-scoped
+   selectors (specificity beats the global element/class rules) fix that — the
+   same technique the folders drawer (.exp-root) uses. `code` is left alone so it
+   keeps its monospace face. */
+#udtsbot-root p, #udtsbot-root div, #udtsbot-root span, #udtsbot-root a,
+#udtsbot-root strong, #udtsbot-root em, #udtsbot-root li, #udtsbot-root ul,
+#udtsbot-root ol, #udtsbot-root h1, #udtsbot-root h2, #udtsbot-root h3,
+#udtsbot-root h4, #udtsbot-root label, #udtsbot-root input, #udtsbot-root button,
+#udtsbot-root textarea, #udtsbot-root select { font-family: inherit; }
 
 /* ---- Floating launcher -------------------------------------------------
    Stacked ABOVE the app's scroll-to-top button (#scrollUp: right:20px,
