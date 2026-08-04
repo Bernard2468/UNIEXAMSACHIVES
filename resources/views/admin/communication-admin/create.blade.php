@@ -264,7 +264,7 @@
                                                 </label>
                                                 <small class="signoff-hint">
                                                     @if($soSigData)
-                                                        Appends “{{ $soSalutation }}”, your signature, name and position to the end of the message — exactly as it will appear.
+                                                    Appends your salutation, signature, name, and position to the message. Update your signature or salutation in Settings.
                                                     @else
                                                         No saved signature yet — only “{{ $soSalutation }}”, your name and position will be added. Save a signature in Settings &rarr; Signature.
                                                     @endif
