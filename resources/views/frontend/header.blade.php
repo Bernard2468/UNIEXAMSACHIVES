@@ -1,4 +1,4 @@
-<header class="uda-header-sticky{{ (Route::currentRouteName() === 'frontend.welcome' && !Auth::check()) ? ' is-welcome' : '' }}">
+<header class="uda-header-sticky">
     {{-- `header__sticky` removed: the theme JS used to bolt a fixed clone-style
          `.sticky` state onto it at 245px scroll (fadeInDown animation). The header
          is now PERMANENTLY pinned via position: sticky below — no scroll
@@ -227,15 +227,12 @@
                             <div class="uda-sheet-backdrop" aria-hidden="true"></div>
                         @else
                             @if (Route::currentRouteName() === 'frontend.welcome')
-                                {{-- Public homepage (logged out). MOBILE ONLY: a compact login icon
-                                     instead of the text button — clicking it smooth-scrolls to the hero
-                                     "Access System" CTA (which routes to the auth form). The href still
-                                     points at the login route so it degrades gracefully without JS.
-                                     TABLET/DESKTOP keep the normal "Register / Login" button below;
-                                     CSS shows exactly one of the two per breakpoint. --}}
-                                <a href="{{ route('frontend.login') }}" class="uda-login-icon" data-scroll-to="#accessSystem" aria-label="Login" title="Login">
-                                    <img loading="lazy" src="https://img.icons8.com/dotty/80/login-rounded-down.png" alt="Login" width="30" height="30">
-                                </a>
+                                {{-- Public homepage (logged out). MOBILE: a compact "Login" pill that
+                                     smooth-scrolls to the hero "Access System" CTA (which routes to the
+                                     auth form). The href still points at the login route so it degrades
+                                     gracefully without JS. TABLET/DESKTOP keep the full "Register / Login"
+                                     button; CSS shows exactly one of the two per breakpoint. --}}
+                                <a href="{{ route('frontend.login') }}" class="uda-btn uda-btn-primary uda-login-btn-mobile" data-scroll-to="#accessSystem">Login</a>
                                 <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary uda-login-btn-desktop">Register / Login</a>
                             @else
                                 <a href="{{route('frontend.login')}}" class="uda-btn uda-btn-primary">Register / Login</a>
@@ -395,61 +392,25 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     .uda-title-pill__short { display: inline; }
 }
 
-/* ═══ Public homepage only (logged out): keep the FULL suite name on mobile ═══
-   On the welcome page the header has room (no hamburger, logo hidden on phones),
-   so we show the complete "University Digital Transformation Suite (UDTS)" name
-   instead of the compact "UDTS". It wraps to two lines with a tighter font. */
-@media (max-width: 767px) {
-    .uda-header-sticky.is-welcome .uda-title-pill__full { display: inline; }
-    .uda-header-sticky.is-welcome .uda-title-pill__short { display: none; }
-    .uda-header-sticky.is-welcome .uda-title-pill {
-        font-size: 11px;
-        line-height: 1.25;
-        padding: 6px 12px;
-        white-space: normal;
-        text-align: center;
-    }
-}
-
-/* ═══ Login icon (public homepage, logged out) — MOBILE ONLY ═══
-   On phones (≤767px) the welcome page swaps the "Register / Login" text button
-   for this compact icon; clicking it smooth-scrolls to the hero "Access System"
-   CTA (JS below). Tablet/desktop keep the text button, so the icon is hidden by
-   default and only revealed inside the mobile media query. */
-.uda-login-icon {
+/* ═══ Login control (public homepage, logged out) ═══
+   Standard landing-page pattern: the navbar carries ONE identity element (the
+   compact "UDTS" pill) + ONE action. The full suite name is NOT repeated here —
+   it lives in the hero H1 below. Tablet/desktop show the full "Register / Login"
+   button; mobile shows a compact "Login" pill that smooth-scrolls to the hero
+   "Access System" CTA (JS below). Exactly one of the two renders per breakpoint. */
+.uda-login-btn-mobile {
     display: none;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #f3f0ff;
-    border: 1px solid #d9ccff;
-    box-shadow: 0 2px 8px rgba(95, 45, 237, 0.12);
-    cursor: pointer;
-    text-decoration: none;
-    transition: background .18s ease, transform .15s ease, box-shadow .18s ease;
-}
-.uda-login-icon:hover {
-    background: #ece5ff;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(95, 45, 237, 0.22);
-}
-.uda-login-icon:active { transform: translateY(0); }
-.uda-login-icon img {
-    width: 25px;
-    height: 25px;
-    object-fit: contain;
-    display: block;
-    pointer-events: none;
+    padding: 8px 16px;
+    min-height: 38px;
+    font-size: 13.5px;
+    border-radius: 999px;
 }
 @media (max-width: 767px) {
-    /* Mobile: show the icon, hide the text button */
-    .uda-login-icon { display: inline-flex; }
+    .uda-login-btn-mobile { display: inline-flex; }
     .uda-login-btn-desktop { display: none; }
 }
 
-/* Brief pulse on the hero CTA after the header login icon scrolls to it */
+/* Brief pulse on the hero CTA after the header login button scrolls to it */
 @keyframes uda-cta-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(95, 45, 237, 0.45); }
     70%  { box-shadow: 0 0 0 14px rgba(95, 45, 237, 0); }
@@ -1415,11 +1376,11 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 
-// ═══ Welcome-page login icon → smooth-scroll to the hero "Access System" CTA ═══
+// ═══ Welcome-page login button → smooth-scroll to the hero "Access System" CTA ═══
 // Progressive enhancement: the anchor's href already points at the login route,
-// so if this handler never runs the icon still works as a plain link.
+// so if this handler never runs the button still works as a plain link.
 document.addEventListener('DOMContentLoaded', function(){
-  document.querySelectorAll('.uda-login-icon[data-scroll-to]').forEach(function(icon){
+  document.querySelectorAll('a[data-scroll-to]').forEach(function(icon){
     icon.addEventListener('click', function(e){
       var target = document.querySelector(icon.getAttribute('data-scroll-to'));
       if (!target) return; // no CTA on this page → let the link navigate to login
