@@ -29,6 +29,7 @@ class User extends Authenticatable
         'super_admin_granted_by',
         'profile_picture',
         'ui_font_scale',
+        'memo_salutation',
         'department_id',
         'staff_category',
         'account_type',

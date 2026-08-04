@@ -305,6 +305,21 @@
                                     <p class="sp-section__hint">Draw or upload your signature once — it is offered as "my saved signature" whenever you sign a form or minute a memo, and it appears on official PDFs exactly as saved here.</p>
                                 </div>
 
+                                {{-- Closing salutation: appended (with the signature, name and
+                                     position) to outgoing memos when the composer ticks
+                                     "Add salutation & signature". --}}
+                                <form action="{{ route('admin.forms.my-salutation.update') }}" method="POST" class="sig-salutation">
+                                    @csrf
+                                    <label class="sp-label" for="sig-salutation-input">Closing salutation</label>
+                                    <div class="sig-salutation__row">
+                                        <input class="sp-input" type="text" id="sig-salutation-input" name="salutation"
+                                               value="{{ auth()->user()->memo_salutation }}"
+                                               placeholder="Thank you." maxlength="120">
+                                        <button type="submit" class="sp-btn">Save</button>
+                                    </div>
+                                    <small class="sig-salutation__hint">Shown above your signature when you add your sign-off to a memo — e.g. “Thank you.” or “Yours faithfully,”. Leave blank to use “Thank you.”</small>
+                                </form>
+
                                 @php $spSavedSig = auth()->user()->savedSignature; @endphp
 
                                 @if($spSavedSig && $spSavedSig->image_url)
@@ -1106,6 +1121,11 @@
 }
 
 /* ═════════════ Signature panel ═════════════ */
+.sig-salutation { margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1.5px solid #f1f5f9; }
+.sig-salutation__row { display: flex; gap: 10px; align-items: center; }
+.sig-salutation__row .sp-input { flex: 1 1 auto; }
+.sig-salutation__row .sp-btn { flex: 0 0 auto; }
+.sig-salutation__hint { display: block; margin-top: 6px; font-size: 0.78rem; color: #8a8fa0; }
 .sig-current { margin-bottom: 20px; }
 .sig-current__label { display: block; font-size: 0.78rem; font-weight: 600; color: #374151; margin-bottom: 8px; }
 .sig-current__row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
@@ -1265,8 +1285,8 @@
     resizeCanvas();
 })();
 
-// ── Reopen the Signature tab after a signature save/remove round-trip
-@if(in_array(session('success'), ['Signature saved.', 'Saved signature removed.'], true))
+// ── Reopen the Signature tab after a signature/salutation save round-trip
+@if(in_array(session('success'), ['Signature saved.', 'Saved signature removed.', 'Salutation saved.'], true))
 document.addEventListener('DOMContentLoaded', function () {
     var t = document.querySelector('.sp-tab[data-panel="sp-signature"]');
     if (t) t.click();

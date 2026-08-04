@@ -360,16 +360,22 @@ class EmailCampaign extends Model
         return empty($ids) || in_array((int) $userId, $ids, true);
     }
 
-    public function assignTo($userId, $assignedBy, $office = null)
+    public function assignTo($userId, $assignedBy, $office = null, string $roleForNewRows = 'assignee')
     {
         // Deactivate current active participants EXCEPT the assigner
         $this->activeParticipants()->where('user_id', '!=', $assignedBy)->update(['is_active_participant' => false]);
-        
-        // Add new assignee as active participant
+
+        // Add new assignee as active participant. Rows created BY minuting
+        // carry the 'assignee' role — never 'to' — so minuting a memo onward
+        // can never grow the original To list (a real To/Cc recipient who is
+        // minuted-to keeps their original role on the existing row). The
+        // Through-forward flow passes 'to' instead: there it materialises the
+        // memo's ORIGINAL addressees, who genuinely are To recipients.
         $recipient = $this->recipients()->where('user_id', $userId)->first();
         if (!$recipient) {
             $recipient = $this->recipients()->create([
                 'user_id' => $userId,
+                'recipient_role' => $roleForNewRows,
                 'status' => 'sent',
                 'is_active_participant' => true,
                 'assigned_at' => now(),
@@ -388,6 +394,7 @@ class EmailCampaign extends Model
         if (!$assignerRecipient) {
             $assignerRecipient = $this->recipients()->create([
                 'user_id' => $assignedBy,
+                'recipient_role' => 'assignee',
                 'status' => 'sent',
                 'is_active_participant' => true,
                 'assigned_at' => now(),
@@ -413,7 +420,7 @@ class EmailCampaign extends Model
         return $recipient;
     }
 
-    public function assignToMultiple($userIds, $assignedBy, $office = null)
+    public function assignToMultiple($userIds, $assignedBy, $office = null, string $roleForNewRows = 'assignee')
     {
         // Ensure userIds is an array
         if (!is_array($userIds)) {
@@ -429,11 +436,16 @@ class EmailCampaign extends Model
         // (re)assignment is deliberate: the memo's single tray card is now the
         // ONLY in-app alert for an assignment (we no longer create a duplicate
         // Notification), so it must resurface as unread/fresh for the assignee.
+        // Rows created BY minuting carry the 'assignee' role — never 'to' —
+        // so minuting onward can never grow the memo's original To list. The
+        // Through-forward flow passes 'to' instead: there it materialises the
+        // memo's ORIGINAL addressees, who genuinely are To recipients.
         foreach ($userIds as $userId) {
             $recipient = $this->recipients()->where('user_id', $userId)->first();
             if (!$recipient) {
                 $recipient = $this->recipients()->create([
                     'user_id' => $userId,
+                    'recipient_role' => $roleForNewRows,
                     'status' => 'sent',
                     'is_active_participant' => true,
                     'assigned_at' => now(),
@@ -458,6 +470,7 @@ class EmailCampaign extends Model
         if (!$assignerRecipient) {
             $assignerRecipient = $this->recipients()->create([
                 'user_id' => $assignedBy,
+                'recipient_role' => 'assignee',
                 'status' => 'sent',
                 'is_active_participant' => true,
                 'assigned_at' => now(),

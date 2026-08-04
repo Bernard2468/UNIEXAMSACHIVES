@@ -30,6 +30,21 @@ class UserSignatureController extends Controller
         return back()->with('success', 'Signature saved.');
     }
 
+    /**
+     * Save the user's closing salutation (e.g. "Thank you.") shown alongside
+     * the signature when they tick "Add salutation & signature" on compose.
+     */
+    public function updateSalutation(Request $request)
+    {
+        $data = $request->validate([
+            'salutation' => 'nullable|string|max:120',
+        ]);
+
+        Auth::user()->update(['memo_salutation' => trim((string) ($data['salutation'] ?? '')) ?: null]);
+
+        return back()->with('success', 'Salutation saved.');
+    }
+
     public function destroy()
     {
         $user = Auth::user();

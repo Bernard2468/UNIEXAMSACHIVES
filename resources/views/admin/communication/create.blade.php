@@ -248,7 +248,90 @@
                                                     
                                                     <textarea id="message" name="message" style="display: none;">{{ old('message') }}</textarea>
                                                 </div>
-                                                <small class="form-help">Use the toolbar above for rich text formatting. Your message will be sent as HTML.</small>
+                                                @php
+                                                    // Sign-off block data: salutation (Settings → Signature), saved
+                                                    // signature embedded as a data URI (renders in chat, PDF and mail
+                                                    // without needing the auth-gated /storage route), name, position.
+                                                    $soUser = auth()->user();
+                                                    $soSalutation = $soUser->memo_salutation ?: 'Thank you.';
+                                                    $soName = trim(($soUser->first_name ?? '') . ' ' . ($soUser->last_name ?? '')) ?: ($soUser->name ?? '');
+                                                    $soPosition = optional($soUser->position)->name;
+                                                    $soSigData = null;
+                                                    if ($soUser->savedSignature && $soUser->savedSignature->signature_image_path) {
+                                                        $soAbs = storage_path('app/public/' . $soUser->savedSignature->signature_image_path);
+                                                        if (file_exists($soAbs)) {
+                                                            $soSigData = 'data:image/png;base64,' . base64_encode(file_get_contents($soAbs));
+                                                        }
+                                                    }
+                                                @endphp
+                                                <label class="signoff-toggle" for="signoff-checkbox">
+                                                    <input type="checkbox" id="signoff-checkbox">
+                                                    <span>Add my salutation &amp; signature</span>
+                                                </label>
+                                                <small class="signoff-hint">
+                                                    @if($soSigData)
+                                                        Appends “{{ $soSalutation }}”, your signature, name and position to the end of the message — exactly as it will appear.
+                                                    @else
+                                                        No saved signature yet — only “{{ $soSalutation }}”, your name and position will be added. Save a signature in Settings &rarr; Signature.
+                                                    @endif
+                                                </small>
+                                                <style>
+                                                    .signoff-toggle { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.86rem; font-weight: 500; color: #374151; cursor: pointer; user-select: none; }
+                                                    .signoff-toggle input { accent-color: #0c0c0c; width: 15px; height: 15px; cursor: pointer; }
+                                                    .signoff-hint { display: block; margin-top: 3px; font-size: 0.76rem; color: #9ca3af; }
+                                                </style>
+                                                <script>
+                                                (function () {
+                                                    var cb = document.getElementById('signoff-checkbox');
+                                                    var editor = document.getElementById('editor-content');
+                                                    if (!cb || !editor) return;
+
+                                                    var BLOCK_ID = 'memo-signoff-block';
+                                                    var salutation = @json($soSalutation);
+                                                    var sigData = @json($soSigData);
+                                                    var name = @json($soName);
+                                                    var position = @json($soPosition);
+
+                                                    function escapeHtml(s) {
+                                                        return String(s || '').replace(/[&<>"']/g, function (c) {
+                                                            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                                                        });
+                                                    }
+
+                                                    function buildBlock() {
+                                                        var div = document.createElement('div');
+                                                        div.id = BLOCK_ID;
+                                                        div.setAttribute('contenteditable', 'false');
+                                                        var html = '<p style="margin:16px 0 6px;">' + escapeHtml(salutation) + '</p>';
+                                                        if (sigData) {
+                                                            html += '<img src="' + sigData + '" alt="Signature" style="height:52px; display:block; margin:2px 0 4px;">';
+                                                        }
+                                                        html += '<p style="margin:0;"><strong>' + escapeHtml(name) + '</strong>'
+                                                              + (position ? '<br>' + escapeHtml(position) : '') + '</p>';
+                                                        div.innerHTML = html;
+                                                        return div;
+                                                    }
+
+                                                    function syncHidden() {
+                                                        var hidden = document.getElementById('message');
+                                                        if (hidden) hidden.value = editor.innerHTML;
+                                                        editor.dispatchEvent(new Event('input', { bubbles: true }));
+                                                    }
+
+                                                    cb.addEventListener('change', function () {
+                                                        var existing = editor.querySelector('#' + BLOCK_ID);
+                                                        if (this.checked) {
+                                                            if (!existing) editor.appendChild(buildBlock());
+                                                        } else if (existing) {
+                                                            existing.remove();
+                                                        }
+                                                        syncHidden();
+                                                    });
+
+                                                    // A repopulated draft (validation error) may already carry the block.
+                                                    if (editor.querySelector('#' + BLOCK_ID)) cb.checked = true;
+                                                })();
+                                                </script>
                                             </div>
 
                                             <div class="form-group">

@@ -837,6 +837,13 @@
                             $letterheadUrl    = $letterheadRecord?->image_url;
                             $ccRecipients = $memo->ccRecipients->load('user');
                             $toRecipients = $memo->recipients->filter(fn($r) => $r->recipient_role === 'to');
+                            // The To line is the ORIGINAL addressing and must never grow when the
+                            // memo is minuted onward. New assignment rows carry the 'assignee' role,
+                            // but memos minuted before that fix have polluted 'to' rows — so when the
+                            // immutable selected_users snapshot exists, keep only those rows.
+                            if (!empty($memo->selected_users)) {
+                                $toRecipients = $toRecipients->filter(fn($r) => in_array($r->user_id, $memo->selected_users));
+                            }
                             // A Through memo still awaiting forward has no 'to' rows yet — fall
                             // back to the addressed (held) recipients so the header reads correctly.
                             $throughAddressees = ($memo->hasThrough() && $toRecipients->isEmpty() && !empty($memo->selected_users))

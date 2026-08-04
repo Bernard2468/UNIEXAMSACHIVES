@@ -181,13 +181,19 @@
         ? \App\Models\User::whereIn('id', $memo->cc_users)->get()
         : collect();
 
+    // The To line is the ORIGINAL addressing and must never grow when the memo
+    // is minuted onward. New assignment rows carry the 'assignee' role, but
+    // memos minuted before that fix have polluted 'to' rows — so the immutable
+    // selected_users snapshot (taken at compose time) takes precedence.
     if ($throughToHeld->isNotEmpty()) {
         $displayToNames = $throughToHeld->map($personName);
+    } elseif (!empty($memo->selected_users)) {
+        $displayToNames = \App\Models\User::whereIn('id', $memo->selected_users)->get()->map($personName);
     } elseif ($toRecipients->isNotEmpty()) {
         $displayToNames = $toRecipients->map(fn($r) => $personName($r->user));
     } else {
         $displayToNames = $memo->recipients
-            ->filter(fn($r) => !in_array($r->recipient_role ?? 'to', ['cc', 'through'], true))
+            ->filter(fn($r) => !in_array($r->recipient_role ?? 'to', ['cc', 'through', 'assignee'], true))
             ->map(fn($r) => $personName($r->user));
     }
 

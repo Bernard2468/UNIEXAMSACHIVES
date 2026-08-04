@@ -422,6 +422,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('/my-signature',   [UserSignatureController::class, 'update'])->name('my-signature.update');
         Route::delete('/my-signature', [UserSignatureController::class, 'destroy'])->name('my-signature.destroy');
+        Route::post('/my-salutation',  [UserSignatureController::class, 'updateSalutation'])->name('my-salutation.update');
     });
 
     #logout

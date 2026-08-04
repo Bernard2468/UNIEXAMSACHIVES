@@ -1917,8 +1917,10 @@ class HomeController extends Controller
 
         // Materialise the primary recipients + make them active participants.
         // assignToMultiple keeps the intermediary (assigner) active and sets the
-        // recipients as the current holders; new rows default to recipient_role 'to'.
-        $memo->assignToMultiple($toUsers->pluck('id')->toArray(), $userId, null);
+        // recipients as the current holders. Role 'to' is passed explicitly:
+        // these are the memo's ORIGINAL addressees (unlike minuting, whose new
+        // rows get 'assignee' so they never pollute the To list).
+        $memo->assignToMultiple($toUsers->pluck('id')->toArray(), $userId, null, 'to');
 
         foreach ($toUsers as $user) {
             $this->sendMemoEmailTo($memo, $user, $resendService, $memo->subject, 'to');
