@@ -76,7 +76,6 @@ class BotController extends Controller
             'bot_daily_user_cap'    => (int) SystemSetting::get('bot_daily_user_cap', 40),
             'bot_store_transcripts' => (bool) SystemSetting::get('bot_store_transcripts', false),
             'bot_model_cascade'     => $this->cascadeString(),
-            'bot_greeting'          => (string) SystemSetting::get('bot_greeting', ''),
             'bot_temperature'       => (string) SystemSetting::get('bot_temperature', '0.6'),
         ];
 
@@ -121,14 +120,13 @@ class BotController extends Controller
             'bot_daily_user_cap'    => 'required|integer|min:0|max:100000',
             'bot_temperature'       => 'required|numeric|min:0|max:1',
             'bot_store_transcripts' => 'nullable|boolean',
-            'bot_greeting'          => 'nullable|string|max:1000',
             'bot_model_cascade'     => 'nullable|string|max:2000',
         ]);
 
         SystemSetting::set('bot_daily_user_cap', (int) $data['bot_daily_user_cap'], auth()->id());
         SystemSetting::set('bot_temperature', (string) $data['bot_temperature'], auth()->id());
         SystemSetting::set('bot_store_transcripts', $request->boolean('bot_store_transcripts'), auth()->id());
-        SystemSetting::set('bot_greeting', (string) ($data['bot_greeting'] ?? ''), auth()->id());
+        // The opening greeting is generated dynamically per user — no stored value.
 
         $models = collect(preg_split('/[\r\n,]+/', (string) ($data['bot_model_cascade'] ?? '')))
             ->map(fn ($m) => trim($m))

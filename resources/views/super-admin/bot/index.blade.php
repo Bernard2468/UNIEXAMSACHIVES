@@ -242,8 +242,11 @@
                 </div>
 
                 <div class="col-12">
-                    <label class="form-label">Welcome greeting</label>
-                    <textarea name="bot_greeting" rows="2" class="form-control">{{ $settings['bot_greeting'] }}</textarea>
+                    <div class="privacy-note" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af;">
+                        The bot's opening line is now <strong>generated automatically</strong> — it greets each person by
+                        name and time of day, and surfaces their live pending items (forms awaiting them, unread memos).
+                        No manual greeting to maintain.
+                    </div>
                 </div>
 
                 <div class="col-12">
