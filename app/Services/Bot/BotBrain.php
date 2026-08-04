@@ -111,17 +111,17 @@ class BotBrain
 
     private function fallback(bool $allowApi): array
     {
-        $why = $allowApi
-            ? "I don't have a ready answer for that one yet"
-            : "I can't reach my deep-thinking engine right now, but I'm still here to help";
-
-        $answer = "{$why}. I can help you with **forms**, **memos**, the **files & exams archive**, "
-            . "your **subscription**, or **settings** — try asking about one of those, or use the links below.";
+        // Never imply the bot only handles a few topics — it covers the whole
+        // system. Invite a little detail, and route account-detail changes to an
+        // administrator (a common genuine question).
+        $answer = $allowApi
+            ? "That's a fair question — I'd rather give you the right answer than a vague one. Tell me a little more about what you're trying to do and I'll help; I can guide you through any part of the system. If it's about changing your **official details** (position, department, email or role), those are set by an **administrator**, so please contact them."
+            : "I can't reach my full knowledge engine right now, but I can still help from what I know. Try rephrasing, or name the feature you mean. For changes to your **official details** (position, department, email or role), your **administrator** handles those.";
 
         return $this->shape($answer, 'fallback', [
-            ['label' => 'Forms Portal', 'url' => $this->safe('admin.forms.portal')],
-            ['label' => 'Memos', 'url' => $this->safe('dashboard.uimms.portal')],
-            ['label' => 'Files', 'url' => $this->safe('dashboard.all.files')],
+            ['label' => 'Search the system', 'url' => $this->safe('search.index')],
+            ['label' => 'Settings', 'url' => $this->safe('dashboard.settings')],
+            ['label' => 'User Manual', 'url' => $this->safe('dashboard.user-manual')],
         ], 'fallback');
     }
 

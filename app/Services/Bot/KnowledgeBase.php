@@ -101,12 +101,18 @@ organisational Forms workflow with e-signing, an internal memo system (UIMMS), a
 Always use the friendly UI labels only — "Super Admin", "Admin", "User". Never expose raw database role values.
 Only a **Super Admin** manages system settings, subscriptions, payments, and this bot.
 
-## Your behaviour — accuracy first
-1. Be concise (usually 2–5 sentences). Use short markdown (bold, bullets) when it helps.
-2. Point people to features with a clickable markdown link, e.g. [Forms Portal]({$this->link('admin.forms.portal')}). Use ONLY the pages listed above — never invent a page, route, price or feature.
-3. If you are not certain a link is correct, name the sidebar button instead of guessing a URL.
-4. Never reveal another user's private data; you only know the current user's own context when it is provided.
-5. Discuss only this platform and general university-admin help. You are a real, live assistant — never call yourself a demo.
+## Accounts — who can change what (IMPORTANT)
+- A user can change their OWN: **name, profile picture, password, e-signature, memo salutation, and text size** (in Settings / Profile).
+- An **administrator** manages a user's **position, department, staff category, email, role, account approval, and account creation/deletion**. These drive official routing (e.g. who signs which forms), so users cannot change them themselves — this is a deliberate security rule.
+- So when someone asks to change their **position, department, role or email** (or "my credentials"), tell them those are set by an administrator and they should **contact their administrator**, and remind them what they *can* change themselves.
+
+## Your behaviour — accuracy first, and genuinely helpful
+1. You cover the ENTIRE platform — every feature and corner above. Never imply you only handle a few topics. Treat every genuine question seriously and give a real, specific answer.
+2. Be concise (usually 2–5 sentences). Use short markdown (bold, bullets) when it helps.
+3. Point people to features with a clickable markdown link, e.g. [Forms Portal]({$this->link('admin.forms.portal')}). Use ONLY the pages listed above — never invent a page, route, price or feature.
+4. If you are not certain a link is correct, name the sidebar button instead of guessing a URL. If something is outside what a user can do themselves, say who handles it (usually their administrator).
+5. Never reveal another user's private data; you only know the current user's own context when it is provided.
+6. Discuss only this platform and general university-admin help. You are a real, live assistant — never call yourself a demo.
 MAP;
     }
 
@@ -316,10 +322,30 @@ MAP;
             ],
             [
                 'key' => 'password', 'category' => 'profile', 'title' => 'Change my password',
-                'keywords' => 'password change password reset password update password security credentials',
+                'keywords' => 'password change password reset password update password login passcode',
                 'answer' => "Change your password on your **Settings** page. If you're locked out at the login screen, use the **Forgot password** link there instead.",
                 'links' => [
                     ['label' => 'Settings', 'route' => 'dashboard.settings'],
+                ],
+            ],
+            [
+                'key' => 'account_admin_managed', 'category' => 'account',
+                'title' => 'Change my position, department, role or email',
+                'keywords' => 'change my position change role change department change email update position job title designation promote credentials official details staff category who can change my position update my role update my details change my organization change job title fix my position wrong position',
+                'answer' => "Your **position, department, staff category, email and role** are set by an **administrator**, not by you. These control official routing (for example, who signs which forms), so for security only a System Administrator can change them.\n\n**Please contact your administrator** to update your position, department or email.\n\nWhat you *can* change yourself in **Settings** / **Profile**: your **name**, **profile picture**, **password**, **e-signature**, **memo salutation** and **text size**.",
+                'links' => [
+                    ['label' => 'Settings', 'route' => 'dashboard.settings'],
+                    ['label' => 'Profile', 'route' => 'dashboard.profile'],
+                ],
+            ],
+            [
+                'key' => 'account_self_service', 'category' => 'account',
+                'title' => 'Update my own details (name, picture, password)',
+                'keywords' => 'edit my account update my profile my details what can i change my information change my name update photo profile picture personal details my account settings',
+                'answer' => "You can update these yourself in **Settings** / **Profile**: your **name**, **profile picture**, **password**, **e-signature**, **memo salutation** and **text size**. Your **position, department, email and role** are managed by an **administrator** — contact them for those.",
+                'links' => [
+                    ['label' => 'Settings', 'route' => 'dashboard.settings'],
+                    ['label' => 'Profile', 'route' => 'dashboard.profile'],
                 ],
             ],
             [
