@@ -1,14 +1,16 @@
 {{--
     UDTS Assistant — floating AI bot widget.
 
-    A faithful port of the GNRS chatbot (GNRS/src/components/AIAssistant.tsx) to
-    vanilla JS + CSS: same robot, same floating/rotating idle animation, same
-    pulsing ring, same chat-window design, tokens and Outfit font. The framer-motion
-    animations are reproduced with CSS @keyframes; the token "stream" is reproduced
-    with a client-side typewriter reveal (reliable on shared hosting). All dynamic
-    values are passed as data-* attributes so the CSS/JS block can stay @verbatim.
+    A faithful port of the GNRS chatbot to vanilla JS + CSS: same robot, same
+    floating/rotating idle animation, same pulsing ring, same chat-window design,
+    tokens and Outfit font. Motion is reproduced with CSS keyframes; the token
+    "stream" is reproduced with a client-side typewriter reveal (reliable on shared
+    hosting). All dynamic values are passed as data-attributes so the CSS/JS block
+    stays isolated from Blade. Rendered once in layout.app for signed-in users.
 
-    Rendered once in layout.app, guarded by @auth + $botEnabled.
+    NOTE: never write Blade directive words (with a leading at-sign) inside this
+    comment — Blade extracts verbatim blocks before stripping comments, so a stray
+    directive keyword here would swallow the rest of the file into a verbatim block.
 --}}
 @php
     $rn = optional(request()->route())->getName() ?? '';
