@@ -26,7 +26,6 @@
         'dashboard.profile'       => 'Profile',
         'offices.'                => 'Offices',
         'committees.'             => 'Committees',
-        'dashboard.payment-history'=> 'Billing',
         'search.'                 => 'Search',
         'dashboard'               => 'Dashboard',
     ];
@@ -323,7 +322,7 @@
         {label:'What can I do here?',       icon:'compass'},
         {label:'How do I submit a form?',   icon:'file'},
         {label:'How many forms await me?',  icon:'inbox'},
-        {label:'My subscription status',    icon:'card'},
+        {label:'How do I sign a form?',     icon:'card'},
         {label:'Where are my files?',       icon:'folder'},
         {label:'How do I send a memo?',     icon:'mail'},
     ];

@@ -7,7 +7,6 @@ use App\Models\File;
 use App\Models\FormSubmission;
 use App\Models\EmailCampaign;
 use App\Models\Notification;
-use App\Models\SystemSubscription;
 use App\Models\User;
 
 /**
@@ -34,7 +33,6 @@ class LiveDataResolver
             ?? $this->formsMine($q, $user)
             ?? $this->unreadMemos($q, $user)
             ?? $this->notifications($q, $user)
-            ?? $this->subscription($q)
             ?? $this->myArchive($q, $user)
             ?? $this->dateTime($q);
     }
@@ -168,50 +166,6 @@ class LiveDataResolver
             'answer'      => $answer,
             'links'       => [['label' => 'Notifications', 'url' => $this->link('dashboard.notifications')]],
             'matched_key' => 'live:notifications',
-        ];
-    }
-
-    // ── Institution subscription status (visible to all staff) ───────────────
-    private function subscription(string $q): ?array
-    {
-        if (!$this->has($q, ['subscription', 'licence', 'license', 'expire', 'expiry', 'renew', 'billing', 'plan valid', 'when does'])) {
-            return null;
-        }
-        if (!$this->statusPhrasing($q) && !$this->has($q, ['when', 'expire', 'expiry', 'valid', 'renew', 'status', 'active'])) {
-            return null;
-        }
-
-        try {
-            $sub = SystemSubscription::query()->latest('subscription_end_date')->first();
-        } catch (\Throwable $e) {
-            return null;
-        }
-        if (!$sub) {
-            return null;
-        }
-
-        $status = ucfirst(str_replace('_', ' ', (string) $sub->status));
-        $end    = optional($sub->subscription_end_date)->format('j M Y');
-        $days   = null;
-        try {
-            $days = $sub->days_until_expiry;
-        } catch (\Throwable $e) {
-            // attribute may be unavailable in some states
-        }
-
-        $answer = "The institution's subscription is currently **{$status}**";
-        if ($end) {
-            $answer .= ", valid until **{$end}**";
-        }
-        if (is_int($days)) {
-            $answer .= $days >= 0 ? " (~{$days} day" . ($days === 1 ? '' : 's') . " left)" : " (expired)";
-        }
-        $answer .= ". Invoices and receipts are under Payment History.";
-
-        return [
-            'answer'      => $answer,
-            'links'       => [['label' => 'Payment History', 'url' => $this->link('dashboard.payment-history.index')]],
-            'matched_key' => 'live:subscription',
         ];
     }
 

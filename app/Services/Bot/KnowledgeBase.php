@@ -68,7 +68,7 @@ point a user to the exact page they need with a clickable link.
 ## What UDTS is
 An internal institutional platform for a university/college: a secure examinations & document archive, an
 organisational Forms workflow with e-signing, an internal memo system (UIMMS), and institutional administration
-(offices, committees, departments, subscriptions).
+(offices, committees, departments).
 
 ## Navigation — use the exact sidebar labels
 ### Internal Memo Management System (UIMMS)
@@ -91,7 +91,6 @@ organisational Forms workflow with e-signing, an internal memo system (UIMMS), a
 ### Organisation & account
 - **Committees** — manage committees; **My Committees** ({$this->link('committees.my-committees')}) shows the ones you belong to.
 - **Offices** ({$this->link('offices.index')}) — institutional offices (Finance, Internal Audit, Registrar, VC, Procurement Committee, Director of Finance) that forms route through.
-- **Billing / Payment History** ({$this->link('dashboard.payment-history.index')}) — the institution's subscription invoices and receipts.
 - **Settings** ({$this->link('dashboard.settings')}) — change password, set your **e-signature**, set your **memo salutation**, and adjust **text size** on the Appearance tab.
 - **Profile** ({$this->link('dashboard.profile')}) — your personal details.
 - **Notifications** ({$this->link('dashboard.notifications')}) — in-app alerts. **Search** ({$this->link('search.index')}) — global search (also ⌘K / Ctrl-K).
@@ -99,7 +98,13 @@ organisational Forms workflow with e-signing, an internal memo system (UIMMS), a
 
 ## Roles
 Always use the friendly UI labels only — "Super Admin", "Admin", "User". Never expose raw database role values.
-Only a **Super Admin** manages system settings, subscriptions, payments, and this bot.
+Only a **Super Admin** manages system settings and this bot.
+
+## Off-limits topic (do NOT discuss)
+The platform's **subscription, licence, billing, invoices, plan, price and renewal** are a private matter between the
+institution and the developer (Metascholar). Do NOT answer questions about them, quote any status/amount/date, or link to
+billing pages. If asked, briefly say that's handled directly by administration/management and steer back to helping with
+memos, forms, the archive or settings.
 
 ## Accounts — who can change what (IMPORTANT)
 - A user can change their OWN: **name, profile picture, password, e-signature, memo salutation, and text size** (in Settings / Profile).
@@ -131,7 +136,7 @@ MAP;
             [
                 'key' => 'greeting', 'category' => 'meta', 'title' => 'Greeting',
                 'keywords' => 'hi hello hey good morning good afternoon good evening yo greetings howdy',
-                'answer' => "Hello! 👋 I'm **MetaGuide**. I can help with **memos**, **forms**, the **exams & files archive**, your **subscription**, or settings — and take you straight to the right page. What do you need?",
+                'answer' => "Hello! 👋 I'm **MetaGuide**. I can help with **memos**, **forms**, the **exams & files archive**, or your **settings** — and take you straight to the right page. What do you need?",
                 'links' => [],
             ],
             [
@@ -304,14 +309,6 @@ MAP;
             ],
 
             // ── account / help ─────────────────────────────────────────────
-            [
-                'key' => 'subscription', 'category' => 'billing', 'title' => 'Subscription & billing',
-                'keywords' => 'subscription licence license billing invoice receipt payment history renew expiry expire plan cost pay when does it expire',
-                'answer' => "Your institution's **subscription**, invoices and receipts are under **Billing / Payment History**. If access is ever blocked, the subscription may have lapsed — a Super Admin can renew it.",
-                'links' => [
-                    ['label' => 'Payment History', 'route' => 'dashboard.payment-history.index'],
-                ],
-            ],
             [
                 'key' => 'text_size', 'category' => 'profile', 'title' => 'Change text size / appearance',
                 'keywords' => 'text size font size bigger smaller zoom appearance display accessibility readable larger interface size',
