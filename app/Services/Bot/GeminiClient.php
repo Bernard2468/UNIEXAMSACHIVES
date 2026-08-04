@@ -22,12 +22,22 @@ use Illuminate\Support\Facades\Log;
  */
 class GeminiClient
 {
-    /** Default cascade (overridable via the `bot_model_cascade` setting). */
+    /**
+     * Default cascade (overridable via the `bot_model_cascade` setting).
+     * Only widely-available, stable model IDs — the Super Admin can add newer
+     * ones (e.g. gemini-3-* shown by the "Test" button) via the cascade field.
+     */
     public const DEFAULT_MODELS = [
         'gemini-2.5-flash',
         'gemini-2.5-flash-lite',
+    ];
+
+    /** Model IDs that are no longer valid and must be scrubbed from a saved cascade. */
+    public const RETIRED_MODELS = [
         'gemini-1.5-flash',
         'gemini-1.5-flash-8b',
+        'gemini-1.5-pro',
+        'gemini-pro',
     ];
 
     public function hasKeys(): bool
@@ -40,31 +50,45 @@ class GeminiClient
     }
 
     /**
-     * Validate a raw key by making one tiny live call. Used by the Super Admin
-     * "Test" button. Returns ['ok' => bool, 'message' => string, 'model' => ?string].
+     * Validate a raw key and discover the models it can use. Used by the Super
+     * Admin "Test" button. Validating via ListModels (not generateContent) proves
+     * the key works regardless of which specific model IDs are current, and lets
+     * us tell the admin exactly which model IDs to put in the cascade.
+     *
+     * @return array{ok:bool, message:string, models:string[]}
      */
     public function testRawKey(string $plain): array
     {
         $plain = trim($plain);
         if ($plain === '') {
-            return ['ok' => false, 'message' => 'Key is empty.', 'model' => null];
+            return ['ok' => false, 'message' => 'Key is empty.', 'models' => []];
         }
 
-        $contents = [['role' => 'user', 'parts' => [['text' => 'Reply with the single word: OK']]]];
-
-        foreach ($this->models() as $model) {
-            try {
-                $text = $this->callModel($plain, $model, $contents, 0.0);
-                if ($text !== null) {
-                    return ['ok' => true, 'message' => 'Connection successful.', 'model' => $model];
-                }
-            } catch (\Throwable $e) {
-                // try the next model; remember the last error
-                $last = $e->getMessage();
-            }
+        try {
+            $response = Http::timeout(20)->acceptJson()
+                ->get("https://generativelanguage.googleapis.com/v1beta/models?key={$plain}&pageSize=200");
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'message' => 'Network error: ' . $e->getMessage(), 'models' => []];
         }
 
-        return ['ok' => false, 'message' => $last ?? 'All models failed for this key.', 'model' => null];
+        if (!$response->successful()) {
+            $msg = data_get($response->json(), 'error.message', 'HTTP ' . $response->status());
+            return ['ok' => false, 'message' => $msg, 'models' => []];
+        }
+
+        // Keep only models that support text generation, strip the "models/" prefix.
+        $models = collect($response->json('models', []))
+            ->filter(fn ($m) => in_array('generateContent', (array) data_get($m, 'supportedGenerationMethods', []), true))
+            ->map(fn ($m) => str_replace('models/', '', (string) data_get($m, 'name')))
+            ->filter(fn ($n) => str_starts_with($n, 'gemini-'))
+            ->values()
+            ->all();
+
+        return [
+            'ok'      => true,
+            'message' => 'Key is valid. ' . count($models) . ' usable text models found.',
+            'models'  => $models,
+        ];
     }
 
     /** @return string[] */
@@ -75,14 +99,21 @@ class GeminiClient
             $configured = json_decode($configured, true);
         }
         if (is_array($configured) && !empty($configured)) {
-            return array_values(array_filter(array_map('trim', $configured)));
+            $models = array_values(array_filter(
+                array_map('trim', $configured),
+                fn ($m) => $m !== '' && !in_array($m, self::RETIRED_MODELS, true),
+            ));
+            if (!empty($models)) {
+                return $models;
+            }
         }
         return self::DEFAULT_MODELS;
     }
 
     private function apiVersion(string $model): string
     {
-        return str_starts_with($model, 'gemini-1') ? 'v1' : 'v1beta';
+        // All current Gemini models are served on v1beta.
+        return 'v1beta';
     }
 
     /**
@@ -178,9 +209,13 @@ class GeminiClient
                     'contents'         => $contents,
                     'generationConfig' => [
                         'temperature'     => $temperature,
-                        'maxOutputTokens' => 2048,
+                        'maxOutputTokens' => 4096,
                         'topP'            => 0.95,
                         'topK'            => 40,
+                        // Disable "thinking" on 2.5/3.x flash models — otherwise thinking
+                        // tokens can consume the whole output budget and return EMPTY text
+                        // (which is exactly what made the first Test appear to "fail").
+                        'thinkingConfig'  => ['thinkingBudget' => 0],
                     ],
                     'safetySettings' => [
                         ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_ONLY_HIGH'],
@@ -191,8 +226,22 @@ class GeminiClient
                 ]);
 
             if ($response->successful()) {
-                $text = data_get($response->json(), 'candidates.0.content.parts.0.text');
-                return is_string($text) ? $text : null;
+                // Join every text part (skip "thought" parts), robust to responses
+                // that split the answer across multiple parts.
+                $parts = data_get($response->json(), 'candidates.0.content.parts', []);
+                $text = collect($parts)
+                    ->filter(fn ($p) => empty($p['thought']) && isset($p['text']))
+                    ->map(fn ($p) => $p['text'])
+                    ->implode('');
+
+                if (trim($text) !== '') {
+                    return $text;
+                }
+
+                // 200 but no usable text — surface why (e.g. MAX_TOKENS / SAFETY) so the
+                // cascade moves on and the error is visible instead of a silent null.
+                $reason = data_get($response->json(), 'candidates.0.finishReason', 'no text');
+                throw new \RuntimeException("Gemini {$model} returned empty text (finishReason: {$reason})");
             }
 
             $status = $response->status();

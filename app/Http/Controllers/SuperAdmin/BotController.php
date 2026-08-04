@@ -53,6 +53,18 @@ class BotController extends Controller
                 ],
             );
         }
+
+        // Self-heal a cascade saved with now-retired model IDs (e.g. gemini-1.5-*),
+        // which would otherwise 404 on every call.
+        $cascade = SystemSetting::get('bot_model_cascade');
+        $cascade = is_array($cascade) ? $cascade : (json_decode((string) $cascade, true) ?: []);
+        $cleaned = array_values(array_filter($cascade, fn ($m) => !in_array(trim((string) $m), GeminiClient::RETIRED_MODELS, true)));
+        if (empty($cleaned)) {
+            $cleaned = GeminiClient::DEFAULT_MODELS;
+        }
+        if ($cleaned !== $cascade) {
+            SystemSetting::set('bot_model_cascade', $cleaned, auth()->id());
+        }
     }
 
     public function index()
@@ -188,9 +200,15 @@ class BotController extends Controller
         $result = $gemini->testRawKey($plain);
         $key->markUsed(!$result['ok']);
 
-        return $result['ok']
-            ? back()->with('success', "✅ {$result['message']} (model: {$result['model']})")
-            : back()->with('error', "❌ Test failed: {$result['message']}");
+        if (!$result['ok']) {
+            return back()->with('error', "❌ Test failed: {$result['message']}");
+        }
+
+        $models = $result['models'] ?? [];
+        $preview = collect($models)->take(12)->implode(', ');
+        $hint = $preview ? " Available models: {$preview}." : '';
+
+        return back()->with('success', "✅ {$result['message']}{$hint} You can put any of these in the model cascade below.");
     }
 
     // ── Knowledge base CRUD ──────────────────────────────────────────────────
