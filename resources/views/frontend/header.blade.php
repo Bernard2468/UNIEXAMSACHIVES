@@ -411,6 +411,16 @@ header.uda-header-sticky .mob_menu_wrapper { display: none; }
     text-decoration: none;
     transition: transform .15s ease, box-shadow .18s ease, filter .18s ease;
 }
+/* Keep the arrow white in EVERY interactive state. The global
+   `a:hover { color: var(--primaryColor); }` (style.css) would otherwise repaint
+   `currentColor` to #5F2DED on tap — the same purple as this button's
+   background — making the icon look like it vanished into an empty circle
+   during the split second before the auth page loads (most visible on mobile,
+   where tapping a link fires :hover). */
+.uda-login-icon,
+.uda-login-icon:hover,
+.uda-login-icon:focus,
+.uda-login-icon:active { color: #fff; }
 .uda-login-icon:hover {
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(95, 45, 237, 0.34);
