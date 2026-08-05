@@ -379,7 +379,7 @@
    Painted on the WINDOW (which is position:fixed + overflow:hidden), NOT the scrolling message
    list — so it fits the chat exactly, never scrolls, and never adds a scrollbar. The blur layer
    is scaled up so its faded edges are clipped cleanly by the window. */
-.ub-window.ub-has-wall::before{ content:''; position:absolute; inset:0; background-image:var(--ub-wall); background-size:cover; background-position:center; filter:blur(11px); transform:scale(1.1); opacity:.5; z-index:0; pointer-events:none; }
+.ub-window.ub-has-wall::before{ content:''; position:absolute; inset:0; background-image:var(--ub-wall); background-size:contain; background-repeat:no-repeat; background-position:center; filter:blur(7px); opacity:.5; z-index:0; pointer-events:none; }
 .ub-window.ub-has-wall::after{ content:''; position:absolute; inset:0; background:rgba(255,255,255,.5); z-index:0; pointer-events:none; }
 .ub-window.ub-has-wall > *{ position:relative; z-index:1; }
 .ub-window.ub-has-wall .ub-msgs{ background:transparent; }

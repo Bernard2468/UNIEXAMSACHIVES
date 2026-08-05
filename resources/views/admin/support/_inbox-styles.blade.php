@@ -152,7 +152,7 @@
    full-width pane is already clipped by #sib, and no overflow context is added
    so the sticky composer keeps working. */
 @media (min-width:768px){ .sib-pane.sib-has-wall{ overflow:hidden; } }
-.sib-pane.sib-has-wall::before{ content:''; position:absolute; inset:0; background-image:var(--sib-wall); background-size:cover; background-position:center; filter:blur(11px); transform:scale(1.1); opacity:.45; z-index:0; pointer-events:none; }
+.sib-pane.sib-has-wall::before{ content:''; position:absolute; inset:0; background-image:var(--sib-wall); background-size:contain; background-repeat:no-repeat; background-position:center; filter:blur(7px); opacity:.45; z-index:0; pointer-events:none; }
 .sib-pane.sib-has-wall::after{ content:''; position:absolute; inset:0; background:rgba(238,241,246,.6); z-index:0; pointer-events:none; }
 .sib-pane.sib-has-wall > *{ position:relative; z-index:1; }
 .sib-pane.sib-has-wall .sib-msgs{ background-color:transparent; background-image:none; }
