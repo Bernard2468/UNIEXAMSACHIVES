@@ -100,7 +100,10 @@
         width: 100%;
         max-width: 1200px;
         height: 92vh;            /* real height — body's flex:1 now has space */
-        min-height: 560px;       /* sane floor on very short viewports */
+        /* Floor so a PDF has room, but NEVER taller than the viewport — otherwise
+           short/landscape screens push the header (and close button) off-screen. */
+        min-height: min(560px, calc(100dvh - 24px));
+        max-height: calc(100dvh - 20px);
         background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
         border: 1px solid rgba(255, 255, 255, 0.07);
         border-radius: 18px;
