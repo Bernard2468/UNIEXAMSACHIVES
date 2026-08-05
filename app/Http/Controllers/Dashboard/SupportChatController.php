@@ -104,8 +104,8 @@ class SupportChatController extends Controller
         return response()->json($this->threadPayload($conversation->fresh(), markRead: false, after: $after));
     }
 
-    /** Allowed attachment types (images + common docs), shared with the agent side. */
-    public const ALLOWED_ATTACHMENT_MIMES = 'image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain';
+    /** Allowed attachment types — images and PDF only. Shared with the agent side. */
+    public const ALLOWED_ATTACHMENT_MIMES = 'image/jpeg,image/png,image/gif,image/webp,application/pdf';
 
     /** Send a message (and/or a file) as the requesting user. */
     public function message(Request $request, BotConversation $conversation)
@@ -149,8 +149,9 @@ class SupportChatController extends Controller
         $mime = $message->attachment_mime ?: 'application/octet-stream';
         $name = $message->attachment_name ?: 'attachment';
 
-        // Images render inline in the chat; other files download.
-        if (str_starts_with($mime, 'image/')) {
+        // Preview inline (images always; PDFs when the viewer requests ?inline=1);
+        // otherwise stream as a download.
+        if (str_starts_with($mime, 'image/') || $request->boolean('inline')) {
             return response()->file($path, ['Content-Type' => $mime]);
         }
         return response()->download($path, $name, ['Content-Type' => $mime]);

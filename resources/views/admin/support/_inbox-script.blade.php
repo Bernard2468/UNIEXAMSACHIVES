@@ -205,13 +205,29 @@
         el.msgs.appendChild(row);
     }
 
+    var SIB_PDF_ICON='<svg viewBox="0 0 32 32" width="30" height="30"><path d="M8 3h12l6 6v18a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="#fff" stroke="#e2e8f0"/><path d="M20 3l6 6h-4a2 2 0 0 1-2-2V3z" fill="#e2e8f0"/><rect x="4.5" y="17" width="17" height="9" rx="1.6" fill="#e5352b"/><text x="13" y="23.7" font-family="Arial,Helvetica,sans-serif" font-size="6.2" font-weight="700" fill="#fff" text-anchor="middle">PDF</text></svg>';
+    function attViewAttrs(att){
+        return ' data-att-view data-att-url="'+esc(att.url||'')+'" data-att-name="'+esc(att.name||'file')+'" data-att-mime="'+esc(att.mime||'')+'" data-att-size="'+esc(att.size_h||'')+'"';
+    }
     function attachmentHtml(att){
-        if(!att) return '';
-        if(att.is_image && att.url){
-            return '<a class="sib-att-img-link" href="'+esc(att.url)+'" target="_blank" rel="noopener"><img class="sib-att-img" src="'+esc(att.url)+'" alt="'+esc(att.name||'image')+'"></a>';
+        if(!att || !att.url) return '';
+        var url = esc(att.url);
+        if(att.is_image){
+            return '<a class="sib-att-img-link" href="'+url+'"'+attViewAttrs(att)+'><img class="sib-att-img" src="'+url+'" alt="'+esc(att.name||'image')+'"></a>';
         }
-        var url = att.url ? esc(att.url) : '#';
-        return '<a class="sib-att-file" href="'+url+'" target="_blank" rel="noopener"><span class="sib-att-ic">📄</span><span class="sib-att-meta"><span class="sib-att-name">'+esc(att.name||'file')+'</span><span class="sib-att-size">'+esc(att.size_h||'')+'</span></span></a>';
+        return '<a class="sib-att-file" href="'+url+'"'+attViewAttrs(att)+'><span class="sib-att-ic">'+SIB_PDF_ICON+'</span><span class="sib-att-meta"><span class="sib-att-name">'+esc(att.name||'file')+'</span><span class="sib-att-size">PDF · '+esc(att.size_h||'')+'</span></span></a>';
+    }
+    // Click an attachment → premium in-page preview (shared Forms viewer).
+    if(el.msgs){
+        el.msgs.addEventListener('click', function(e){
+            var a = e.target.closest('[data-att-view]');
+            if(!a) return;
+            e.preventDefault();
+            var item={ url:a.getAttribute('data-att-url'), name:a.getAttribute('data-att-name'), mime:a.getAttribute('data-att-mime'), size:a.getAttribute('data-att-size') };
+            if(!item.url) return;
+            if(window.attachmentViewer){ window.attachmentViewer.openOne(item); }
+            else { window.open(item.url, '_blank'); }
+        });
     }
 
     function startThreadPoll(){
@@ -306,6 +322,7 @@
     function onFileSelected(){
         var f = el.file.files && el.file.files[0];
         if(!f) return;
+        if(!(/^image\//.test(f.type) || f.type==='application/pdf')){ clearPendingFile(); if(window.toast){ try{ window.toast('Only images and PDF files are allowed.','error'); }catch(e){} } return; }
         if(f.size > 10*1024*1024){ clearPendingFile(); if(window.toast){ try{ window.toast('File is too large (max 10MB).','error'); }catch(e){} } return; }
         state.pendingFile = f;
         el.attachPending.style.display='flex';

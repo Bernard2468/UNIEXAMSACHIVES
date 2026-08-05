@@ -135,7 +135,7 @@
                                             <button type="button" class="sib-clip" id="sibClip" title="Attach a file">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.48"/></svg>
                                             </button>
-                                            <input type="file" id="sibFile" style="display:none;" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt">
+                                            <input type="file" id="sibFile" style="display:none;" accept="image/*,application/pdf">
                                             <textarea id="sibInput" rows="1" placeholder="Type your reply…"></textarea>
                                             <button id="sibSend" class="sib-send" disabled>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>

@@ -391,7 +391,8 @@
 .ub-att-img{ max-width:212px; max-height:230px; border-radius:12px; display:block; }
 .ub-att-file{ display:inline-flex; align-items:center; gap:9px; text-decoration:none; padding:8px 11px; border-radius:11px; background:rgba(0,0,0,.045); border:1px solid rgba(0,0,0,.06); color:inherit; max-width:230px; margin:1px 0 2px; }
 .ub-att-file:hover{ background:rgba(0,0,0,.07); }
-.ub-att-ic{ font-size:18px; flex:0 0 auto; }
+.ub-att-ic{ flex:0 0 auto; display:inline-flex; align-items:center; }
+.ub-att-ic svg{ display:block; filter:drop-shadow(0 1px 1px rgba(0,0,0,.08)); }
 .ub-att-meta{ display:flex; flex-direction:column; min-width:0; }
 .ub-att-name{ font-size:12px; font-weight:600; color:#111b21; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ub-att-size{ font-size:10.5px; color:rgba(17,27,33,.5); }
@@ -565,7 +566,7 @@
             '<div class="ub-attach-pending" data-attach-pending style="display:none;"></div>'+
             '<div class="ub-inputrow" data-inputrow>'+
               '<button class="ub-clip" data-clip type="button" title="Attach a file" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.48"/></svg></button>'+
-              '<input type="file" data-file style="display:none;" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt">'+
+              '<input type="file" data-file style="display:none;" accept="image/*,application/pdf">'+
               '<input type="text" placeholder="Ask me anything about UDTS…" data-input>'+
               '<button class="ub-retry" data-retry title="Retry last">'+ICONS.rotate+'</button>'+
               '<button class="ub-send" data-send>'+ICONS.send+'</button>'+
@@ -1026,13 +1027,29 @@
     }
     function hidePeerTyping(){ var t=msgs.querySelector('[data-peer-typing]'); if(t) t.remove(); }
 
+    var UB_PDF_ICON='<svg viewBox="0 0 32 32" width="30" height="30"><path d="M8 3h12l6 6v18a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" fill="#fff" stroke="#e2e8f0"/><path d="M20 3l6 6h-4a2 2 0 0 1-2-2V3z" fill="#e2e8f0"/><rect x="4.5" y="17" width="17" height="9" rx="1.6" fill="#e5352b"/><text x="13" y="23.7" font-family="Arial,Helvetica,sans-serif" font-size="6.2" font-weight="700" fill="#fff" text-anchor="middle">PDF</text></svg>';
+    function attViewAttrs(att){
+        return ' data-att-view data-att-url="'+esc(att.url||'')+'" data-att-name="'+esc(att.name||'file')+'" data-att-mime="'+esc(att.mime||'')+'" data-att-size="'+esc(att.size_h||'')+'"';
+    }
     function attachmentHtml(att){
-        if(!att) return '';
-        if(att.is_image && att.url){
-            return '<a class="ub-att-img-link" href="'+esc(att.url)+'" target="_blank" rel="noopener"><img class="ub-att-img" src="'+esc(att.url)+'" alt="'+esc(att.name||'image')+'"></a>';
+        if(!att || !att.url) return '';
+        var url = esc(att.url);
+        if(att.is_image){
+            return '<a class="ub-att-img-link" href="'+url+'"'+attViewAttrs(att)+'><img class="ub-att-img" src="'+url+'" alt="'+esc(att.name||'image')+'"></a>';
         }
-        var url = att.url ? esc(att.url) : '#';
-        return '<a class="ub-att-file" href="'+url+'" target="_blank" rel="noopener"><span class="ub-att-ic">📄</span><span class="ub-att-meta"><span class="ub-att-name">'+esc(att.name||'file')+'</span><span class="ub-att-size">'+esc(att.size_h||'')+'</span></span></a>';
+        return '<a class="ub-att-file" href="'+url+'"'+attViewAttrs(att)+'><span class="ub-att-ic">'+UB_PDF_ICON+'</span><span class="ub-att-meta"><span class="ub-att-name">'+esc(att.name||'file')+'</span><span class="ub-att-size">PDF · '+esc(att.size_h||'')+'</span></span></a>';
+    }
+    // Click an attachment → premium in-page preview (shared Forms viewer), never a new tab.
+    if(msgs){
+        msgs.addEventListener('click', function(e){
+            var a = e.target.closest('[data-att-view]');
+            if(!a) return;
+            e.preventDefault();
+            var item={ url:a.getAttribute('data-att-url'), name:a.getAttribute('data-att-name'), mime:a.getAttribute('data-att-mime'), size:a.getAttribute('data-att-size') };
+            if(!item.url) return;
+            if(window.attachmentViewer){ window.attachmentViewer.openOne(item); }
+            else { window.open(item.url, '_blank'); }
+        });
     }
 
     function addSupportBubble(m){
@@ -1081,6 +1098,7 @@
     function onFileSelected(){
         var f = fileInput.files && fileInput.files[0];
         if(!f) return;
+        if(!(/^image\//.test(f.type) || f.type==='application/pdf')){ clearPendingFile(); if(window.toast){ try{ window.toast('Only images and PDF files are allowed.','error'); }catch(e){} } return; }
         if(f.size > 10*1024*1024){ clearPendingFile(); if(window.toast){ try{ window.toast('File is too large (max 10MB).','error'); }catch(e){} } return; }
         state.pendingFile = f;
         attachPending.style.display='flex';

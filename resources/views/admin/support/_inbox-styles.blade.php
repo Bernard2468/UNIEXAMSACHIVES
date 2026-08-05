@@ -158,7 +158,8 @@
 .sib-att-img{ max-width:220px; max-height:240px; border-radius:12px; display:block; }
 .sib-att-file{ display:inline-flex; align-items:center; gap:9px; text-decoration:none; padding:8px 11px; border-radius:11px; background:rgba(0,0,0,.045); border:1px solid rgba(0,0,0,.06); color:inherit; max-width:240px; margin:1px 0 2px; }
 .sib-att-file:hover{ background:rgba(0,0,0,.07); }
-.sib-att-ic{ font-size:19px; flex:0 0 auto; }
+.sib-att-ic{ flex:0 0 auto; display:inline-flex; align-items:center; }
+.sib-att-ic svg{ display:block; filter:drop-shadow(0 1px 1px rgba(0,0,0,.08)); }
 .sib-att-meta{ display:flex; flex-direction:column; min-width:0; }
 .sib-att-name{ font-size:12.5px; font-weight:600; color:#111b21; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sib-att-size{ font-size:10.5px; color:rgba(17,27,33,.5); }
