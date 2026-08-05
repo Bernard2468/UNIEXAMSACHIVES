@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\BotConversation;
+use App\Models\BotMessage;
 use App\Services\Support\SupportChatService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -103,22 +104,56 @@ class SupportChatController extends Controller
         return response()->json($this->threadPayload($conversation->fresh(), markRead: false, after: $after));
     }
 
-    /** Send a message as the requesting user. */
+    /** Allowed attachment types (images + common docs), shared with the agent side. */
+    public const ALLOWED_ATTACHMENT_MIMES = 'image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain';
+
+    /** Send a message (and/or a file) as the requesting user. */
     public function message(Request $request, BotConversation $conversation)
     {
         abort_unless(Auth::user()->can('reply', $conversation), 403);
 
         $data = $request->validate([
-            'body'      => 'required|string|max:4000',
-            'client_id' => 'nullable|string|max:64',
+            'body'       => 'nullable|string|max:4000',
+            'client_id'  => 'nullable|string|max:64',
+            'attachment' => ['nullable', 'file', 'max:10240', 'mimetypes:' . self::ALLOWED_ATTACHMENT_MIMES],
         ]);
 
-        $msg = $this->support->postUserMessage($conversation, Auth::user(), $data['body'], $data['client_id'] ?? null);
+        $body = trim((string) ($data['body'] ?? ''));
+        $attachment = $request->hasFile('attachment')
+            ? $this->support->storeUploadedFile($request->file('attachment'), $conversation->id)
+            : null;
+
+        if ($body === '' && !$attachment) {
+            return response()->json(['ok' => false, 'error' => 'Type a message or attach a file.'], 422);
+        }
+
+        $msg = $this->support->postUserMessage($conversation, Auth::user(), $body, $data['client_id'] ?? null, $attachment);
 
         return response()->json([
             'ok'      => true,
             'message' => $msg ? $this->support->serializeMessage($msg) : null,
         ]);
+    }
+
+    /** Stream a message attachment — authorized to conversation participants only. */
+    public function attachment(Request $request, BotMessage $message)
+    {
+        $conversation = $message->conversation;
+        abort_unless($conversation && $conversation->isSupport(), 404);
+        abort_unless(Auth::user()->can('view', $conversation), 403);
+        abort_unless($message->attachment_path, 404);
+
+        $path = storage_path('app/public/' . $message->attachment_path);
+        abort_unless(is_file($path), 404);
+
+        $mime = $message->attachment_mime ?: 'application/octet-stream';
+        $name = $message->attachment_name ?: 'attachment';
+
+        // Images render inline in the chat; other files download.
+        if (str_starts_with($mime, 'image/')) {
+            return response()->file($path, ['Content-Type' => $mime]);
+        }
+        return response()->download($path, $name, ['Content-Type' => $mime]);
     }
 
     /** The requester marks their own conversation resolved. */

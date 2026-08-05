@@ -278,10 +278,10 @@ class SupportChatService
     // ===== Messaging =====
 
     /** A message from the requesting user. Idempotent on client_id. */
-    public function postUserMessage(BotConversation $conv, User $user, string $body, ?string $clientId = null): ?BotMessage
+    public function postUserMessage(BotConversation $conv, User $user, string $body, ?string $clientId = null, ?array $attachment = null): ?BotMessage
     {
-        return DB::transaction(function () use ($conv, $user, $body, $clientId) {
-            $msg = $this->appendUserMessage($conv, $user, $body, $clientId);
+        return DB::transaction(function () use ($conv, $user, $body, $clientId, $attachment) {
+            $msg = $this->appendUserMessage($conv, $user, $body, $clientId, $attachment);
             if ($msg) {
                 $this->notifyAgentsOfReply($conv->fresh(), $user);
             }
@@ -298,9 +298,9 @@ class SupportChatService
      * Super Admin who has taken it over — can post, so two agents never chat with
      * the same user at once.
      */
-    public function postAgentMessage(BotConversation $conv, User $agent, string $body, bool $internal = false, ?string $clientId = null): ?BotMessage
+    public function postAgentMessage(BotConversation $conv, User $agent, string $body, bool $internal = false, ?string $clientId = null, ?array $attachment = null): ?BotMessage
     {
-        return DB::transaction(function () use ($conv, $agent, $body, $internal, $clientId) {
+        return DB::transaction(function () use ($conv, $agent, $body, $internal, $clientId, $attachment) {
             if ($clientId) {
                 $dupe = $conv->messages()->where('client_id', $clientId)->first();
                 if ($dupe) {
@@ -329,7 +329,7 @@ class SupportChatService
                 }
             }
 
-            $msg = BotMessage::create([
+            $msg = BotMessage::create(array_merge([
                 'conversation_id' => $conv->id,
                 'role'            => 'assistant',
                 'sender_type'     => BotMessage::SENDER_AGENT,
@@ -337,7 +337,7 @@ class SupportChatService
                 'content'         => $body,
                 'client_id'       => $clientId,
                 'is_internal'     => $internal,
-            ]);
+            ], $this->attachmentColumns($attachment)));
 
             if ($internal) {
                 return $msg; // agent-private — no status/counter/notify changes
@@ -529,7 +529,7 @@ class SupportChatService
 
     // ===== Internal writes =====
 
-    private function appendUserMessage(BotConversation $conv, User $user, string $body, ?string $clientId): ?BotMessage
+    private function appendUserMessage(BotConversation $conv, User $user, string $body, ?string $clientId, ?array $attachment = null): ?BotMessage
     {
         if ($clientId) {
             $dupe = $conv->messages()->where('client_id', $clientId)->first();
@@ -538,7 +538,7 @@ class SupportChatService
             }
         }
 
-        $msg = BotMessage::create([
+        $msg = BotMessage::create(array_merge([
             'conversation_id' => $conv->id,
             'role'            => 'user',
             'sender_type'     => BotMessage::SENDER_USER,
@@ -546,7 +546,7 @@ class SupportChatService
             'content'         => $body,
             'client_id'       => $clientId,
             'is_internal'     => false,
-        ]);
+        ], $this->attachmentColumns($attachment)));
 
         $reopened = false;
         if ($conv->isResolved()) {
@@ -724,6 +724,19 @@ class SupportChatService
             $name = trim($m->sender->first_name . ' ' . $m->sender->last_name);
         }
 
+        $attachment = null;
+        if ($m->attachment_path) {
+            $mime = (string) $m->attachment_mime;
+            $attachment = [
+                'url'      => $this->safeRoute('bot.support.attachment', ['message' => $m->id]),
+                'name'     => (string) $m->attachment_name,
+                'mime'     => $mime,
+                'size'     => (int) $m->attachment_size,
+                'size_h'   => $this->humanSize((int) $m->attachment_size),
+                'is_image' => str_starts_with($mime, 'image/'),
+            ];
+        }
+
         return [
             'id'          => $m->id,
             'sender'      => $sender,
@@ -731,9 +744,55 @@ class SupportChatService
             'is_internal' => (bool) $m->is_internal,
             'name'        => $name,
             'avatar'      => $avatar,
+            'attachment'  => $attachment,
             'time'        => optional($m->created_at)->toIso8601String(),
             'time_h'      => optional($m->created_at)->format('g:i A'),
         ];
+    }
+
+    /** Store an uploaded file (randomised name) and return its attachment array. */
+    public function storeUploadedFile(\Illuminate\Http\UploadedFile $file, int $convId): array
+    {
+        $path = $file->store('support/' . $convId, 'public');
+        return [
+            'path' => $path,
+            'name' => $file->getClientOriginalName(),
+            'mime' => $file->getMimeType() ?: $file->getClientMimeType(),
+            'size' => $file->getSize(),
+        ];
+    }
+
+    private function attachmentColumns(?array $attachment): array
+    {
+        if (!$attachment || empty($attachment['path'])) {
+            return [];
+        }
+        return [
+            'attachment_path' => $attachment['path'],
+            'attachment_name' => Str::limit((string) ($attachment['name'] ?? 'file'), 180, ''),
+            'attachment_mime' => (string) ($attachment['mime'] ?? 'application/octet-stream'),
+            'attachment_size' => (int) ($attachment['size'] ?? 0),
+        ];
+    }
+
+    private function humanSize(int $bytes): string
+    {
+        if ($bytes >= 1048576) {
+            return round($bytes / 1048576, 1) . ' MB';
+        }
+        if ($bytes >= 1024) {
+            return round($bytes / 1024) . ' KB';
+        }
+        return $bytes . ' B';
+    }
+
+    private function safeRoute(string $name, array $params): string
+    {
+        try {
+            return route($name, $params, false);
+        } catch (\Throwable $e) {
+            return '';
+        }
     }
 
     /** @return array<string,mixed> */

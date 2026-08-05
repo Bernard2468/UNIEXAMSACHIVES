@@ -127,17 +127,28 @@ class SupportInboxController extends Controller
         abort_unless(Auth::user()->can('reply', $conversation), 403);
 
         $data = $request->validate([
-            'body'      => 'required|string|max:4000',
-            'internal'  => 'nullable|boolean',
-            'client_id' => 'nullable|string|max:64',
+            'body'       => 'nullable|string|max:4000',
+            'internal'   => 'nullable|boolean',
+            'client_id'  => 'nullable|string|max:64',
+            'attachment' => ['nullable', 'file', 'max:10240', 'mimetypes:' . SupportChatController::ALLOWED_ATTACHMENT_MIMES],
         ]);
+
+        $body = trim((string) ($data['body'] ?? ''));
+        $attachment = $request->hasFile('attachment')
+            ? $this->support->storeUploadedFile($request->file('attachment'), $conversation->id)
+            : null;
+
+        if ($body === '' && !$attachment) {
+            return response()->json(['ok' => false, 'error' => 'Type a reply or attach a file.'], 422);
+        }
 
         $msg = $this->support->postAgentMessage(
             $conversation,
             Auth::user(),
-            $data['body'],
+            $body,
             (bool) ($data['internal'] ?? false),
             $data['client_id'] ?? null,
+            $attachment,
         );
 
         // Null = the thread was just claimed by another agent (lost the race).

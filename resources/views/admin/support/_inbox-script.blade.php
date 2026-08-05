@@ -32,7 +32,8 @@
         search: document.getElementById('sibSearch'), tabs: document.getElementById('sibTabs'),
         back: document.getElementById('sibBack'),
         lock: document.getElementById('sibLock'), lockText: document.getElementById('sibLockText'),
-        csat: document.getElementById('sibCsat')
+        csat: document.getElementById('sibCsat'),
+        clip: document.getElementById('sibClip'), file: document.getElementById('sibFile'), attachPending: document.getElementById('sibAttachPending')
     };
 
     // Chat wallpaper (Super-Admin set) — applied to the pane (clipped, non-scrolling)
@@ -41,7 +42,7 @@
         try{ el.pane.classList.add('sib-has-wall'); el.pane.style.setProperty('--sib-wall', 'url("'+CFG.wallpaper.replace(/["\\;]/g,'')+'")'); }catch(e){}
     }
 
-    var state = { filter:'open', q:'', activeId:0, activeConv:null, lastMsgId:0, sending:false, listTimer:null, msgTimer:null };
+    var state = { filter:'open', q:'', activeId:0, activeConv:null, lastMsgId:0, sending:false, listTimer:null, msgTimer:null, pendingFile:null };
 
     // ---------- list ----------
     function fetchList(){
@@ -87,6 +88,7 @@
     // ---------- thread ----------
     function openConversation(id){
         state.activeId = id; state.lastMsgId = 0;
+        clearPendingFile();
         highlightActive();
         el.paneEmpty.style.display = 'none';
         el.wrap.style.display = 'flex';
@@ -194,11 +196,22 @@
         var row = document.createElement('div');
         row.className = 'sib-row ' + (isAgent?'agent':'user') + (m.is_internal?' internal':'');
         var avatar = m.avatar ? '<img src="'+esc(m.avatar)+'" alt="" onerror="this.remove()">' : '';
+        var att = attachmentHtml(m.attachment);
+        var bodyHtml = (m.is_internal?'📝 ':'') + (m.body ? esc(m.body) : '');
         row.innerHTML =
             '<div class="sib-mav">'+avatar+esc(initials(m.name||(isAgent?'A':'U')))+'</div>'+
-            '<div><div class="sib-bubble">'+(m.is_internal?'📝 ':'')+esc(m.body)+'</div>'+
+            '<div><div class="sib-bubble">'+att+bodyHtml+'</div>'+
             '<span class="sib-time">'+esc(m.time_h||'')+(m.is_internal?' · internal note':'')+'</span></div>';
         el.msgs.appendChild(row);
+    }
+
+    function attachmentHtml(att){
+        if(!att) return '';
+        if(att.is_image && att.url){
+            return '<a class="sib-att-img-link" href="'+esc(att.url)+'" target="_blank" rel="noopener"><img class="sib-att-img" src="'+esc(att.url)+'" alt="'+esc(att.name||'image')+'"></a>';
+        }
+        var url = att.url ? esc(att.url) : '#';
+        return '<a class="sib-att-file" href="'+url+'" target="_blank" rel="noopener"><span class="sib-att-ic">📄</span><span class="sib-att-meta"><span class="sib-att-name">'+esc(att.name||'file')+'</span><span class="sib-att-size">'+esc(att.size_h||'')+'</span></span></a>';
     }
 
     function startThreadPoll(){
@@ -223,14 +236,24 @@
     function stopThreadPoll(){ if(state.msgTimer){ clearInterval(state.msgTimer); state.msgTimer=null; } }
 
     // ---------- send ----------
+    function fileHdrs(){ return {'X-CSRF-TOKEN':CFG.csrf,'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}; }
+
     function sendReply(){
         var body = el.input.value.trim();
-        if(!body || state.sending || !state.activeId) return;
+        var file = state.pendingFile;
+        if((!body && !file) || state.sending || !state.activeId) return;
         state.sending = true; el.send.disabled = true;
         var internal = el.internal.checked;
         var cid = uid();
-        fetch(u(CFG.reply, state.activeId), {method:'POST', headers:hdrs(), body:JSON.stringify({body:body, internal:internal, client_id:cid})})
-            .then(function(r){ return r.json().then(function(j){ return {status:r.status, j:(j||{})}; }); })
+        var req;
+        if(file){
+            var fd = new FormData();
+            fd.append('body', body); fd.append('internal', internal?'1':'0'); fd.append('client_id', cid); fd.append('attachment', file);
+            req = fetch(u(CFG.reply, state.activeId), {method:'POST', headers:fileHdrs(), body:fd});
+        } else {
+            req = fetch(u(CFG.reply, state.activeId), {method:'POST', headers:hdrs(), body:JSON.stringify({body:body, internal:internal, client_id:cid})});
+        }
+        req.then(function(r){ return r.json().then(function(j){ return {status:r.status, j:(j||{})}; }); })
             .then(function(res){
                 state.sending=false;
                 var d = res.j;
@@ -238,7 +261,7 @@
                     appendMessage(d.message);
                     state.lastMsgId = Math.max(state.lastMsgId, d.message.id);
                     el.msgs.scrollTop = el.msgs.scrollHeight;
-                    el.input.value=''; autosize(); refreshSend();
+                    el.input.value=''; clearPendingFile(); autosize(); refreshSend();
                     fetchList();
                 } else if(res.status===409 || res.status===403 || d.locked){
                     // Another agent owns it now — flip this view to read-only.
@@ -278,7 +301,27 @@
 
     // ---------- composer helpers ----------
     function autosize(){ el.input.style.height='auto'; el.input.style.height=Math.min(140, el.input.scrollHeight)+'px'; }
-    function refreshSend(){ el.send.disabled = !el.input.value.trim() || state.sending; }
+    function refreshSend(){ el.send.disabled = (!el.input.value.trim() && !state.pendingFile) || state.sending; }
+
+    function onFileSelected(){
+        var f = el.file.files && el.file.files[0];
+        if(!f) return;
+        if(f.size > 10*1024*1024){ clearPendingFile(); if(window.toast){ try{ window.toast('File is too large (max 10MB).','error'); }catch(e){} } return; }
+        state.pendingFile = f;
+        el.attachPending.style.display='flex';
+        el.attachPending.innerHTML='<span class="name"></span><button type="button" title="Remove">✕</button>';
+        el.attachPending.querySelector('.name').textContent='📎 '+f.name;
+        el.attachPending.querySelector('button').addEventListener('click', clearPendingFile);
+        refreshSend();
+    }
+    function clearPendingFile(){
+        state.pendingFile=null;
+        if(el.file) el.file.value='';
+        if(el.attachPending){ el.attachPending.style.display='none'; el.attachPending.innerHTML=''; }
+        refreshSend();
+    }
+    if(el.clip){ el.clip.addEventListener('click', function(){ if(el.file) el.file.click(); }); }
+    if(el.file){ el.file.addEventListener('change', onFileSelected); }
 
     var lastTyping = 0;
     el.input.addEventListener('input', function(){

@@ -270,13 +270,12 @@
 .ub-row.user{ justify-content:flex-end; }
 @keyframes ub-rise{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 .ub-av{ width:26px; height:26px; object-fit:contain; display:block; flex-shrink:0; }
-.ub-bubble{ max-width:80%; padding:9px 13px; border-radius:18px 18px 18px 5px; background:var(--ub-surface-alt);
-    border:1px solid var(--ub-border-light); box-shadow:0 1px 2px rgba(16,24,40,.05); font-size:13px; line-height:1.5; color:var(--ub-text); }
-/* Outgoing (the user's own) message — premium blue pill (Messenger/Telegram feel), high-contrast white text. */
-.ub-row.user .ub-bubble{ border-radius:18px 18px 5px 18px; background:linear-gradient(135deg,#2f6bff,#1d4ed8); border:none; color:#fff;
-    box-shadow:0 4px 14px rgba(29,78,216,.26); }
-.ub-row.user .ub-bubble a{ color:#fff; }
-.ub-row.user .ub-bubble strong{ color:#fff; }
+/* Incoming (bot/agent) — clean white pill, dark text (WhatsApp/Telegram). */
+.ub-bubble{ max-width:80%; padding:9px 13px; border-radius:18px 18px 18px 5px; background:#ffffff;
+    border:1px solid #e9edef; box-shadow:0 1px 1.5px rgba(11,20,26,.10); font-size:13px; line-height:1.5; color:#111b21; }
+/* Outgoing (the user's own) — soft light-green pill, dark text. Flat, no gradient. */
+.ub-row.user .ub-bubble{ border-radius:18px 18px 5px 18px; background:#dcf8c6; border:1px solid #cdeeb3; color:#111b21;
+    box-shadow:0 1px 1.5px rgba(11,20,26,.10); }
 .ub-bubble p{ margin:2px 0; line-height:1.6; }
 .ub-bubble ul,.ub-bubble ol{ margin:5px 0 5px 16px; padding:0; }
 .ub-bubble li{ margin-bottom:3px; line-height:1.55; }
@@ -286,8 +285,8 @@
 .ub-bubble strong{ font-weight:600; }
 .ub-bubble h2{ font-weight:700; font-size:.85rem; margin:9px 0 3px; }
 .ub-bubble h3{ font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ub-text2); margin:9px 0 3px; }
-.ub-time{ margin:4px 0 0; font-size:9.5px; color:var(--ub-text3); }
-.ub-row.user .ub-time{ color:rgba(255,255,255,.72); }
+.ub-time{ margin:3px 0 0; font-size:9.5px; color:rgba(17,27,33,.45); }
+.ub-row.user .ub-time{ color:rgba(17,27,33,.45); }
 /* Premium chat sizing: smaller on desktop/tablet, keep the perfect mobile size. */
 @media (max-width:767px){ .ub-bubble{ font-size:14px; } .ub-time{ font-size:10px; } }
 .ub-cursor{ display:inline-block; width:2px; height:12px; background:var(--ub-link); margin-left:2px;
@@ -334,8 +333,8 @@
 @media (max-width:767px){ .ub-inputrow input{ font-size:16px; } }
 .ub-send{ width:32px; height:32px; border-radius:9px; flex-shrink:0; background:var(--ub-border-light); border:none;
     cursor:not-allowed; display:flex; align-items:center; justify-content:center; transition:background .18s, transform .1s; }
-.ub-send.active{ background:linear-gradient(135deg,#2f6bff,#1d4ed8); cursor:pointer; }
-.ub-send.active:hover{ background:#1e40af; }
+.ub-send.active{ background:#1f8a53; cursor:pointer; }
+.ub-send.active:hover{ background:#186b40; }
 .ub-send svg{ width:14px; height:14px; color:var(--ub-icon); }
 .ub-send.active svg{ color:#fff; }
 .ub-retry{ background:none; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; color:var(--ub-icon);
@@ -363,7 +362,7 @@
 .ub-supback{ flex:0 0 auto; background:none; border:1px solid var(--ub-chip-border); border-radius:8px; font-size:11.5px; color:var(--ub-chip-text); padding:5px 9px; cursor:pointer; font-family:inherit; }
 .ub-supback:hover{ background:var(--ub-chip-hover); }
 .ub-sup-sys{ align-self:center; text-align:center; font-size:11px; color:var(--ub-text3); background:var(--ub-surface-alt); border:1px solid var(--ub-border-light); border-radius:20px; padding:4px 12px; margin:2px auto; max-width:90%; }
-.ub-agent-name{ display:block; font-size:10.5px; font-weight:800; color:#2563eb; margin-bottom:3px; letter-spacing:.01em; }
+.ub-agent-name{ display:block; font-size:10.5px; font-weight:800; color:#1f8a53; margin-bottom:3px; letter-spacing:.01em; }
 .ub-history svg{ width:17px; height:17px; }
 /* history list (the user's past support chats) */
 .ub-hist{ display:flex; align-items:stretch; gap:6px; margin:0 0 8px; transition:opacity .18s; }
@@ -380,6 +379,22 @@
 .ub-hist-del:hover{ color:var(--ub-over); border-color:#fecaca; background:#fef2f2; }
 .ub-hist-del svg{ width:15px; height:15px; }
 .ub-hist-empty{ text-align:center; color:var(--ub-text3); font-size:12.5px; padding:24px 12px; }
+/* attachments */
+.ub-clip{ background:none; border:none; cursor:pointer; padding:4px; color:var(--ub-icon); display:flex; align-items:center; flex:0 0 auto; }
+.ub-clip:hover{ color:var(--ub-icon-hover); }
+.ub-clip svg{ width:18px; height:18px; }
+.ub-attach-pending{ display:flex; align-items:center; gap:8px; padding:7px 10px; margin-bottom:8px; background:var(--ub-surface-alt); border:1px solid var(--ub-border-light); border-radius:10px; font-size:12px; color:var(--ub-text2); }
+.ub-attach-pending .name{ flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ub-attach-pending button{ background:none; border:none; cursor:pointer; color:var(--ub-text3); font-size:14px; flex:0 0 auto; line-height:1; }
+.ub-attach-pending button:hover{ color:var(--ub-over); }
+.ub-att-img-link{ display:block; margin:1px 0 2px; }
+.ub-att-img{ max-width:212px; max-height:230px; border-radius:12px; display:block; }
+.ub-att-file{ display:inline-flex; align-items:center; gap:9px; text-decoration:none; padding:8px 11px; border-radius:11px; background:rgba(0,0,0,.045); border:1px solid rgba(0,0,0,.06); color:inherit; max-width:230px; margin:1px 0 2px; }
+.ub-att-file:hover{ background:rgba(0,0,0,.07); }
+.ub-att-ic{ font-size:18px; flex:0 0 auto; }
+.ub-att-meta{ display:flex; flex-direction:column; min-width:0; }
+.ub-att-name{ font-size:12px; font-weight:600; color:#111b21; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ub-att-size{ font-size:10.5px; color:rgba(17,27,33,.5); }
 /* Chat wallpaper (Super-Admin set) — softly blurred behind the bubbles, WhatsApp/Telegram style.
    Painted on the WINDOW (which is position:fixed + overflow:hidden), NOT the scrolling message
    list — so it fits the chat exactly, never scrolls, and never adds a scrollbar. The blur layer
@@ -464,7 +479,7 @@
     // ---- state ----
     var state = { open:false, loading:false, history:[], remaining:CFG.remaining, limit:(CFG.limit||CFG.remaining), unlimited:CFG.remaining===null, greeted:false,
                   mode:'bot', convId:0, supportLastId:0, supportTimer:null, supportSending:false, pendingContext:[],
-                  supportResolved:false, supportAgentAvatar:null };
+                  supportResolved:false, supportAgentAvatar:null, pendingFile:null };
 
     // ---- helpers ----
     function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -547,7 +562,10 @@
           '</div>'+
           '<div class="ub-msgs" data-msgs></div>'+
           '<div class="ub-foot">'+
+            '<div class="ub-attach-pending" data-attach-pending style="display:none;"></div>'+
             '<div class="ub-inputrow" data-inputrow>'+
+              '<button class="ub-clip" data-clip type="button" title="Attach a file" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.48"/></svg></button>'+
+              '<input type="file" data-file style="display:none;" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt">'+
               '<input type="text" placeholder="Ask me anything about UDTS…" data-input>'+
               '<button class="ub-retry" data-retry title="Retry last">'+ICONS.rotate+'</button>'+
               '<button class="ub-send" data-send>'+ICONS.send+'</button>'+
@@ -559,6 +577,7 @@
     var $=function(s){ return shell.querySelector(s); };
     var msgs=$('[data-msgs]'), input=$('[data-input]'), sendBtn=$('[data-send]'), retryBtn=$('[data-retry]'),
         inputRow=$('[data-inputrow]'),
+        clipBtn=$('[data-clip]'), fileInput=$('[data-file]'), attachPending=$('[data-attach-pending]'),
         progWrap=$('[data-progwrap]'), progText=$('[data-progtext]'), progFill=$('[data-progfill]');
 
     // ---- pill / progress ----
@@ -658,8 +677,8 @@
     function send(text){
         text=(text||input.value).trim();
         if(state.mode==='history'){ input.value=''; setActive(); return; }
+        if(state.mode==='support'){ if(!text && !state.pendingFile) return; input.value=''; setActive(); return sendSupportMessage(text); }
         if(!text) return;
-        if(state.mode==='support'){ input.value=''; setActive(); return sendSupportMessage(text); }
         if(state.mode==='support_intake'){ input.value=''; setActive(); return submitSupportIntake(text); }
         if(state.loading) return;
         clearSuggestions();
@@ -696,7 +715,8 @@
     }
 
     function setActive(){
-        var on = input.value.trim() && !state.loading;
+        var hasFile = (state.mode==='support' && !!state.pendingFile);
+        var on = (input.value.trim() || hasFile) && !state.loading;
         sendBtn.classList.toggle('active', !!on);
         var last = state.history.length>0;
         retryBtn.classList.toggle('on', last && !state.loading);
@@ -741,6 +761,8 @@
         if(!CFG.support.enabled){ historyBtn.style.display='none'; }
         else { historyBtn.addEventListener('click', function(){ openHistory(); }); }
     }
+    if(clipBtn){ clipBtn.addEventListener('click', function(){ if(fileInput && !state.supportResolved) fileInput.click(); }); }
+    if(fileInput){ fileInput.addEventListener('change', onFileSelected); }
 
     // Chat wallpaper (Super-Admin set) — applied to the WINDOW (fixed, clipped) so
     // it fits perfectly and never adds scroll to the message list.
@@ -767,6 +789,8 @@
         if(statusText) statusText.textContent = origStatus;
         if(input){ input.disabled=false; input.setAttribute('placeholder', origPlaceholder); }
         if(retryBtn) retryBtn.style.display='';
+        if(clipBtn) clipBtn.style.display='none';
+        clearPendingFile();
         refreshUsage();
     }
 
@@ -912,6 +936,7 @@
         if(retryBtn) retryBtn.style.display='none';
         if(nameEl) nameEl.textContent = 'Support Team';
         input.setAttribute('placeholder','Message the support team…');
+        if(clipBtn) clipBtn.style.display='';
         renderSupportThread(payload, false);
         startSupportPoll();
         setTimeout(function(){ input.focus(); }, 60);
@@ -953,6 +978,8 @@
             state.supportResolved = true;
             if(input){ input.disabled=true; input.setAttribute('placeholder','This chat is resolved'); }
             if(sendBtn) sendBtn.classList.remove('active');
+            if(clipBtn) clipBtn.style.display='none';
+            clearPendingFile();
             hidePeerTyping();
             if(!bar){
                 bar=document.createElement('div'); bar.className='ub-resolved'; bar.dataset.resolvedBar='1';
@@ -971,6 +998,7 @@
         } else {
             state.supportResolved = false;
             if(input){ input.disabled=false; if(input.getAttribute('placeholder')==='This chat is resolved') input.setAttribute('placeholder','Message the support team…'); }
+            if(clipBtn) clipBtn.style.display='';
             if(bar) bar.remove();
         }
     }
@@ -998,6 +1026,15 @@
     }
     function hidePeerTyping(){ var t=msgs.querySelector('[data-peer-typing]'); if(t) t.remove(); }
 
+    function attachmentHtml(att){
+        if(!att) return '';
+        if(att.is_image && att.url){
+            return '<a class="ub-att-img-link" href="'+esc(att.url)+'" target="_blank" rel="noopener"><img class="ub-att-img" src="'+esc(att.url)+'" alt="'+esc(att.name||'image')+'"></a>';
+        }
+        var url = att.url ? esc(att.url) : '#';
+        return '<a class="ub-att-file" href="'+url+'" target="_blank" rel="noopener"><span class="ub-att-ic">📄</span><span class="ub-att-meta"><span class="ub-att-name">'+esc(att.name||'file')+'</span><span class="ub-att-size">'+esc(att.size_h||'')+'</span></span></a>';
+    }
+
     function addSupportBubble(m){
         if(m.sender==='system'){
             var sys=document.createElement('div'); sys.className='ub-sup-sys'; sys.textContent=m.body;
@@ -1005,26 +1042,58 @@
         }
         var isUser = (m.sender==='user');
         var row=document.createElement('div'); row.className='ub-row'+(isUser?' user':'');
+        var inner = attachmentHtml(m.attachment) + (m.body ? '<p class="ub-msg-text"></p>' : '') + '<p class="ub-time">'+esc(m.time_h||'')+'</p>';
         if(isUser){
-            row.innerHTML='<div class="ub-bubble"><p></p><p class="ub-time">'+esc(m.time_h||'')+'</p></div>';
-            row.querySelector('p').textContent=m.body;
+            row.innerHTML='<div class="ub-bubble">'+inner+'</div>';
         } else {
             var src = m.avatar ? esc(m.avatar) : CFG.robot;
-            row.innerHTML='<img class="ub-av" src="'+src+'" alt=""><div class="ub-bubble"><span class="ub-agent-name">'+esc(m.name||'Support')+'</span><p></p><p class="ub-time">'+esc(m.time_h||'')+'</p></div>';
-            row.querySelectorAll('p')[0].textContent=m.body;
+            row.innerHTML='<img class="ub-av" src="'+src+'" alt=""><div class="ub-bubble"><span class="ub-agent-name">'+esc(m.name||'Support')+'</span>'+inner+'</div>';
         }
+        if(m.body){ var t=row.querySelector('.ub-msg-text'); if(t) t.textContent=m.body; }
         msgs.appendChild(row);
     }
 
+    function fileHdrs(){ return {'X-CSRF-TOKEN':CFG.csrf,'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}; }
+
     function sendSupportMessage(text){
         if(state.supportSending || !state.convId || state.supportResolved) return;
-        addSupportBubble({sender:'user', body:text, time_h:nowTime()}); scrollDown();
+        var file = state.pendingFile;
+        if(!text && !file) return;
         state.supportSending=true;
         var cid=supCid('u');
-        fetch(supUrl(CFG.support.message, state.convId),{method:'POST',headers:hdrs(),body:JSON.stringify({body:text, client_id:cid})})
-            .then(function(r){return r.json();})
-            .then(function(d){ if(d && d.message && d.message.id){ state.supportLastId=Math.max(state.supportLastId, d.message.id); } state.supportSending=false; })
-            .catch(function(){ state.supportSending=false; });
+
+        if(file){
+            clearPendingFile();
+            var fd=new FormData(); fd.append('body', text||''); fd.append('client_id', cid); fd.append('attachment', file);
+            fetch(supUrl(CFG.support.message, state.convId),{method:'POST',headers:fileHdrs(),body:fd})
+                .then(function(r){return r.json();})
+                .then(function(d){ state.supportSending=false; if(d && d.message){ addSupportBubble(d.message); if(d.message.id) state.supportLastId=Math.max(state.supportLastId, d.message.id); scrollDown(); } })
+                .catch(function(){ state.supportSending=false; });
+        } else {
+            addSupportBubble({sender:'user', body:text, time_h:nowTime()}); scrollDown();
+            fetch(supUrl(CFG.support.message, state.convId),{method:'POST',headers:hdrs(),body:JSON.stringify({body:text, client_id:cid})})
+                .then(function(r){return r.json();})
+                .then(function(d){ if(d && d.message && d.message.id){ state.supportLastId=Math.max(state.supportLastId, d.message.id); } state.supportSending=false; })
+                .catch(function(){ state.supportSending=false; });
+        }
+    }
+
+    function onFileSelected(){
+        var f = fileInput.files && fileInput.files[0];
+        if(!f) return;
+        if(f.size > 10*1024*1024){ clearPendingFile(); if(window.toast){ try{ window.toast('File is too large (max 10MB).','error'); }catch(e){} } return; }
+        state.pendingFile = f;
+        attachPending.style.display='flex';
+        attachPending.innerHTML='<span class="name"></span><button type="button" title="Remove">✕</button>';
+        attachPending.querySelector('.name').textContent='📎 '+f.name;
+        attachPending.querySelector('button').addEventListener('click', clearPendingFile);
+        setActive();
+    }
+    function clearPendingFile(){
+        state.pendingFile=null;
+        if(fileInput) fileInput.value='';
+        if(attachPending){ attachPending.style.display='none'; attachPending.innerHTML=''; }
+        setActive();
     }
 
     function startSupportPoll(){

@@ -104,6 +104,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/support/escalate',              [\App\Http\Controllers\Dashboard\SupportChatController::class, 'escalate'])->middleware('throttle:20,1')->name('bot.support.escalate');
     Route::get('/support/active',                 [\App\Http\Controllers\Dashboard\SupportChatController::class, 'active'])->name('bot.support.active');
     Route::get('/support/history',                [\App\Http\Controllers\Dashboard\SupportChatController::class, 'history'])->name('bot.support.history');
+    Route::get('/support/attachment/{message}',   [\App\Http\Controllers\Dashboard\SupportChatController::class, 'attachment'])->name('bot.support.attachment');
     Route::get('/support/{conversation}/thread',  [\App\Http\Controllers\Dashboard\SupportChatController::class, 'thread'])->name('bot.support.thread');
     Route::post('/support/{conversation}/message',[\App\Http\Controllers\Dashboard\SupportChatController::class, 'message'])->middleware('throttle:60,1')->name('bot.support.message');
     Route::post('/support/{conversation}/typing', [\App\Http\Controllers\Dashboard\SupportChatController::class, 'typing'])->middleware('throttle:120,1')->name('bot.support.typing');

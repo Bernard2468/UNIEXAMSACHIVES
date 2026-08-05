@@ -116,16 +116,17 @@
 @keyframes sib-rise{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
 .sib-mav{ flex:0 0 auto; width:28px; height:28px; border-radius:50%; background:#cbd5e1; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; overflow:hidden; position:relative; align-self:flex-end; }
 .sib-mav img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-.sib-bubble{ position:relative; padding:9px 13px; border-radius:16px; font-size:14px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; box-shadow:0 1px 1.5px rgba(15,23,42,.08); }
-.sib-row.user .sib-bubble{ background:#fff; color:var(--sib-text); border-bottom-left-radius:5px; }
-.sib-row.agent .sib-bubble{ background:var(--sib-brand); color:#fff; border-bottom-right-radius:5px; }
+/* WhatsApp/Telegram bubbles — light pills, dark text, flat (no deep colours). */
+.sib-bubble{ position:relative; padding:8px 12px; border-radius:14px; font-size:13.5px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word; box-shadow:0 1px 1.5px rgba(11,20,26,.10); }
+.sib-row.user .sib-bubble{ background:#ffffff; border:1px solid #e9edef; color:#111b21; border-bottom-left-radius:5px; }
+.sib-row.agent .sib-bubble{ background:#dcf8c6; border:1px solid #cdeeb3; color:#111b21; border-bottom-right-radius:5px; }
 .sib-row.agent.internal .sib-bubble{ background:#fffbeb; border:1px dashed var(--sib-amber); color:#92400e; box-shadow:none; }
 /* little tails */
-.sib-row.user .sib-bubble::before{ content:''; position:absolute; left:-5px; bottom:0; width:12px; height:12px; background:#fff; border-bottom-right-radius:12px; clip-path:polygon(100% 0,100% 100%,0 100%); }
-.sib-row.agent:not(.internal) .sib-bubble::before{ content:''; position:absolute; right:-5px; bottom:0; width:12px; height:12px; background:var(--sib-brand); border-bottom-left-radius:12px; clip-path:polygon(0 0,100% 100%,0 100%); }
-.sib-agent-name{ display:block; font-size:11px; font-weight:700; color:#dbe4f5; margin-bottom:2px; }
+.sib-row.user .sib-bubble::before{ content:''; position:absolute; left:-5px; bottom:0; width:12px; height:12px; background:#ffffff; border-bottom-right-radius:12px; clip-path:polygon(100% 0,100% 100%,0 100%); }
+.sib-row.agent:not(.internal) .sib-bubble::before{ content:''; position:absolute; right:-5px; bottom:0; width:12px; height:12px; background:#dcf8c6; border-bottom-left-radius:12px; clip-path:polygon(0 0,100% 100%,0 100%); }
+.sib-agent-name{ display:block; font-size:11px; font-weight:800; color:#1f8a53; margin-bottom:2px; }
 .sib-row.agent.internal .sib-agent-name{ color:#b45309; }
-.sib-time{ font-size:10px; color:var(--sib-text3); margin-top:3px; display:block; }
+.sib-time{ font-size:9.5px; color:rgba(17,27,33,.45); margin-top:3px; display:block; }
 .sib-row.agent .sib-time{ text-align:right; }
 .sib-sys{ font-size:11.5px; color:#475569; background:rgba(255,255,255,.85); border-radius:20px; padding:5px 14px; text-align:center; box-shadow:0 1px 2px rgba(15,23,42,.06); }
 
@@ -144,6 +145,23 @@
 .sib-send:active{ transform:scale(.92); }
 .sib-send:disabled{ opacity:.4; cursor:not-allowed; }
 .sib-composer.note-on .sib-send{ background:var(--sib-amber); }
+
+/* attachments */
+.sib-clip{ flex:0 0 auto; width:40px; height:44px; border:none; background:none; cursor:pointer; color:var(--sib-text3); display:flex; align-items:center; justify-content:center; }
+.sib-clip:hover{ color:var(--sib-brand); }
+.sib-clip svg{ width:20px; height:20px; }
+.sib-attach-pending{ display:flex; align-items:center; gap:8px; padding:7px 10px; margin-bottom:8px; background:var(--sib-bg2); border:1px solid var(--sib-border); border-radius:10px; font-size:12.5px; color:var(--sib-text2); }
+.sib-attach-pending .name{ flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sib-attach-pending button{ background:none; border:none; cursor:pointer; color:var(--sib-text3); font-size:15px; line-height:1; }
+.sib-attach-pending button:hover{ color:var(--sib-red); }
+.sib-att-img-link{ display:block; margin:1px 0 2px; }
+.sib-att-img{ max-width:220px; max-height:240px; border-radius:12px; display:block; }
+.sib-att-file{ display:inline-flex; align-items:center; gap:9px; text-decoration:none; padding:8px 11px; border-radius:11px; background:rgba(0,0,0,.045); border:1px solid rgba(0,0,0,.06); color:inherit; max-width:240px; margin:1px 0 2px; }
+.sib-att-file:hover{ background:rgba(0,0,0,.07); }
+.sib-att-ic{ font-size:19px; flex:0 0 auto; }
+.sib-att-meta{ display:flex; flex-direction:column; min-width:0; }
+.sib-att-name{ font-size:12.5px; font-weight:600; color:#111b21; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sib-att-size{ font-size:10.5px; color:rgba(17,27,33,.5); }
 
 /* chat wallpaper (Super-Admin set) — painted on the non-scrolling pane (clipped),
    NOT the scrolling message list, so it fits exactly and never adds a scrollbar */

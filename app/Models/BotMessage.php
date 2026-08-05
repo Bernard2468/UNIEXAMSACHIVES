@@ -17,6 +17,7 @@ class BotMessage extends Model
     protected $fillable = [
         'conversation_id', 'role', 'content', 'source',
         'sender_type', 'sender_id', 'client_id', 'is_internal', 'read_at',
+        'attachment_path', 'attachment_name', 'attachment_mime', 'attachment_size',
     ];
 
     protected $casts = [
