@@ -270,10 +270,13 @@
 .ub-row.user{ justify-content:flex-end; }
 @keyframes ub-rise{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
 .ub-av{ width:26px; height:26px; object-fit:contain; display:block; flex-shrink:0; }
-.ub-bubble{ max-width:78%; padding:10px 14px; border-radius:18px 18px 18px 4px; background:var(--ub-surface-alt);
-    border:1px solid var(--ub-border-light); box-shadow:0 1px 3px rgba(0,0,0,.04); font-size:14px; line-height:1.55; color:var(--ub-text); }
-.ub-row.user .ub-bubble{ border-radius:18px 18px 4px 18px; background:var(--ub-user); border:none; color:#fff;
-    box-shadow:0 2px 8px rgba(0,0,0,.12); }
+.ub-bubble{ max-width:80%; padding:9px 13px; border-radius:18px 18px 18px 5px; background:var(--ub-surface-alt);
+    border:1px solid var(--ub-border-light); box-shadow:0 1px 2px rgba(16,24,40,.05); font-size:13px; line-height:1.5; color:var(--ub-text); }
+/* Outgoing (the user's own) message — premium blue pill (Messenger/Telegram feel), high-contrast white text. */
+.ub-row.user .ub-bubble{ border-radius:18px 18px 5px 18px; background:linear-gradient(135deg,#2f6bff,#1d4ed8); border:none; color:#fff;
+    box-shadow:0 4px 14px rgba(29,78,216,.26); }
+.ub-row.user .ub-bubble a{ color:#fff; }
+.ub-row.user .ub-bubble strong{ color:#fff; }
 .ub-bubble p{ margin:2px 0; line-height:1.6; }
 .ub-bubble ul,.ub-bubble ol{ margin:5px 0 5px 16px; padding:0; }
 .ub-bubble li{ margin-bottom:3px; line-height:1.55; }
@@ -283,8 +286,10 @@
 .ub-bubble strong{ font-weight:600; }
 .ub-bubble h2{ font-weight:700; font-size:.85rem; margin:9px 0 3px; }
 .ub-bubble h3{ font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ub-text2); margin:9px 0 3px; }
-.ub-time{ margin:5px 0 0; font-size:10px; color:var(--ub-text3); }
-.ub-row.user .ub-time{ color:rgba(255,255,255,.4); }
+.ub-time{ margin:4px 0 0; font-size:9.5px; color:var(--ub-text3); }
+.ub-row.user .ub-time{ color:rgba(255,255,255,.72); }
+/* Premium chat sizing: smaller on desktop/tablet, keep the perfect mobile size. */
+@media (max-width:767px){ .ub-bubble{ font-size:14px; } .ub-time{ font-size:10px; } }
 .ub-cursor{ display:inline-block; width:2px; height:12px; background:var(--ub-link); margin-left:2px;
     vertical-align:middle; border-radius:1px; animation:ub-blink .72s ease-in-out infinite; }
 @keyframes ub-blink{ 0%,100%{opacity:1;} 50%{opacity:0;} }
@@ -329,8 +334,8 @@
 @media (max-width:767px){ .ub-inputrow input{ font-size:16px; } }
 .ub-send{ width:32px; height:32px; border-radius:9px; flex-shrink:0; background:var(--ub-border-light); border:none;
     cursor:not-allowed; display:flex; align-items:center; justify-content:center; transition:background .18s, transform .1s; }
-.ub-send.active{ background:var(--ub-user); cursor:pointer; }
-.ub-send.active:hover{ background:#27272a; }
+.ub-send.active{ background:linear-gradient(135deg,#2f6bff,#1d4ed8); cursor:pointer; }
+.ub-send.active:hover{ background:#1e40af; }
 .ub-send svg{ width:14px; height:14px; color:var(--ub-icon); }
 .ub-send.active svg{ color:#fff; }
 .ub-retry{ background:none; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; color:var(--ub-icon);
@@ -358,7 +363,7 @@
 .ub-supback{ flex:0 0 auto; background:none; border:1px solid var(--ub-chip-border); border-radius:8px; font-size:11.5px; color:var(--ub-chip-text); padding:5px 9px; cursor:pointer; font-family:inherit; }
 .ub-supback:hover{ background:var(--ub-chip-hover); }
 .ub-sup-sys{ align-self:center; text-align:center; font-size:11px; color:var(--ub-text3); background:var(--ub-surface-alt); border:1px solid var(--ub-border-light); border-radius:20px; padding:4px 12px; margin:2px auto; max-width:90%; }
-.ub-agent-name{ display:block; font-size:10.5px; font-weight:700; color:#1a4a9b; margin-bottom:2px; }
+.ub-agent-name{ display:block; font-size:10.5px; font-weight:800; color:#2563eb; margin-bottom:3px; letter-spacing:.01em; }
 .ub-history svg{ width:17px; height:17px; }
 /* history list (the user's past support chats) */
 .ub-hist{ display:flex; align-items:stretch; gap:6px; margin:0 0 8px; transition:opacity .18s; }
