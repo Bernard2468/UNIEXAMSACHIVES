@@ -107,8 +107,10 @@
                                     {{-- What the bot already tried --}}
                                     <div class="sib-context" id="sibContext" style="display:none;">
                                         <button class="sib-context-toggle" id="sibContextToggle">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                                            What the assistant already tried
+                                            <span class="sib-ctx-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg></span>
+                                            <span class="sib-ctx-title">What MetaGuide already tried</span>
+                                            <span class="sib-ctx-count" id="sibContextCount"></span>
+                                            <svg class="sib-ctx-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                                         </button>
                                         <div class="sib-context-body" id="sibContextBody" style="display:none;"></div>
                                     </div>

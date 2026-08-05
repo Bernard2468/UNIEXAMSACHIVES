@@ -95,14 +95,34 @@
 .sib-btn.green{ background:var(--sib-green); border-color:var(--sib-green); color:#fff; }
 .sib-btn.green:hover{ background:#15803d; color:#fff; }
 
-/* bot context */
-.sib-context{ border-bottom:1px solid var(--sib-border2); background:#fffdf7; }
-.sib-context-toggle{ width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:10px 18px; font-size:12.5px; font-weight:600; font-family:inherit; color:#92400e; display:flex; align-items:center; gap:8px; }
-.sib-context-toggle svg{ width:13px; height:13px; transition:transform .18s; }
-.sib-context-toggle.open svg{ transform:rotate(90deg); }
-.sib-context-body{ padding:2px 18px 14px; }
-.sib-ctx-turn{ font-size:12.5px; line-height:1.5; margin:6px 0; padding-left:10px; border-left:2px solid #fde68a; color:#57534e; }
-.sib-ctx-turn b{ color:#78716c; }
+/* bot context — a rich mini-transcript of what the assistant already tried */
+.sib-context{ border-bottom:1px solid var(--sib-border2); background:linear-gradient(180deg,#fffdf7,#fefce8); }
+.sib-context-toggle{ width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:11px 16px; font-size:12.5px; font-weight:700; font-family:inherit; color:#92400e; display:flex; align-items:center; gap:9px; }
+.sib-ctx-badge{ flex:0 0 auto; width:24px; height:24px; border-radius:7px; background:#fef3c7; color:#b45309; display:inline-flex; align-items:center; justify-content:center; }
+.sib-ctx-badge svg{ width:15px; height:15px; }
+.sib-ctx-title{ flex:1 1 auto; }
+.sib-ctx-count{ flex:0 0 auto; background:#fde68a; color:#92400e; font-size:10px; font-weight:700; border-radius:20px; padding:1px 8px; }
+.sib-ctx-count:empty{ display:none; }
+.sib-ctx-chev{ flex:0 0 auto; width:14px; height:14px; color:#b45309; transition:transform .18s; }
+.sib-context-toggle.open .sib-ctx-chev{ transform:rotate(90deg); }
+.sib-context-body{ padding:8px 16px 14px; display:flex; flex-direction:column; gap:9px; }
+.sib-ctx-turn{ display:flex; gap:8px; max-width:90%; }
+.sib-ctx-turn.user{ align-self:flex-end; flex-direction:row-reverse; }
+.sib-ctx-turn.bot{ align-self:flex-start; }
+.sib-ctx-av{ flex:0 0 auto; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; align-self:flex-end; }
+.sib-ctx-turn.user .sib-ctx-av{ background:#dcf8c6; color:#3d6b2e; }
+.sib-ctx-turn.bot .sib-ctx-av{ background:#1a4a9b; color:#fff; }
+.sib-ctx-av svg{ width:15px; height:15px; }
+.sib-ctx-msg{ min-width:0; }
+.sib-ctx-who{ font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:#a1976f; margin:0 3px 3px; }
+.sib-ctx-turn.user .sib-ctx-who{ text-align:right; }
+.sib-ctx-text{ font-size:12.5px; line-height:1.55; color:#44403c; background:#ffffff; border:1px solid #f1e7cf; border-radius:13px; padding:8px 12px; box-shadow:0 1px 1px rgba(120,90,20,.05); word-wrap:break-word; }
+.sib-ctx-turn.user .sib-ctx-text{ background:#dcf8c6; border-color:#cdeeb3; color:#111b21; }
+.sib-ctx-text a{ color:#1a4a9b; text-decoration:underline; text-underline-offset:2px; word-break:break-word; font-weight:600; }
+.sib-ctx-text strong{ font-weight:700; color:#1f2937; }
+.sib-ctx-turn.user .sib-ctx-text strong{ color:#0b3d0b; }
+.sib-ctx-text em{ font-style:italic; }
+.sib-ctx-text code{ background:#f4f4f5; color:#3f3f46; padding:1px 5px; border-radius:4px; font-size:.85em; font-family:'Geist Mono','Fira Code',monospace; }
 
 /* messages — chat wallpaper + bubbles with tails */
 .sib-msgs{ flex:1 1 auto; overflow-y:auto; padding:18px 16px; display:flex; flex-direction:column; gap:10px;

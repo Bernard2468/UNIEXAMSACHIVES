@@ -26,7 +26,7 @@
         thName: document.getElementById('sibThName'), thSub: document.getElementById('sibThSub'),
         thAvatar: document.getElementById('sibThAvatar'), thActions: document.getElementById('sibThActions'),
         context: document.getElementById('sibContext'), contextToggle: document.getElementById('sibContextToggle'),
-        contextBody: document.getElementById('sibContextBody'),
+        contextBody: document.getElementById('sibContextBody'), contextCount: document.getElementById('sibContextCount'),
         input: document.getElementById('sibInput'), send: document.getElementById('sibSend'),
         internal: document.getElementById('sibInternal'), composer: document.getElementById('sibComposer'),
         search: document.getElementById('sibSearch'), tabs: document.getElementById('sibTabs'),
@@ -123,11 +123,54 @@
         setUserTyping(!!d.peer_typing);
         el.msgs.scrollTop = el.msgs.scrollHeight;
     }
+    // Safe inline markdown → HTML (bold, italic, code, safe links). Escapes everything else.
+    function ctxInline(text){
+        var out=''; var rem=String(text==null?'':text); var guard=0;
+        var pats=[
+            {re:/\[([^\]]+)\]\(([^)]+)\)/, t:'link'},
+            {re:/\*\*([^*]+)\*\*/, t:'bold'},
+            {re:/\*([^*\n]+)\*/, t:'em'},
+            {re:/`([^`]+)`/, t:'code'}
+        ];
+        while(rem.length && guard++<400){
+            var idx=Infinity, m=null, type='';
+            for(var i=0;i<pats.length;i++){ var mm=pats[i].re.exec(rem); if(mm && mm.index<idx){ idx=mm.index; m=mm; type=pats[i].t; } }
+            if(!m){ out+=esc(rem); break; }
+            if(idx>0) out+=esc(rem.slice(0,idx));
+            if(type==='link'){
+                var label=esc(m[1]); var href=m[2].trim();
+                var internal = href.charAt(0)==='/';
+                var safe = internal || /^https?:\/\//i.test(href) || /^mailto:/i.test(href);
+                if(!safe){ out+=label; }
+                else{
+                    // Open in a new tab so the agent never loses the inbox.
+                    out+='<a href="'+encodeURI(href)+'" target="_blank" rel="noopener noreferrer">'+label+'</a>';
+                }
+            }
+            else if(type==='bold'){ out+='<strong>'+esc(m[1])+'</strong>'; }
+            else if(type==='em'){ out+='<em>'+esc(m[1])+'</em>'; }
+            else if(type==='code'){ out+='<code>'+esc(m[1])+'</code>'; }
+            rem=rem.slice(idx+m[0].length);
+        }
+        return out;
+    }
+    function ctxRich(text){ return String(text==null?'':text).split('\n').map(ctxInline).join('<br>'); }
+
+    var CTX_BOT_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>';
+
     function renderContext(turns){
-        if(!turns.length){ el.context.style.display='none'; return; }
+        if(!turns.length){ el.context.style.display='none'; if(el.contextCount) el.contextCount.textContent=''; return; }
         el.context.style.display='block';
+        if(el.contextCount) el.contextCount.textContent = turns.length + (turns.length===1?' message':' messages');
+        var uname = (state.activeConv && state.activeConv.user && state.activeConv.user.name) ? state.activeConv.user.name : 'User';
         el.contextBody.innerHTML = turns.map(function(t){
-            return '<div class="sib-ctx-turn"><b>'+(t.role==='assistant'?'Assistant':'User')+':</b> '+esc(t.content)+'</div>';
+            var isBot = (t.role==='assistant');
+            var who = isBot ? 'MetaGuide' : esc(uname);
+            var av  = isBot ? CTX_BOT_ICON : esc(initials(uname));
+            return '<div class="sib-ctx-turn '+(isBot?'bot':'user')+'">'+
+                     '<div class="sib-ctx-av">'+av+'</div>'+
+                     '<div class="sib-ctx-msg"><div class="sib-ctx-who">'+who+'</div><div class="sib-ctx-text">'+ctxRich(t.content)+'</div></div>'+
+                   '</div>';
         }).join('');
     }
     // Actions + composer/lock, driven entirely by the server's per-viewer flags
@@ -357,7 +400,7 @@
     el.back.addEventListener('click', function(){ root.classList.remove('show-thread'); state.activeId=0; stopThreadPoll(); highlightActive(); });
     el.contextToggle.addEventListener('click', function(){
         var open = el.contextBody.style.display!=='none';
-        el.contextBody.style.display = open ? 'none' : 'block';
+        el.contextBody.style.display = open ? 'none' : '';
         el.contextToggle.classList.toggle('open', !open);
     });
 
