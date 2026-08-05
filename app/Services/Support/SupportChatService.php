@@ -149,6 +149,38 @@ class SupportChatService
         return $this->agentPresent() || $this->isWithinSupportHours();
     }
 
+    /** Optional chat wallpaper URL (Super-Admin set). Empty = none. */
+    public function wallpaper(): ?string
+    {
+        $url = trim((string) SystemSetting::get('bot_chat_wallpaper', ''));
+        return $url !== '' ? $url : null;
+    }
+
+    // ===== Typing indicators (cache-based, polled) =====
+
+    private function typingKey(int $convId, string $who): string
+    {
+        return "support:typing:{$convId}:{$who}"; // who = user | agent
+    }
+
+    public function setTyping(int $convId, string $who): void
+    {
+        try {
+            Cache::put($this->typingKey($convId, $who), now()->getTimestamp(), 10);
+        } catch (\Throwable $e) {
+        }
+    }
+
+    public function isTyping(int $convId, string $who): bool
+    {
+        try {
+            $ts = Cache::get($this->typingKey($convId, $who));
+            return $ts && (now()->getTimestamp() - (int) $ts) <= 6;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     // ===== Agent pool =====
 
     /**
@@ -378,6 +410,18 @@ class SupportChatService
                 : $name . ' picked up this conversation.';
             $this->addSystemMessage($conv, $line);
         });
+    }
+
+    /** Record the requester's satisfaction rating on a resolved chat (CSAT). */
+    public function recordCsat(BotConversation $conv, string $rating, ?string $note = null): void
+    {
+        $meta = $conv->meta ?? [];
+        $meta['csat'] = [
+            'rating' => $rating === 'up' ? 'up' : 'down',
+            'note'   => $note ? Str::limit(trim($note), 500, '') : null,
+            'at'     => now()->toIso8601String(),
+        ];
+        $conv->forceFill(['meta' => $meta])->save();
     }
 
     /** Soft-hide a thread from the requester's own history (agents keep the record). */
@@ -709,6 +753,8 @@ class SupportChatService
             'updated'     => optional($conv->updated_at)->toIso8601String(),
         ];
 
+        $csat = $conv->meta['csat'] ?? null;
+
         if ($forAgent) {
             $owner = $conv->user;
             $data['user'] = [
@@ -720,8 +766,10 @@ class SupportChatService
             $data['agent_unread'] = (int) $conv->agent_unread;
             $data['assigned_agent_id'] = $conv->assigned_agent_id;
             $data['context'] = $conv->meta['bot_context'] ?? [];
+            $data['csat'] = $csat; // {rating, note, at} — shown as a satisfaction badge
         } else {
             $data['user_unread'] = (int) $conv->user_unread;
+            $data['csat_done'] = !empty($csat); // widget hides the rating prompt once given
         }
 
         return $data;

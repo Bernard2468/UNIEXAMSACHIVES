@@ -32,6 +32,7 @@ class SupportInboxController extends Controller
             'preselect' => (int) $request->query('c', 0),
             'hoursText' => $this->support->hoursText(),
             'online'    => $this->support->isSupportOnline(),
+            'wallpaper' => $this->support->wallpaper() ?? '',
         ]);
     }
 
@@ -175,6 +176,14 @@ class SupportInboxController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    /** The agent is typing (drives the user's indicator). */
+    public function typing(Request $request, BotConversation $conversation)
+    {
+        abort_unless(Auth::user()->can('view', $conversation), 403);
+        $this->support->setTyping($conversation->id, 'agent');
+        return response()->json(['ok' => true]);
+    }
+
     /** Badge counts for the sidebar / inbox header. */
     public function counts(Request $request)
     {
@@ -237,6 +246,7 @@ class SupportInboxController extends Controller
         return [
             'conversation' => $conv,
             'messages'     => $messages,
+            'peer_typing'  => $this->support->isTyping($conversation->id, 'user'),
             'server_time'  => now()->toIso8601String(),
         ];
     }

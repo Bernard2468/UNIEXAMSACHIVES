@@ -131,6 +131,30 @@ class SupportChatController extends Controller
         return response()->json(['ok' => true, 'conversation' => $this->support->serializeConversation($conversation->fresh())]);
     }
 
+    /** The requester is typing (lightweight ping; drives the agent's indicator). */
+    public function typing(Request $request, BotConversation $conversation)
+    {
+        abort_unless(Auth::user()->can('view', $conversation), 403);
+        $this->support->setTyping($conversation->id, 'user');
+        return response()->json(['ok' => true]);
+    }
+
+    /** The requester rates a resolved conversation (CSAT). */
+    public function csat(Request $request, BotConversation $conversation)
+    {
+        abort_unless(Auth::user()->can('view', $conversation), 403);
+        abort_unless((int) $conversation->user_id === (int) Auth::id(), 403);
+
+        $data = $request->validate([
+            'rating' => 'required|in:up,down',
+            'note'   => 'nullable|string|max:500',
+        ]);
+
+        $this->support->recordCsat($conversation, $data['rating'], $data['note'] ?? null);
+
+        return response()->json(['ok' => true]);
+    }
+
     /** Shared payload builder: conversation meta + user-visible messages. */
     private function threadPayload(BotConversation $conversation, bool $markRead, int $after = 0): array
     {
@@ -154,6 +178,7 @@ class SupportChatController extends Controller
         return [
             'conversation' => $this->support->serializeConversation($conversation),
             'messages'     => $messages,
+            'peer_typing'  => $this->support->isTyping($conversation->id, 'agent'),
             'server_time'  => now()->toIso8601String(),
         ];
     }

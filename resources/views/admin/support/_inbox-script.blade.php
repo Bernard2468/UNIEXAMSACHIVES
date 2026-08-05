@@ -7,9 +7,11 @@
     var CFG = {
         list: root.dataset.list, counts: root.dataset.counts,
         show: root.dataset.show, messages: root.dataset.messages, reply: root.dataset.reply,
+        typing: root.dataset.typing,
         claim: root.dataset.claim, resolve: root.dataset.resolve, reopen: root.dataset.reopen,
         csrf: root.dataset.csrf, me: parseInt(root.dataset.me, 10) || 0,
-        preselect: parseInt(root.dataset.preselect, 10) || 0
+        preselect: parseInt(root.dataset.preselect, 10) || 0,
+        wallpaper: root.dataset.wallpaper || ''
     };
     function u(tpl, id){ return tpl.replace('__CID__', id); }
     function hdrs(){ return {'Content-Type':'application/json','X-CSRF-TOKEN':CFG.csrf,'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}; }
@@ -29,8 +31,14 @@
         internal: document.getElementById('sibInternal'), composer: document.getElementById('sibComposer'),
         search: document.getElementById('sibSearch'), tabs: document.getElementById('sibTabs'),
         back: document.getElementById('sibBack'),
-        lock: document.getElementById('sibLock'), lockText: document.getElementById('sibLockText')
+        lock: document.getElementById('sibLock'), lockText: document.getElementById('sibLockText'),
+        csat: document.getElementById('sibCsat')
     };
+
+    // Chat wallpaper (Super-Admin set) — softly blurred behind the bubbles.
+    if(CFG.wallpaper && el.msgs){
+        try{ el.msgs.classList.add('sib-has-wall'); el.msgs.style.setProperty('--sib-wall', 'url("'+CFG.wallpaper.replace(/["\\;]/g,'')+'")'); }catch(e){}
+    }
 
     var state = { filter:'open', q:'', activeId:0, activeConv:null, lastMsgId:0, sending:false, listTimer:null, msgTimer:null };
 
@@ -109,6 +117,7 @@
         }
         (d.messages || []).forEach(function(m){ appendMessage(m); });
         if(d.messages && d.messages.length){ state.lastMsgId = d.messages[d.messages.length-1].id; }
+        setUserTyping(!!d.peer_typing);
         el.msgs.scrollTop = el.msgs.scrollHeight;
     }
     function renderContext(turns){
@@ -149,6 +158,30 @@
                 el.lockText.textContent = 'View only.';
             }
         }
+
+        // CSAT satisfaction badge (resolved chats the user has rated).
+        if(el.csat){
+            if(conv.csat && conv.csat.rating){
+                el.csat.className = 'sib-csat ' + (conv.csat.rating==='up' ? 'up' : 'down');
+                el.csat.textContent = conv.csat.rating==='up' ? '👍 Satisfied' : '👎 Unsatisfied';
+            } else {
+                el.csat.className = ''; el.csat.textContent = '';
+            }
+        }
+    }
+
+    // User typing indicator (idempotent — no flicker while they keep typing).
+    function setUserTyping(on){
+        var existing = el.msgs.querySelector('[data-user-typing]');
+        if(on){
+            if(existing) return;
+            var row = document.createElement('div'); row.className = 'sib-typing-row'; row.dataset.userTyping = '1';
+            row.innerHTML = '<div class="sib-typing-dots"><i></i><i></i><i></i></div>';
+            el.msgs.appendChild(row);
+            el.msgs.scrollTop = el.msgs.scrollHeight;
+        } else if(existing){
+            existing.remove();
+        }
     }
     function appendMessage(m){
         if(m.sender==='system'){
@@ -176,11 +209,13 @@
                 .then(function(d){
                     if(d.messages && d.messages.length){
                         var atBottom = (el.msgs.scrollHeight - el.msgs.scrollTop - el.msgs.clientHeight) < 60;
+                        setUserTyping(false); // remove so new messages append at the bottom
                         d.messages.forEach(function(m){ appendMessage(m); });
                         state.lastMsgId = d.messages[d.messages.length-1].id;
                         if(atBottom) el.msgs.scrollTop = el.msgs.scrollHeight;
                     }
                     if(d.conversation){ state.activeConv = d.conversation; applyConversationState(d.conversation); }
+                    setUserTyping(!!d.peer_typing);
                 }).catch(function(){});
         }, 4000);
     }
@@ -244,7 +279,14 @@
     function autosize(){ el.input.style.height='auto'; el.input.style.height=Math.min(140, el.input.scrollHeight)+'px'; }
     function refreshSend(){ el.send.disabled = !el.input.value.trim() || state.sending; }
 
-    el.input.addEventListener('input', function(){ autosize(); refreshSend(); });
+    var lastTyping = 0;
+    el.input.addEventListener('input', function(){
+        autosize(); refreshSend();
+        if(state.activeId){
+            var t = Date.now();
+            if(t - lastTyping > 2500){ lastTyping = t; fetch(u(CFG.typing, state.activeId), {method:'POST', headers:hdrs(), body:'{}'}).catch(function(){}); }
+        }
+    });
     el.input.addEventListener('keydown', function(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendReply(); } });
     el.send.addEventListener('click', sendReply);
     el.internal.addEventListener('change', function(){

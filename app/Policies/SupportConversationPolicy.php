@@ -52,14 +52,20 @@ class SupportConversationPolicy
             && ($this->owns($user, $conversation) || $user->isSupportAgent());
     }
 
-    /** Post a message. Owner always; agent only if unassigned (→claims) or theirs. */
+    /**
+     * Post a message.
+     *  - Owner (requester): only while the chat is still open. Once an agent has
+     *    RESOLVED it, the user cannot reply — they must start a new chat (top
+     *    assistants like X/Google close a resolved thread this way).
+     *  - Agent: only if the thread is unassigned (→claims) or already theirs.
+     */
     public function reply(User $user, BotConversation $conversation): bool
     {
         if (!$conversation->isSupport()) {
             return false;
         }
         if ($this->owns($user, $conversation)) {
-            return true;
+            return !$conversation->isResolved();
         }
         if (!$user->isSupportAgent()) {
             return false;

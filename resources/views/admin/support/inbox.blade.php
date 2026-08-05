@@ -22,6 +22,7 @@
                          data-show="{{ route('dashboard.support.show', ['conversation' => '__CID__']) }}"
                          data-messages="{{ route('dashboard.support.messages', ['conversation' => '__CID__']) }}"
                          data-reply="{{ route('dashboard.support.reply', ['conversation' => '__CID__']) }}"
+                         data-typing="{{ route('dashboard.support.typing', ['conversation' => '__CID__']) }}"
                          data-claim="{{ route('dashboard.support.claim', ['conversation' => '__CID__']) }}"
                          data-resolve="{{ route('dashboard.support.resolve', ['conversation' => '__CID__']) }}"
                          data-reopen="{{ route('dashboard.support.reopen', ['conversation' => '__CID__']) }}"
@@ -29,7 +30,8 @@
                          data-me="{{ auth()->id() }}"
                          data-preselect="{{ $preselect }}"
                          data-online="{{ $online ? '1' : '0' }}"
-                         data-hours="{{ $hoursText }}">
+                         data-hours="{{ $hoursText }}"
+                         data-wallpaper="{{ $wallpaper }}">
 
                         {{-- Header --}}
                         <div class="sib-top">
@@ -95,7 +97,7 @@
                                         <div class="sib-th-id">
                                             <div class="sib-th-avatar" id="sibThAvatar"></div>
                                             <div>
-                                                <div class="sib-th-name" id="sibThName">—</div>
+                                                <div class="sib-th-name"><span id="sibThName">—</span><span id="sibCsat"></span></div>
                                                 <div class="sib-th-sub" id="sibThSub"></div>
                                             </div>
                                         </div>

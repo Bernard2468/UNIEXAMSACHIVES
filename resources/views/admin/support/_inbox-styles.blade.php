@@ -145,6 +145,24 @@
 .sib-send:disabled{ opacity:.4; cursor:not-allowed; }
 .sib-composer.note-on .sib-send{ background:var(--sib-amber); }
 
+/* chat wallpaper (Super-Admin set) — softly blurred behind the bubbles */
+.sib-msgs.sib-has-wall{ position:relative; }
+.sib-msgs.sib-has-wall::before{ content:''; position:absolute; inset:-16px; background-image:var(--sib-wall); background-size:cover; background-position:center; filter:blur(9px); opacity:.5; z-index:0; pointer-events:none; }
+.sib-msgs.sib-has-wall::after{ content:''; position:absolute; inset:0; background:rgba(238,241,246,.66); z-index:0; pointer-events:none; }
+.sib-msgs.sib-has-wall > *{ position:relative; z-index:1; }
+
+/* typing indicator (the user is typing) */
+.sib-typing-row{ display:flex; gap:8px; align-self:flex-start; max-width:82%; }
+.sib-typing-dots{ display:flex; gap:5px; align-items:center; padding:11px 14px; border-radius:16px; background:#fff; border:1px solid var(--sib-border); box-shadow:0 1px 1.5px rgba(15,23,42,.08); }
+.sib-typing-dots i{ width:7px; height:7px; border-radius:50%; background:var(--sib-text3); display:inline-block; animation:sib-bounce .65s infinite ease-in-out; }
+.sib-typing-dots i:nth-child(2){ animation-delay:.16s; } .sib-typing-dots i:nth-child(3){ animation-delay:.32s; }
+@keyframes sib-bounce{ 0%,100%{ transform:translateY(0); opacity:.5; } 50%{ transform:translateY(-5px); opacity:1; } }
+
+/* CSAT satisfaction badge in the thread header */
+.sib-csat{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; padding:2px 9px; border-radius:20px; margin-left:8px; }
+.sib-csat.up{ background:#dcfce7; color:#166534; }
+.sib-csat.down{ background:#fee2e2; color:#991b1b; }
+
 /* read-only lock (another agent owns the chat) */
 .sib-lock{ display:flex; align-items:center; gap:10px; padding:14px 18px; border-top:1px solid var(--sib-border2); background:#f8fafc; color:var(--sib-text2); font-size:13px; }
 .sib-lock svg{ width:18px; height:18px; flex:0 0 auto; color:var(--sib-text3); }

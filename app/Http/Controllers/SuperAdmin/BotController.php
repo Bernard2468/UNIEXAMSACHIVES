@@ -35,6 +35,13 @@ class BotController extends Controller
             // NB: the opening greeting is generated dynamically per user (see the
             // bot-assistant widget) — there is intentionally no stored greeting.
             ['key' => 'bot_temperature',       'value' => '0.6', 'data_type' => 'string',  'label' => 'Answer creativity (temperature)'],
+            // ── Human Support Chat (bot → human handoff) ──
+            ['key' => 'support_chat_enabled',  'value' => '1',   'data_type' => 'boolean', 'label' => 'Support Chat enabled'],
+            ['key' => 'support_office_slug',   'value' => 'it-support', 'data_type' => 'string', 'label' => 'Support office (slug)'],
+            ['key' => 'support_hours_start',   'value' => '08:00', 'data_type' => 'string', 'label' => 'Support hours — start'],
+            ['key' => 'support_hours_end',     'value' => '17:00', 'data_type' => 'string', 'label' => 'Support hours — end'],
+            ['key' => 'support_days',          'value' => json_encode([1, 2, 3, 4, 5]), 'data_type' => 'json', 'label' => 'Support working days (ISO 1=Mon)'],
+            ['key' => 'bot_chat_wallpaper',    'value' => '', 'data_type' => 'string', 'label' => 'Chat wallpaper image URL'],
         ];
 
         foreach ($defaults as $d) {
@@ -72,13 +79,27 @@ class BotController extends Controller
     {
         $this->ensureSettings();
 
+        $days = SystemSetting::get('support_days', [1, 2, 3, 4, 5]);
+        if (is_string($days)) {
+            $days = json_decode($days, true) ?: [1, 2, 3, 4, 5];
+        }
+
         $settings = [
             'bot_enabled'           => (bool) SystemSetting::get('bot_enabled', true),
             'bot_daily_user_cap'    => (int) SystemSetting::get('bot_daily_user_cap', 40),
             'bot_store_transcripts' => (bool) SystemSetting::get('bot_store_transcripts', false),
             'bot_model_cascade'     => $this->cascadeString(),
             'bot_temperature'       => (string) SystemSetting::get('bot_temperature', '0.6'),
+            // Support chat
+            'support_chat_enabled'  => (bool) SystemSetting::get('support_chat_enabled', true),
+            'support_office_slug'   => (string) SystemSetting::get('support_office_slug', 'it-support'),
+            'support_hours_start'   => (string) SystemSetting::get('support_hours_start', '08:00'),
+            'support_hours_end'     => (string) SystemSetting::get('support_hours_end', '17:00'),
+            'support_days'          => array_map('intval', (array) $days),
+            'bot_chat_wallpaper'    => (string) SystemSetting::get('bot_chat_wallpaper', ''),
         ];
+
+        $offices = \App\Models\Office::orderBy('name')->get();
 
         $keys = BotApiKey::orderBy('provider')->orderByDesc('is_active')->get();
 
@@ -97,7 +118,7 @@ class BotController extends Controller
             : collect();
 
         return view('super-admin.bot.index', compact(
-            'settings', 'keys', 'analytics', 'series', 'feedback', 'flagged', 'kbEntries', 'transcripts'
+            'settings', 'offices', 'keys', 'analytics', 'series', 'feedback', 'flagged', 'kbEntries', 'transcripts'
         ));
     }
 
@@ -141,6 +162,34 @@ class BotController extends Controller
         }
 
         return back()->with('success', 'Bot settings updated.');
+    }
+
+    /** Human Support Chat settings — availability, routing office, hours, wallpaper. */
+    public function updateSupportSettings(Request $request)
+    {
+        $this->ensureSettings();
+
+        $data = $request->validate([
+            'support_office_slug' => 'nullable|string|max:120',
+            'support_hours_start' => 'required|date_format:H:i',
+            'support_hours_end'   => 'required|date_format:H:i',
+            'support_days'        => 'nullable|array',
+            'support_days.*'      => 'integer|min:1|max:7',
+            'bot_chat_wallpaper'  => 'nullable|string|max:1000',
+        ]);
+
+        SystemSetting::set('support_chat_enabled', $request->boolean('support_chat_enabled'), auth()->id());
+        SystemSetting::set('support_office_slug', trim((string) ($data['support_office_slug'] ?? '')) ?: 'it-support', auth()->id());
+        SystemSetting::set('support_hours_start', $data['support_hours_start'], auth()->id());
+        SystemSetting::set('support_hours_end', $data['support_hours_end'], auth()->id());
+
+        $days = array_values(array_unique(array_map('intval', $data['support_days'] ?? [])));
+        sort($days);
+        SystemSetting::set('support_days', $days ?: [1, 2, 3, 4, 5], auth()->id());
+
+        SystemSetting::set('bot_chat_wallpaper', trim((string) ($data['bot_chat_wallpaper'] ?? '')), auth()->id());
+
+        return back()->with('success', 'Support chat settings updated.');
     }
 
     /** Master switch — turns the bot on/off for the entire system. */

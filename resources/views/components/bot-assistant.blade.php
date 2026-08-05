@@ -91,12 +91,13 @@
     // ── Support Chat (bot → human handoff) config for the widget ──
     // Resolved via the service so hours / online state stay in one place. Wrapped
     // so a not-yet-migrated support layer can never break the widget or the page.
-    $botSupportEnabled = false; $botSupportOnline = false; $botSupportHours = '';
+    $botSupportEnabled = false; $botSupportOnline = false; $botSupportHours = ''; $botWallpaper = '';
     try {
         $supportSvc = app(\App\Services\Support\SupportChatService::class);
         $botSupportEnabled = $supportSvc->isEnabled();
         $botSupportOnline  = $supportSvc->isSupportOnline();
         $botSupportHours   = $supportSvc->hoursText();
+        $botWallpaper      = $supportSvc->wallpaper() ?? '';
     } catch (\Throwable $e) {
         $botSupportEnabled = false;
     }
@@ -122,8 +123,11 @@
      data-support-history="{{ $botSupportSafe('bot.support.history') }}"
      data-support-thread="{{ $botSupportSafe('bot.support.thread', ['conversation' => '__CID__']) }}"
      data-support-message="{{ $botSupportSafe('bot.support.message', ['conversation' => '__CID__']) }}"
+     data-support-typing="{{ $botSupportSafe('bot.support.typing', ['conversation' => '__CID__']) }}"
+     data-support-csat="{{ $botSupportSafe('bot.support.csat', ['conversation' => '__CID__']) }}"
      data-support-resolve="{{ $botSupportSafe('bot.support.resolve', ['conversation' => '__CID__']) }}"
-     data-support-destroy="{{ $botSupportSafe('bot.support.destroy', ['conversation' => '__CID__']) }}"></div>
+     data-support-destroy="{{ $botSupportSafe('bot.support.destroy', ['conversation' => '__CID__']) }}"
+     data-wallpaper="{{ $botWallpaper }}"></div>
 
 @verbatim
 <style>
@@ -222,14 +226,19 @@
     opacity:0; transition:opacity .2s; }
 .ub-open .ub-overlay{ opacity:1; }
 
-.ub-window{ position:fixed; bottom:126px; right:20px; z-index:2147483002; width:420px; max-width:calc(100vw - 40px);
-    height:600px; max-height:calc(85vh - 126px); display:flex; flex-direction:column; background:var(--ub-surface);
+.ub-window{ position:fixed; bottom:126px; right:20px; z-index:2147483002; width:440px; max-width:calc(100vw - 40px);
+    height:680px; max-height:calc(100vh - 146px); display:flex; flex-direction:column; background:var(--ub-surface);
     border-radius:20px; border:1px solid var(--ub-border); overflow:hidden;
     box-shadow:0 24px 64px rgba(0,0,0,.12),0 8px 24px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.06);
     opacity:0; transform:translateY(20px) scale(.94); transition:opacity .22s, transform .28s cubic-bezier(.2,.9,.3,1.2);
     color:var(--ub-text); }
 .ub-open .ub-window{ opacity:1; transform:translateY(0) scale(1); }
-@media (max-width:767px){ .ub-window{ right:12px; left:12px; bottom:12px; width:auto; height:78vh; max-height:78vh; } }
+@media (max-width:767px){ .ub-window{ right:12px; left:12px; bottom:12px; width:auto; height:88vh; max-height:88vh; } }
+/* Larger desktops: give it more room. */
+@media (min-width:1600px){ .ub-window{ width:480px; height:760px; } }
+/* Short viewports (typical laptops): sit lower + use nearly the full height so it
+   never looks like a small box. */
+@media (min-width:768px) and (max-height:820px){ .ub-window{ bottom:92px; height:auto; top:20px; max-height:none; } }
 
 .ub-header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px 13px;
     border-bottom:1px solid var(--ub-border-light); flex-shrink:0; }
@@ -363,6 +372,25 @@
 .ub-hist-del:hover{ color:var(--ub-over); border-color:#fecaca; background:#fef2f2; }
 .ub-hist-del svg{ width:15px; height:15px; }
 .ub-hist-empty{ text-align:center; color:var(--ub-text3); font-size:12.5px; padding:24px 12px; }
+/* Chat wallpaper (Super-Admin set) — softly blurred behind the bubbles, WhatsApp/Telegram style */
+.ub-msgs.ub-has-wall{ position:relative; }
+.ub-msgs.ub-has-wall::before{ content:''; position:absolute; inset:-16px; background-image:var(--ub-wall); background-size:cover; background-position:center; filter:blur(9px); opacity:.5; z-index:0; pointer-events:none; }
+.ub-msgs.ub-has-wall::after{ content:''; position:absolute; inset:0; background:rgba(255,255,255,.62); z-index:0; pointer-events:none; }
+.ub-msgs.ub-has-wall > *{ position:relative; z-index:1; }
+/* Typing indicator (peer is typing) */
+.ub-typewrap{ display:flex; align-items:flex-end; gap:8px; }
+/* resolved / new-chat bar */
+.ub-resolved{ margin:6px 0 2px; border-radius:14px; padding:12px 14px; background:var(--ub-surface-alt); border:1px solid var(--ub-border-light); text-align:center; }
+.ub-resolved-t{ font-size:12.5px; color:var(--ub-text2); line-height:1.5; margin-bottom:10px; }
+.ub-resolved-new{ background:var(--ub-user); color:#fff; border:none; border-radius:9px; font-size:12.5px; font-weight:600; padding:9px 16px; cursor:pointer; font-family:inherit; transition:background .15s; }
+.ub-resolved-new:hover{ background:#27272a; }
+/* CSAT rating */
+.ub-csat{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--ub-border); }
+.ub-csat-q{ font-size:12px; color:var(--ub-text2); margin-bottom:7px; }
+.ub-csat-btns{ display:flex; gap:8px; justify-content:center; }
+.ub-csat-btns button{ width:40px; height:36px; border:1px solid var(--ub-chip-border); border-radius:10px; background:#fff; cursor:pointer; font-size:16px; transition:.15s; }
+.ub-csat-btns button:hover{ background:var(--ub-chip-hover); border-color:var(--ub-chip-hover-bdr); }
+.ub-csat-done{ font-size:12px; color:var(--ub-charcoal); text-align:center; }
 </style>
 
 <script>
@@ -388,11 +416,14 @@
         history:  root.dataset.supportHistory,
         thread:   root.dataset.supportThread,
         message:  root.dataset.supportMessage,
+        typing:   root.dataset.supportTyping,
+        csat:     root.dataset.supportCsat,
         resolve:  root.dataset.supportResolve,
         destroy:  root.dataset.supportDestroy,
         hours:    root.dataset.supportHours || '',
         online:   root.dataset.supportOnline === '1'
     };
+    CFG.wallpaper = root.dataset.wallpaper || '';
 
     var SUGGESTIONS = [
         {label:'What can I do here?',       icon:'compass'},
@@ -420,7 +451,8 @@
 
     // ---- state ----
     var state = { open:false, loading:false, history:[], remaining:CFG.remaining, limit:(CFG.limit||CFG.remaining), unlimited:CFG.remaining===null, greeted:false,
-                  mode:'bot', convId:0, supportLastId:0, supportTimer:null, supportSending:false, pendingContext:[] };
+                  mode:'bot', convId:0, supportLastId:0, supportTimer:null, supportSending:false, pendingContext:[],
+                  supportResolved:false, supportAgentAvatar:null };
 
     // ---- helpers ----
     function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -698,14 +730,28 @@
         else { historyBtn.addEventListener('click', function(){ openHistory(); }); }
     }
 
+    // Chat wallpaper (Super-Admin set) — softly blurred behind the bubbles.
+    if(CFG.wallpaper){
+        try{ msgs.classList.add('ub-has-wall'); msgs.style.setProperty('--ub-wall', 'url("'+CFG.wallpaper.replace(/["\\;]/g,'')+'")'); }catch(e){}
+    }
+
+    // Typing ping: while in an active support chat, tell the agent we're typing (throttled).
+    var lastTypingPing = 0;
+    input.addEventListener('input', function(){
+        if(state.mode!=='support' || !state.convId || state.supportResolved) return;
+        var t = Date.now();
+        if(t - lastTypingPing > 2500){ lastTypingPing = t; try{ fetch(supUrl(CFG.support.typing, state.convId), {method:'POST', headers:hdrs(), body:'{}'}).catch(function(){}); }catch(e){} }
+    });
+
     function supUrl(tpl, id){ return String(tpl||'').replace('__CID__', id); }
     function supCid(p){ return (p||'u') + Date.now() + Math.random().toString(36).slice(2,7); }
 
     function restoreBotChrome(){
         state.mode='bot'; stopSupportPoll();
+        state.supportResolved=false;
         if(nameEl) nameEl.textContent = origName;
         if(statusText) statusText.textContent = origStatus;
-        if(input) input.setAttribute('placeholder', origPlaceholder);
+        if(input){ input.disabled=false; input.setAttribute('placeholder', origPlaceholder); }
         if(retryBtn) retryBtn.style.display='';
         refreshUsage();
     }
@@ -874,14 +920,69 @@
 
     function updateSupportStatus(conv){
         if(!conv) return;
-        if(statusText){ statusText.textContent = conv.agent_name ? ('with '+conv.agent_name) : (conv.online ? 'Online' : 'Away'); }
+        state.supportAgentAvatar = conv.agent_avatar || null;
+        if(statusText){ statusText.textContent = conv.agent_name ? ('with '+conv.agent_name) : (conv.resolved ? 'Resolved' : (conv.online ? 'Online' : 'Away')); }
         var s = msgs.querySelector('[data-sup-status]');
         if(s){
-            if(conv.resolved){ s.textContent = 'Resolved · reply to reopen'; }
+            if(conv.resolved){ s.textContent = 'This conversation is resolved'; }
             else if(conv.agent_name){ s.textContent = 'You’re chatting with '+conv.agent_name; }
             else { s.textContent = conv.online ? ('We’re online · typically reply in a few minutes') : ('We’re away right now · we’ll email you · '+(conv.hours||'')); }
         }
+        applySupportResolvedState(conv);
     }
+
+    // Resolved chats are terminal for the user (X/Google style): the composer is
+    // locked and they get a "Start a new chat" CTA + a satisfaction rating.
+    function applySupportResolvedState(conv){
+        var bar = msgs.querySelector('[data-resolved-bar]');
+        if(conv.resolved){
+            state.supportResolved = true;
+            if(input){ input.disabled=true; input.setAttribute('placeholder','This chat is resolved'); }
+            if(sendBtn) sendBtn.classList.remove('active');
+            hidePeerTyping();
+            if(!bar){
+                bar=document.createElement('div'); bar.className='ub-resolved'; bar.dataset.resolvedBar='1';
+                var csatHtml = conv.csat_done ? '' :
+                    '<div class="ub-csat"><div class="ub-csat-q">Was this resolved to your satisfaction?</div><div class="ub-csat-btns"><button type="button" data-csat="up" title="Yes">👍</button><button type="button" data-csat="down" title="No">👎</button></div></div>';
+                bar.innerHTML='<div class="ub-resolved-t">This conversation was marked resolved. Need more help?</div><button class="ub-resolved-new" type="button">Start a new chat</button>'+csatHtml;
+                bar.querySelector('.ub-resolved-new').addEventListener('click', function(){ startNewSupportChat(); });
+                var up=bar.querySelector('[data-csat="up"]'); var down=bar.querySelector('[data-csat="down"]');
+                if(up) up.addEventListener('click', function(){ sendCsat('up', bar); });
+                if(down) down.addEventListener('click', function(){ sendCsat('down', bar); });
+                msgs.appendChild(bar);
+            } else {
+                msgs.appendChild(bar); // keep pinned to the bottom
+            }
+            scrollDown();
+        } else {
+            state.supportResolved = false;
+            if(input){ input.disabled=false; if(input.getAttribute('placeholder')==='This chat is resolved') input.setAttribute('placeholder','Message the support team…'); }
+            if(bar) bar.remove();
+        }
+    }
+
+    function startNewSupportChat(){
+        state.convId=0; state.supportResolved=false; stopSupportPoll();
+        if(input){ input.disabled=false; }
+        startSupport();
+    }
+
+    function sendCsat(rating, bar){
+        if(!state.convId) return;
+        fetch(supUrl(CFG.support.csat, state.convId),{method:'POST',headers:hdrs(),body:JSON.stringify({rating:rating})})
+            .then(function(r){return r.json();})
+            .then(function(){ var c=bar.querySelector('.ub-csat'); if(c) c.innerHTML='<div class="ub-csat-done">Thanks for your feedback! 🙏</div>'; })
+            .catch(function(){});
+    }
+
+    function showPeerTyping(){
+        if(msgs.querySelector('[data-peer-typing]')) return;
+        var row=document.createElement('div'); row.className='ub-row'; row.dataset.peerTyping='1';
+        var av = state.supportAgentAvatar ? esc(state.supportAgentAvatar) : CFG.robot;
+        row.innerHTML='<img class="ub-av" src="'+av+'" alt=""><div class="ub-typing"><i></i><i></i><i></i></div>';
+        msgs.appendChild(row); scrollDown();
+    }
+    function hidePeerTyping(){ var t=msgs.querySelector('[data-peer-typing]'); if(t) t.remove(); }
 
     function addSupportBubble(m){
         if(m.sender==='system'){
@@ -902,7 +1003,7 @@
     }
 
     function sendSupportMessage(text){
-        if(state.supportSending || !state.convId) return;
+        if(state.supportSending || !state.convId || state.supportResolved) return;
         addSupportBubble({sender:'user', body:text, time_h:nowTime()}); scrollDown();
         state.supportSending=true;
         var cid=supCid('u');
@@ -921,11 +1022,13 @@
                 .then(function(d){
                     if(d.messages && d.messages.length){
                         var atBottom=(msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight) < 80;
+                        hidePeerTyping();
                         d.messages.forEach(addSupportBubble);
                         state.supportLastId=d.messages[d.messages.length-1].id;
                         if(atBottom) scrollDown();
                     }
                     if(d.conversation) updateSupportStatus(d.conversation);
+                    if(d.peer_typing && !state.supportResolved){ showPeerTyping(); } else { hidePeerTyping(); }
                 }).catch(function(){});
         }, 4000);
     }

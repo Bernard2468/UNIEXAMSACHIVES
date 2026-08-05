@@ -266,6 +266,84 @@
     </div>
 </div>
 
+{{-- ── Human Support Chat (bot → human handoff) ───────────────────────── --}}
+@php $dayLabels = [1=>'Mon',2=>'Tue',3=>'Wed',4=>'Thu',5=>'Fri',6=>'Sat',7=>'Sun']; @endphp
+<div class="card">
+    <div class="card-header"><span class="section-title">Human support chat</span></div>
+    <div class="card-body">
+        <p style="color:#64748b;font-size:13px;margin-bottom:16px;">
+            Controls the <strong>“Talk to a person”</strong> handoff inside the assistant — who staffs it, when it shows as
+            online, and an optional chat wallpaper. The agent pool is the chosen <strong>support office</strong> plus all
+            institutional Admins &amp; Super Admins.
+        </p>
+        <form method="POST" action="{{ route('super-admin.bot.support') }}">
+            @csrf
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="privacy-note" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;">
+                        <label class="d-flex align-items-center gap-2" style="cursor:pointer;margin:0;">
+                            <input type="checkbox" name="support_chat_enabled" value="1" {{ $settings['support_chat_enabled'] ? 'checked' : '' }}>
+                            <span><strong>Support chat enabled</strong> — users can escalate from the bot to a human. Turn off to hide the “Talk to a person” button everywhere.</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Support office (routing)</label>
+                    <input list="officeSlugs" name="support_office_slug" class="form-control" value="{{ $settings['support_office_slug'] }}" placeholder="it-support">
+                    <datalist id="officeSlugs">
+                        @foreach($offices as $o)
+                            <option value="{{ $o->slug }}">{{ $o->name }}{{ $o->is_active ? '' : ' (inactive)' }}</option>
+                        @endforeach
+                    </datalist>
+                    <div class="s" style="font-size:12px;color:#94a3b8;margin-top:4px;">
+                        Chats route to this office’s active members first. If it has none, they fall back to all Admins + Super Admins.
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Hours — start</label>
+                    <input type="time" name="support_hours_start" class="form-control" value="{{ $settings['support_hours_start'] }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hours — end</label>
+                    <input type="time" name="support_hours_end" class="form-control" value="{{ $settings['support_hours_end'] }}">
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Working days</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach($dayLabels as $n => $lbl)
+                            <label class="d-flex align-items-center gap-1" style="cursor:pointer;">
+                                <input type="checkbox" name="support_days[]" value="{{ $n }}" {{ in_array($n, $settings['support_days']) ? 'checked' : '' }}>
+                                <span>{{ $lbl }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <div class="s" style="font-size:12px;color:#94a3b8;margin-top:4px;">
+                        Outside these hours the bot keeps helping and offline messages are captured as tickets + emailed.
+                        (Live agent presence still shows “online” whenever an agent is actually in the inbox.)
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label">Chat wallpaper URL <span style="font-weight:400;color:#94a3b8;">(optional)</span></label>
+                    <input type="url" name="bot_chat_wallpaper" class="form-control" value="{{ $settings['bot_chat_wallpaper'] }}" placeholder="https://…/wallpaper.jpg">
+                    <div class="s" style="font-size:12px;color:#94a3b8;margin-top:4px;">
+                        Shown softly blurred behind the chat bubbles (WhatsApp/Telegram style) on both the assistant and the support inbox. Leave blank for the default clean background.
+                    </div>
+                    @if($settings['bot_chat_wallpaper'])
+                        <img src="{{ $settings['bot_chat_wallpaper'] }}" alt="wallpaper preview" style="max-height:90px;border-radius:10px;margin-top:10px;border:1px solid #eef0f3;" onerror="this.style.display='none'">
+                    @endif
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-primary">Save support settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {{-- ── Knowledge base ─────────────────────────────────────────────────── --}}
 <div class="card">
     <div class="card-header d-flex align-items-center justify-content-between">

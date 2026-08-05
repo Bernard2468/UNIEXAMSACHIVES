@@ -106,6 +106,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/support/history',                [\App\Http\Controllers\Dashboard\SupportChatController::class, 'history'])->name('bot.support.history');
     Route::get('/support/{conversation}/thread',  [\App\Http\Controllers\Dashboard\SupportChatController::class, 'thread'])->name('bot.support.thread');
     Route::post('/support/{conversation}/message',[\App\Http\Controllers\Dashboard\SupportChatController::class, 'message'])->middleware('throttle:60,1')->name('bot.support.message');
+    Route::post('/support/{conversation}/typing', [\App\Http\Controllers\Dashboard\SupportChatController::class, 'typing'])->middleware('throttle:120,1')->name('bot.support.typing');
+    Route::post('/support/{conversation}/csat',   [\App\Http\Controllers\Dashboard\SupportChatController::class, 'csat'])->name('bot.support.csat');
     Route::post('/support/{conversation}/resolve',[\App\Http\Controllers\Dashboard\SupportChatController::class, 'resolve'])->name('bot.support.resolve');
     Route::delete('/support/{conversation}',      [\App\Http\Controllers\Dashboard\SupportChatController::class, 'destroy'])->name('bot.support.destroy');
 
@@ -117,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{conversation}',          [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'show'])->name('show');
         Route::get('/{conversation}/messages', [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'messages'])->name('messages');
         Route::post('/{conversation}/reply',   [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'reply'])->middleware('throttle:120,1')->name('reply');
+        Route::post('/{conversation}/typing',  [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'typing'])->middleware('throttle:180,1')->name('typing');
         Route::post('/{conversation}/claim',   [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'claim'])->name('claim');
         Route::post('/{conversation}/resolve', [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'resolve'])->name('resolve');
         Route::post('/{conversation}/reopen',  [\App\Http\Controllers\Dashboard\SupportInboxController::class, 'reopen'])->name('reopen');
@@ -548,6 +551,7 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['super_admin'])-
     // AI Assistant Bot — control center (master switch, key vault, analytics, knowledge base)
     Route::get('/bot', [\App\Http\Controllers\SuperAdmin\BotController::class, 'index'])->name('bot.index');
     Route::post('/bot/settings', [\App\Http\Controllers\SuperAdmin\BotController::class, 'updateSettings'])->name('bot.settings');
+    Route::post('/bot/support', [\App\Http\Controllers\SuperAdmin\BotController::class, 'updateSupportSettings'])->name('bot.support');
     Route::post('/bot/toggle', [\App\Http\Controllers\SuperAdmin\BotController::class, 'toggle'])->name('bot.toggle');
     // Key vault
     Route::post('/bot/keys', [\App\Http\Controllers\SuperAdmin\BotController::class, 'storeKey'])->name('bot.keys.store');
