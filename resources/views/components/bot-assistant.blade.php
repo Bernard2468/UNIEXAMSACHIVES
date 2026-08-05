@@ -324,6 +324,9 @@
 .ub-inputrow.focus{ border-color:var(--ub-charcoal); box-shadow:0 0 0 3px rgba(63,63,70,.08); }
 .ub-inputrow input{ flex:1; background:transparent; border:none; outline:none; font-size:14px; color:var(--ub-text);
     font-family:inherit; letter-spacing:-.01em; }
+/* iOS focus-zoom gotcha: any input < 16px makes Safari zoom the page on tap.
+   Bump the composer to 16px on phones so tapping it never zooms. */
+@media (max-width:767px){ .ub-inputrow input{ font-size:16px; } }
 .ub-send{ width:32px; height:32px; border-radius:9px; flex-shrink:0; background:var(--ub-border-light); border:none;
     cursor:not-allowed; display:flex; align-items:center; justify-content:center; transition:background .18s, transform .1s; }
 .ub-send.active{ background:var(--ub-user); cursor:pointer; }
@@ -372,11 +375,15 @@
 .ub-hist-del:hover{ color:var(--ub-over); border-color:#fecaca; background:#fef2f2; }
 .ub-hist-del svg{ width:15px; height:15px; }
 .ub-hist-empty{ text-align:center; color:var(--ub-text3); font-size:12.5px; padding:24px 12px; }
-/* Chat wallpaper (Super-Admin set) — softly blurred behind the bubbles, WhatsApp/Telegram style */
-.ub-msgs.ub-has-wall{ position:relative; }
-.ub-msgs.ub-has-wall::before{ content:''; position:absolute; inset:-16px; background-image:var(--ub-wall); background-size:cover; background-position:center; filter:blur(9px); opacity:.5; z-index:0; pointer-events:none; }
-.ub-msgs.ub-has-wall::after{ content:''; position:absolute; inset:0; background:rgba(255,255,255,.62); z-index:0; pointer-events:none; }
-.ub-msgs.ub-has-wall > *{ position:relative; z-index:1; }
+/* Chat wallpaper (Super-Admin set) — softly blurred behind the bubbles, WhatsApp/Telegram style.
+   Painted on the WINDOW (which is position:fixed + overflow:hidden), NOT the scrolling message
+   list — so it fits the chat exactly, never scrolls, and never adds a scrollbar. The blur layer
+   is scaled up so its faded edges are clipped cleanly by the window. */
+.ub-window.ub-has-wall::before{ content:''; position:absolute; inset:0; background-image:var(--ub-wall); background-size:cover; background-position:center; filter:blur(11px); transform:scale(1.1); opacity:.5; z-index:0; pointer-events:none; }
+.ub-window.ub-has-wall::after{ content:''; position:absolute; inset:0; background:rgba(255,255,255,.5); z-index:0; pointer-events:none; }
+.ub-window.ub-has-wall > *{ position:relative; z-index:1; }
+.ub-window.ub-has-wall .ub-msgs{ background:transparent; }
+.ub-window.ub-has-wall .ub-header, .ub-window.ub-has-wall .ub-progwrap{ background:var(--ub-surface); }
 /* Typing indicator (peer is typing) */
 .ub-typewrap{ display:flex; align-items:flex-end; gap:8px; }
 /* resolved / new-chat bar */
@@ -730,9 +737,11 @@
         else { historyBtn.addEventListener('click', function(){ openHistory(); }); }
     }
 
-    // Chat wallpaper (Super-Admin set) — softly blurred behind the bubbles.
+    // Chat wallpaper (Super-Admin set) — applied to the WINDOW (fixed, clipped) so
+    // it fits perfectly and never adds scroll to the message list.
     if(CFG.wallpaper){
-        try{ msgs.classList.add('ub-has-wall'); msgs.style.setProperty('--ub-wall', 'url("'+CFG.wallpaper.replace(/["\\;]/g,'')+'")'); }catch(e){}
+        var winEl = shell.querySelector('.ub-window');
+        if(winEl){ try{ winEl.classList.add('ub-has-wall'); winEl.style.setProperty('--ub-wall', 'url("'+CFG.wallpaper.replace(/["\\;]/g,'')+'")'); }catch(e){} }
     }
 
     // Typing ping: while in an active support chat, tell the agent we're typing (throttled).

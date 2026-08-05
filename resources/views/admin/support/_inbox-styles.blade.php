@@ -145,11 +145,17 @@
 .sib-send:disabled{ opacity:.4; cursor:not-allowed; }
 .sib-composer.note-on .sib-send{ background:var(--sib-amber); }
 
-/* chat wallpaper (Super-Admin set) — softly blurred behind the bubbles */
-.sib-msgs.sib-has-wall{ position:relative; }
-.sib-msgs.sib-has-wall::before{ content:''; position:absolute; inset:-16px; background-image:var(--sib-wall); background-size:cover; background-position:center; filter:blur(9px); opacity:.5; z-index:0; pointer-events:none; }
-.sib-msgs.sib-has-wall::after{ content:''; position:absolute; inset:0; background:rgba(238,241,246,.66); z-index:0; pointer-events:none; }
-.sib-msgs.sib-has-wall > *{ position:relative; z-index:1; }
+/* chat wallpaper (Super-Admin set) — painted on the non-scrolling pane (clipped),
+   NOT the scrolling message list, so it fits exactly and never adds a scrollbar */
+.sib-pane.sib-has-wall{ position:relative; }
+/* Clip the scaled blur on desktop (pane sits beside the rail). On mobile the
+   full-width pane is already clipped by #sib, and no overflow context is added
+   so the sticky composer keeps working. */
+@media (min-width:768px){ .sib-pane.sib-has-wall{ overflow:hidden; } }
+.sib-pane.sib-has-wall::before{ content:''; position:absolute; inset:0; background-image:var(--sib-wall); background-size:cover; background-position:center; filter:blur(11px); transform:scale(1.1); opacity:.45; z-index:0; pointer-events:none; }
+.sib-pane.sib-has-wall::after{ content:''; position:absolute; inset:0; background:rgba(238,241,246,.6); z-index:0; pointer-events:none; }
+.sib-pane.sib-has-wall > *{ position:relative; z-index:1; }
+.sib-pane.sib-has-wall .sib-msgs{ background-color:transparent; background-image:none; }
 
 /* typing indicator (the user is typing) */
 .sib-typing-row{ display:flex; gap:8px; align-self:flex-start; max-width:82%; }

@@ -35,9 +35,10 @@
         csat: document.getElementById('sibCsat')
     };
 
-    // Chat wallpaper (Super-Admin set) — softly blurred behind the bubbles.
-    if(CFG.wallpaper && el.msgs){
-        try{ el.msgs.classList.add('sib-has-wall'); el.msgs.style.setProperty('--sib-wall', 'url("'+CFG.wallpaper.replace(/["\\;]/g,'')+'")'); }catch(e){}
+    // Chat wallpaper (Super-Admin set) — applied to the pane (clipped, non-scrolling)
+    // so it fits the thread exactly and never adds a scrollbar to the message list.
+    if(CFG.wallpaper && el.pane){
+        try{ el.pane.classList.add('sib-has-wall'); el.pane.style.setProperty('--sib-wall', 'url("'+CFG.wallpaper.replace(/["\\;]/g,'')+'")'); }catch(e){}
     }
 
     var state = { filter:'open', q:'', activeId:0, activeConv:null, lastMsgId:0, sending:false, listTimer:null, msgTimer:null };
