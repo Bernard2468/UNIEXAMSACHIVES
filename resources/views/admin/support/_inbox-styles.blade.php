@@ -145,6 +145,11 @@
 .sib-send:disabled{ opacity:.4; cursor:not-allowed; }
 .sib-composer.note-on .sib-send{ background:var(--sib-amber); }
 
+/* read-only lock (another agent owns the chat) */
+.sib-lock{ display:flex; align-items:center; gap:10px; padding:14px 18px; border-top:1px solid var(--sib-border2); background:#f8fafc; color:var(--sib-text2); font-size:13px; }
+.sib-lock svg{ width:18px; height:18px; flex:0 0 auto; color:var(--sib-text3); }
+.sib-lock b{ color:var(--sib-text); font-weight:700; }
+
 .sib-rail::-webkit-scrollbar,.sib-msgs::-webkit-scrollbar{ width:7px; }
 .sib-rail::-webkit-scrollbar-thumb,.sib-msgs::-webkit-scrollbar-thumb{ background:rgba(100,116,139,.25); border-radius:99px; }
 

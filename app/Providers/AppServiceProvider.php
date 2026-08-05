@@ -180,7 +180,9 @@ class AppServiceProvider extends ServiceProvider
                     try {
                         $isAgent = Auth::user()->isSupportAgent();
                         if ($isAgent) {
-                            $count = \App\Models\BotConversation::support()->open()->count();
+                            // Chats waiting to be picked up (unclaimed queue).
+                            $count = \App\Models\BotConversation::support()->open()
+                                ->whereNull('assigned_agent_id')->count();
                         }
                     } catch (\Throwable $e) {
                         $isAgent = false;

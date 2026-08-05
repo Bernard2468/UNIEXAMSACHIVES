@@ -53,15 +53,15 @@
                                 <span class="sib-tab__label">Open</span>
                                 <span class="sib-c" data-c="open">0</span>
                             </button>
-                            <button class="sib-tab" data-filter="unassigned">
-                                <svg class="sib-tab__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                <span class="sib-tab__label">Unassigned</span>
-                                <span class="sib-c" data-c="unassigned">0</span>
-                            </button>
                             <button class="sib-tab" data-filter="mine">
                                 <svg class="sib-tab__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                 <span class="sib-tab__label">Mine</span>
                                 <span class="sib-c" data-c="mine">0</span>
+                            </button>
+                            <button class="sib-tab" data-filter="assigned">
+                                <svg class="sib-tab__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                <span class="sib-tab__label">Others</span>
+                                <span class="sib-c" data-c="assigned">0</span>
                             </button>
                             <button class="sib-tab" data-filter="resolved">
                                 <svg class="sib-tab__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -113,6 +113,12 @@
 
                                     {{-- Messages --}}
                                     <div class="sib-msgs" id="sibMsgs"></div>
+
+                                    {{-- Read-only lock (shown when another agent owns this chat) --}}
+                                    <div class="sib-lock" id="sibLock" style="display:none;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        <span id="sibLockText">This conversation has been picked up by another agent — view only.</span>
+                                    </div>
 
                                     {{-- Composer --}}
                                     <div class="sib-composer" id="sibComposer">

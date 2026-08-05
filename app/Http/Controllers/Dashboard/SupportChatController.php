@@ -37,6 +37,17 @@ class SupportChatController extends Controller
             'bot_context.*.content' => 'required_with:bot_context|string|max:4000',
         ]);
 
+        // Never create a ticket (or alert agents) until the user has actually
+        // described their concern. With no message and no open thread to resume,
+        // tell the widget to collect the first message first.
+        $hasMessage = trim((string) ($data['message'] ?? '')) !== '';
+        $existing = BotConversation::support()->open()->visibleToUser()
+            ->where('user_id', Auth::id())->exists();
+
+        if (!$hasMessage && !$existing) {
+            return response()->json(['intake' => true, 'conversation' => null]);
+        }
+
         $conversation = $this->support->startOrResumeSupport(Auth::user(), $data);
 
         return response()->json($this->threadPayload($conversation, markRead: true));
@@ -45,7 +56,7 @@ class SupportChatController extends Controller
     /** The user's current open support thread, if any (for widget resume). */
     public function active(Request $request)
     {
-        $conversation = BotConversation::support()
+        $conversation = BotConversation::support()->visibleToUser()
             ->where('user_id', Auth::id())
             ->orderByRaw("CASE WHEN status != 'resolved' THEN 0 ELSE 1 END")
             ->latest('id')
@@ -56,6 +67,26 @@ class SupportChatController extends Controller
         }
 
         return response()->json($this->threadPayload($conversation, markRead: false));
+    }
+
+    /** The requester's own conversation history (for the widget's "past chats"). */
+    public function history(Request $request)
+    {
+        $rows = $this->support->userHistory(Auth::user())
+            ->map(fn ($c) => $this->support->serializeHistoryRow($c))
+            ->values();
+
+        return response()->json(['conversations' => $rows]);
+    }
+
+    /** Clear a chat from the requester's history (soft-hide; agents keep records). */
+    public function destroy(Request $request, BotConversation $conversation)
+    {
+        abort_unless(Auth::user()->can('delete', $conversation), 403);
+
+        $this->support->deleteForUser($conversation);
+
+        return response()->json(['ok' => true]);
     }
 
     /** Poll a thread for new messages. */

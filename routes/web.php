@@ -103,9 +103,11 @@ Route::middleware(['auth'])->group(function () {
     # ===== Support Chat (bot → human handoff) — user-facing, inside the widget =====
     Route::post('/support/escalate',              [\App\Http\Controllers\Dashboard\SupportChatController::class, 'escalate'])->middleware('throttle:20,1')->name('bot.support.escalate');
     Route::get('/support/active',                 [\App\Http\Controllers\Dashboard\SupportChatController::class, 'active'])->name('bot.support.active');
+    Route::get('/support/history',                [\App\Http\Controllers\Dashboard\SupportChatController::class, 'history'])->name('bot.support.history');
     Route::get('/support/{conversation}/thread',  [\App\Http\Controllers\Dashboard\SupportChatController::class, 'thread'])->name('bot.support.thread');
     Route::post('/support/{conversation}/message',[\App\Http\Controllers\Dashboard\SupportChatController::class, 'message'])->middleware('throttle:60,1')->name('bot.support.message');
     Route::post('/support/{conversation}/resolve',[\App\Http\Controllers\Dashboard\SupportChatController::class, 'resolve'])->name('bot.support.resolve');
+    Route::delete('/support/{conversation}',      [\App\Http\Controllers\Dashboard\SupportChatController::class, 'destroy'])->name('bot.support.destroy');
 
     # ===== Support Inbox — agents only (Support office + Institutional Admins + Super Admins) =====
     Route::middleware('support_agent')->prefix('dashboard/support')->name('dashboard.support.')->group(function () {

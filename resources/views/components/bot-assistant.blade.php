@@ -119,9 +119,11 @@
      data-support-hours="{{ $botSupportHours }}"
      data-support-escalate="{{ $botSupportSafe('bot.support.escalate') }}"
      data-support-active="{{ $botSupportSafe('bot.support.active') }}"
+     data-support-history="{{ $botSupportSafe('bot.support.history') }}"
      data-support-thread="{{ $botSupportSafe('bot.support.thread', ['conversation' => '__CID__']) }}"
      data-support-message="{{ $botSupportSafe('bot.support.message', ['conversation' => '__CID__']) }}"
-     data-support-resolve="{{ $botSupportSafe('bot.support.resolve', ['conversation' => '__CID__']) }}"></div>
+     data-support-resolve="{{ $botSupportSafe('bot.support.resolve', ['conversation' => '__CID__']) }}"
+     data-support-destroy="{{ $botSupportSafe('bot.support.destroy', ['conversation' => '__CID__']) }}"></div>
 
 @verbatim
 <style>
@@ -345,6 +347,22 @@
 .ub-supback:hover{ background:var(--ub-chip-hover); }
 .ub-sup-sys{ align-self:center; text-align:center; font-size:11px; color:var(--ub-text3); background:var(--ub-surface-alt); border:1px solid var(--ub-border-light); border-radius:20px; padding:4px 12px; margin:2px auto; max-width:90%; }
 .ub-agent-name{ display:block; font-size:10.5px; font-weight:700; color:#1a4a9b; margin-bottom:2px; }
+.ub-history svg{ width:17px; height:17px; }
+/* history list (the user's past support chats) */
+.ub-hist{ display:flex; align-items:stretch; gap:6px; margin:0 0 8px; transition:opacity .18s; }
+.ub-hist-main{ flex:1 1 auto; min-width:0; text-align:left; background:var(--ub-surface-alt); border:1px solid var(--ub-border-light); border-radius:12px; padding:10px 12px; cursor:pointer; font-family:inherit; transition:background .15s, border-color .15s; }
+.ub-hist-main:hover{ background:var(--ub-chip-hover); border-color:var(--ub-chip-hover-bdr); }
+.ub-hist-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.ub-hist-subj{ font-size:13px; font-weight:600; color:var(--ub-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ub-hist-time{ font-size:10.5px; color:var(--ub-text3); flex:0 0 auto; }
+.ub-hist-snip{ font-size:12px; color:var(--ub-text2); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ub-hist-status{ font-size:10.5px; font-weight:600; margin-top:5px; }
+.ub-hist-status.act{ color:#16a34a; }
+.ub-hist-status.res{ color:var(--ub-text3); }
+.ub-hist-del{ flex:0 0 auto; width:42px; border:1px solid var(--ub-border-light); border-radius:12px; background:#fff; color:var(--ub-text3); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:color .15s, border-color .15s, background .15s; }
+.ub-hist-del:hover{ color:var(--ub-over); border-color:#fecaca; background:#fef2f2; }
+.ub-hist-del svg{ width:15px; height:15px; }
+.ub-hist-empty{ text-align:center; color:var(--ub-text3); font-size:12.5px; padding:24px 12px; }
 </style>
 
 <script>
@@ -367,9 +385,11 @@
         enabled:  root.dataset.supportEnabled === '1',
         escalate: root.dataset.supportEscalate,
         active:   root.dataset.supportActive,
+        history:  root.dataset.supportHistory,
         thread:   root.dataset.supportThread,
         message:  root.dataset.supportMessage,
         resolve:  root.dataset.supportResolve,
+        destroy:  root.dataset.supportDestroy,
         hours:    root.dataset.supportHours || '',
         online:   root.dataset.supportOnline === '1'
     };
@@ -400,7 +420,7 @@
 
     // ---- state ----
     var state = { open:false, loading:false, history:[], remaining:CFG.remaining, limit:(CFG.limit||CFG.remaining), unlimited:CFG.remaining===null, greeted:false,
-                  mode:'bot', convId:0, supportLastId:0, supportTimer:null, supportSending:false };
+                  mode:'bot', convId:0, supportLastId:0, supportTimer:null, supportSending:false, pendingContext:[] };
 
     // ---- helpers ----
     function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -472,6 +492,7 @@
             '</div></div>'+
             '<div class="ub-tools">'+
               '<button class="ub-iconbtn ub-human" data-human title="Talk to a person"><img src="https://res.cloudinary.com/dsypclqxk/image/upload/v1785866774/1dee6f70-14e1-4867-8cbb-7a8df642750d.png" alt="Talk to a person"></button>'+
+              '<button class="ub-iconbtn ub-history" data-history title="Your conversations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg></button>'+
               '<button class="ub-iconbtn" data-new title="New conversation">'+ICONS.rotate+'</button>'+
               '<button class="ub-iconbtn" data-close title="Close">'+ICONS.x+'</button>'+
             '</div>'+
@@ -592,8 +613,10 @@
     // ---- send ----
     function send(text){
         text=(text||input.value).trim();
+        if(state.mode==='history'){ input.value=''; setActive(); return; }
         if(!text) return;
         if(state.mode==='support'){ input.value=''; setActive(); return sendSupportMessage(text); }
+        if(state.mode==='support_intake'){ input.value=''; setActive(); return submitSupportIntake(text); }
         if(state.loading) return;
         clearSuggestions();
         input.value=''; setActive();
@@ -669,6 +692,11 @@
         if(!CFG.support.enabled){ humanBtn.style.display='none'; }
         else { humanBtn.addEventListener('click', function(){ startSupport(); }); }
     }
+    var historyBtn = $('[data-history]');
+    if(historyBtn){
+        if(!CFG.support.enabled){ historyBtn.style.display='none'; }
+        else { historyBtn.addEventListener('click', function(){ openHistory(); }); }
+    }
 
     function supUrl(tpl, id){ return String(tpl||'').replace('__CID__', id); }
     function supCid(p){ return (p||'u') + Date.now() + Math.random().toString(36).slice(2,7); }
@@ -690,16 +718,129 @@
         msgs.appendChild(wrap); scrollDown();
     }
 
+    // "Talk to a person": resume an existing open chat, or — if none — ask the
+    // user to describe their concern FIRST. No ticket is created (and no agent is
+    // alerted) until they actually send that first message.
     function startSupport(){
         if(!CFG.support.enabled) return;
         var ctx=[];
         for(var i=0;i<state.history.length;i++){ ctx.push({role:state.history[i].role, content:state.history[i].content}); }
-        ctx = ctx.slice(-12);
+        state.pendingContext = ctx.slice(-12);
         var tRow=typing();
-        fetch(CFG.support.escalate,{method:'POST',headers:hdrs(),body:JSON.stringify({page:CFG.page, bot_context:ctx})})
+        fetch(CFG.support.escalate,{method:'POST',headers:hdrs(),body:JSON.stringify({page:CFG.page, bot_context:state.pendingContext})})
+            .then(function(r){return r.json();})
+            .then(function(d){
+                if(tRow) tRow.remove();
+                if(d && d.conversation){ enterSupportUI(d); }   // resumed an open chat
+                else { enterSupportIntake(); }                  // collect the concern first
+            })
+            .catch(function(){ if(tRow) tRow.remove(); enterSupportIntake(); });
+    }
+
+    // Pre-chat: prompt the user for their first message before we connect them.
+    function enterSupportIntake(){
+        state.mode='support_intake';
+        stopSupportPoll();
+        clearSuggestions();
+        if(progWrap) progWrap.style.display='none';
+        if(retryBtn) retryBtn.style.display='none';
+        if(nameEl) nameEl.textContent = 'Contact support';
+        if(statusText) statusText.textContent = CFG.support.online ? 'Online' : 'Away';
+        input.setAttribute('placeholder','Describe your issue…');
+        msgs.innerHTML='';
+        var head=document.createElement('div'); head.className='ub-suphead';
+        head.innerHTML='<div class="ub-suphead-i"><b>Contact support</b><span>'+(CFG.support.online ? 'We’re online' : 'We’ll reply by email')+'</span></div><button class="ub-supback" type="button">← Assistant</button>';
+        head.querySelector('.ub-supback').addEventListener('click', function(){ greet(); });
+        msgs.appendChild(head);
+        var row=addAssistantShell();
+        row.querySelector('[data-body]').innerHTML=markdown("Please describe your issue or question in a message below, and I'll connect you to a support administrator.");
+        scrollDown();
+        setTimeout(function(){ input.focus(); }, 60);
+    }
+
+    // Submit the concern → NOW create the conversation and alert agents.
+    function submitSupportIntake(text){
+        addUser(text);
+        var tRow=typing();
+        fetch(CFG.support.escalate,{method:'POST',headers:hdrs(),body:JSON.stringify({message:text, page:CFG.page, bot_context: state.pendingContext||[]})})
+            .then(function(r){return r.json();})
+            .then(function(d){
+                if(tRow) tRow.remove();
+                if(d && d.conversation){ enterSupportUI(d); }
+                else {
+                    var row=addAssistantShell();
+                    row.querySelector('[data-body]').innerHTML=markdown("Sorry — I couldn't connect you just now. Please try again in a moment.");
+                }
+            })
+            .catch(function(){ if(tRow) tRow.remove(); var row=addAssistantShell(); row.querySelector('[data-body]').innerHTML=markdown('Network error — please try again.'); });
+    }
+
+    // ---- History (the user's own past support chats) ----
+    function openHistory(){
+        if(!CFG.support.enabled) return;
+        state.mode='history';
+        stopSupportPoll();
+        clearSuggestions();
+        if(progWrap) progWrap.style.display='none';
+        if(retryBtn) retryBtn.style.display='none';
+        if(nameEl) nameEl.textContent = 'Your conversations';
+        if(statusText) statusText.textContent = 'History';
+        input.setAttribute('placeholder','Open a conversation above…');
+        msgs.innerHTML = '';
+        var tRow=typing();
+        fetch(CFG.support.history,{headers:hdrs()})
+            .then(function(r){return r.json();})
+            .then(function(d){ if(tRow) tRow.remove(); renderHistory((d && d.conversations) || []); })
+            .catch(function(){ if(tRow) tRow.remove(); renderHistory([]); });
+    }
+
+    function renderHistory(rows){
+        msgs.innerHTML='';
+        var head=document.createElement('div'); head.className='ub-suphead';
+        head.innerHTML='<div class="ub-suphead-i"><b>Your conversations</b><span>'+rows.length+' chat'+(rows.length===1?'':'s')+'</span></div><button class="ub-supback" type="button">← Assistant</button>';
+        head.querySelector('.ub-supback').addEventListener('click', function(){ greet(); });
+        msgs.appendChild(head);
+
+        if(!rows.length){
+            var e=document.createElement('div'); e.className='ub-hist-empty';
+            e.textContent="You haven't spoken with support yet.";
+            msgs.appendChild(e); return;
+        }
+
+        var trash='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+        rows.forEach(function(c){
+            var status = c.resolved ? 'Resolved' : (c.status==='queued' ? 'Waiting' : 'Active');
+            var item=document.createElement('div'); item.className='ub-hist';
+            item.innerHTML=
+                '<button class="ub-hist-main" type="button">'+
+                    '<div class="ub-hist-top"><span class="ub-hist-subj"></span><span class="ub-hist-time">'+esc(c.time_h||'')+'</span></div>'+
+                    '<div class="ub-hist-snip"></div>'+
+                    '<div class="ub-hist-status '+(c.resolved?'res':'act')+'">'+status+(c.unread>0?(' · '+c.unread+' new'):'')+'</div>'+
+                '</button>'+
+                '<button class="ub-hist-del" type="button" title="Delete conversation">'+trash+'</button>';
+            item.querySelector('.ub-hist-subj').textContent = c.subject || 'Support request';
+            item.querySelector('.ub-hist-snip').textContent = c.snippet || '';
+            item.querySelector('.ub-hist-main').addEventListener('click', function(){ openSupportConversation(c.id); });
+            item.querySelector('.ub-hist-del').addEventListener('click', function(ev){ ev.stopPropagation(); deleteSupportConversation(c.id, item); });
+            msgs.appendChild(item);
+        });
+        scrollDown();
+    }
+
+    function openSupportConversation(id){
+        var tRow=typing();
+        fetch(supUrl(CFG.support.thread, id)+'?after=0',{headers:hdrs()})
             .then(function(r){return r.json();})
             .then(function(d){ if(tRow) tRow.remove(); if(d && d.conversation){ enterSupportUI(d); } })
             .catch(function(){ if(tRow) tRow.remove(); });
+    }
+
+    function deleteSupportConversation(id, itemEl){
+        if(!window.confirm('Delete this conversation from your history? Support will keep a record.')) return;
+        fetch(supUrl(CFG.support.destroy, id),{method:'DELETE',headers:hdrs()})
+            .then(function(r){return r.json();})
+            .then(function(d){ if(d && d.ok && itemEl){ itemEl.style.opacity='0'; setTimeout(function(){ if(itemEl.parentNode) itemEl.parentNode.removeChild(itemEl); },180); } })
+            .catch(function(){});
     }
 
     function enterSupportUI(payload){
@@ -791,7 +932,9 @@
     function stopSupportPoll(){ if(state.supportTimer){ clearInterval(state.supportTimer); state.supportTimer=null; } }
 
     function resumeSupportIfAny(){
-        if(!CFG.support.enabled || state.mode==='support') return;
+        // Only auto-resume from the plain bot view — never override an in-progress
+        // intake, an open support thread, or the history list.
+        if(!CFG.support.enabled || state.mode!=='bot') return;
         fetch(CFG.support.active,{headers:hdrs()})
             .then(function(r){return r.json();})
             .then(function(d){ if(d && d.conversation && !d.conversation.resolved){ enterSupportUI(d); } })

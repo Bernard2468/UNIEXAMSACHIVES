@@ -28,7 +28,8 @@
         input: document.getElementById('sibInput'), send: document.getElementById('sibSend'),
         internal: document.getElementById('sibInternal'), composer: document.getElementById('sibComposer'),
         search: document.getElementById('sibSearch'), tabs: document.getElementById('sibTabs'),
-        back: document.getElementById('sibBack')
+        back: document.getElementById('sibBack'),
+        lock: document.getElementById('sibLock'), lockText: document.getElementById('sibLockText')
     };
 
     var state = { filter:'open', q:'', activeId:0, activeConv:null, lastMsgId:0, sending:false, listTimer:null, msgTimer:null };
@@ -42,7 +43,7 @@
         }).catch(function(){});
     }
     function updateCounts(c){
-        ['open','unassigned','mine'].forEach(function(k){
+        ['open','mine','assigned'].forEach(function(k){
             var n = root.querySelector('.sib-c[data-c="'+k+'"]');
             if(n){ var v = (c[k]!=null? c[k] : 0); n.textContent = v; n.classList.toggle('sib-c--zero', !v); }
         });
@@ -58,6 +59,7 @@
                        : (c.status==='queued' ? '<span class="sib-badge queued">Queued</span>' : '<span class="sib-badge active">Active</span>');
             var cat = c.category ? '<span class="sib-badge cat">'+esc(c.category)+'</span>' : '';
             var wait = (c.waiting_min!=null && c.waiting_min>0) ? '<span class="sib-wait">'+c.waiting_min+'m waiting</span>' : '';
+            var who = (c.assigned_agent_id && c.agent_name) ? '<span class="sib-badge cat">'+esc(c.agent_name)+'</span>' : '';
             var av = c.user_avatar ? '<img src="'+esc(c.user_avatar)+'" alt="" onerror="this.remove()">' : '';
             var unread = c.unread>0 ? '<span class="sib-unread">'+(c.unread>9?'9+':c.unread)+'</span>' : '';
             card.innerHTML =
@@ -66,7 +68,7 @@
                     '<div class="sib-card-top"><span class="sib-card-name">'+esc(c.user_name)+'</span><span class="sib-card-time">'+esc(c.time_h||'')+'</span></div>'+
                     '<div class="sib-card-subj">'+esc(c.subject)+'</div>'+
                     '<div class="sib-card-snip">'+esc(c.snippet||'')+'</div>'+
-                    '<div class="sib-card-meta">'+badge+cat+wait+'</div>'+
+                    '<div class="sib-card-meta">'+badge+who+cat+wait+'</div>'+
                 '</div>'+ unread;
             card.addEventListener('click', function(){ openConversation(c.id); });
             el.list.appendChild(card);
@@ -99,11 +101,11 @@
             el.thSub.textContent = (conv.subject || '') + (conv.category ? ' · '+conv.category : '');
             var av = conv.user && conv.user.avatar;
             el.thAvatar.innerHTML = (av ? '<img src="'+esc(av)+'" alt="" onerror="this.remove()">' : '') + esc(initials(conv.user && conv.user.name));
-            renderActions(conv);
+            applyConversationState(conv);
             renderContext(conv.context || []);
             el.msgs.innerHTML = '';
         } else {
-            renderActions(conv); // keep action buttons in sync with status changes
+            applyConversationState(conv); // keep actions + lock in sync with status changes
         }
         (d.messages || []).forEach(function(m){ appendMessage(m); });
         if(d.messages && d.messages.length){ state.lastMsgId = d.messages[d.messages.length-1].id; }
@@ -116,18 +118,37 @@
             return '<div class="sib-ctx-turn"><b>'+(t.role==='assistant'?'Assistant':'User')+':</b> '+esc(t.content)+'</div>';
         }).join('');
     }
-    function renderActions(conv){
+    // Actions + composer/lock, driven entirely by the server's per-viewer flags
+    // so the ownership rule is enforced consistently (and updates live on poll).
+    function applyConversationState(conv){
         var html = '';
         if(conv.resolved){
-            html = '<button class="sib-btn" data-act="reopen">Reopen</button>';
+            if(conv.can_reopen){ html += '<button class="sib-btn" data-act="reopen">Reopen</button>'; }
         } else {
-            if(!conv.assigned_agent_id){ html += '<button class="sib-btn primary" data-act="claim">Claim</button>'; }
-            html += '<button class="sib-btn green" data-act="resolve">Resolve</button>';
+            if(conv.can_claim){    html += '<button class="sib-btn primary" data-act="claim">Claim</button>'; }
+            if(conv.can_takeover){ html += '<button class="sib-btn primary" data-act="claim">Take over</button>'; }
+            if(conv.can_resolve){  html += '<button class="sib-btn green" data-act="resolve">Resolve</button>'; }
         }
         el.thActions.innerHTML = html;
         el.thActions.querySelectorAll('[data-act]').forEach(function(b){
             b.addEventListener('click', function(){ doAction(b.getAttribute('data-act')); });
         });
+
+        // Composer only when this viewer may reply; otherwise a read-only notice.
+        if(conv.can_reply){
+            el.composer.style.display = '';
+            el.lock.style.display = 'none';
+        } else {
+            el.composer.style.display = 'none';
+            el.lock.style.display = 'flex';
+            if(conv.resolved){
+                el.lockText.textContent = 'This conversation is resolved — view only. Reopen it to reply.';
+            } else if(conv.assigned_other && conv.agent_name){
+                el.lockText.innerHTML = 'Picked up by <b>'+esc(conv.agent_name)+'</b> — view only.';
+            } else {
+                el.lockText.textContent = 'View only.';
+            }
+        }
     }
     function appendMessage(m){
         if(m.sender==='system'){
@@ -159,7 +180,7 @@
                         state.lastMsgId = d.messages[d.messages.length-1].id;
                         if(atBottom) el.msgs.scrollTop = el.msgs.scrollHeight;
                     }
-                    if(d.conversation){ state.activeConv = d.conversation; renderActions(d.conversation); }
+                    if(d.conversation){ state.activeConv = d.conversation; applyConversationState(d.conversation); }
                 }).catch(function(){});
         }, 4000);
     }
@@ -173,18 +194,39 @@
         var internal = el.internal.checked;
         var cid = uid();
         fetch(u(CFG.reply, state.activeId), {method:'POST', headers:hdrs(), body:JSON.stringify({body:body, internal:internal, client_id:cid})})
-            .then(function(r){return r.json();})
-            .then(function(d){
+            .then(function(r){ return r.json().then(function(j){ return {status:r.status, j:(j||{})}; }); })
+            .then(function(res){
                 state.sending=false;
-                if(d && d.ok && d.message){
+                var d = res.j;
+                if(d.ok && d.message){
                     appendMessage(d.message);
                     state.lastMsgId = Math.max(state.lastMsgId, d.message.id);
                     el.msgs.scrollTop = el.msgs.scrollHeight;
                     el.input.value=''; autosize(); refreshSend();
                     fetchList();
-                } else { el.send.disabled=false; }
+                } else if(res.status===409 || res.status===403 || d.locked){
+                    // Another agent owns it now — flip this view to read-only.
+                    resyncThread();
+                    if(window.toast){ try{ window.toast(d.error || 'This conversation is handled by another agent.', 'warning'); }catch(e){} }
+                } else {
+                    el.send.disabled=false;
+                }
             })
             .catch(function(){ state.sending=false; el.send.disabled=false; });
+    }
+
+    // Pull the latest conversation state (used after a lost-race lock).
+    function resyncThread(){
+        if(!state.activeId) return;
+        fetch(u(CFG.messages, state.activeId)+'?after='+state.lastMsgId, {headers:hdrs()})
+            .then(function(r){return r.json();})
+            .then(function(d){
+                if(d.messages && d.messages.length){
+                    d.messages.forEach(function(m){ appendMessage(m); });
+                    state.lastMsgId = d.messages[d.messages.length-1].id;
+                }
+                if(d.conversation){ state.activeConv = d.conversation; applyConversationState(d.conversation); }
+            }).catch(function(){});
     }
     function doAction(act){
         if(!state.activeId) return;

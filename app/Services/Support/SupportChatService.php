@@ -190,7 +190,7 @@ class SupportChatService
     public function startOrResumeSupport(User $user, array $data): BotConversation
     {
         return DB::transaction(function () use ($user, $data) {
-            $existing = BotConversation::support()->open()
+            $existing = BotConversation::support()->open()->visibleToUser()
                 ->where('user_id', $user->id)
                 ->latest('id')
                 ->first();
@@ -257,7 +257,15 @@ class SupportChatService
         });
     }
 
-    /** A reply (or internal note) from an agent. Auto-claims an unassigned thread. */
+    /**
+     * A reply (or internal note) from an agent.
+     *
+     * Ownership lock: an UNassigned thread is claimed atomically by the first
+     * replier; once a thread belongs to someone else, this returns null (the
+     * caller shows "picked up by another agent"). Only the assigned agent — or a
+     * Super Admin who has taken it over — can post, so two agents never chat with
+     * the same user at once.
+     */
     public function postAgentMessage(BotConversation $conv, User $agent, string $body, bool $internal = false, ?string $clientId = null): ?BotMessage
     {
         return DB::transaction(function () use ($conv, $agent, $body, $internal, $clientId) {
@@ -265,6 +273,27 @@ class SupportChatService
                 $dupe = $conv->messages()->where('client_id', $clientId)->first();
                 if ($dupe) {
                     return $dupe;
+                }
+            }
+
+            $justClaimed = false;
+
+            // Internal notes never change assignment. Public replies enforce the lock.
+            if (!$internal) {
+                if (!$conv->assigned_agent_id) {
+                    $claimed = DB::table('bot_conversations')
+                        ->where('id', $conv->id)->whereNull('assigned_agent_id')
+                        ->update(['assigned_agent_id' => $agent->id]);
+                    if ($claimed) {
+                        $conv->assigned_agent_id = $agent->id;
+                        $justClaimed = true;
+                    } else {
+                        $conv->refresh();
+                    }
+                }
+                // Owned by a different agent → refuse (must take over first).
+                if ($conv->assigned_agent_id && (int) $conv->assigned_agent_id !== (int) $agent->id) {
+                    return null;
                 }
             }
 
@@ -279,20 +308,19 @@ class SupportChatService
             ]);
 
             if ($internal) {
-                return $msg; // notes are agent-private — no status/counter/notify changes
+                return $msg; // agent-private — no status/counter/notify changes
             }
 
-            $justClaimed = false;
-            if (!$conv->assigned_agent_id) {
-                $conv->assigned_agent_id = $agent->id;
-                $justClaimed = true;
-            }
             $conv->status = BotConversation::STATUS_ACTIVE;
             $conv->resolved_at = null;
             $conv->resolved_by = null;
             $conv->last_agent_message_at = now();
             $conv->user_unread = $conv->user_unread + 1;
             $conv->agent_unread = 0;
+            // Never ghost a live reply: un-hide a thread the user had cleared.
+            if ($conv->user_deleted_at) {
+                $conv->user_deleted_at = null;
+            }
             $conv->save();
 
             if ($justClaimed) {
@@ -307,19 +335,86 @@ class SupportChatService
 
     // ===== Status transitions =====
 
+    /**
+     * Claim an unassigned thread (any agent), or — for a Super Admin only —
+     * take over one already handled by another agent. Race-safe.
+     */
     public function claim(BotConversation $conv, User $agent): void
     {
         DB::transaction(function () use ($conv, $agent) {
             if ((int) $conv->assigned_agent_id === (int) $agent->id) {
-                return;
+                return; // already mine
             }
-            $conv->assigned_agent_id = $agent->id;
+
+            $previous = $conv->assignedAgent; // captured before any reassign
+
+            if (!$conv->assigned_agent_id) {
+                $claimed = DB::table('bot_conversations')
+                    ->where('id', $conv->id)->whereNull('assigned_agent_id')
+                    ->update(['assigned_agent_id' => $agent->id]);
+                if (!$claimed) {
+                    $conv->refresh(); // lost the race
+                }
+            } elseif ($agent->isSuperAdmin()) {
+                DB::table('bot_conversations')->where('id', $conv->id)
+                    ->update(['assigned_agent_id' => $agent->id]);
+            } else {
+                return; // a regular agent cannot take over another's thread
+            }
+
+            $conv->refresh();
+            if ((int) $conv->assigned_agent_id !== (int) $agent->id) {
+                return; // someone else won the claim
+            }
+
             if ($conv->status === BotConversation::STATUS_QUEUED) {
                 $conv->status = BotConversation::STATUS_ACTIVE;
+                $conv->save();
             }
-            $conv->save();
-            $this->addSystemMessage($conv, trim($agent->first_name . ' ' . $agent->last_name) . ' picked up this conversation.');
+
+            $name = trim($agent->first_name . ' ' . $agent->last_name);
+            $line = ($previous && (int) $previous->id !== (int) $agent->id)
+                ? $name . ' took over this conversation from ' . trim($previous->first_name . ' ' . $previous->last_name) . '.'
+                : $name . ' picked up this conversation.';
+            $this->addSystemMessage($conv, $line);
         });
+    }
+
+    /** Soft-hide a thread from the requester's own history (agents keep the record). */
+    public function deleteForUser(BotConversation $conv): void
+    {
+        $conv->forceFill(['user_deleted_at' => now()])->save();
+    }
+
+    /**
+     * The requester's own conversation history (most recent first, hidden ones
+     * excluded). For the widget's "your past chats" list.
+     *
+     * @return \Illuminate\Support\Collection<int, BotConversation>
+     */
+    public function userHistory(User $user): \Illuminate\Support\Collection
+    {
+        return BotConversation::support()->visibleToUser()
+            ->where('user_id', $user->id)
+            ->with('latestMessage')
+            ->orderByDesc('updated_at')
+            ->limit(50)
+            ->get();
+    }
+
+    /** Compact row for the widget history list. */
+    public function serializeHistoryRow(BotConversation $c): array
+    {
+        $last = $c->latestMessage;
+        return [
+            'id'       => $c->id,
+            'subject'  => $c->subject ?: 'Support request',
+            'status'   => $c->status,
+            'resolved' => $c->isResolved(),
+            'unread'   => (int) $c->user_unread,
+            'snippet'  => $last ? Str::limit((string) $last->content, 80) : '',
+            'time_h'   => optional($c->updated_at)->diffForHumans(),
+        ];
     }
 
     public function resolve(BotConversation $conv, User $actor): void

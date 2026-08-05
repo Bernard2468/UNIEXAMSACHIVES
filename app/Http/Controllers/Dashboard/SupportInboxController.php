@@ -49,11 +49,11 @@ class SupportInboxController extends Controller
             ->orderByDesc('updated_at');
 
         match ($filter) {
-            'mine'       => $query->open()->where('assigned_agent_id', $me),
-            'unassigned' => $query->open()->whereNull('assigned_agent_id'),
-            'resolved'   => $query->where('status', BotConversation::STATUS_RESOLVED),
-            'all'        => $query,
-            default      => $query->open(),
+            'mine'     => $query->open()->where('assigned_agent_id', $me),
+            'assigned' => $query->open()->whereNotNull('assigned_agent_id')->where('assigned_agent_id', '!=', $me),
+            'resolved' => $query->where('status', BotConversation::STATUS_RESOLVED),
+            'all'      => $query,
+            default    => $query->open()->whereNull('assigned_agent_id'), // 'open' = unclaimed queue
         };
 
         if ($search !== '') {
@@ -139,15 +139,24 @@ class SupportInboxController extends Controller
             $data['client_id'] ?? null,
         );
 
+        // Null = the thread was just claimed by another agent (lost the race).
+        if (!$msg) {
+            return response()->json([
+                'ok'     => false,
+                'locked' => true,
+                'error'  => 'This conversation was just picked up by another agent.',
+            ], 409);
+        }
+
         return response()->json([
             'ok'      => true,
-            'message' => $msg ? $this->support->serializeMessage($msg) : null,
+            'message' => $this->support->serializeMessage($msg),
         ]);
     }
 
     public function claim(Request $request, BotConversation $conversation)
     {
-        abort_unless(Auth::user()->can('manage', $conversation), 403);
+        abort_unless(Auth::user()->can('claim', $conversation), 403);
         $this->support->claim($conversation, Auth::user());
         return response()->json(['ok' => true]);
     }
@@ -179,9 +188,9 @@ class SupportInboxController extends Controller
     {
         $me = Auth::id();
         return [
-            'open'       => BotConversation::support()->open()->count(),
-            'unassigned' => BotConversation::support()->open()->whereNull('assigned_agent_id')->count(),
-            'mine'       => BotConversation::support()->open()->where('assigned_agent_id', $me)->count(),
+            'open'     => BotConversation::support()->open()->whereNull('assigned_agent_id')->count(),
+            'mine'     => BotConversation::support()->open()->where('assigned_agent_id', $me)->count(),
+            'assigned' => BotConversation::support()->open()->whereNotNull('assigned_agent_id')->where('assigned_agent_id', '!=', $me)->count(),
         ];
     }
 
@@ -205,8 +214,28 @@ class SupportInboxController extends Controller
             ->map(fn ($m) => $this->support->serializeMessage($m))
             ->values();
 
+        $conv = $this->support->serializeConversation($conversation, forAgent: true);
+
+        // Per-viewer capability flags so the UI can enforce the ownership lock:
+        // only the assignee (or the claimer of an unclaimed thread) may reply;
+        // everyone else sees it read-only. A Super Admin must take over first.
+        $me = Auth::user();
+        $assigned = $conversation->assigned_agent_id;
+        $isMine       = $assigned && (int) $assigned === (int) $me->id;
+        $isUnassigned = !$assigned;
+        $isSuper      = $me->isSuperAdmin();
+        $resolved     = $conversation->isResolved();
+
+        $conv['is_mine']        = $isMine;
+        $conv['assigned_other'] = (!$isUnassigned && !$isMine);
+        $conv['can_reply']      = !$resolved && ($isUnassigned || $isMine);
+        $conv['can_claim']      = $isUnassigned && !$resolved;
+        $conv['can_takeover']   = $isSuper && !$isUnassigned && !$isMine && !$resolved;
+        $conv['can_resolve']    = !$resolved && ($isUnassigned || $isMine || $isSuper);
+        $conv['can_reopen']     = $resolved && ($isMine || $isUnassigned || $isSuper);
+
         return [
-            'conversation' => $this->support->serializeConversation($conversation, forAgent: true),
+            'conversation' => $conv,
             'messages'     => $messages,
             'server_time'  => now()->toIso8601String(),
         ];

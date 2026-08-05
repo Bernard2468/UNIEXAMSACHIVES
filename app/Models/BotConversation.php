@@ -29,13 +29,14 @@ class BotConversation extends Model
     protected $fillable = [
         'user_id', 'page', 'mode', 'status', 'subject', 'category',
         'assigned_agent_id', 'office_id', 'last_user_message_at', 'last_agent_message_at',
-        'resolved_at', 'resolved_by', 'user_unread', 'agent_unread', 'meta',
+        'resolved_at', 'resolved_by', 'user_unread', 'agent_unread', 'meta', 'user_deleted_at',
     ];
 
     protected $casts = [
         'last_user_message_at'  => 'datetime',
         'last_agent_message_at' => 'datetime',
         'resolved_at'           => 'datetime',
+        'user_deleted_at'       => 'datetime',
         'user_unread'           => 'integer',
         'agent_unread'          => 'integer',
         'meta'                  => 'array',
@@ -85,6 +86,12 @@ class BotConversation extends Model
     public function scopeOpen($query)
     {
         return $query->whereIn('status', [self::STATUS_QUEUED, self::STATUS_ACTIVE]);
+    }
+
+    /** Not hidden by the user (their history/active views). Agents ignore this. */
+    public function scopeVisibleToUser($query)
+    {
+        return $query->whereNull('user_deleted_at');
     }
 
     // ===== Helpers =====
